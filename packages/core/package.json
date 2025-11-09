@@ -12,7 +12,7 @@
     "build": "bun run clean && vite build",
     "build:services": "bun scripts/build-services.mjs",
     "start": "bun run build && bun run start:api",
-    "start:api": "bun run build:services && bun run db:migrate && bun server/api-elysia.ts",
+    "start:api": "bun run build:services && bun run db:migrate && NODE_ENV=production bun server/api-elysia.ts",
     "clean": "rm -rf dist",
     "lint": "eslint . --ext .ts,.tsx",
     "preview": "vite preview",

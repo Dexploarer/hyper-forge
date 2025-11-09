@@ -1,0 +1,35 @@
+# Railway Deployment Configuration
+# Using Railpack (Railway's modern builder, replaces deprecated Nixpacks)
+# Deployed: March 2025
+
+[build]
+builder = "RAILPACK"
+buildCommand = "cd packages/core && bun run build"
+
+[deploy]
+startCommand = "cd packages/core && bun run start:api"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Watch paths for automatic rebuilds
+[[deploy.watchPaths]]
+paths = ["packages/core/**"]
+
+# Environment configuration
+[env]
+# Node environment (set to production in Railway dashboard)
+# NODE_ENV = "production"
+
+# Railway automatically provides:
+# - PORT (used by api-elysia.ts)
+# - DATABASE_URL (from PostgreSQL plugin)
+
+# Required environment variables (set in Railway Dashboard):
+# - PRIVY_APP_ID
+# - PRIVY_APP_SECRET
+# - AI_GATEWAY_API_KEY (or OPENAI_API_KEY)
+# - MESHY_API_KEY
+# - ELEVENLABS_API_KEY
+# - ADMIN_UPLOAD_TOKEN (for asset uploads)

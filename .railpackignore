@@ -1,0 +1,61 @@
+# Railpack Ignore File
+# Similar to .dockerignore - excludes files from Railway build
+
+# Development files
+.git
+.gitignore
+.github
+*.log
+*.md
+!README.md
+CLAUDE.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Testing
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__
+coverage
+
+# Documentation
+docs
+dev-book
+*.md
+!README.md
+
+# Local env files (use Railway dashboard for env vars)
+.env
+.env.local
+.env.*.local
+
+# Development dependencies (Railway installs from package.json)
+node_modules
+
+# Build artifacts (rebuilt on Railway)
+dist
+.turbo
+.cache
+
+# Temporary files
+tmp
+temp
+*.tmp
+temp-images/*
+test-*.json
+test-*.png
+
+# Scripts not needed in production
+scripts/audit-assets.ts
+scripts/normalize-all-assets.ts
+scripts/count-lines.mjs
+
+# Private/hyperscape assets (if you don't want to include in build)
+# gdd-assets/*
+# Note: Uncomment above if using Railway Volume for assets
