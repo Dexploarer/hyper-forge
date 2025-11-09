@@ -58,13 +58,21 @@ export class QdrantService {
       throw new Error("QDRANT_URL environment variable is required");
     }
 
+    // Normalize URL - ensure it has a protocol
+    let normalizedUrl = qdrantUrl.trim();
+    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+      // Default to http:// for Railway internal URLs or localhost
+      normalizedUrl = `http://${normalizedUrl}`;
+      console.log(`[QdrantService] Added http:// protocol to URL: ${normalizedUrl}`);
+    }
+
     // Initialize Qdrant client
     this.client = new QdrantClient({
-      url: qdrantUrl,
+      url: normalizedUrl,
       apiKey: qdrantApiKey, // Optional - Railway Qdrant may not require API key
     });
 
-    console.log(`[QdrantService] Initialized with URL: ${qdrantUrl}`);
+    console.log(`[QdrantService] Initialized with URL: ${normalizedUrl}`);
   }
 
   /**
