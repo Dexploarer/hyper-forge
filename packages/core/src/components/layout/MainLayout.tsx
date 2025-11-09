@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { NavigationView } from '@/types'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
-import { MobileTopBar } from './MobileTopBar'
 import { BottomNav } from './BottomNav'
 import { MobileMenuDrawer } from './MobileMenuDrawer'
 
@@ -19,12 +18,6 @@ export function MainLayout({ currentView, onViewChange, children }: MainLayoutPr
     <>
       {/* Mobile Layout (< 1024px) */}
       <div className="lg:hidden flex flex-col h-screen bg-gradient-to-br from-bg-primary to-bg-secondary overflow-hidden">
-        {/* Mobile Top Bar */}
-        <MobileTopBar
-          currentView={currentView}
-          onMenuClick={() => setIsMenuOpen(true)}
-        />
-
         {/* Main Content with bottom padding for nav */}
         <main id="main-content" className="flex-1 overflow-auto relative pb-16" tabIndex={-1}>
           {/* Subtle grid background */}

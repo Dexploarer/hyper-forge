@@ -13,8 +13,8 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   // Get current user profile (requires authentication)
   .get(
     "/me",
-    async (context) => {
-      const authResult = await requireAuth(context);
+    async ({ request }) => {
+      const authResult = await requireAuth({ request });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -37,8 +37,8 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   // Update/Complete user profile (requires authentication)
   .post(
     "/complete-profile",
-    async (context) => {
-      const authResult = await requireAuth(context);
+    async ({ request, body }) => {
+      const authResult = await requireAuth({ request });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -46,7 +46,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       }
 
       const { user: authUser } = authResult;
-      const { displayName, email, discordUsername } = context.body as any;
+      const { displayName, email, discordUsername } = body as any;
 
       // Update profile (only set profileCompleted if not already set)
       const updateData: any = {
@@ -87,8 +87,8 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
   // Get all users (admin only)
   .get(
     "/",
-    async (context) => {
-      const adminResult = await requireAdmin(context);
+    async ({ request }) => {
+      const adminResult = await requireAdmin({ request });
 
       // If admin check failed, return the error response
       if (adminResult instanceof Response) {

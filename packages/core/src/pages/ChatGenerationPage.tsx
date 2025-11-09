@@ -208,7 +208,7 @@ export const ChatGenerationPage: React.FC<ChatGenerationPageProps> = ({
         {/* Greeting */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <Sparkles className="w-10 h-10 text-primary animate-pulse" />
+            <Sparkles className="w-10 h-10 text-purple-600 dark:text-primary animate-pulse" />
             <h1 className="text-5xl font-bold text-text-primary">
               What would you like to create?
             </h1>
@@ -262,7 +262,7 @@ export const ChatGenerationPage: React.FC<ChatGenerationPageProps> = ({
                   'bg-gradient-to-br shadow-md group-hover:shadow-lg transition-shadow',
                   tool.gradient
                 )}>
-                  <Icon className="w-7 h-7 text-white" />
+                  <Icon className="w-7 h-7 text-purple-600 dark:text-white" />
                 </div>
 
                 {/* Label */}
