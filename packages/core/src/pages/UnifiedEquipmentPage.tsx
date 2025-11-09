@@ -193,8 +193,9 @@ export const UnifiedEquipmentPage: React.FC = () => {
                       avatarUrl={selectedAvatar?.hasModel ? `/api/assets/${selectedAvatar.id}/model` : undefined}
                       armorUrl={selectedArmor?.hasModel ? `/api/assets/${selectedArmor.id}/model` : undefined}
                       helmetUrl={selectedHelmet?.hasModel ? `/api/assets/${selectedHelmet.id}/model` : undefined}
+                      weaponUrl={selectedWeapon?.hasModel ? `/api/assets/${selectedWeapon.id}/model` : undefined}
                       showWireframe={showWireframe}
-                      equipmentSlot={equipmentSlot as 'Head' | 'Spine2' | 'Pelvis'}
+                      equipmentSlot={equipmentSlot as 'Head' | 'Spine2' | 'Pelvis' | 'Hand_R' | 'Hand_L'}
                       selectedAvatar={selectedAvatar}
                       currentAnimation={currentAnimation}
                       isAnimationPlaying={isAnimationPlaying}

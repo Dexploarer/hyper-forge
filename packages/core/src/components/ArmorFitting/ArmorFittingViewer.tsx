@@ -68,14 +68,16 @@ interface ModelDemoProps {
   avatarUrl?: string;
   armorUrl?: string;
   helmetUrl?: string;
+  weaponUrl?: string;
   showWireframe: boolean;
-  equipmentSlot: "Head" | "Spine2" | "Pelvis";
+  equipmentSlot: "Head" | "Spine2" | "Pelvis" | "Hand_R" | "Hand_L";
   currentAnimation: "tpose" | "walking" | "running";
   isAnimationPlaying: boolean;
   onModelsReady: (meshes: {
     avatar: THREE.SkinnedMesh | null;
     armor: THREE.Mesh | null;
     helmet: THREE.Mesh | null;
+    weapon: THREE.Mesh | null;
     helmetGroup?: THREE.Group | null;
   }) => void;
 }
@@ -84,6 +86,7 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
   avatarUrl,
   armorUrl,
   helmetUrl,
+  weaponUrl,
   showWireframe,
   equipmentSlot,
   currentAnimation,
@@ -93,12 +96,14 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
   const avatarRef = useRef<THREE.Group>(null);
   const armorRef = useRef<THREE.Group>(null);
   const helmetRef = useRef<THREE.Group>(null);
+  const weaponRef = useRef<THREE.Group>(null);
 
   // Track loaded URLs to prevent unnecessary reloads
   const loadedUrlsRef = useRef({
     avatar: "",
     armor: "",
     helmet: "",
+    weapon: "",
   });
 
   // Animation state
@@ -185,6 +190,7 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
     let avatarMesh: THREE.SkinnedMesh | null = null;
     let armorMesh: THREE.Mesh | null = null;
     let helmetMesh: THREE.Mesh | null = null;
+    let weaponMesh: THREE.Mesh | null = null;
 
     const loadModels = async () => {
       const loader = new GLTFLoader();
@@ -395,19 +401,67 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
         });
       }
 
+      // Clear weapon if not in Hand mode or no URL
+      const isHandSlot = equipmentSlot === "Hand_R" || equipmentSlot === "Hand_L";
+      if (!weaponUrl || !isHandSlot) {
+        if (weaponRef.current) {
+          weaponRef.current.clear();
+          loadedUrlsRef.current.weapon = "";
+        }
+      }
+      // Load weapon only if URL changed
+      else if (
+        weaponUrl &&
+        isHandSlot &&
+        weaponRef.current &&
+        weaponUrl !== loadedUrlsRef.current.weapon
+      ) {
+        try {
+          const gltf = await loader.loadAsync(weaponUrl);
+          weaponRef.current.clear();
+          weaponRef.current.add(gltf.scene);
+          loadedUrlsRef.current.weapon = weaponUrl;
+
+          // Find mesh
+          gltf.scene.traverse((child: THREE.Object3D) => {
+            if (child instanceof THREE.Mesh && !weaponMesh) {
+              weaponMesh = child;
+              weaponMesh.userData.isWeapon = true;
+              weaponMesh.userData.isEquipment = true;
+              weaponMesh.userData.equipmentSlot = equipmentSlot;
+            }
+          });
+
+          // Match avatar scale
+          if (avatarRef.current) {
+            weaponRef.current.scale.copy(avatarRef.current.scale);
+          }
+        } catch (error) {
+          console.error("Failed to load weapon:", error);
+        }
+      } else if (weaponUrl && isHandSlot && weaponRef.current) {
+        // URL exists but already loaded - find the mesh
+        weaponRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh && !weaponMesh) {
+            weaponMesh = child;
+          }
+        });
+      }
+
       // Notify parent only if we have meshes
-      if (avatarMesh || armorMesh || helmetMesh) {
+      if (avatarMesh || armorMesh || helmetMesh || weaponMesh) {
         onModelsReady({
           avatar: avatarMesh,
           armor: armorMesh,
           helmet: helmetMesh,
+          weapon: weaponMesh,
           helmetGroup: helmetRef.current,
         });
       }
     };
 
     loadModels();
-  }, [avatarUrl, armorUrl, helmetUrl, equipmentSlot, onModelsReady]);
+  }, [avatarUrl, armorUrl, helmetUrl, weaponUrl, equipmentSlot, onModelsReady]);
 
   // Apply wireframe
   useEffect(() => {
@@ -420,6 +474,13 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
     }
     if (helmetRef.current) {
       helmetRef.current.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.material.wireframe = showWireframe;
+        }
+      });
+    }
+    if (weaponRef.current) {
+      weaponRef.current.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           child.material.wireframe = showWireframe;
         }
@@ -567,6 +628,7 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
       <group ref={avatarRef} />
       <group ref={armorRef} />
       <group ref={helmetRef} />
+      <group ref={weaponRef} />
     </>
   );
 };
@@ -576,8 +638,9 @@ interface SceneProps {
   avatarUrl?: string;
   armorUrl?: string;
   helmetUrl?: string;
+  weaponUrl?: string;
   showWireframe: boolean;
-  equipmentSlot: "Head" | "Spine2" | "Pelvis";
+  equipmentSlot: "Head" | "Spine2" | "Pelvis" | "Hand_R" | "Hand_L";
   currentAnimation: "tpose" | "walking" | "running";
   isAnimationPlaying: boolean;
   visualizationGroup?: THREE.Group;
@@ -585,6 +648,7 @@ interface SceneProps {
     avatar: THREE.SkinnedMesh | null;
     armor: THREE.Mesh | null;
     helmet: THREE.Mesh | null;
+    weapon: THREE.Mesh | null;
     scene: THREE.Scene;
     helmetGroup?: THREE.Group | null;
   }) => void;
@@ -594,6 +658,7 @@ const Scene: React.FC<SceneProps> = ({
   avatarUrl,
   armorUrl,
   helmetUrl,
+  weaponUrl,
   showWireframe,
   equipmentSlot,
   currentAnimation,
@@ -613,12 +678,14 @@ const Scene: React.FC<SceneProps> = ({
     avatar: THREE.SkinnedMesh | null;
     armor: THREE.Mesh | null;
     helmet: THREE.Mesh | null;
+    weapon: THREE.Mesh | null;
     helmetGroup?: THREE.Group | null;
   }) => {
     console.log("Models ready in scene:", {
       avatar: !!meshes.avatar,
       armor: !!meshes.armor,
       helmet: !!meshes.helmet,
+      weapon: !!meshes.weapon,
     });
 
     onModelsLoaded({
@@ -637,6 +704,7 @@ const Scene: React.FC<SceneProps> = ({
         avatarUrl={avatarUrl}
         armorUrl={armorUrl}
         helmetUrl={helmetUrl}
+        weaponUrl={weaponUrl}
         showWireframe={showWireframe}
         equipmentSlot={equipmentSlot}
         currentAnimation={currentAnimation}
@@ -659,6 +727,7 @@ export interface ArmorFittingViewerRef {
     avatar: THREE.SkinnedMesh | null;
     armor: THREE.Mesh | null;
     helmet: THREE.Mesh | null;
+    weapon: THREE.Mesh | null;
     scene: THREE.Scene | null;
   };
 
@@ -684,8 +753,9 @@ interface ArmorFittingViewerProps {
   avatarUrl?: string;
   armorUrl?: string;
   helmetUrl?: string;
+  weaponUrl?: string;
   showWireframe: boolean;
-  equipmentSlot: "Head" | "Spine2" | "Pelvis";
+  equipmentSlot: "Head" | "Spine2" | "Pelvis" | "Hand_R" | "Hand_L";
   selectedAvatar?: { name: string } | null;
   onModelsLoaded?: () => void;
   currentAnimation?: "tpose" | "walking" | "running";
@@ -704,6 +774,7 @@ export const ArmorFittingViewer = forwardRef<
     avatarUrl,
     armorUrl,
     helmetUrl,
+    weaponUrl,
     showWireframe,
     equipmentSlot,
     selectedAvatar,
@@ -713,6 +784,7 @@ export const ArmorFittingViewer = forwardRef<
   const avatarMeshRef = useRef<THREE.SkinnedMesh | null>(null);
   const armorMeshRef = useRef<THREE.Mesh | null>(null);
   const helmetMeshRef = useRef<THREE.Mesh | null>(null);
+  const weaponMeshRef = useRef<THREE.Mesh | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
 
   // Services
@@ -787,6 +859,7 @@ export const ArmorFittingViewer = forwardRef<
     avatar: THREE.SkinnedMesh | null;
     armor: THREE.Mesh | null;
     helmet: THREE.Mesh | null;
+    weapon: THREE.Mesh | null;
     scene: THREE.Scene;
     helmetGroup?: THREE.Group | null;
   }) => {
@@ -794,6 +867,7 @@ export const ArmorFittingViewer = forwardRef<
     avatarMeshRef.current = meshes.avatar;
     armorMeshRef.current = meshes.armor;
     helmetMeshRef.current = meshes.helmet;
+    weaponMeshRef.current = meshes.weapon;
     sceneRef.current = meshes.scene;
     helmetGroupRef.current = meshes.helmetGroup || null;
 
@@ -1141,6 +1215,7 @@ export const ArmorFittingViewer = forwardRef<
       avatar: avatarMeshRef.current,
       armor: armorMeshRef.current,
       helmet: helmetMeshRef.current,
+      weapon: weaponMeshRef.current,
       scene: sceneRef.current,
     }),
 
@@ -2063,6 +2138,7 @@ export const ArmorFittingViewer = forwardRef<
           avatarUrl={avatarUrl}
           armorUrl={armorUrl}
           helmetUrl={helmetUrl}
+          weaponUrl={weaponUrl}
           showWireframe={showWireframe}
           equipmentSlot={equipmentSlot}
           currentAnimation={props.currentAnimation || "tpose"}
