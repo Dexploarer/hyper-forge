@@ -55,7 +55,11 @@ export class QdrantService {
     const qdrantApiKey = process.env.QDRANT_API_KEY;
 
     if (!qdrantUrl) {
-      throw new Error("QDRANT_URL environment variable is required");
+      // Don't throw - just create a null client
+      // This allows the server to start even if Qdrant is not configured
+      console.warn("[QdrantService] QDRANT_URL not configured - vector search will not be available");
+      this.client = null as any; // Will be checked before use
+      return;
     }
 
     // Normalize URL - ensure it has a protocol
@@ -76,10 +80,22 @@ export class QdrantService {
   }
 
   /**
+   * Check if Qdrant client is available
+   */
+  private isAvailable(): boolean {
+    return this.client !== null && this.client !== undefined;
+  }
+
+  /**
    * Initialize all collections
    * Creates collections if they don't exist
    */
   async initializeCollections(): Promise<void> {
+    if (!this.isAvailable()) {
+      console.warn("[QdrantService] Client not available - skipping initialization");
+      return;
+    }
+
     const collections: CollectionName[] = [
       "assets",
       "npcs",
@@ -403,6 +419,10 @@ export class QdrantService {
    * Health check - verify connection to Qdrant
    */
   async healthCheck(): Promise<boolean> {
+    if (!this.isAvailable()) {
+      return false;
+    }
+
     try {
       // Try to list collections as a health check
       await this.client.getCollections();
