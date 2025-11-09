@@ -170,8 +170,8 @@ export const AssetList = t.Array(AssetMetadata);
 export const AssetResponse = t.Object({
   id: t.String(),
   name: t.String(),
-  description: t.String(),
-  type: t.String(),
+  description: t.Optional(t.String()),
+  type: t.Optional(t.String()),
   metadata: AssetMetadata, // Full metadata.json content with proper types
   hasModel: t.Boolean(),
   modelFile: t.Optional(t.String()),
