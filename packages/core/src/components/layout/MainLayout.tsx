@@ -61,7 +61,7 @@ export function MainLayout({ currentView, onViewChange, children }: MainLayoutPr
       </div>
 
       {/* Desktop Layout (>= 1024px) */}
-      <div className="hidden lg:flex h-screen bg-gradient-to-br from-bg-primary to-bg-secondary overflow-hidden">
+      <div className="hidden lg:flex h-screen bg-gradient-to-br from-bg-primary to-bg-secondary overflow-hidden gap-0">
         {/* Left Sidebar */}
         <Sidebar currentView={currentView} onViewChange={onViewChange} />
 
