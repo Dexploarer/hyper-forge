@@ -1,18 +1,23 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   Sparkles,
   Package,
-  Wrench,
   Hand,
   Shield,
   Play,
   X,
   LogOut,
-  Settings
+  Music,
+  ScrollText,
+  Library,
+  TestTube2,
+  Users,
+  User
 } from 'lucide-react'
 import { NavigationView } from '@/types'
 import { NAVIGATION_VIEWS } from '@/constants'
 import { useAuth } from '@/contexts/AuthContext'
+import { ProfileSettingsModal } from '@/components/auth/ProfileSettingsModal'
 import { cn } from '@/styles'
 
 interface MobileMenuDrawerProps {
@@ -43,10 +48,34 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Browse & manage assets'
   },
   {
+    view: NAVIGATION_VIEWS.AUDIO,
+    icon: Music,
+    label: 'Audio',
+    description: 'Voice, music & sound effects'
+  },
+  {
+    view: NAVIGATION_VIEWS.CONTENT,
+    icon: ScrollText,
+    label: 'Content',
+    description: 'NPCs, quests & lore'
+  },
+  {
+    view: NAVIGATION_VIEWS.CONTENT_LIBRARY,
+    icon: Library,
+    label: 'Library',
+    description: 'Saved content browser'
+  },
+  {
+    view: NAVIGATION_VIEWS.PLAYTESTER,
+    icon: TestTube2,
+    label: 'Playtester',
+    description: 'AI swarm testing'
+  },
+  {
     view: NAVIGATION_VIEWS.EQUIPMENT,
-    icon: Wrench,
-    label: 'Equipment',
-    description: 'Weapon & armor fitting'
+    icon: Shield,
+    label: 'Equipment Fitting',
+    description: 'Weapons, armor & helmets'
   },
   {
     view: NAVIGATION_VIEWS.HAND_RIGGING,
@@ -55,21 +84,22 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Auto-grip detection'
   },
   {
-    view: NAVIGATION_VIEWS.ARMOR_FITTING,
-    icon: Shield,
-    label: 'Armor Fitting',
-    description: 'Character armor placement'
-  },
-  {
     view: NAVIGATION_VIEWS.RETARGET_ANIMATE,
     icon: Play,
     label: 'Animation',
     description: 'Retarget & animate'
+  },
+  {
+    view: NAVIGATION_VIEWS.ADMIN_DASHBOARD,
+    icon: Users,
+    label: 'Admin Dashboard',
+    description: 'Manage users & admins'
   }
 ]
 
 export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }: MobileMenuDrawerProps) {
-  const { logout } = useAuth()
+  const { user, logout, completeProfile } = useAuth()
+  const [showProfileSettings, setShowProfileSettings] = useState(false)
 
   // Prevent body scroll when menu is open
   useEffect(() => {
@@ -93,6 +123,10 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
   const handleNavClick = (view: NavigationView) => {
     onViewChange(view)
     onClose()
+  }
+
+  const handleProfileClick = () => {
+    setShowProfileSettings(true)
   }
 
   return (
@@ -178,14 +212,22 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
           </div>
         </nav>
 
-        {/* Footer - Settings & Logout */}
+        {/* Footer - Profile & Logout */}
         <div className="p-3 border-t border-white/10 space-y-2">
           <button
+            onClick={handleProfileClick}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-text-secondary transition-colors border border-transparent hover:border-white/10 active:scale-98"
-            aria-label="Settings"
+            aria-label="Profile settings"
           >
-            <Settings className="w-5 h-5 flex-shrink-0" />
-            <span className="text-sm font-medium">Settings</span>
+            <User className="w-5 h-5 flex-shrink-0" />
+            <div className="flex-1 text-left">
+              <div className="text-sm font-medium text-text-primary">
+                {user?.displayName || 'Admin'}
+              </div>
+              <div className="text-xs text-text-tertiary">
+                View profile
+              </div>
+            </div>
           </button>
 
           <button
@@ -198,6 +240,16 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
           </button>
         </div>
       </aside>
+
+      {/* Profile Settings Modal */}
+      {showProfileSettings && user && (
+        <ProfileSettingsModal
+          user={user}
+          onClose={() => setShowProfileSettings(false)}
+          onSave={completeProfile}
+          onLogout={logout}
+        />
+      )}
     </>
   )
 }

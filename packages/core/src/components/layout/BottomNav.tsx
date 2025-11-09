@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sparkles, Package, Wrench, MoreHorizontal } from 'lucide-react'
+import { Sparkles, Package, Shield, MoreHorizontal } from 'lucide-react'
 import { NavigationView } from '@/types'
 import { NAVIGATION_VIEWS } from '@/constants'
 import { cn } from '@/styles'
@@ -29,7 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     view: NAVIGATION_VIEWS.EQUIPMENT,
-    icon: Wrench,
+    icon: Shield,
     label: 'Equipment'
   },
   {

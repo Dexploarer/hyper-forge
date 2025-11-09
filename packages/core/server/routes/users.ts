@@ -50,7 +50,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     }
   )
 
-  // Complete user profile
+  // Update/Complete user profile
   .post(
     "/complete-profile",
     async ({ body }) => {
@@ -65,16 +65,22 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         throw new Error("User not found");
       }
 
-      // Update profile
+      // Update profile (only set profileCompleted if not already set)
+      const updateData: any = {
+        displayName,
+        email,
+        discordUsername,
+        updatedAt: new Date(),
+      };
+
+      // Only set profileCompleted timestamp on first completion
+      if (!user.profileCompleted) {
+        updateData.profileCompleted = new Date();
+      }
+
       const [updatedUser] = await db
         .update(users)
-        .set({
-          displayName,
-          email,
-          discordUsername,
-          profileCompleted: new Date(),
-          updatedAt: new Date(),
-        })
+        .set(updateData)
         .where(eq(users.id, user.id))
         .returning();
 
@@ -89,8 +95,8 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       }),
       detail: {
         tags: ["Users"],
-        summary: "Complete user profile",
-        description: "Save user profile information after first login",
+        summary: "Update user profile",
+        description: "Save or update user profile information",
       },
     }
   )
