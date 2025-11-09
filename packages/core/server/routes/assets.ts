@@ -24,9 +24,20 @@ export const createAssetRoutes = (
         // Asset listing endpoint
         .get(
           "",
-          async () => {
-            const assets = await assetService.listAssets();
-            return assets;
+          async ({ set }) => {
+            try {
+              const assets = await assetService.listAssets();
+              console.log(`[Assets] Listed ${assets.length} assets`);
+              return assets;
+            } catch (error) {
+              const err = error as Error;
+              console.error(`[Assets] Error listing assets:`, err.message);
+              set.status = 500;
+              return { 
+                error: "Failed to list assets",
+                details: err.message
+              };
+            }
           },
           {
             response: Models.AssetListResponse,
@@ -41,26 +52,46 @@ export const createAssetRoutes = (
 
         // Get single asset model
         .get("/:id/model", async ({ params: { id }, set }) => {
-          const modelPath = await assetService.getModelPath(id);
-          const modelFile = Bun.file(modelPath);
+          try {
+            const modelPath = await assetService.getModelPath(id);
+            const modelFile = Bun.file(modelPath);
 
-          if (!(await modelFile.exists())) {
+            if (!(await modelFile.exists())) {
+              console.error(`[Assets] Model file not found at path: ${modelPath}`);
+              set.status = 404;
+              return { 
+                error: `Model not found for asset ${id}`,
+                path: modelPath,
+                assetId: id
+              };
+            }
+
+            return modelFile;
+          } catch (error) {
+            const err = error as Error;
+            console.error(`[Assets] Error loading model for asset ${id}:`, err.message);
             set.status = 404;
-            return { error: `Model not found for asset ${id}` };
+            return { 
+              error: `Failed to load model for asset ${id}`,
+              details: err.message,
+              assetId: id
+            };
           }
-
-          return modelFile;
         })
 
         // HEAD request for model existence check
         .head("/:id/model", async ({ params: { id }, set }) => {
-          const modelPath = await assetService.getModelPath(id);
-          const modelFile = Bun.file(modelPath);
+          try {
+            const modelPath = await assetService.getModelPath(id);
+            const modelFile = Bun.file(modelPath);
 
-          if (!(await modelFile.exists())) {
+            if (!(await modelFile.exists())) {
+              set.status = 404;
+            } else {
+              set.status = 200;
+            }
+          } catch (error) {
             set.status = 404;
-          } else {
-            set.status = 200;
           }
 
           return null;
