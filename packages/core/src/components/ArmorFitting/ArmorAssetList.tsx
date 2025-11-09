@@ -8,15 +8,15 @@ import { Badge, Input } from '../common'
 interface ArmorAssetListProps {
   assets: Asset[]
   loading: boolean
-  assetType: 'avatar' | 'armor' | 'helmet' // UPDATED
+  assetType: 'avatar' | 'armor' | 'helmet' | 'weapon' // UPDATED - added weapon
   selectedAsset: Asset | null
   selectedAvatar?: Asset | null
   selectedArmor?: Asset | null
   selectedHelmet?: Asset | null // NEW
   onAssetSelect: (asset: Asset) => void
-  onAssetTypeChange: (type: 'avatar' | 'armor' | 'helmet') => void // UPDATED
+  onAssetTypeChange: (type: 'avatar' | 'armor' | 'helmet' | 'weapon') => void // UPDATED - added weapon
   hideTypeToggle?: boolean // NEW - for armor fitting page
-  equipmentSlot?: 'Head' | 'Spine2' | 'Pelvis' // NEW - to determine which equipment to show
+  equipmentSlot?: 'Head' | 'Spine2' | 'Pelvis' | 'Hand_R' | 'Hand_L' // UPDATED - added weapon slots
 }
 
 export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
@@ -67,22 +67,30 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
     [assets]
   )
 
+  // NEW - Weapon assets
+  const weaponAssets = useMemo(() =>
+    assets.filter(a => a.type === 'weapon'),
+    [assets]
+  )
+
   const filteredAssets = useMemo(() => {
     // Filter based on equipment slot
     let baseAssets: Asset[] = []
-    
+
     if (assetType === 'avatar') {
       baseAssets = avatarAssets
     } else if (assetType === 'armor' && equipmentSlot === 'Spine2') {
       baseAssets = armorAssets
     } else if (assetType === 'helmet' && equipmentSlot === 'Head') {
       baseAssets = helmetAssets
+    } else if (assetType === 'weapon' && (equipmentSlot === 'Hand_R' || equipmentSlot === 'Hand_L')) {
+      baseAssets = weaponAssets
     }
-    
+
     return baseAssets.filter(a =>
       a.name.toLowerCase().includes(searchTerm.toLowerCase())
     )
-  }, [assetType, avatarAssets, armorAssets, helmetAssets, searchTerm, equipmentSlot])
+  }, [assetType, avatarAssets, armorAssets, helmetAssets, weaponAssets, searchTerm, equipmentSlot])
 
   // Group armor by slot
   const groupedArmorAssets = useMemo(() => {
@@ -111,6 +119,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
   // Get icon for asset type
   const getAssetIcon = (asset: Asset) => {
     if (asset.type === 'character') return User
+    if (asset.type === 'weapon') return Sword
     const name = asset.name.toLowerCase()
     if (name.includes('helmet') || name.includes('head')) return HardHat
     if (name.includes('chest') || name.includes('body') || name.includes('torso')) return Shirt
@@ -123,12 +132,14 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
       {/* Header */}
       <div className="p-4 border-b border-border-primary bg-bg-primary bg-opacity-30">
         <h2 className="text-lg font-semibold text-text-primary mb-4">
-          {hideTypeToggle 
-            ? assetType === 'avatar' 
+          {hideTypeToggle
+            ? assetType === 'avatar'
               ? 'Select Avatar'
               : assetType === 'helmet'
-                ? 'Select Helmet' 
-                : 'Select Armor'
+                ? 'Select Helmet'
+                : assetType === 'weapon'
+                  ? 'Select Weapon'
+                  : 'Select Armor'
             : 'Asset Library'}
         </h2>
 

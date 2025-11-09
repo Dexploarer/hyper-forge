@@ -7,12 +7,11 @@ import { NavigationProvider } from "./contexts/NavigationContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { useNavigation } from "./hooks/useNavigation";
 import { LandingPage } from "./pages/LandingPage";
-import { ArmorFittingPage } from "./pages/ArmorFittingPage";
+import { UnifiedEquipmentPage } from "./pages/UnifiedEquipmentPage";
 import { AssetsPage } from "./pages/AssetsPage";
 import { AudioGenerationPage } from "./pages/AudioGenerationPage";
 import { ContentGenerationPage } from "./pages/ContentGenerationPage";
 import { ContentLibraryPage } from "./pages/ContentLibraryPage";
-import { EquipmentPage } from "./pages/EquipmentPage";
 import { GenerationPage } from "./pages/GenerationPage";
 import { HandRiggingPage } from "./pages/HandRiggingPage";
 import { PlaytesterSwarmPage } from "./pages/PlaytesterSwarmPage";
@@ -43,9 +42,9 @@ function AppContent() {
         {currentView === NAVIGATION_VIEWS.CONTENT && <ContentGenerationPage />}
         {currentView === NAVIGATION_VIEWS.CONTENT_LIBRARY && <ContentLibraryPage />}
         {currentView === NAVIGATION_VIEWS.PLAYTESTER && <PlaytesterSwarmPage />}
-        {currentView === NAVIGATION_VIEWS.EQUIPMENT && <EquipmentPage />}
+        {currentView === NAVIGATION_VIEWS.EQUIPMENT && <UnifiedEquipmentPage />}
         {currentView === NAVIGATION_VIEWS.HAND_RIGGING && <HandRiggingPage />}
-        {currentView === NAVIGATION_VIEWS.ARMOR_FITTING && <ArmorFittingPage />}
+        {currentView === NAVIGATION_VIEWS.ARMOR_FITTING && <UnifiedEquipmentPage />}
         {currentView === NAVIGATION_VIEWS.RETARGET_ANIMATE && <RetargetAnimatePage />}
       </MainLayout>
     </>

@@ -16,16 +16,16 @@
     "clean": "rm -rf dist",
     "lint": "eslint . --ext .ts,.tsx",
     "preview": "vite preview",
-    "assets:audit": "bun x tsx scripts/audit-assets.ts",
-    "assets:normalize": "bun x tsx scripts/normalize-all-assets.ts",
+    "assets:audit": "bunx tsx scripts/audit-assets.ts",
+    "assets:normalize": "bunx tsx scripts/normalize-all-assets.ts",
     "check:deps": "depcheck",
     "check:all": "knip",
     "count:lines": "bun scripts/count-lines.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:generate": "bun x drizzle-kit generate",
+    "db:generate": "bunx drizzle-kit generate",
     "db:migrate": "bun run server/db/migrate.ts",
-    "db:push": "bun x drizzle-kit push",
-    "db:studio": "bun x drizzle-kit studio"
+    "db:push": "bunx drizzle-kit push",
+    "db:studio": "bunx drizzle-kit studio"
   },
   "keywords": [
     "ai",

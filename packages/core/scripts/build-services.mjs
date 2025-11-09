@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 /**
  * Build script to compile TypeScript services for server-side use
@@ -45,9 +45,9 @@ const configPath = join(process.cwd(), 'tsconfig.services.json')
 try {
   // Write temporary config
   writeFileSync(configPath, JSON.stringify(buildConfig, null, 2))
-  
-  // Compile using the specific config
-  execSync(`npx tsc -p ${configPath}`, {
+
+  // Compile using the specific config (use bun x instead of npx for Bun environments)
+  execSync(`bun x tsc -p ${configPath}`, {
     stdio: 'inherit'
   })
   
