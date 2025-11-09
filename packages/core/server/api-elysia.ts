@@ -14,7 +14,6 @@ import { Elysia } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { serverTiming } from "@elysiajs/server-timing";
-import { staticPlugin } from "@elysiajs/static";
 import { rateLimit } from "elysia-rate-limit";
 import path from "path";
 import fs from "fs";
@@ -168,38 +167,38 @@ const app = new Elysia()
   .use(errorHandler)
   .use(loggingMiddleware)
 
-  // Static file serving - use @elysiajs/static for proper directory serving
-  // Note: staticPlugin expects relative paths from cwd (/app/packages/core on Railway)
-  .use(staticPlugin({
-    assets: "gdd-assets",
-    prefix: "/gdd-assets",
-    alwaysStatic: true
-  }))
-  .use(staticPlugin({
-    assets: "temp-images",
-    prefix: "/temp-images",
-    alwaysStatic: true
-  }))
-  .use(staticPlugin({
-    assets: "public/emotes",
-    prefix: "/emotes",
-    alwaysStatic: true
-  }))
-  .use(staticPlugin({
-    assets: "public/rigs",
-    prefix: "/rigs",
-    alwaysStatic: true
-  }))
-  .use(staticPlugin({
-    assets: "public/images",
-    prefix: "/images",
-    alwaysStatic: true
-  }))
-  .use(staticPlugin({
-    assets: "public/prompts",
-    prefix: "/prompts",
-    alwaysStatic: true
-  }))
+  // Static file serving using native Bun.file() for reliability
+  // Bun.file() works better than @elysiajs/static on Railway
+  .get("/gdd-assets/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
+    return Bun.file(filePath);
+  })
+  .get("/temp-images/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
+    return Bun.file(filePath);
+  })
+  .get("/emotes/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/emotes", relativePath);
+    return Bun.file(filePath);
+  })
+  .get("/rigs/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/rigs", relativePath);
+    return Bun.file(filePath);
+  })
+  .get("/images/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/images", relativePath);
+    return Bun.file(filePath);
+  })
+  .get("/prompts/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/prompts", relativePath);
+    return Bun.file(filePath);
+  })
 
   // Routes
   .use(healthRoutes)
