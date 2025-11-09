@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import type { User } from '@/services/api/UsersAPIClient'
 import { cn } from '@/styles'
 import { Badge } from '@/components/common'
+import { focusManager } from '@/styles/utils'
 
 interface UserProfileMenuProps {
   user: User | null
@@ -18,18 +19,38 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const menuContentRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
-  // Close menu when clicking outside
+  // Close menu when clicking outside or pressing Escape
   useEffect(() => {
+    if (!isOpen) return
+
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsOpen(false)
       }
     }
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+        buttonRef.current?.focus()
+      }
+    }
+
+    // Trap focus within menu
+    const cleanupFocusTrap = menuContentRef.current
+      ? focusManager.trapFocus(menuContentRef.current)
+      : undefined
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+      cleanupFocusTrap?.()
     }
   }, [isOpen])
 
@@ -63,6 +84,7 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
     <div className="relative" ref={menuRef}>
       {/* Profile Button */}
       <button
+        ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
           'flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200',
@@ -70,6 +92,9 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
           isOpen && 'bg-bg-tertiary ring-2 ring-primary/50',
         )}
         title="User Profile"
+        aria-label="User profile menu"
+        aria-expanded={isOpen}
+        aria-haspopup="true"
       >
         {/* Avatar */}
         <div className={cn(
@@ -102,7 +127,12 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-bg-primary border border-border-primary rounded-lg shadow-2xl z-[100] overflow-hidden animate-fade-in">
+        <div
+          ref={menuContentRef}
+          className="absolute right-0 mt-2 w-80 bg-bg-primary border border-border-primary rounded-lg shadow-2xl z-[100] overflow-hidden animate-fade-in"
+          role="menu"
+          aria-label="User profile menu"
+        >
           {/* Header */}
           <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-b border-border-primary">
             <div className="flex items-start gap-3">
@@ -160,13 +190,15 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
           </div>
 
           {/* Actions */}
-          <div className="p-2">
+          <div className="p-2" role="group" aria-label="Profile actions">
             <button
               onClick={() => {
                 setIsOpen(false)
                 onOpenProfile()
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary rounded-md transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
+              role="menuitem"
+              aria-label="Edit profile"
             >
               <Settings size={16} />
               <span>Edit Profile</span>
@@ -177,7 +209,9 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
                   setIsOpen(false)
                   onLogout()
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-inset"
+                role="menuitem"
+                aria-label="Logout"
               >
                 <LogOut size={16} />
                 <span>Logout</span>

@@ -1,9 +1,10 @@
 import { Star, X, CheckCircle, Circle } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
 import { AssetService } from '@/services/api/AssetService'
 import { useAssetsStore } from '@/store'
+import { useApp } from '@/contexts/AppContext'
 
 interface BulkActionsBarProps {
   onActionComplete?: () => void
@@ -19,10 +20,47 @@ interface StatusOption {
 
 export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete }) => {
   const { selectedAssetIds, clearSelection } = useAssetsStore()
+  const { showNotification } = useApp()
   const [isProcessing, setIsProcessing] = useState(false)
   const [showStatusMenu, setShowStatusMenu] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const statusMenuRef = useRef<HTMLDivElement>(null)
 
   const selectedCount = selectedAssetIds.size
+
+  // Close status menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        statusMenuRef.current &&
+        !statusMenuRef.current.contains(event.target as Node) &&
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node)
+      ) {
+        setShowStatusMenu(false)
+      }
+    }
+
+    if (showStatusMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showStatusMenu])
+
+  // Keyboard navigation for status menu
+  useEffect(() => {
+    if (!showStatusMenu) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowStatusMenu(false)
+        menuRef.current?.querySelector('button')?.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [showStatusMenu])
 
   if (selectedCount === 0) {
     return null
@@ -32,10 +70,20 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
     setIsProcessing(true)
     try {
       await AssetService.bulkUpdateAssets(Array.from(selectedAssetIds), { isFavorite })
+      showNotification(
+        isFavorite 
+          ? `Added ${selectedCount} asset${selectedCount > 1 ? 's' : ''} to favorites`
+          : `Removed ${selectedCount} asset${selectedCount > 1 ? 's' : ''} from favorites`,
+        'success'
+      )
       onActionComplete?.()
       clearSelection()
     } catch (error) {
       console.error('Failed to update favorites:', error)
+      showNotification(
+        'Failed to update favorites. Please try again.',
+        'error'
+      )
     } finally {
       setIsProcessing(false)
     }
@@ -46,10 +94,18 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
     setShowStatusMenu(false)
     try {
       await AssetService.bulkUpdateAssets(Array.from(selectedAssetIds), { status })
+      showNotification(
+        `Updated ${selectedCount} asset${selectedCount > 1 ? 's' : ''} status to ${status}`,
+        'success'
+      )
       onActionComplete?.()
       clearSelection()
     } catch (error) {
       console.error('Failed to update status:', error)
+      showNotification(
+        'Failed to update status. Please try again.',
+        'error'
+      )
     } finally {
       setIsProcessing(false)
     }
@@ -103,13 +159,15 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
             </button>
 
             {/* Status menu */}
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowStatusMenu(!showStatusMenu)}
                 disabled={isProcessing}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-secondary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Change status"
                 aria-label="Change status"
+                aria-expanded={showStatusMenu}
+                aria-haspopup="true"
               >
                 <CheckCircle size={14} />
                 <span>Status</span>
@@ -121,17 +179,26 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
                   <div
                     className="fixed inset-0 z-[45]"
                     onClick={() => setShowStatusMenu(false)}
+                    aria-hidden="true"
                   />
 
                   {/* Status menu */}
-                  <div className="absolute bottom-full left-0 mb-2 bg-bg-secondary border border-border-primary rounded-lg shadow-xl overflow-hidden z-[60] min-w-[140px]">
-                    {statusOptions.map((option) => {
+                  <div
+                    ref={statusMenuRef}
+                    className="absolute bottom-full left-0 mb-2 bg-bg-secondary border border-border-primary rounded-lg shadow-xl overflow-hidden z-[60] min-w-[140px]"
+                    role="menu"
+                    aria-label="Status options"
+                  >
+                    {statusOptions.map((option, index) => {
                       const Icon = option.icon
                       return (
                         <button
                           key={option.value}
                           onClick={() => handleBulkStatusChange(option.value)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors focus:bg-bg-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
+                          role="menuitem"
+                          aria-label={`Set status to ${option.label}`}
+                          tabIndex={0}
                         >
                           <Icon size={12} />
                           <span>{option.label}</span>

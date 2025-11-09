@@ -10,6 +10,7 @@ import { useAssetsStore } from '../../store'
 import { Asset } from '../../types'
 
 import { apiFetch } from '@/utils/api'
+import { useApp } from '@/contexts/AppContext'
 
 
 interface AssetListProps {
@@ -35,6 +36,7 @@ const AssetList: React.FC<AssetListProps> = ({
     toggleSelectionMode,
     toggleAssetSelection
   } = useAssetsStore()
+  const { showNotification } = useApp()
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped')
   const [updatingFavorites, setUpdatingFavorites] = useState<Set<string>>(new Set())
@@ -55,6 +57,14 @@ const AssetList: React.FC<AssetListProps> = ({
       // Update local asset metadata
       asset.metadata.isFavorite = !asset.metadata.isFavorite
 
+      // Show success notification
+      showNotification(
+        asset.metadata.isFavorite 
+          ? 'Added to favorites' 
+          : 'Removed from favorites',
+        'success'
+      )
+
       // Trigger re-render by calling onAssetDelete (which triggers reload)
       if (onAssetDelete) {
         // Force a re-render by selecting the same asset again if it's selected
@@ -64,6 +74,10 @@ const AssetList: React.FC<AssetListProps> = ({
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error)
+      showNotification(
+        'Failed to update favorite. Please try again.',
+        'error'
+      )
     } finally {
       setUpdatingFavorites(prev => {
         const next = new Set(prev)
@@ -462,17 +476,22 @@ const AssetList: React.FC<AssetListProps> = ({
                                   <button
                                     onClick={(e) => toggleFavorite(group.base, e)}
                                     disabled={updatingFavorites.has(group.base.id)}
-                                    className="p-0.5 hover:scale-110 transition-transform flex-shrink-0"
+                                    className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
                                     title={group.base.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                    aria-label={group.base.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                                   >
-                                    <Star
-                                      size={12}
-                                      className={`${
-                                        group.base.metadata.isFavorite
-                                          ? 'text-yellow-400 fill-yellow-400'
-                                          : 'text-text-tertiary hover:text-yellow-400'
-                                      } transition-colors`}
-                                    />
+                                    {updatingFavorites.has(group.base.id) ? (
+                                      <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      <Star
+                                        size={12}
+                                        className={`${
+                                          group.base.metadata.isFavorite
+                                            ? 'text-yellow-400 fill-yellow-400'
+                                            : 'text-text-tertiary hover:text-yellow-400'
+                                        } transition-colors`}
+                                      />
+                                    )}
                                   </button>
                                 </div>
 
@@ -540,17 +559,22 @@ const AssetList: React.FC<AssetListProps> = ({
                                       <button
                                         onClick={(e) => toggleFavorite(variant, e)}
                                         disabled={updatingFavorites.has(variant.id)}
-                                        className="p-0.5 hover:scale-110 transition-transform flex-shrink-0"
+                                        className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
                                         title={variant.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                        aria-label={variant.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                                       >
-                                        <Star
-                                          size={10}
-                                          className={`${
-                                            variant.metadata.isFavorite
-                                              ? 'text-yellow-400 fill-yellow-400'
-                                              : 'text-text-tertiary hover:text-yellow-400'
-                                          } transition-colors`}
-                                        />
+                                        {updatingFavorites.has(variant.id) ? (
+                                          <div className="w-2.5 h-2.5 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                        ) : (
+                                          <Star
+                                            size={10}
+                                            className={`${
+                                              variant.metadata.isFavorite
+                                                ? 'text-yellow-400 fill-yellow-400'
+                                                : 'text-text-tertiary hover:text-yellow-400'
+                                            } transition-colors`}
+                                          />
+                                        )}
                                       </button>
                                     </div>
 
@@ -616,7 +640,7 @@ const AssetList: React.FC<AssetListProps> = ({
                               )}
                             </button>
                           ) : (
-                            <div className="w-6" /> /* Spacer for alignment */
+                            <div className="w-6" /> {/* Spacer for alignment */}
                           )}
 
                           <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${selectedAsset?.id === asset.id
@@ -637,17 +661,22 @@ const AssetList: React.FC<AssetListProps> = ({
                               <button
                                 onClick={(e) => toggleFavorite(asset, e)}
                                 disabled={updatingFavorites.has(asset.id)}
-                                className="p-0.5 hover:scale-110 transition-transform flex-shrink-0"
+                                className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
                                 title={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                aria-label={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                               >
-                                <Star
-                                  size={12}
-                                  className={`${
-                                    asset.metadata.isFavorite
-                                      ? 'text-yellow-400 fill-yellow-400'
-                                      : 'text-text-tertiary hover:text-yellow-400'
-                                  } transition-colors`}
-                                />
+                                {updatingFavorites.has(asset.id) ? (
+                                  <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  <Star
+                                    size={12}
+                                    className={`${
+                                      asset.metadata.isFavorite
+                                        ? 'text-yellow-400 fill-yellow-400'
+                                        : 'text-text-tertiary hover:text-yellow-400'
+                                    } transition-colors`}
+                                  />
+                                )}
                               </button>
                             </div>
 
@@ -779,17 +808,22 @@ const AssetList: React.FC<AssetListProps> = ({
                                 <button
                                   onClick={(e) => toggleFavorite(asset, e)}
                                   disabled={updatingFavorites.has(asset.id)}
-                                  className="p-0.5 hover:scale-110 transition-transform flex-shrink-0"
+                                  className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
                                   title={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                  aria-label={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                                 >
-                                  <Star
-                                    size={12}
-                                    className={`${
-                                      asset.metadata.isFavorite
-                                        ? 'text-yellow-400 fill-yellow-400'
-                                        : 'text-text-tertiary hover:text-yellow-400'
-                                    } transition-colors`}
-                                  />
+                                  {updatingFavorites.has(asset.id) ? (
+                                    <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Star
+                                      size={12}
+                                      className={`${
+                                        asset.metadata.isFavorite
+                                          ? 'text-yellow-400 fill-yellow-400'
+                                          : 'text-text-tertiary hover:text-yellow-400'
+                                      } transition-colors`}
+                                    />
+                                  )}
                                 </button>
                               </div>
 
