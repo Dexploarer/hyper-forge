@@ -1,13 +1,15 @@
 import {
   Package, Shield, Swords, Diamond, Hammer, Building,
   User, Trees, Box, Target, HelpCircle, Sparkles,
-  ChevronRight, Layers
+  ChevronRight, Layers, Star, CheckSquare, Square
 } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 
 import { getTierColor } from '../../constants'
 import { useAssetsStore } from '../../store'
 import { Asset } from '../../types'
+
+import { apiFetch } from '@/utils/api'
 
 
 interface AssetListProps {
@@ -22,11 +24,54 @@ interface AssetGroup {
 
 const AssetList: React.FC<AssetListProps> = ({
   assets,
+  onAssetDelete
 }) => {
   // Get state and actions from store
-  const { selectedAsset, handleAssetSelect } = useAssetsStore()
+  const {
+    selectedAsset,
+    handleAssetSelect,
+    selectionMode,
+    selectedAssetIds,
+    toggleSelectionMode,
+    toggleAssetSelection
+  } = useAssetsStore()
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped')
+  const [updatingFavorites, setUpdatingFavorites] = useState<Set<string>>(new Set())
+
+  const toggleFavorite = async (asset: Asset, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent asset selection
+    setUpdatingFavorites(prev => new Set(prev).add(asset.id))
+
+    try {
+      await apiFetch(`/api/assets/${asset.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          isFavorite: !asset.metadata.isFavorite
+        })
+      })
+
+      // Update local asset metadata
+      asset.metadata.isFavorite = !asset.metadata.isFavorite
+
+      // Trigger re-render by calling onAssetDelete (which triggers reload)
+      if (onAssetDelete) {
+        // Force a re-render by selecting the same asset again if it's selected
+        if (selectedAsset?.id === asset.id) {
+          handleAssetSelect(asset)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error)
+    } finally {
+      setUpdatingFavorites(prev => {
+        const next = new Set(prev)
+        next.delete(asset.id)
+        return next
+      })
+    }
+  }
 
   // Group assets by base/variants
   const assetGroups = useMemo(() => {
@@ -267,30 +312,51 @@ const AssetList: React.FC<AssetListProps> = ({
           <h2 className="text-base font-semibold text-text-primary flex items-center gap-2">
             <Package size={18} className="text-primary" />
             Assets <span className="text-text-tertiary font-normal text-sm">({assets.length})</span>
+            {selectionMode && selectedAssetIds.size > 0 && (
+              <span className="text-xs text-primary font-medium">
+                ({selectedAssetIds.size} selected)
+              </span>
+            )}
           </h2>
 
-          {/* View mode toggle */}
-          <div className="flex items-center gap-1 bg-bg-tertiary rounded-lg p-1">
+          <div className="flex items-center gap-2">
+            {/* Selection mode toggle */}
             <button
-              onClick={() => setViewMode('grouped')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'grouped'
+              onClick={toggleSelectionMode}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                selectionMode
                   ? 'bg-primary text-white shadow-sm'
-                  : 'text-text-tertiary hover:text-text-secondary'
-                }`}
-              title="Group by base models"
+                  : 'bg-bg-tertiary text-text-tertiary hover:text-text-secondary'
+              }`}
+              title={selectionMode ? 'Exit selection mode' : 'Enter selection mode'}
             >
-              <Layers size={14} />
+              {selectionMode ? <CheckSquare size={14} /> : <Square size={14} />}
+              <span>Select</span>
             </button>
-            <button
-              onClick={() => setViewMode('flat')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'flat'
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'text-text-tertiary hover:text-text-secondary'
-                }`}
-              title="Show all items"
-            >
-              <Package size={14} />
-            </button>
+
+            {/* View mode toggle */}
+            <div className="flex items-center gap-1 bg-bg-tertiary rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('grouped')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'grouped'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-text-tertiary hover:text-text-secondary'
+                  }`}
+                title="Group by base models"
+              >
+                <Layers size={14} />
+              </button>
+              <button
+                onClick={() => setViewMode('flat')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'flat'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-text-tertiary hover:text-text-secondary'
+                  }`}
+                title="Show all items"
+              >
+                <Package size={14} />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -333,8 +399,25 @@ const AssetList: React.FC<AssetListProps> = ({
                             : 'hover:bg-bg-primary hover:bg-opacity-50'
                           }`}>
                           <div className="flex items-center p-3">
+                            {/* Checkbox for selection mode */}
+                            {selectionMode && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleAssetSelection(group.base.id)
+                                }}
+                                className="p-1 -ml-1 mr-2 hover:bg-bg-secondary rounded transition-all"
+                              >
+                                {selectedAssetIds.has(group.base.id) ? (
+                                  <CheckSquare size={16} className="text-primary" />
+                                ) : (
+                                  <Square size={16} className="text-text-tertiary" />
+                                )}
+                              </button>
+                            )}
+
                             {/* Chevron for expand/collapse */}
-                            {group.variants.length > 0 ? (
+                            {!selectionMode && group.variants.length > 0 ? (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -348,9 +431,9 @@ const AssetList: React.FC<AssetListProps> = ({
                                     }`}
                                 />
                               </button>
-                            ) : (
+                            ) : !selectionMode ? (
                               <div className="w-7 h-7 -ml-1 mr-2" />
-                            )}
+                            ) : null}
 
                             <div
                               className="flex-1 flex items-center gap-3 cursor-pointer py-1"
@@ -376,6 +459,21 @@ const AssetList: React.FC<AssetListProps> = ({
                                   {group.base.hasModel && (
                                     <Sparkles size={12} className="text-success flex-shrink-0" />
                                   )}
+                                  <button
+                                    onClick={(e) => toggleFavorite(group.base, e)}
+                                    disabled={updatingFavorites.has(group.base.id)}
+                                    className="p-0.5 hover:scale-110 transition-transform flex-shrink-0"
+                                    title={group.base.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                  >
+                                    <Star
+                                      size={12}
+                                      className={`${
+                                        group.base.metadata.isFavorite
+                                          ? 'text-yellow-400 fill-yellow-400'
+                                          : 'text-text-tertiary hover:text-yellow-400'
+                                      } transition-colors`}
+                                    />
+                                  </button>
                                 </div>
 
                                 <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">
@@ -411,6 +509,22 @@ const AssetList: React.FC<AssetListProps> = ({
                                 }}
                               >
                                 <div className="flex items-center gap-3 p-2 pl-3">
+                                  {/* Checkbox for selection mode */}
+                                  {selectionMode && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        toggleAssetSelection(variant.id)
+                                      }}
+                                      className="p-1 -ml-2 mr-1 hover:bg-bg-secondary rounded transition-all flex-shrink-0"
+                                    >
+                                      {selectedAssetIds.has(variant.id) ? (
+                                        <CheckSquare size={14} className="text-primary" />
+                                      ) : (
+                                        <Square size={14} className="text-text-tertiary" />
+                                      )}
+                                    </button>
+                                  )}
                                   <div className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 group-hover:scale-105 ${selectedAsset?.id === variant.id
                                       ? 'bg-primary bg-opacity-10 text-text-primary ring-2 ring-primary'
                                       : 'bg-bg-secondary bg-opacity-50 text-text-tertiary group-hover:bg-bg-tertiary group-hover:text-text-secondary'
@@ -419,9 +533,26 @@ const AssetList: React.FC<AssetListProps> = ({
                                   </div>
 
                                   <div className="flex-1 min-w-0">
-                                    <h3 className="font-medium text-xs text-text-primary truncate">
-                                      {cleanAssetName(variant.name)}
-                                    </h3>
+                                    <div className="flex items-center gap-1.5">
+                                      <h3 className="font-medium text-xs text-text-primary truncate">
+                                        {cleanAssetName(variant.name)}
+                                      </h3>
+                                      <button
+                                        onClick={(e) => toggleFavorite(variant, e)}
+                                        disabled={updatingFavorites.has(variant.id)}
+                                        className="p-0.5 hover:scale-110 transition-transform flex-shrink-0"
+                                        title={variant.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                      >
+                                        <Star
+                                          size={10}
+                                          className={`${
+                                            variant.metadata.isFavorite
+                                              ? 'text-yellow-400 fill-yellow-400'
+                                              : 'text-text-tertiary hover:text-yellow-400'
+                                          } transition-colors`}
+                                        />
+                                      </button>
+                                    </div>
 
                                     {variant.metadata?.tier && (
                                       <div className="flex items-center gap-1.5 mt-0.5">
@@ -469,7 +600,24 @@ const AssetList: React.FC<AssetListProps> = ({
                         onClick={() => handleAssetSelect(asset)}
                       >
                         <div className="flex items-center gap-3 p-2 hover:bg-bg-primary hover:bg-opacity-40 rounded-lg transition-colors">
-                          <div className="w-6" /> {/* Spacer for alignment */}
+                          {/* Checkbox for selection mode */}
+                          {selectionMode ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleAssetSelection(asset.id)
+                              }}
+                              className="p-1 -ml-1 mr-1 hover:bg-bg-secondary rounded transition-all flex-shrink-0"
+                            >
+                              {selectedAssetIds.has(asset.id) ? (
+                                <CheckSquare size={16} className="text-primary" />
+                              ) : (
+                                <Square size={16} className="text-text-tertiary" />
+                              )}
+                            </button>
+                          ) : (
+                            <div className="w-6" /> /* Spacer for alignment */
+                          )}
 
                           <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${selectedAsset?.id === asset.id
                               ? 'bg-primary bg-opacity-10 text-text-primary shadow-sm ring-2 ring-primary'
@@ -486,6 +634,21 @@ const AssetList: React.FC<AssetListProps> = ({
                               {asset.hasModel && (
                                 <Sparkles size={12} className="text-success flex-shrink-0" />
                               )}
+                              <button
+                                onClick={(e) => toggleFavorite(asset, e)}
+                                disabled={updatingFavorites.has(asset.id)}
+                                className="p-0.5 hover:scale-110 transition-transform flex-shrink-0"
+                                title={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                              >
+                                <Star
+                                  size={12}
+                                  className={`${
+                                    asset.metadata.isFavorite
+                                      ? 'text-yellow-400 fill-yellow-400'
+                                      : 'text-text-tertiary hover:text-yellow-400'
+                                  } transition-colors`}
+                                />
+                              </button>
                             </div>
 
                             <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">
@@ -582,6 +745,22 @@ const AssetList: React.FC<AssetListProps> = ({
                           onClick={() => handleAssetSelect(asset)}
                         >
                           <div className="flex items-center gap-3 p-2 hover:bg-bg-primary hover:bg-opacity-40 rounded-lg transition-colors">
+                            {/* Checkbox for selection mode */}
+                            {selectionMode && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleAssetSelection(asset.id)
+                                }}
+                                className="p-1 -ml-1 mr-1 hover:bg-bg-secondary rounded transition-all flex-shrink-0"
+                              >
+                                {selectedAssetIds.has(asset.id) ? (
+                                  <CheckSquare size={16} className="text-primary" />
+                                ) : (
+                                  <Square size={16} className="text-text-tertiary" />
+                                )}
+                              </button>
+                            )}
                             <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${selectedAsset?.id === asset.id
                                 ? 'bg-primary bg-opacity-10 text-text-primary shadow-sm ring-2 ring-primary'
                                 : 'bg-bg-secondary bg-opacity-70 text-text-tertiary'
@@ -597,6 +776,21 @@ const AssetList: React.FC<AssetListProps> = ({
                                 {asset.hasModel && (
                                   <Sparkles size={12} className="text-success flex-shrink-0" />
                                 )}
+                                <button
+                                  onClick={(e) => toggleFavorite(asset, e)}
+                                  disabled={updatingFavorites.has(asset.id)}
+                                  className="p-0.5 hover:scale-110 transition-transform flex-shrink-0"
+                                  title={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                >
+                                  <Star
+                                    size={12}
+                                    className={`${
+                                      asset.metadata.isFavorite
+                                        ? 'text-yellow-400 fill-yellow-400'
+                                        : 'text-text-tertiary hover:text-yellow-400'
+                                    } transition-colors`}
+                                  />
+                                </button>
                               </div>
 
                               <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">

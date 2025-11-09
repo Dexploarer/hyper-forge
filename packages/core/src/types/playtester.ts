@@ -167,7 +167,7 @@ export interface PlaytestResult {
 
 // Playtest request params
 export interface RunPlaytestParams {
-  contentToTest: any
+  contentToTest: unknown // Type validated at runtime based on contentType
   contentType: PlaytestContentType
   testerProfiles?: Array<string | CustomTesterProfile>
   testConfig?: {

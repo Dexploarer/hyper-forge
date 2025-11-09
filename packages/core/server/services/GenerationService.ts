@@ -21,7 +21,14 @@ import fetch from "node-fetch";
 // ==================== Type Definitions ====================
 
 // Use a compatible fetch function type (node-fetch doesn't have preconnect method)
-type FetchFunction = (url: string | URL, init?: any) => Promise<any>;
+interface FetchResponse {
+  ok: boolean;
+  status: number;
+  json: () => Promise<unknown>;
+  arrayBuffer: () => Promise<ArrayBuffer>;
+}
+
+type FetchFunction = (url: string | URL, init?: Record<string, unknown>) => Promise<FetchResponse>;
 type MaterialPresetType = Static<typeof MaterialPreset>;
 
 interface ReferenceImage {
@@ -66,7 +73,7 @@ interface PipelineConfig {
 interface StageResult {
   status: "pending" | "processing" | "completed" | "failed" | "skipped";
   progress: number;
-  result?: any;
+  result?: unknown;
   error?: string;
 }
 
@@ -91,7 +98,7 @@ interface Pipeline {
     rigging?: StageResult;
     spriteGeneration?: StageResult;
   };
-  results: Record<string, any>;
+  results: Record<string, unknown>;
   error?: string;
   createdAt: string;
   completedAt?: string;
@@ -100,7 +107,7 @@ interface Pipeline {
     name: string;
     modelUrl: string;
     conceptArtUrl: string;
-    variants: any[];
+    variants: VariantResult[];
   };
 }
 
@@ -110,12 +117,21 @@ interface StartPipelineResponse {
   message: string;
 }
 
+interface PipelineStageWithName {
+  name: string;
+  status: "pending" | "processing" | "completed" | "failed";
+  progress?: number;
+  startedAt?: string;
+  completedAt?: string;
+  error?: string;
+}
+
 interface PipelineStatusResponse {
   id: string;
   status: string;
   progress: number;
-  stages: Pipeline["stages"];
-  results: Record<string, any>;
+  stages: Record<string, PipelineStageWithName>;
+  results: Record<string, unknown>;
   error?: string;
   createdAt: string;
   completedAt?: string;
@@ -179,6 +195,14 @@ interface VariantResult {
   error?: string;
 }
 
+interface OpenAIResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
+
 // ==================== Service Class ====================
 
 export class GenerationService extends EventEmitter {
@@ -215,8 +239,8 @@ export class GenerationService extends EventEmitter {
         apiKey: process.env.MESHY_API_KEY || "",
         baseUrl: "https://api.meshy.ai",
       },
-      // node-fetch is compatible with global fetch for our use case (ignore type mismatch)
-      fetchFn: this.fetchFn as any,
+      // node-fetch is compatible with our FetchFunction type
+      fetchFn: this.fetchFn as unknown as typeof fetch,
     });
 
     // Initialize image hosting service
@@ -281,11 +305,22 @@ export class GenerationService extends EventEmitter {
       throw new Error(`Pipeline ${pipelineId} not found`);
     }
 
+    // Convert stages to Record format with name property for each stage
+    const stagesWithNames: Record<string, PipelineStageWithName> = {};
+    for (const [stageName, stageData] of Object.entries(pipeline.stages)) {
+      stagesWithNames[stageName] = {
+        name: stageName,
+        status: stageData.status as "pending" | "processing" | "completed" | "failed",
+        progress: stageData.progress,
+        error: stageData.error,
+      };
+    }
+
     return {
       id: pipeline.id,
       status: pipeline.status,
       progress: pipeline.progress,
-      stages: pipeline.stages,
+      stages: stagesWithNames,
       results: pipeline.results,
       error: pipeline.error,
       createdAt: pipeline.createdAt,
@@ -681,6 +716,7 @@ export class GenerationService extends EventEmitter {
 
         // Save metadata - EXACT structure from arrows-base reference
         const metadata = {
+          id: pipeline.config.assetId,
           name: pipeline.config.assetId,
           gameId: pipeline.config.assetId,
           type: pipeline.config.type,
@@ -728,7 +764,7 @@ export class GenerationService extends EventEmitter {
           try {
             await assetDatabaseService.createAssetRecord(
               pipeline.config.assetId,
-              metadata as any,
+              metadata as import("../models").AssetMetadataType,
               pipeline.config.user.userId,
               `${pipeline.config.assetId}/${pipeline.config.assetId}.glb`,
             );
@@ -1309,7 +1345,7 @@ Your task is to enhance the user's description to create better results with ima
         throw new Error(`GPT-4 API error: ${response.status}`);
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as OpenAIResponse;
       const optimizedPrompt = data.choices[0].message.content.trim();
 
       return {
@@ -1499,8 +1535,11 @@ Your task is to enhance the user's description to create better results with ima
 // Cleanup old pipelines periodically
 setInterval(
   () => {
-    if ((global as any).generationService) {
-      (global as any).generationService.cleanupOldPipelines();
+    const globalWithService = global as typeof global & {
+      generationService?: GenerationService;
+    };
+    if (globalWithService.generationService) {
+      globalWithService.generationService.cleanupOldPipelines();
     }
   },
   30 * 60 * 1000,

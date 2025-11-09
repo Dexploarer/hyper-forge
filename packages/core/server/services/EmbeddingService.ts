@@ -7,6 +7,7 @@ import { embed, embedMany } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Asset } from "../db/schema/assets.schema";
 import type { NPC, Quest, Lore, Dialogue } from "../db/schema/content.schema";
+import type { NPCData, QuestData, LoreData, DialogueNode } from "./ContentGenerationService";
 
 /**
  * Embedding configuration
@@ -138,7 +139,7 @@ export class EmbeddingService {
 
     // Extract data from JSONB field
     if (npc.data) {
-      const data = npc.data as any;
+      const data = npc.data as NPCData;
       if (data.personality?.traits) {
         parts.push(`personality: ${data.personality.traits.join(", ")}`);
       }
@@ -175,12 +176,12 @@ export class EmbeddingService {
 
     // Extract data from JSONB field
     if (quest.data) {
-      const data = quest.data as any;
+      const data = quest.data as QuestData;
       if (data.description) parts.push(data.description);
       if (data.story) parts.push(data.story);
       if (data.objectives) {
         const objectives = data.objectives
-          .map((obj: any) => obj.description)
+          .map((obj) => obj.description)
           .join(", ");
         parts.push(`objectives: ${objectives}`);
       }
@@ -206,7 +207,7 @@ export class EmbeddingService {
 
     // Extract data from JSONB field
     if (lore.data) {
-      const data = lore.data as any;
+      const data = lore.data as LoreData;
       if (data.content) parts.push(data.content);
       if (data.timeline) parts.push(`timeline: ${data.timeline}`);
       if (data.characters) {
@@ -232,7 +233,7 @@ export class EmbeddingService {
 
     // Extract dialogue nodes from JSONB
     if (dialogue.nodes) {
-      const nodes = dialogue.nodes as any[];
+      const nodes = dialogue.nodes as DialogueNode[];
       const dialogueTexts = nodes.map((node) => node.text).join(" ");
       parts.push(dialogueTexts);
     }

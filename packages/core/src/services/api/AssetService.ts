@@ -9,6 +9,13 @@ import { apiFetch } from "@/utils/api";
 
 export type { MaterialPreset };
 
+export type AssetStatus = 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived';
+
+export interface BulkUpdateRequest {
+  status?: AssetStatus;
+  isFavorite?: boolean;
+}
+
 export interface Asset {
   id: string;
   name: string;
@@ -170,6 +177,39 @@ class AssetServiceClass {
    */
   getAPIVRMUrl(assetId: string): string {
     return `/assets/${assetId}/${assetId}.vrm`;
+  }
+
+  /**
+   * Bulk update multiple assets
+   * Supports updating status and isFavorite fields for multiple assets at once
+   */
+  async bulkUpdateAssets(
+    assetIds: string[],
+    updates: BulkUpdateRequest
+  ): Promise<{
+    success: boolean;
+    updated: number;
+    failed: number;
+    errors?: Array<{ assetId: string; error: string }>;
+  }> {
+    const response = await apiFetch(`${this.baseUrl}/assets/bulk-update`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        assetIds,
+        updates,
+      }),
+      timeoutMs: 30000,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'Bulk update failed');
+    }
+
+    return response.json();
   }
 }
 

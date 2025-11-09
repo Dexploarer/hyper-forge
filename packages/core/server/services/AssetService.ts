@@ -14,6 +14,9 @@ interface AssetUpdate {
   tier?: number;
   category?: string;
   metadata?: Record<string, unknown>;
+  isFavorite?: boolean;
+  status?: 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived';
+  notes?: string;
 }
 
 interface Asset {
@@ -67,9 +70,10 @@ export class AssetService {
           if (
             !metadata.tier &&
             metadata.isVariant &&
-            (metadata as any).materialPreset
+            "materialPreset" in metadata &&
+            metadata.materialPreset
           ) {
-            const preset = (metadata as any).materialPreset;
+            const preset = metadata.materialPreset;
             // Use the material ID as the tier name (e.g., "steel", "bronze", "dragon")
             metadata.tier = preset.id || preset.tier;
           }
@@ -314,6 +318,17 @@ export class AssetService {
         updatedAt: new Date().toISOString(),
       };
 
+      // Handle direct field updates
+      if (updates.isFavorite !== undefined) {
+        updatedMetadata.isFavorite = updates.isFavorite;
+      }
+      if (updates.notes !== undefined) {
+        updatedMetadata.notes = updates.notes;
+      }
+      if (updates.status !== undefined) {
+        updatedMetadata.status = updates.status;
+      }
+
       // Default isPublic to true if not set
       if (updatedMetadata.isPublic === undefined) {
         updatedMetadata.isPublic = true;
@@ -372,7 +387,7 @@ export class AssetService {
             name: updatedMetadata.name,
             description: updatedMetadata.description,
             type: updatedMetadata.type,
-            metadata: updatedMetadata as any,
+            metadata: updatedMetadata,
           });
         } catch (error) {
           console.error(

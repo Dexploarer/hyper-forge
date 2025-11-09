@@ -1,4 +1,4 @@
-import { Search, Filter, ChevronDown, ChevronUp, X } from 'lucide-react'
+import { Search, Filter, ChevronDown, ChevronUp, X, Star } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
 import { useAssetsStore } from '../../store'
@@ -30,11 +30,13 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
     searchTerm,
     typeFilter,
     materialFilter,
+    showFavoritesOnly,
     setSearchTerm,
     setTypeFilter,
-    setMaterialFilter
+    setMaterialFilter,
+    toggleFavoritesFilter
   } = useAssetsStore()
-  
+
   // Load material presets
   useEffect(() => {
     apiFetch('/prompts/material-presets.json')
@@ -47,7 +49,7 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
       .catch(err => console.error('Failed to load material presets:', err))
   }, [])
   
-  const hasActiveFilters = searchTerm || typeFilter || materialFilter
+  const hasActiveFilters = searchTerm || typeFilter || materialFilter || showFavoritesOnly
 
   return (
     <div className="card bg-gradient-to-br from-bg-primary to-bg-secondary border-border-primary animate-scale-in">
@@ -88,6 +90,28 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
       {/* Filters */}
       {isExpanded && (
         <div className="px-4 pb-4 space-y-3 animate-fade-in">
+          {/* Favorites Filter Toggle */}
+          <button
+            onClick={toggleFavoritesFilter}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 border ${
+              showFavoritesOnly
+                ? 'bg-yellow-500/10 border-yellow-500/30 hover:border-yellow-500/50'
+                : 'bg-bg-primary border-border-primary hover:border-border-secondary'
+            }`}
+          >
+            <Star
+              size={16}
+              className={`transition-colors ${
+                showFavoritesOnly ? 'text-yellow-400 fill-yellow-400' : 'text-text-tertiary'
+              }`}
+            />
+            <span className={`text-sm font-medium ${
+              showFavoritesOnly ? 'text-yellow-400' : 'text-text-secondary'
+            }`}>
+              {showFavoritesOnly ? 'Showing Favorites' : 'Show Favorites Only'}
+            </span>
+          </button>
+
           {/* Search */}
           <div className="relative">
             <Search 
@@ -164,13 +188,14 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
                 setSearchTerm('')
                 setTypeFilter('')
                 setMaterialFilter('')
+                if (showFavoritesOnly) toggleFavoritesFilter()
               }}
-              className="w-full py-2 text-sm text-text-secondary hover:text-primary 
-                       bg-bg-primary hover:bg-primary hover:bg-opacity-10 
+              className="w-full py-2 text-sm text-text-secondary hover:text-primary
+                       bg-bg-primary hover:bg-primary hover:bg-opacity-10
                        border border-border-primary hover:border-primary
                        rounded-lg transition-all duration-200 font-medium"
             >
-              Clear Filters
+              Clear All Filters
             </button>
           )}
         </div>

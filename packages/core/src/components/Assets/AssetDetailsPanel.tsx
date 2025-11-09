@@ -1,7 +1,7 @@
-import { 
-  X, Package, Hash, Tag, Calendar, Layers, Palette, Box, 
+import {
+  X, Package, Hash, Tag, Calendar, Layers, Palette, Box,
   FileCode, ChevronRight, Copy, Check,
-  Sparkles, AlertCircle, Download, Share2, Code
+  Sparkles, AlertCircle, Download, Share2, Code, FileText
 } from 'lucide-react'
 import React, { useState } from 'react'
 
@@ -235,9 +235,24 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({ asset, isOpen, on
                   </div>
                 </div>
               )}
+
+              {/* Notes Section */}
+              {asset.metadata.notes && (
+                <div className="pt-3 border-t border-border-primary">
+                  <h3 className="text-xs font-semibold text-text-primary mb-3 flex items-center gap-2">
+                    <FileText size={14} className="text-primary" />
+                    Notes
+                  </h3>
+                  <div className="bg-bg-secondary bg-opacity-50 rounded-lg p-3 border border-border-primary">
+                    <p className="text-xs text-text-secondary whitespace-pre-wrap leading-relaxed">
+                      {asset.metadata.notes}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
-          
+
           {/* Metadata Tab */}
           {activeTab === 'metadata' && (
             <div className="p-5">

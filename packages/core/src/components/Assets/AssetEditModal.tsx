@@ -27,15 +27,17 @@ export function AssetEditModal({
     metadata: {
       tier: string
       subtype: string
+      notes?: string
     }
   }
-  
+
   const [editedData, setEditedData] = useState<EditedAssetData>({
     name: '',
     type: '',
     metadata: {
       tier: '',
-      subtype: ''
+      subtype: '',
+      notes: ''
     }
   })
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -45,13 +47,13 @@ export function AssetEditModal({
 
   useEffect(() => {
     if (asset) {
-      const metadataWithTier = asset.metadata as AssetMetadata & { tier?: string }
       setEditedData({
         name: asset.name,
         type: asset.type,
         metadata: {
-          tier: metadataWithTier.tier || '',
-          subtype: asset.metadata.subtype || ''
+          tier: typeof asset.metadata.tier === 'string' ? asset.metadata.tier : String(asset.metadata.tier || ''),
+          subtype: asset.metadata.subtype || '',
+          notes: asset.metadata.notes || ''
         }
       })
       setIsDirty(false)
@@ -60,7 +62,7 @@ export function AssetEditModal({
     }
   }, [asset])
 
-  const validateName = (name: string) => {
+  const validateName = (name: string): string => {
     if (!name.trim()) {
       return 'Name is required'
     }
@@ -70,14 +72,14 @@ export function AssetEditModal({
     return ''
   }
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string): void => {
     setEditedData(prev => {
       if (field.includes('.')) {
-        const [parent, child] = field.split('.')
+        const [parent, child] = field.split('.') as [keyof EditedAssetData, string]
         return {
           ...prev,
           [parent]: {
-            ...(prev[parent as keyof typeof prev] as Record<string, string>),
+            ...(prev[parent] as Record<string, string>),
             [child]: value
           }
         }
@@ -85,13 +87,13 @@ export function AssetEditModal({
       return { ...prev, [field]: value }
     })
     setIsDirty(true)
-    
+
     if (field === 'name') {
       setNameError(validateName(value))
     }
   }
 
-  const handleSave = async () => {
+  const handleSave = async (): Promise<void> => {
     const error = validateName(editedData.name)
     if (error) {
       setNameError(error)
@@ -120,7 +122,7 @@ export function AssetEditModal({
     }
   }
 
-  const handleDelete = () => {
+  const handleDelete = (): void => {
     if (asset && onDelete) {
       onDelete(asset, hasVariants)
       // Don't close here - let the parent handle it
@@ -210,6 +212,20 @@ export function AssetEditModal({
             />
           </div>
         )}
+
+        {/* Notes */}
+        <div>
+          <label className="block text-sm font-medium text-text-secondary mb-1.5">
+            Notes
+          </label>
+          <textarea
+            value={editedData.metadata.notes || ''}
+            onChange={(e) => handleChange('metadata.notes', e.target.value)}
+            placeholder="Add notes about this asset..."
+            rows={3}
+            className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary placeholder-text-tertiary resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          />
+        </div>
 
         {/* Status Info */}
         <div className="flex flex-wrap gap-2 pt-2">

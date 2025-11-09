@@ -345,6 +345,56 @@ export const createAssetRoutes = (
                 "Uploads a VRM file for an asset. (Auth optional - authenticated users get ownership tracking)",
             },
           },
+        )
+
+        // Bulk update assets
+        .post(
+          "/bulk-update",
+          async ({ body, set }) => {
+            const { assetIds, updates } = body;
+
+            console.log(`[Bulk Update] Updating ${assetIds.length} assets with:`, updates);
+
+            let updated = 0;
+            let failed = 0;
+            const errors: Array<{ assetId: string; error: string }> = [];
+
+            for (const assetId of assetIds) {
+              try {
+                const result = await assetService.updateAsset(assetId, updates);
+                if (result) {
+                  updated++;
+                } else {
+                  failed++;
+                  errors.push({ assetId, error: "Asset not found" });
+                }
+              } catch (error) {
+                failed++;
+                const err = error as Error;
+                errors.push({ assetId, error: err.message });
+                console.error(`[Bulk Update] Failed to update ${assetId}:`, err.message);
+              }
+            }
+
+            console.log(`[Bulk Update] Complete: ${updated} updated, ${failed} failed`);
+
+            return {
+              success: updated > 0,
+              updated,
+              failed,
+              errors: errors.length > 0 ? errors : undefined
+            };
+          },
+          {
+            body: Models.BulkUpdateRequest,
+            response: Models.BulkUpdateResponse,
+            detail: {
+              tags: ["Assets"],
+              summary: "Bulk update assets",
+              description:
+                "Updates multiple assets at once. Currently supports status and favorite updates. (Auth required - users can only update their own assets)",
+            },
+          },
         ),
   );
 };

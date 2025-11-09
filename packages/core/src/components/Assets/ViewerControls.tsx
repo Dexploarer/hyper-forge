@@ -1,18 +1,19 @@
-import { 
-  RotateCw, 
-  Eye, 
-  EyeOff, 
-  Grid, 
-  Sun, 
-  Moon, 
-  Palette, 
+import {
+  RotateCw,
+  Eye,
+  EyeOff,
+  Grid,
+  Sun,
+  Moon,
+  Palette,
   RefreshCw,
   X,
   Layers,
   Camera,
   Edit3,
   Activity,
-  Grid3x3
+  Grid3x3,
+  GitBranch
 } from 'lucide-react'
 import React from 'react'
 
@@ -21,6 +22,7 @@ import { useAssetsStore } from '../../store'
 interface ViewerControlsProps {
   onViewerReset: () => void
   onDownload: () => void
+  onShowVariantTree?: () => void
   assetType?: string
   canRetexture?: boolean
   hasRigging?: boolean
@@ -29,6 +31,7 @@ interface ViewerControlsProps {
 const ViewerControls: React.FC<ViewerControlsProps> = ({
   onViewerReset,
   onDownload,
+  onShowVariantTree,
   assetType,
   canRetexture = true,
   hasRigging = false
@@ -83,6 +86,17 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
           <Grid3x3 size={16} />
           <span className="text-sm font-medium">Sprites</span>
         </button>
+
+        {onShowVariantTree && (
+          <button
+            onClick={onShowVariantTree}
+            className="px-4 py-2 bg-bg-secondary bg-opacity-90 hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
+            title="View variant relationship tree"
+          >
+            <GitBranch size={16} />
+            <span className="text-sm font-medium">Variant Tree</span>
+          </button>
+        )}
       </div>
       
       {/* Top-right controls - View Options */}

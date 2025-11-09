@@ -98,13 +98,15 @@ export interface DialogueNode {
   responses?: DialogueResponse[]
 }
 
+export interface DialogueMetadata {
+  characterName?: string
+  description?: string
+  [key: string]: unknown
+}
+
 export interface DialogueData {
   nodes: DialogueNode[]
-  metadata?: {
-    characterName?: string
-    description?: string
-    [key: string]: any
-  }
+  metadata?: DialogueMetadata
 }
 
 export interface GenerateDialogueParams {
@@ -134,20 +136,22 @@ export interface GenerateLoreParams {
 }
 
 // Generated Content Result
+export interface GeneratedContentMetadata {
+  type: ContentType
+  prompt?: string
+  archetype?: string
+  questType?: string
+  difficulty?: string
+  category?: string
+  quality?: QualityLevel
+  [key: string]: unknown
+}
+
 export interface GeneratedContent {
   id: string
   type: ContentType
   name: string
   data: NPCData | QuestData | DialogueNode[] | LoreData
-  metadata: {
-    type: ContentType
-    prompt?: string
-    archetype?: string
-    questType?: string
-    difficulty?: string
-    category?: string
-    quality?: QualityLevel
-    [key: string]: any
-  }
+  metadata: GeneratedContentMetadata
   createdAt: string
 }

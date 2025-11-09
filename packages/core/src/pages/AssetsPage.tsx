@@ -8,12 +8,16 @@ import AssetDetailsPanel from "@/components/Assets/AssetDetailsPanel";
 import { AssetEditModal } from "@/components/Assets/AssetEditModal";
 import AssetFilters from "@/components/Assets/AssetFilters";
 import AssetList from "@/components/Assets/AssetList";
+import { AssetStatisticsCard } from "@/components/Assets/AssetStatisticsCard";
+import { BulkActionsBar } from "@/components/Assets/BulkActionsBar";
 import { EmptyAssetState } from "@/components/Assets/EmptyAssetState";
+import { GenerationHistoryTimeline } from "@/components/Assets/GenerationHistoryTimeline";
 import { LoadingState } from "@/components/Assets/LoadingState";
 import RegenerateModal from "@/components/Assets/RegenerateModal";
 import RetextureModal from "@/components/Assets/RetextureModal";
 import SpriteGenerationModal from "@/components/Assets/SpriteGenerationModal";
 import { TransitionOverlay } from "@/components/Assets/TransitionOverlay";
+import { VariantTreeViewer } from "@/components/Assets/VariantTreeViewer";
 import ViewerControls from "@/components/Assets/ViewerControls";
 import { MaterialPresetEditor } from "@/components/Materials";
 import { AnimationPlayer } from "@/components/shared/AnimationPlayer";
@@ -24,8 +28,9 @@ import { useAssets } from "@/hooks";
 export const AssetsPage: React.FC = () => {
   const { assets, loading, reloadAssets, forceReload } = useAssets();
 
-  // Local state for Material Preset Editor
+  // Local state for modals
   const [showPresetEditor, setShowPresetEditor] = useState(false);
+  const [showVariantTree, setShowVariantTree] = useState(false);
 
   // Get state and actions from store
   const {
@@ -92,6 +97,12 @@ export const AssetsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Sidebar - Full width mobile, 4 cols desktop */}
           <div className="lg:col-span-4 space-y-3 animate-slide-in-left">
+            {/* Asset Statistics */}
+            <AssetStatisticsCard assets={assets} />
+
+            {/* Generation History Timeline */}
+            <GenerationHistoryTimeline assets={assets} />
+
             {/* Filters */}
             <AssetFilters
               totalAssets={assets.length}
@@ -230,6 +241,7 @@ export const AssetsPage: React.FC = () => {
                   <ViewerControls
                     onViewerReset={handleViewerReset}
                     onDownload={handleDownload}
+                    onShowVariantTree={() => setShowVariantTree(true)}
                     assetType={selectedAsset.type}
                     canRetexture={
                       selectedAsset.type !== "character" &&
@@ -313,6 +325,17 @@ export const AssetsPage: React.FC = () => {
           // Presets saved successfully - filters will reload them automatically
         }}
       />
+
+      {/* Variant Tree Viewer */}
+      {showVariantTree && (
+        <VariantTreeViewer
+          assets={assets}
+          onClose={() => setShowVariantTree(false)}
+        />
+      )}
+
+      {/* Bulk Actions Bar */}
+      <BulkActionsBar onActionComplete={reloadAssets} />
     </div>
   );
 };

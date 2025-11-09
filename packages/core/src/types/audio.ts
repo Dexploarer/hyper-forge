@@ -66,25 +66,38 @@ export interface SFXEstimate {
 }
 
 // Music Generation
-export interface GenerateMusicParams {
-  prompt?: string
-  musicLengthMs?: number
-  compositionPlan?: any
-  forceInstrumental?: boolean
+export interface CompositionSection {
+  name: string
+  duration: number
+  description: string
 }
 
 export interface CompositionPlan {
   prompt: string
   musicLengthMs?: number
-  sections?: Array<{
-    name: string
-    duration: number
-    description: string
-  }>
+  sections?: CompositionSection[]
   modelId?: string
 }
 
+export interface GenerateMusicParams {
+  prompt?: string
+  musicLengthMs?: number
+  compositionPlan?: CompositionPlan
+  forceInstrumental?: boolean
+}
+
 // Generated Audio Result
+export interface GeneratedAudioMetadata {
+  type: AudioType
+  prompt?: string
+  voiceId?: string
+  voiceName?: string
+  settings?: VoiceSettings
+  durationSeconds?: number
+  musicLengthMs?: number
+  [key: string]: unknown
+}
+
 export interface GeneratedAudio {
   id: string
   type: AudioType
@@ -92,16 +105,7 @@ export interface GeneratedAudio {
   audioUrl: string
   audioData?: string // base64 for inline playback
   duration?: number
-  metadata: {
-    type: AudioType
-    prompt?: string
-    voiceId?: string
-    voiceName?: string
-    settings?: VoiceSettings
-    durationSeconds?: number
-    musicLengthMs?: number
-    [key: string]: any
-  }
+  metadata: GeneratedAudioMetadata
   createdAt: string
 }
 

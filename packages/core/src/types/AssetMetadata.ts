@@ -72,6 +72,14 @@ export interface BaseAssetMetadata extends RiggingMetadata {
   gripDetected?: boolean  // For weapons
   requiresAnimationStrip?: boolean
 
+  // User preferences
+  isFavorite?: boolean
+  notes?: string
+  lastViewedAt?: string
+
+  // Workflow status
+  status?: 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived'
+
   // Project Management
   projectId?: string
 }
@@ -138,6 +146,14 @@ export interface VariantAssetMetadata extends RiggingMetadata {
   format?: string
   gripDetected?: boolean  // For weapons
   requiresAnimationStrip?: boolean
+
+  // User preferences
+  isFavorite?: boolean
+  notes?: string
+  lastViewedAt?: string
+
+  // Workflow status
+  status?: 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived'
 
   // Project Management
   projectId?: string

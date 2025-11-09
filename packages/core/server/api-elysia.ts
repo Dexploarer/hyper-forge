@@ -42,6 +42,7 @@ import { musicRoutes } from "./routes/music";
 import { soundEffectsRoutes } from "./routes/sound-effects";
 import { contentGenerationRoutes } from "./routes/content-generation";
 import { usersRoutes } from "./routes/users";
+import { vectorSearchRoutes } from "./routes/vector-search";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,6 +52,10 @@ const ROOT_DIR = path.join(__dirname, "..");
 await fs.promises.mkdir(path.join(ROOT_DIR, "temp-images"), {
   recursive: true,
 });
+
+// Initialize Qdrant vector database (async)
+import { initializeQdrantCollections } from "./db/qdrant";
+await initializeQdrantCollections();
 
 // Initialize services
 // Railway uses PORT, but we fallback to API_PORT for local dev
@@ -136,6 +141,10 @@ const app = new Elysia()
             name: "Content Generation",
             description: "AI-powered NPC, quest, dialogue, and lore generation",
           },
+          {
+            name: "Vector Search",
+            description: "Semantic search using Qdrant vector database",
+          },
         ],
         components: {
           securitySchemes: {
@@ -215,6 +224,7 @@ const app = new Elysia()
   .use(musicRoutes)
   .use(soundEffectsRoutes)
   .use(contentGenerationRoutes)
+  .use(vectorSearchRoutes)
 
   // TEMPORARY: Debug endpoint to check paths
   .get("/api/admin/debug-paths", async () => {
@@ -331,6 +341,11 @@ if (!process.env.AI_GATEWAY_API_KEY && !process.env.OPENAI_API_KEY) {
 if (!process.env.ELEVENLABS_API_KEY) {
   console.warn(
     "⚠️  ELEVENLABS_API_KEY not found - voice, music, and sound effects generation will fail",
+  );
+}
+if (!process.env.QDRANT_URL) {
+  console.warn(
+    "⚠️  QDRANT_URL not configured - semantic search and vector operations will not be available",
   );
 }
 

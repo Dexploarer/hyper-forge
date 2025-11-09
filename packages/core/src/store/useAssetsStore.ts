@@ -11,15 +11,30 @@ export interface ModelInfo {
   fileSize?: number
 }
 
+export interface RecentlyViewedItem {
+  id: string
+  name: string
+  type: string
+  timestamp: number
+}
+
 interface AssetsState {
   // Selected Asset
   selectedAsset: Asset | null
-  
+
   // Filter States
   searchTerm: string
   typeFilter: string
   materialFilter: string
-  
+  showFavoritesOnly: boolean
+
+  // Recently Viewed
+  recentlyViewed: RecentlyViewedItem[]
+
+  // Bulk Selection
+  selectionMode: boolean
+  selectedAssetIds: Set<string>
+
   // Viewer States
   showGroundPlane: boolean
   isWireframe: boolean
@@ -32,12 +47,14 @@ interface AssetsState {
   isTransitioning: boolean
   modelInfo: ModelInfo | null
   showAnimationView: boolean
-  
+
   // Actions
   setSelectedAsset: (asset: Asset | null) => void
   setSearchTerm: (term: string) => void
   setTypeFilter: (type: string) => void
   setMaterialFilter: (material: string) => void
+  setShowFavoritesOnly: (show: boolean) => void
+  toggleFavoritesFilter: () => void
   setShowGroundPlane: (show: boolean) => void
   setIsWireframe: (wireframe: boolean) => void
   setIsLightBackground: (light: boolean) => void
@@ -49,20 +66,30 @@ interface AssetsState {
   setIsTransitioning: (transitioning: boolean) => void
   setModelInfo: (info: ModelInfo | null) => void
   setShowAnimationView: (show: boolean) => void
-  
+
+  // Recently Viewed Actions
+  addRecentlyViewed: (asset: Asset) => void
+  clearRecentlyViewed: () => void
+
+  // Bulk Selection Actions
+  setSelectionMode: (enabled: boolean) => void
+  toggleSelectionMode: () => void
+  toggleAssetSelection: (assetId: string) => void
+  selectAllAssets: (assetIds: string[]) => void
+  clearSelection: () => void
+
   // Toggle Actions
   toggleGroundPlane: () => void
   toggleWireframe: () => void
   toggleBackground: () => void
   toggleDetailsPanel: () => void
   toggleAnimationView: () => void
-  
+
   // Complex Actions
   handleAssetSelect: (asset: Asset) => void
-  clearSelection: () => void
   resetViewerSettings: () => void
   closeAllModals: () => void
-  
+
   // Computed Values
   getFilteredAssets: (assets: Asset[]) => Asset[]
 }
@@ -77,6 +104,10 @@ export const useAssetsStore = create<AssetsState>()(
           searchTerm: '',
           typeFilter: '',
           materialFilter: '',
+          showFavoritesOnly: false,
+          recentlyViewed: [],
+          selectionMode: false,
+          selectedAssetIds: new Set<string>(),
           showGroundPlane: false,
           isWireframe: false,
           isLightBackground: false,
@@ -105,7 +136,15 @@ export const useAssetsStore = create<AssetsState>()(
           setMaterialFilter: (material) => set(state => {
             state.materialFilter = material
           }),
-          
+
+          setShowFavoritesOnly: (show) => set(state => {
+            state.showFavoritesOnly = show
+          }),
+
+          toggleFavoritesFilter: () => set(state => {
+            state.showFavoritesOnly = !state.showFavoritesOnly
+          }),
+
           setShowGroundPlane: (show) => set(state => {
             state.showGroundPlane = show
           }),
@@ -149,7 +188,54 @@ export const useAssetsStore = create<AssetsState>()(
           setShowAnimationView: (show) => set(state => {
             state.showAnimationView = show
           }),
-          
+
+          // Recently Viewed Actions
+          addRecentlyViewed: (asset) => set(state => {
+            const newItem: RecentlyViewedItem = {
+              id: asset.id,
+              name: asset.name,
+              type: asset.type,
+              timestamp: Date.now()
+            }
+            // Remove if already exists
+            state.recentlyViewed = state.recentlyViewed.filter(item => item.id !== asset.id)
+            // Add to beginning
+            state.recentlyViewed.unshift(newItem)
+            // Keep only last 10
+            state.recentlyViewed = state.recentlyViewed.slice(0, 10)
+          }),
+
+          clearRecentlyViewed: () => set(state => {
+            state.recentlyViewed = []
+          }),
+
+          // Bulk Selection Actions
+          setSelectionMode: (enabled) => set(state => {
+            state.selectionMode = enabled
+            if (!enabled) {
+              state.selectedAssetIds = new Set<string>()
+            }
+          }),
+
+          toggleSelectionMode: () => set(state => {
+            state.selectionMode = !state.selectionMode
+            if (!state.selectionMode) {
+              state.selectedAssetIds = new Set<string>()
+            }
+          }),
+
+          toggleAssetSelection: (assetId) => set(state => {
+            if (state.selectedAssetIds.has(assetId)) {
+              state.selectedAssetIds.delete(assetId)
+            } else {
+              state.selectedAssetIds.add(assetId)
+            }
+          }),
+
+          selectAllAssets: (assetIds) => set(state => {
+            state.selectedAssetIds = new Set(assetIds)
+          }),
+
           // Toggle Actions
           toggleGroundPlane: () => set(state => {
             state.showGroundPlane = !state.showGroundPlane
@@ -176,12 +262,23 @@ export const useAssetsStore = create<AssetsState>()(
             state.selectedAsset = asset
             state.modelInfo = null
             state.showAnimationView = false
+            // Track in recently viewed
+            const newItem: RecentlyViewedItem = {
+              id: asset.id,
+              name: asset.name,
+              type: asset.type,
+              timestamp: Date.now()
+            }
+            // Remove if already exists
+            state.recentlyViewed = state.recentlyViewed.filter(item => item.id !== asset.id)
+            // Add to beginning
+            state.recentlyViewed.unshift(newItem)
+            // Keep only last 10
+            state.recentlyViewed = state.recentlyViewed.slice(0, 10)
           }),
-          
+
           clearSelection: () => set(state => {
-            state.selectedAsset = null
-            state.modelInfo = null
-            state.showAnimationView = false
+            state.selectedAssetIds = new Set<string>()
           }),
           
           resetViewerSettings: () => set(state => {
@@ -205,7 +302,10 @@ export const useAssetsStore = create<AssetsState>()(
             return assets.filter(asset => {
               if (state.searchTerm && !asset.name.toLowerCase().includes(state.searchTerm.toLowerCase())) return false
               if (state.typeFilter && asset.type !== state.typeFilter) return false
-              
+
+              // Favorites filter
+              if (state.showFavoritesOnly && !asset.metadata.isFavorite) return false
+
               // Material filtering logic
               if (state.materialFilter) {
                 // For variant assets with materialPreset
@@ -221,7 +321,7 @@ export const useAssetsStore = create<AssetsState>()(
                   return false
                 }
               }
-              
+
               return true
             })
           }
@@ -236,7 +336,9 @@ export const useAssetsStore = create<AssetsState>()(
           isLightBackground: state.isLightBackground,
           searchTerm: state.searchTerm,
           typeFilter: state.typeFilter,
-          materialFilter: state.materialFilter
+          materialFilter: state.materialFilter,
+          showFavoritesOnly: state.showFavoritesOnly,
+          recentlyViewed: state.recentlyViewed
         })
       }
     ),

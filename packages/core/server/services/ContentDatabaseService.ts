@@ -1,6 +1,7 @@
 /**
  * Content Database Service
  * CRUD operations for AI-generated content (NPCs, quests, dialogue, lore)
+ * Automatically indexes to Qdrant vector database for semantic search
  */
 
 import { db } from '../db/db'
@@ -19,6 +20,8 @@ import {
   type NewLore
 } from '../db/schema'
 import { eq, desc } from 'drizzle-orm'
+import { embeddingService } from './EmbeddingService'
+import { qdrantService, type CollectionName } from './QdrantService'
 
 export class ContentDatabaseService {
   // ====================
@@ -37,6 +40,12 @@ export class ContentDatabaseService {
       }).returning()
 
       console.log(`[ContentDatabaseService] Created NPC: ${npc.name}`)
+
+      // Index to Qdrant (async, don't block)
+      this.indexNPC(npc).catch(error => {
+        console.warn(`[ContentDatabaseService] Failed to index NPC embedding:`, error)
+      })
+
       return npc
     } catch (error) {
       console.error(`[ContentDatabaseService] Failed to create NPC:`, error)
@@ -86,6 +95,13 @@ export class ContentDatabaseService {
     try {
       await db.delete(npcs).where(eq(npcs.id, id))
       console.log(`[ContentDatabaseService] Deleted NPC: ${id}`)
+
+      // Delete from Qdrant (async, don't block)
+      if (process.env.QDRANT_URL) {
+        qdrantService.delete('npcs', id).catch(error => {
+          console.warn(`[ContentDatabaseService] Failed to delete NPC embedding:`, error)
+        })
+      }
     } catch (error) {
       console.error(`[ContentDatabaseService] Failed to delete NPC:`, error)
       throw error
@@ -108,6 +124,12 @@ export class ContentDatabaseService {
       }).returning()
 
       console.log(`[ContentDatabaseService] Created Quest: ${quest.title}`)
+
+      // Index to Qdrant (async, don't block)
+      this.indexQuest(quest).catch(error => {
+        console.warn(`[ContentDatabaseService] Failed to index Quest embedding:`, error)
+      })
+
       return quest
     } catch (error) {
       console.error(`[ContentDatabaseService] Failed to create Quest:`, error)
@@ -157,6 +179,13 @@ export class ContentDatabaseService {
     try {
       await db.delete(quests).where(eq(quests.id, id))
       console.log(`[ContentDatabaseService] Deleted Quest: ${id}`)
+
+      // Delete from Qdrant (async, don't block)
+      if (process.env.QDRANT_URL) {
+        qdrantService.delete('quests', id).catch(error => {
+          console.warn(`[ContentDatabaseService] Failed to delete Quest embedding:`, error)
+        })
+      }
     } catch (error) {
       console.error(`[ContentDatabaseService] Failed to delete Quest:`, error)
       throw error
@@ -179,6 +208,12 @@ export class ContentDatabaseService {
       }).returning()
 
       console.log(`[ContentDatabaseService] Created Dialogue for: ${dialogue.npcName}`)
+
+      // Index to Qdrant (async, don't block)
+      this.indexDialogue(dialogue).catch(error => {
+        console.warn(`[ContentDatabaseService] Failed to index Dialogue embedding:`, error)
+      })
+
       return dialogue
     } catch (error) {
       console.error(`[ContentDatabaseService] Failed to create Dialogue:`, error)
@@ -228,6 +263,13 @@ export class ContentDatabaseService {
     try {
       await db.delete(dialogues).where(eq(dialogues.id, id))
       console.log(`[ContentDatabaseService] Deleted Dialogue: ${id}`)
+
+      // Delete from Qdrant (async, don't block)
+      if (process.env.QDRANT_URL) {
+        qdrantService.delete('dialogues', id).catch(error => {
+          console.warn(`[ContentDatabaseService] Failed to delete Dialogue embedding:`, error)
+        })
+      }
     } catch (error) {
       console.error(`[ContentDatabaseService] Failed to delete Dialogue:`, error)
       throw error
@@ -250,6 +292,12 @@ export class ContentDatabaseService {
       }).returning()
 
       console.log(`[ContentDatabaseService] Created Lore: ${lore.title}`)
+
+      // Index to Qdrant (async, don't block)
+      this.indexLore(lore).catch(error => {
+        console.warn(`[ContentDatabaseService] Failed to index Lore embedding:`, error)
+      })
+
       return lore
     } catch (error) {
       console.error(`[ContentDatabaseService] Failed to create Lore:`, error)
@@ -299,8 +347,152 @@ export class ContentDatabaseService {
     try {
       await db.delete(lores).where(eq(lores.id, id))
       console.log(`[ContentDatabaseService] Deleted Lore: ${id}`)
+
+      // Delete from Qdrant (async, don't block)
+      if (process.env.QDRANT_URL) {
+        qdrantService.delete('lore', id).catch(error => {
+          console.warn(`[ContentDatabaseService] Failed to delete Lore embedding:`, error)
+        })
+      }
     } catch (error) {
       console.error(`[ContentDatabaseService] Failed to delete Lore:`, error)
+      throw error
+    }
+  }
+
+  // ====================
+  // Private Embedding Helpers
+  // ====================
+
+  /**
+   * Index NPC to Qdrant
+   */
+  private async indexNPC(npc: NPC): Promise<void> {
+    if (!process.env.QDRANT_URL) return
+
+    try {
+      const text = embeddingService.prepareNPCText(npc)
+      const { embedding } = await embeddingService.generateEmbedding(text)
+
+      await qdrantService.upsert({
+        collection: 'npcs',
+        id: npc.id,
+        vector: embedding,
+        payload: {
+          type: 'npc',
+          name: npc.name,
+          archetype: npc.archetype,
+          tags: npc.tags,
+          metadata: {
+            createdBy: npc.createdBy,
+            createdAt: npc.createdAt?.toISOString(),
+          }
+        }
+      })
+
+      console.log(`[ContentDatabaseService] Indexed NPC to Qdrant: ${npc.id}`)
+    } catch (error) {
+      console.error(`[ContentDatabaseService] Error indexing NPC ${npc.id} to Qdrant:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Index Quest to Qdrant
+   */
+  private async indexQuest(quest: Quest): Promise<void> {
+    if (!process.env.QDRANT_URL) return
+
+    try {
+      const text = embeddingService.prepareQuestText(quest)
+      const { embedding } = await embeddingService.generateEmbedding(text)
+
+      await qdrantService.upsert({
+        collection: 'quests',
+        id: quest.id,
+        vector: embedding,
+        payload: {
+          type: 'quest',
+          title: quest.title,
+          questType: quest.questType,
+          difficulty: quest.difficulty,
+          tags: quest.tags,
+          metadata: {
+            createdBy: quest.createdBy,
+            createdAt: quest.createdAt?.toISOString(),
+          }
+        }
+      })
+
+      console.log(`[ContentDatabaseService] Indexed Quest to Qdrant: ${quest.id}`)
+    } catch (error) {
+      console.error(`[ContentDatabaseService] Error indexing Quest ${quest.id} to Qdrant:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Index Lore to Qdrant
+   */
+  private async indexLore(lore: Lore): Promise<void> {
+    if (!process.env.QDRANT_URL) return
+
+    try {
+      const text = embeddingService.prepareLoreText(lore)
+      const { embedding } = await embeddingService.generateEmbedding(text)
+
+      await qdrantService.upsert({
+        collection: 'lore',
+        id: lore.id,
+        vector: embedding,
+        payload: {
+          type: 'lore',
+          title: lore.title,
+          category: lore.category,
+          summary: lore.summary,
+          tags: lore.tags,
+          metadata: {
+            createdBy: lore.createdBy,
+            createdAt: lore.createdAt?.toISOString(),
+          }
+        }
+      })
+
+      console.log(`[ContentDatabaseService] Indexed Lore to Qdrant: ${lore.id}`)
+    } catch (error) {
+      console.error(`[ContentDatabaseService] Error indexing Lore ${lore.id} to Qdrant:`, error)
+      throw error
+    }
+  }
+
+  /**
+   * Index Dialogue to Qdrant
+   */
+  private async indexDialogue(dialogue: Dialogue): Promise<void> {
+    if (!process.env.QDRANT_URL) return
+
+    try {
+      const text = embeddingService.prepareDialogueText(dialogue)
+      const { embedding } = await embeddingService.generateEmbedding(text)
+
+      await qdrantService.upsert({
+        collection: 'dialogues',
+        id: dialogue.id,
+        vector: embedding,
+        payload: {
+          type: 'dialogue',
+          npcName: dialogue.npcName,
+          context: dialogue.context,
+          metadata: {
+            createdBy: dialogue.createdBy,
+            createdAt: dialogue.createdAt?.toISOString(),
+          }
+        }
+      })
+
+      console.log(`[ContentDatabaseService] Indexed Dialogue to Qdrant: ${dialogue.id}`)
+    } catch (error) {
+      console.error(`[ContentDatabaseService] Error indexing Dialogue ${dialogue.id} to Qdrant:`, error)
       throw error
     }
   }

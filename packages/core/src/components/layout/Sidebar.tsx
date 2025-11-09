@@ -19,6 +19,8 @@ import { NavigationView } from '@/types'
 import { NAVIGATION_VIEWS } from '@/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { cn } from '@/styles'
+import { RecentlyViewedWidget } from './RecentlyViewedWidget'
+import { useAssetsStore } from '@/store'
 
 interface SidebarProps {
   currentView: NavigationView
@@ -104,11 +106,18 @@ const NAV_ITEMS: NavItem[] = [
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { logout } = useAuth()
+  const { recentlyViewed } = useAssetsStore()
 
   const handleLogout = () => {
     if (confirm('Are you sure you want to logout?')) {
       logout()
     }
+  }
+
+  const handleRecentAssetClick = (assetId: string) => {
+    // Navigate to assets view when clicking a recently viewed asset
+    onViewChange(NAVIGATION_VIEWS.ASSETS)
+    // The asset selection will be handled by the assets page itself via URL or state
   }
 
   return (
@@ -144,6 +153,13 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
           )}
         </button>
       </div>
+
+      {/* Recently Viewed Widget - only show when not collapsed and has items */}
+      {!isCollapsed && recentlyViewed.length > 0 && (
+        <div className="px-2 pt-2 pb-2">
+          <RecentlyViewedWidget onAssetClick={handleRecentAssetClick} />
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">

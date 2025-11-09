@@ -48,6 +48,25 @@ interface TaskStatus {
   };
 }
 
+interface RemeshResponse {
+  model_url: string;
+  task_id: string;
+}
+
+interface RetextureRequestBody {
+  input_task_id: string;
+  art_style: string;
+  ai_model: string;
+  enable_original_uv: boolean;
+  text_style_prompt?: string;
+  image_style_url?: string;
+}
+
+interface RetextureResponse {
+  result?: string;
+  task_id?: string;
+}
+
 interface RetextureParams {
   baseAssetId: string;
   materialPreset?: MaterialPreset;
@@ -116,7 +135,7 @@ class MeshyClient {
       throw new Error(`Remesh failed: ${response.statusText}`);
     }
 
-    const result = (await response.json()) as any;
+    const result = (await response.json()) as RemeshResponse;
     return {
       modelUrl: result.model_url,
       taskId: result.task_id,
@@ -138,7 +157,7 @@ class MeshyClient {
   }
 
   async startRetexture(options: RetextureOptions): Promise<string> {
-    const body: any = {
+    const body: RetextureRequestBody = {
       input_task_id: options.inputTaskId,
       art_style: options.artStyle || "realistic",
       ai_model: options.aiModel || "meshy-5",
@@ -173,8 +192,8 @@ class MeshyClient {
       );
     }
 
-    const result = (await response.json()) as any;
-    return result.result || result.task_id || result;
+    const result = (await response.json()) as RetextureResponse;
+    return result.result || result.task_id || String(result);
   }
 
   async waitForCompletion(

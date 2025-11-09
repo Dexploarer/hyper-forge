@@ -56,13 +56,28 @@ export const SuccessResponse = t.Object({
 
 // ==================== Asset Models ====================
 
+export const MaterialPresetInfo = t.Object({
+  id: t.String(),
+  displayName: t.String(),
+  category: t.String(),
+  tier: t.Number(),
+  color: t.String(),
+  stylePrompt: t.Optional(t.String()),
+});
+
+export const AssetDimensions = t.Object({
+  width: t.Number(),
+  height: t.Number(),
+  depth: t.Number(),
+});
+
 export const AssetMetadata = t.Object({
   id: t.String(),
   name: t.String(),
   description: t.Optional(t.String()),
   type: t.Optional(t.String()),
   subtype: t.Optional(t.String()),
-  tier: t.Optional(t.Number()),
+  tier: t.Optional(t.Union([t.String(), t.Number()])),
   category: t.Optional(t.String()),
   modelUrl: t.Optional(t.String()),
   thumbnailUrl: t.Optional(t.String()),
@@ -73,9 +88,18 @@ export const AssetMetadata = t.Object({
   workflow: t.Optional(t.String()),
   meshyTaskId: t.Optional(t.String()),
   generatedAt: t.Optional(t.String()),
+  generationMethod: t.Optional(t.Union([
+    t.Literal('gpt-image-meshy'),
+    t.Literal('direct-meshy'),
+    t.Literal('manual'),
+    t.Literal('placeholder')
+  ])),
+  quality: t.Optional(t.String()),
   // File paths
+  modelPath: t.Optional(t.String()),
   conceptArtPath: t.Optional(t.String()),
   hasConceptArt: t.Optional(t.Boolean()),
+  hasModel: t.Optional(t.Boolean()),
   riggedModelPath: t.Optional(t.String()),
   // Variant system
   isBaseModel: t.Optional(t.Boolean()),
@@ -84,17 +108,56 @@ export const AssetMetadata = t.Object({
   variants: t.Optional(t.Array(t.String())),
   variantCount: t.Optional(t.Number()),
   lastVariantGenerated: t.Optional(t.String()),
+  // Material info for variants
+  materialPreset: t.Optional(MaterialPresetInfo),
+  baseMaterial: t.Optional(t.String()),
+  retextureTaskId: t.Optional(t.String()),
+  retextureMethod: t.Optional(t.Union([
+    t.Literal('meshy-retexture'),
+    t.Literal('manual-texture'),
+    t.Literal('ai-generated')
+  ])),
+  retextureStatus: t.Optional(t.Union([
+    t.Literal('pending'),
+    t.Literal('processing'),
+    t.Literal('completed'),
+    t.Literal('failed')
+  ])),
+  retextureError: t.Optional(t.String()),
+  baseModelTaskId: t.Optional(t.String()),
+  // Other fields
   gameId: t.Optional(t.String()),
+  gddCompliant: t.Optional(t.Boolean()),
+  isPlaceholder: t.Optional(t.Boolean()),
+  normalized: t.Optional(t.Boolean()),
+  normalizationDate: t.Optional(t.String()),
+  dimensions: t.Optional(AssetDimensions),
+  format: t.Optional(t.String()),
+  gripDetected: t.Optional(t.Boolean()),
+  requiresAnimationStrip: t.Optional(t.Boolean()),
   // Ownership tracking (Phase 1)
   createdBy: t.Optional(t.String()), // User ID
   walletAddress: t.Optional(t.String()), // User's wallet address
   isPublic: t.Optional(t.Boolean()), // Default true
   createdAt: t.Optional(t.String()),
   updatedAt: t.Optional(t.String()),
+  completedAt: t.Optional(t.String()),
   // User preferences and metadata
   isFavorite: t.Optional(t.Boolean()), // Bookmark/favorite flag
   notes: t.Optional(t.String()), // User notes for this asset
   lastViewedAt: t.Optional(t.String()), // Last time asset was viewed
+  // Workflow status
+  status: t.Optional(t.Union([
+    t.Literal('draft'),
+    t.Literal('processing'),
+    t.Literal('completed'),
+    t.Literal('failed'),
+    t.Literal('approved'),
+    t.Literal('published'),
+    t.Literal('archived')
+  ])),
+  // Project Management
+  projectId: t.Optional(t.String()),
 });
 
 export const AssetList = t.Array(AssetMetadata);
@@ -109,7 +172,7 @@ export const AssetResponse = t.Object({
   name: t.String(),
   description: t.String(),
   type: t.String(),
-  metadata: t.Any(), // Full metadata.json content (dynamic structure with many optional fields)
+  metadata: AssetMetadata, // Full metadata.json content with proper types
   hasModel: t.Boolean(),
   modelFile: t.Optional(t.String()),
   generatedAt: t.Optional(t.String()),
@@ -124,13 +187,29 @@ export const AssetUpdate = t.Object({
   category: t.Optional(t.String()),
   isFavorite: t.Optional(t.Boolean()),
   notes: t.Optional(t.String()),
-  status: t.Optional(t.String()),
+  status: t.Optional(t.Union([
+    t.Literal('draft'),
+    t.Literal('processing'),
+    t.Literal('completed'),
+    t.Literal('failed'),
+    t.Literal('approved'),
+    t.Literal('published'),
+    t.Literal('archived')
+  ])),
 });
 
 export const BulkUpdateRequest = t.Object({
   assetIds: t.Array(t.String({ minLength: 1 }), { minItems: 1 }),
   updates: t.Object({
-    status: t.Optional(t.String()),
+    status: t.Optional(t.Union([
+      t.Literal('draft'),
+      t.Literal('processing'),
+      t.Literal('completed'),
+      t.Literal('failed'),
+      t.Literal('approved'),
+      t.Literal('published'),
+      t.Literal('archived')
+    ])),
     isFavorite: t.Optional(t.Boolean()),
   })
 });
@@ -239,12 +318,26 @@ export const PipelineResponse = t.Object({
   message: t.String(),
 });
 
+export const PipelineStage = t.Object({
+  name: t.String(),
+  status: t.Union([
+    t.Literal('pending'),
+    t.Literal('processing'),
+    t.Literal('completed'),
+    t.Literal('failed')
+  ]),
+  progress: t.Optional(t.Number()),
+  startedAt: t.Optional(t.String()),
+  completedAt: t.Optional(t.String()),
+  error: t.Optional(t.String()),
+});
+
 export const PipelineStatus = t.Object({
   id: t.String(),
   status: t.String(),
   progress: t.Number(),
-  stages: t.Any(), // Complex nested type, using Any for simplicity
-  results: t.Record(t.String(), t.Any()),
+  stages: t.Record(t.String(), PipelineStage),
+  results: t.Record(t.String(), t.Unknown()),
   error: t.Optional(t.String()),
   createdAt: t.String(),
   completedAt: t.Optional(t.String()),
@@ -433,10 +526,23 @@ export const CreateVoiceResponse = t.Object({
 
 // ==================== ElevenLabs Music Generation Models ====================
 
+export const CompositionSection = t.Object({
+  name: t.String(),
+  duration: t.Number(),
+  description: t.String(),
+});
+
+export const CompositionPlan = t.Object({
+  prompt: t.String(),
+  musicLengthMs: t.Optional(t.Number()),
+  sections: t.Optional(t.Array(CompositionSection)),
+  modelId: t.Optional(t.String()),
+});
+
 export const GenerateMusicRequest = t.Object({
   prompt: t.Optional(t.String()),
   musicLengthMs: t.Optional(t.Number({ minimum: 1000, maximum: 300000 })),
-  compositionPlan: t.Optional(t.Any()),
+  compositionPlan: t.Optional(CompositionPlan),
   forceInstrumental: t.Optional(t.Boolean()),
   respectSectionsDurations: t.Optional(t.Boolean()),
   storeForInpainting: t.Optional(t.Boolean()),
@@ -447,7 +553,7 @@ export const GenerateMusicRequest = t.Object({
 export const CreateCompositionPlanRequest = t.Object({
   prompt: t.String({ minLength: 1 }),
   musicLengthMs: t.Optional(t.Number()),
-  sourceCompositionPlan: t.Optional(t.Any()),
+  sourceCompositionPlan: t.Optional(CompositionPlan),
   modelId: t.Optional(t.String()),
 });
 
@@ -548,7 +654,7 @@ export const NPCDataResponse = t.Object({
     schedule: t.String(),
     relationships: t.Array(t.String()),
   }),
-  metadata: t.Any(),
+  metadata: t.Record(t.String(), t.Unknown()),
 });
 
 export const GenerateNPCRequest = t.Object({
@@ -595,7 +701,7 @@ export const QuestDataResponse = t.Object({
   story: t.String(),
   difficulty: t.String(),
   questType: t.String(),
-  metadata: t.Any(),
+  metadata: t.Record(t.String(), t.Unknown()),
 });
 
 export const GenerateQuestRequest = t.Object({
@@ -621,7 +727,7 @@ export const LoreDataResponse = t.Object({
   relatedTopics: t.Array(t.String()),
   timeline: t.Optional(t.String()),
   characters: t.Optional(t.Array(t.String())),
-  metadata: t.Any(),
+  metadata: t.Record(t.String(), t.Unknown()),
 });
 
 export const GenerateLoreRequest = t.Object({
@@ -654,3 +760,113 @@ export type WeaponOrientationDetectRequestType = Static<
 export type GenerateVoiceRequestType = Static<typeof GenerateVoiceRequest>;
 export type GenerateMusicRequestType = Static<typeof GenerateMusicRequest>;
 export type GenerateSfxRequestType = Static<typeof GenerateSfxRequest>;
+
+// ==================== Vector Search Models ====================
+
+/**
+ * Vector search result with semantic similarity score
+ */
+export const VectorSearchResult = <T extends ReturnType<typeof t.Any>>(entitySchema: T) =>
+  t.Object({
+    score: t.Number({ minimum: 0, maximum: 1 }),
+    ...entitySchema.properties,
+  });
+
+/**
+ * Asset search request filters
+ */
+export const AssetSearchFilters = t.Object({
+  type: t.Optional(t.String()),
+  category: t.Optional(t.String()),
+});
+
+/**
+ * Asset semantic search result
+ */
+export const AssetSearchResult = t.Object({
+  score: t.Number({ minimum: 0, maximum: 1 }),
+  asset: t.Union([AssetResponse, t.Null()]),
+});
+
+export const AssetSearchResponse = t.Object({
+  results: t.Array(AssetSearchResult),
+});
+
+/**
+ * NPC semantic search result
+ */
+export const NPCSearchResult = t.Object({
+  score: t.Number({ minimum: 0, maximum: 1 }),
+  npc: t.Union([NPCDataResponse, t.Null()]),
+});
+
+export const NPCSearchResponse = t.Object({
+  results: t.Array(NPCSearchResult),
+});
+
+/**
+ * Quest semantic search result
+ */
+export const QuestSearchResult = t.Object({
+  score: t.Number({ minimum: 0, maximum: 1 }),
+  quest: t.Union([QuestDataResponse, t.Null()]),
+});
+
+export const QuestSearchResponse = t.Object({
+  results: t.Array(QuestSearchResult),
+});
+
+/**
+ * Lore semantic search result
+ */
+export const LoreSearchResult = t.Object({
+  score: t.Number({ minimum: 0, maximum: 1 }),
+  lore: t.Union([LoreDataResponse, t.Null()]),
+});
+
+export const LoreSearchResponse = t.Object({
+  results: t.Array(LoreSearchResult),
+});
+
+/**
+ * Vector search health check response
+ */
+export const VectorSearchHealthResponse = t.Object({
+  status: t.Union([
+    t.Literal("healthy"),
+    t.Literal("unhealthy"),
+    t.Literal("unavailable"),
+    t.Literal("error"),
+  ]),
+  message: t.Optional(t.String()),
+  collections: t.Optional(t.Object({
+    assets: t.Number(),
+    npcs: t.Number(),
+    quests: t.Number(),
+    lore: t.Number(),
+    dialogues: t.Number(),
+  })),
+  embeddingModel: t.Optional(t.Object({
+    model: t.String(),
+    dimensions: t.Number(),
+    provider: t.String(),
+  })),
+});
+
+/**
+ * Vector search request query parameters
+ */
+export const VectorSearchQuery = t.Object({
+  query: t.String({ minLength: 1 }),
+  limit: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
+  scoreThreshold: t.Optional(t.Number({ minimum: 0, maximum: 1 })),
+  filters: t.Optional(AssetSearchFilters),
+});
+
+/**
+ * Vector search error response
+ */
+export const VectorSearchErrorResponse = t.Object({
+  error: t.String(),
+  message: t.Optional(t.String()),
+});
