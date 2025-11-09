@@ -184,7 +184,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
 
           {/* Center - 3D Viewport */}
           <div className="lg:col-span-6">
-            <div className="flex flex-col">
+            <div className="flex flex-col h-[600px] lg:h-[700px]">
               <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl">
                 {selectedAvatar || selectedEquipment ? (
                   <>

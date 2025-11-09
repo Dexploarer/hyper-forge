@@ -573,7 +573,7 @@ export const RetargetAnimatePage: React.FC = () => {
 
           {/* Viewer - Full width mobile, 8 cols desktop */}
           <div className="lg:col-span-8 space-y-6">
-            <section className="relative rounded-xl overflow-hidden" style={{ minHeight: '600px' }}>
+            <section className="relative rounded-xl overflow-hidden h-[600px] lg:h-[700px]">
         {/* Viewer Controls */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">
           {vrmConverted && vrmUrl && (
