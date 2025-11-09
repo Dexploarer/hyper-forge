@@ -76,7 +76,7 @@ const app = new Elysia()
       errorResponse: {
         error: "Too Many Requests",
         message: "Rate limit exceeded. Please try again later.",
-      },
+      } as any,
       // Skip rate limiting for health checks
       skip: (req) => new URL(req.url).pathname === "/api/health",
     }),

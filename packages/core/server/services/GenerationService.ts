@@ -20,7 +20,8 @@ import fetch from "node-fetch";
 
 // ==================== Type Definitions ====================
 
-type FetchFunction = typeof fetch;
+// Use a compatible fetch function type (node-fetch doesn't have preconnect method)
+type FetchFunction = (url: string | URL, init?: any) => Promise<any>;
 type MaterialPresetType = Static<typeof MaterialPreset>;
 
 interface ReferenceImage {
@@ -214,16 +215,8 @@ export class GenerationService extends EventEmitter {
         apiKey: process.env.MESHY_API_KEY || "",
         baseUrl: "https://api.meshy.ai",
       },
-      cache: {
-        enabled: true,
-        ttl: 3600,
-        maxSize: 500,
-      },
-      output: {
-        directory: "gdd-assets",
-        format: "glb",
-      },
-      fetchFn: this.fetchFn,
+      // node-fetch is compatible with global fetch for our use case (ignore type mismatch)
+      fetchFn: this.fetchFn as any,
     });
 
     // Initialize image hosting service
@@ -561,6 +554,10 @@ export class GenerationService extends EventEmitter {
         while (attempts < maxAttempts) {
           await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
 
+          if (!meshyTaskId) {
+            throw new Error("Meshy task ID is null");
+          }
+
           const status =
             await this.aiService.getMeshyService().getTaskStatus(meshyTaskId);
           pipeline.stages.image3D.progress =
@@ -651,8 +648,13 @@ export class GenerationService extends EventEmitter {
             console.log(`✅ Weapon normalized with grip at origin`);
 
             // Update with normalized dimensions
+            // Map weapon dimensions (length, width, height) to pipeline format (width, height, depth)
             pipeline.stages.image3D.normalized = true;
-            pipeline.stages.image3D.dimensions = result.dimensions;
+            pipeline.stages.image3D.dimensions = {
+              width: result.dimensions.width,
+              height: result.dimensions.height,
+              depth: result.dimensions.length, // blade length maps to depth
+            };
           } catch (error) {
             console.warn(
               "⚠️ Weapon normalization failed, using raw model:",

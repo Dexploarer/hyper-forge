@@ -98,6 +98,15 @@ export interface DialogueNode {
   responses?: DialogueResponse[]
 }
 
+export interface DialogueData {
+  nodes: DialogueNode[]
+  metadata?: {
+    characterName?: string
+    description?: string
+    [key: string]: any
+  }
+}
+
 export interface GenerateDialogueParams {
   npcName: string
   npcPersonality: string

@@ -4,7 +4,10 @@ import React, { useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, Button } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
 import { notify } from '@/utils/notify'
-import type { GeneratedContent, NPCData, QuestData, DialogueNode, LoreData } from '@/types/content'
+import type { GeneratedContent, NPCData, QuestData, DialogueNode, LoreData, DialogueData } from '@/types/content'
+import { ViewModeToggle, type ViewMode } from './Workflow/ViewModeToggle'
+import { DialogueWorkflowView } from './Workflow/DialogueWorkflowView'
+import { QuestWorkflowView } from './Workflow/QuestWorkflowView'
 
 interface ContentPreviewCardProps {
   content: GeneratedContent
@@ -15,6 +18,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
   const [copied, setCopied] = useState(false)
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null)
   const [isGeneratingPortrait, setIsGeneratingPortrait] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
 
   const handleGeneratePortrait = async () => {
     if (content.type !== 'npc') return
@@ -192,67 +196,95 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
     } else if (content.type === 'quest') {
       const quest = content.data as QuestData
       return (
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-xl font-bold text-text-primary mb-2">{quest.title}</h3>
-            <p className="text-sm text-text-secondary">{quest.description}</p>
-          </div>
+        <div className="space-y-4 h-full flex flex-col">
+          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
 
-          <div>
-            <h4 className="text-sm font-semibold text-text-primary mb-2">Objectives</h4>
-            <div className="space-y-2">
-              {quest.objectives.map((obj, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm">
-                  <span className="text-primary mt-0.5">•</span>
-                  <div className="flex-1">
-                    <p className="text-text-secondary">{obj.description}</p>
-                    <p className="text-xs text-text-tertiary capitalize">{obj.type} - {obj.target} ({obj.count}x)</p>
-                  </div>
+          {viewMode === 'list' ? (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-text-primary mb-2">{quest.title}</h3>
+                <p className="text-sm text-text-secondary">{quest.description}</p>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-text-primary mb-2">Objectives</h4>
+                <div className="space-y-2">
+                  {quest.objectives.map((obj, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm">
+                      <span className="text-primary mt-0.5">•</span>
+                      <div className="flex-1">
+                        <p className="text-text-secondary">{obj.description}</p>
+                        <p className="text-xs text-text-tertiary capitalize">{obj.type} - {obj.target} ({obj.count}x)</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          <div>
-            <h4 className="text-sm font-semibold text-text-primary mb-2">Rewards</h4>
-            <div className="space-y-1 text-sm">
-              <p className="text-text-secondary">Experience: <span className="text-primary">{quest.rewards.experience} XP</span></p>
-              <p className="text-text-secondary">Gold: <span className="text-primary">{quest.rewards.gold} gold</span></p>
-              {quest.rewards.items.length > 0 && (
-                <p className="text-text-secondary">Items: {quest.rewards.items.join(', ')}</p>
-              )}
-            </div>
-          </div>
+              <div>
+                <h4 className="text-sm font-semibold text-text-primary mb-2">Rewards</h4>
+                <div className="space-y-1 text-sm">
+                  <p className="text-text-secondary">Experience: <span className="text-primary">{quest.rewards.experience} XP</span></p>
+                  <p className="text-text-secondary">Gold: <span className="text-primary">{quest.rewards.gold} gold</span></p>
+                  {quest.rewards.items.length > 0 && (
+                    <p className="text-text-secondary">Items: {quest.rewards.items.join(', ')}</p>
+                  )}
+                </div>
+              </div>
 
-          <div>
-            <h4 className="text-sm font-semibold text-text-primary mb-2">Story</h4>
-            <p className="text-sm text-text-secondary leading-relaxed">{quest.story}</p>
-          </div>
+              <div>
+                <h4 className="text-sm font-semibold text-text-primary mb-2">Story</h4>
+                <p className="text-sm text-text-secondary leading-relaxed">{quest.story}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 min-h-[500px]">
+              <QuestWorkflowView quest={quest} />
+            </div>
+          )}
         </div>
       )
     } else if (content.type === 'dialogue') {
       const nodes = content.data as DialogueNode[]
+      const dialogueData: DialogueData = {
+        nodes,
+        metadata: {
+          characterName: content.name,
+          description: `Dialogue tree with ${nodes.length} nodes`,
+        },
+      }
+
       return (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-text-primary">Dialogue Tree ({nodes.length} nodes)</h3>
-          {nodes.map((node, i) => (
-            <div key={node.id} className="p-4 bg-bg-tertiary/30 border border-border-primary rounded-lg">
-              <div className="text-xs text-text-tertiary mb-2">Node {i + 1} - {node.id}</div>
-              <p className="text-sm text-text-primary mb-3">"{node.text}"</p>
-              {node.responses && node.responses.length > 0 && (
-                <div className="space-y-2 pl-4 border-l-2 border-primary/30">
-                  {node.responses.map((response, ri) => (
-                    <div key={ri} className="text-sm">
-                      <p className="text-text-secondary">→ "{response.text}"</p>
-                      {response.nextNodeId && (
-                        <p className="text-xs text-text-tertiary mt-1">Goes to: {response.nextNodeId}</p>
-                      )}
+        <div className="space-y-4 h-full flex flex-col">
+          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+
+          {viewMode === 'list' ? (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-text-primary">Dialogue Tree ({nodes.length} nodes)</h3>
+              {nodes.map((node, i) => (
+                <div key={node.id} className="p-4 bg-bg-tertiary/30 border border-border-primary rounded-lg">
+                  <div className="text-xs text-text-tertiary mb-2">Node {i + 1} - {node.id}</div>
+                  <p className="text-sm text-text-primary mb-3">"{node.text}"</p>
+                  {node.responses && node.responses.length > 0 && (
+                    <div className="space-y-2 pl-4 border-l-2 border-primary/30">
+                      {node.responses.map((response, ri) => (
+                        <div key={ri} className="text-sm">
+                          <p className="text-text-secondary">→ "{response.text}"</p>
+                          {response.nextNodeId && (
+                            <p className="text-xs text-text-tertiary mt-1">Goes to: {response.nextNodeId}</p>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          ) : (
+            <div className="flex-1 min-h-[500px]">
+              <DialogueWorkflowView dialogue={dialogueData} />
+            </div>
+          )}
         </div>
       )
     } else if (content.type === 'lore') {

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import type { VoiceServiceStatus } from '@/services/api/VoiceStatusAPIClient'
+import type { VoiceServiceStatus as VoiceServiceStatusData } from '@/services/api/VoiceStatusAPIClient'
 import { voiceStatusClient } from '@/services/api/VoiceStatusAPIClient'
 import { cn } from '@/styles'
 
@@ -27,7 +27,7 @@ export const VoiceServiceStatus: React.FC<VoiceServiceStatusProps> = ({
   refreshInterval = 30000, // 30 seconds default
   className,
 }) => {
-  const [status, setStatus] = useState<VoiceServiceStatus | null>(null)
+  const [status, setStatus] = useState<VoiceServiceStatusData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)

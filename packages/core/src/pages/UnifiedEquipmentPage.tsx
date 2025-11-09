@@ -157,7 +157,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Error Toast */}
           {lastError && (
             <ErrorNotification error={lastError} onClose={clearError} />
@@ -165,7 +165,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
 
           {/* Left Panel - Asset Selection */}
           <div className="lg:col-span-3">
-            <div className="card overflow-hidden flex flex-col bg-gradient-to-br from-bg-primary to-bg-secondary">
+            <div className="card overflow-hidden flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary p-6 border-r border-border-primary">
               <ArmorAssetList
                 assets={assets}
                 loading={loading}
@@ -185,8 +185,8 @@ export const UnifiedEquipmentPage: React.FC = () => {
 
           {/* Center - 3D Viewport */}
           <div className="lg:col-span-6">
-            <div className="flex flex-col h-[600px] lg:h-[700px]">
-              <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl">
+            <div className="flex flex-col h-[600px] lg:h-[700px] p-6">
+              <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl flex items-center justify-center">
                 {selectedAvatar || selectedEquipment ? (
                   <>
                     <ArmorFittingViewer
@@ -258,9 +258,9 @@ export const UnifiedEquipmentPage: React.FC = () => {
 
           {/* Right Panel - Fitting Controls */}
           <div className="lg:col-span-3">
-            <div className="card overflow-hidden flex flex-col bg-gradient-to-br from-bg-primary to-bg-secondary">
+            <div className="card overflow-hidden flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary border-l border-border-primary">
               {/* Header with Equipment Slot Selector */}
-              <div className="p-4 border-b border-border-primary bg-bg-primary bg-opacity-30 space-y-3">
+              <div className="p-6 border-b border-border-primary bg-bg-primary bg-opacity-30 space-y-3">
                 <h2 className="text-lg font-semibold text-text-primary">Equipment Fitting</h2>
 
                 {/* Equipment Slot Selector */}
@@ -296,7 +296,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
               </div>
 
               {/* Scrollable Controls */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                 {isWeaponMode() ? (
                   // Weapon Fitting Panel
                   <WeaponFittingPanel

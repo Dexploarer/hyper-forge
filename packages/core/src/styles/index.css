@@ -650,6 +650,9 @@ body {
 
 /* ===== Additional App Styles ===== */
 
+/* React Flow Workflow Components */
+@import '../components/Content/Workflow/workflow.css';
+
 /* Ensure the app takes full viewport */
 #root {
   min-height: 100vh;

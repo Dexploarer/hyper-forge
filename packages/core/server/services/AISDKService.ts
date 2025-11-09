@@ -68,6 +68,7 @@ class AISDKService {
 
   /**
    * Get a configured language model
+   * Note: Temperature should be configured when calling generateText/streamText
    */
   async getConfiguredModel(
     quality: ModelQuality = "balanced",
@@ -79,9 +80,8 @@ class AISDKService {
     }
 
     // Return the configured model
-    return this.openai(config.model, {
-      temperature: config.temperature,
-    });
+    // Temperature and other options are passed to generateText/streamText, not here
+    return this.openai(config.model);
   }
 
   /**
