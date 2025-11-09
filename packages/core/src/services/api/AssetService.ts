@@ -79,7 +79,7 @@ class AssetServiceClass {
   }
 
   getModelUrl(assetId: string): string {
-    return `/assets/${assetId}/${assetId}.glb`;
+    return `/gdd-assets/${assetId}/${assetId}.glb`;
   }
 
   /**
@@ -119,7 +119,7 @@ class AssetServiceClass {
   }
 
   getConceptArtUrl(assetId: string): string {
-    return `/assets/${assetId}/concept-art.png`;
+    return `/gdd-assets/${assetId}/concept-art.png`;
   }
 
   /**
