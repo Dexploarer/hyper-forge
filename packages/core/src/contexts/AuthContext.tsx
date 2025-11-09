@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { usePrivy, useLogin } from '@privy-io/react-auth'
 import { ProfileCompletionModal } from '../components/auth/ProfileCompletionModal'
 import type { User } from '@/services/api/UsersAPIClient'
 
@@ -6,7 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   user: User | null
   needsProfileCompletion: boolean
-  login: (password: string) => Promise<boolean>
+  login: (password?: string) => Promise<boolean>
   logout: () => void
   checkAuth: () => boolean
   completeProfile: (profile: {
@@ -18,32 +19,39 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-const AUTH_STORAGE_KEY = 'asset_forge_auth'
-const SESSION_ID_KEY = 'asset_forge_session'
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'admin123'
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { ready, authenticated, user: privyUser, logout: privyLogout, getAccessToken } = usePrivy()
   const [user, setUser] = useState<User | null>(null)
   const [needsProfileCompletion, setNeedsProfileCompletion] = useState(false)
   const [isLoadingUser, setIsLoadingUser] = useState(false)
 
-  // Generate or retrieve session ID
-  const getSessionId = (): string => {
-    let sessionId = localStorage.getItem(SESSION_ID_KEY)
-    if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      localStorage.setItem(SESSION_ID_KEY, sessionId)
-    }
-    return sessionId
-  }
+  // Use Privy's login hook with callbacks
+  const { login: privyLogin } = useLogin({
+    onComplete: async () => {
+      // After successful login, fetch user profile
+      await fetchUser()
+    },
+    onError: (error) => {
+      console.error('Login failed:', error)
+    },
+  })
 
-  // Fetch user profile
+  // Fetch user profile from our backend
   const fetchUser = async () => {
     try {
       setIsLoadingUser(true)
-      const sessionId = getSessionId()
-      const response = await fetch(`/users/me?sessionId=${sessionId}`)
+      const accessToken = await getAccessToken()
+
+      if (!accessToken) {
+        return
+      }
+
+      const response = await fetch('/users/me', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      })
+
       const data = await response.json()
 
       if (data.user) {
@@ -60,34 +68,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Check authentication on mount
+  // Fetch user when Privy authentication changes
   useEffect(() => {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY)
-    if (stored === 'authenticated') {
-      setIsAuthenticated(true)
+    if (ready && authenticated) {
       fetchUser()
+    } else if (ready && !authenticated) {
+      setUser(null)
+      setNeedsProfileCompletion(false)
     }
-  }, [])
+  }, [ready, authenticated])
 
-  const login = async (password: string): Promise<boolean> => {
-    if (password === ADMIN_PASSWORD) {
-      localStorage.setItem(AUTH_STORAGE_KEY, 'authenticated')
-      setIsAuthenticated(true)
-      await fetchUser()
-      return true
+  // Login wrapper - compatible with old interface but uses Privy
+  const login = async (_password?: string): Promise<boolean> => {
+    try {
+      privyLogin()
+      return true // Login modal opened successfully
+    } catch (error) {
+      console.error('Login error:', error)
+      return false
     }
-    return false
   }
 
   const logout = () => {
-    localStorage.removeItem(AUTH_STORAGE_KEY)
-    setIsAuthenticated(false)
+    privyLogout()
     setUser(null)
     setNeedsProfileCompletion(false)
   }
 
   const checkAuth = (): boolean => {
-    return isAuthenticated
+    return authenticated
   }
 
   const completeProfile = async (profile: {
@@ -95,14 +104,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string
     discordUsername: string
   }) => {
-    const sessionId = getSessionId()
+    const accessToken = await getAccessToken()
+
+    if (!accessToken) {
+      throw new Error('Not authenticated')
+    }
+
     const response = await fetch('/users/complete-profile', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId,
-        ...profile,
-      }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify(profile),
     })
 
     if (!response.ok) {
@@ -116,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{
-      isAuthenticated,
+      isAuthenticated: authenticated,
       user,
       needsProfileCompletion,
       login,

@@ -6,64 +6,47 @@
 import { Elysia, t } from "elysia";
 import { eq } from "drizzle-orm";
 import { db, users } from "../db";
+import { requireAuth } from "../middleware/auth";
+import { requireAdmin } from "../middleware/requireAdmin";
 
 export const usersRoutes = new Elysia({ prefix: "/users" })
-  // Get current user profile (creates if doesn't exist)
+  // Get current user profile (requires authentication)
   .get(
     "/me",
-    async ({ query }) => {
-      const { sessionId } = query;
+    async (context) => {
+      const authResult = await requireAuth(context);
 
-      if (!sessionId) {
-        return { user: null };
+      // If auth failed, return the error response
+      if (authResult instanceof Response) {
+        return authResult;
       }
 
-      // For simple auth, use sessionId as identifier
-      // Find or create user
-      let user = await db.query.users.findFirst({
-        where: eq(users.privyUserId, sessionId),
-      });
-
-      if (!user) {
-        // Create new user on first access
-        const [newUser] = await db
-          .insert(users)
-          .values({
-            privyUserId: sessionId,
-            role: "admin", // Everyone with access is admin
-          })
-          .returning();
-        user = newUser;
-      }
-
+      const { user } = authResult;
       return { user };
     },
     {
-      query: t.Object({
-        sessionId: t.String(),
-      }),
       detail: {
         tags: ["Users"],
         summary: "Get current user profile",
-        description: "Gets the current user profile, creates if doesn't exist",
+        description: "Gets the current authenticated user profile. Requires Privy JWT.",
+        security: [{ BearerAuth: [] }],
       },
     }
   )
 
-  // Update/Complete user profile
+  // Update/Complete user profile (requires authentication)
   .post(
     "/complete-profile",
-    async ({ body }) => {
-      const { sessionId, displayName, email, discordUsername } = body;
+    async (context) => {
+      const authResult = await requireAuth(context);
 
-      // Find user
-      const user = await db.query.users.findFirst({
-        where: eq(users.privyUserId, sessionId),
-      });
-
-      if (!user) {
-        throw new Error("User not found");
+      // If auth failed, return the error response
+      if (authResult instanceof Response) {
+        return authResult;
       }
+
+      const { user: authUser } = authResult;
+      const { displayName, email, discordUsername } = context.body as any;
 
       // Update profile (only set profileCompleted if not already set)
       const updateData: any = {
@@ -74,21 +57,20 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       };
 
       // Only set profileCompleted timestamp on first completion
-      if (!user.profileCompleted) {
+      if (!authUser.profileCompleted) {
         updateData.profileCompleted = new Date();
       }
 
       const [updatedUser] = await db
         .update(users)
         .set(updateData)
-        .where(eq(users.id, user.id))
+        .where(eq(users.id, authUser.id))
         .returning();
 
       return { user: updatedUser };
     },
     {
       body: t.Object({
-        sessionId: t.String(),
         displayName: t.String(),
         email: t.String(),
         discordUsername: t.String(),
@@ -96,15 +78,23 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       detail: {
         tags: ["Users"],
         summary: "Update user profile",
-        description: "Save or update user profile information",
+        description: "Save or update user profile information. Requires Privy JWT.",
+        security: [{ BearerAuth: [] }],
       },
     }
   )
 
-  // Get all users (admin dashboard)
+  // Get all users (admin only)
   .get(
     "/",
-    async () => {
+    async (context) => {
+      const adminResult = await requireAdmin(context);
+
+      // If admin check failed, return the error response
+      if (adminResult instanceof Response) {
+        return adminResult;
+      }
+
       const allUsers = await db.query.users.findMany({
         orderBy: (users, { desc }) => [desc(users.createdAt)],
       });
@@ -114,8 +104,9 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
     {
       detail: {
         tags: ["Users"],
-        summary: "Get all users",
-        description: "Get all users for admin dashboard",
+        summary: "Get all users (Admin only)",
+        description: "Get all users for admin dashboard. Requires admin role.",
+        security: [{ BearerAuth: [] }],
       },
     }
   );

@@ -1,3 +1,4 @@
+import { PrivyProvider } from '@privy-io/react-auth';
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import NotificationBar from "./components/shared/NotificationBar";
 import { MainLayout } from "./components/layout";
@@ -54,15 +55,30 @@ function AppContent() {
 
 function App() {
   return (
-    <AppProvider>
-      <AuthProvider>
-        <NavigationProvider>
-          <ErrorBoundary>
-            <AppContent />
-          </ErrorBoundary>
-        </NavigationProvider>
-      </AuthProvider>
-    </AppProvider>
+    <PrivyProvider
+      appId={import.meta.env.VITE_PRIVY_APP_ID || ''}
+      config={{
+        appearance: {
+          theme: 'dark',
+          accentColor: '#8b5cf6',
+        },
+        embeddedWallets: {
+          ethereum: {
+            createOnLogin: 'users-without-wallets',
+          },
+        },
+      }}
+    >
+      <AppProvider>
+        <AuthProvider>
+          <NavigationProvider>
+            <ErrorBoundary>
+              <AppContent />
+            </ErrorBoundary>
+          </NavigationProvider>
+        </AuthProvider>
+      </AppProvider>
+    </PrivyProvider>
   );
 }
 

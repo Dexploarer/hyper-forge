@@ -358,5 +358,10 @@ if (!process.env.QDRANT_URL) {
     "⚠️  QDRANT_URL not configured - semantic search and vector operations will not be available",
   );
 }
+if (!process.env.PRIVY_APP_ID || !process.env.PRIVY_APP_SECRET) {
+  console.warn(
+    "⚠️  PRIVY_APP_ID and PRIVY_APP_SECRET not configured - authentication will not work",
+  );
+}
 
 export type App = typeof app;
