@@ -1,8 +1,9 @@
-import { Download, FileJson, FileText, Copy, Check, Sparkles, Loader2, User } from 'lucide-react'
-import React, { useState } from 'react'
+import { Download, FileJson, FileText, Copy, Check, Sparkles, Loader2, User, Volume2, Play, Pause } from 'lucide-react'
+import React, { useState, useRef } from 'react'
 
 import { Card, CardHeader, CardTitle, CardContent, Button } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
+import { AudioAPIClient } from '@/services/api/AudioAPIClient'
 import { notify } from '@/utils/notify'
 import type { GeneratedContent, NPCData, QuestData, DialogueNode, LoreData, DialogueData } from '@/types/content'
 import { ViewModeToggle, type ViewMode } from './Workflow/ViewModeToggle'
@@ -15,9 +16,14 @@ interface ContentPreviewCardProps {
 
 export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content }) => {
   const [apiClient] = useState(() => new ContentAPIClient())
+  const [audioClient] = useState(() => new AudioAPIClient())
   const [copied, setCopied] = useState(false)
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null)
   const [isGeneratingPortrait, setIsGeneratingPortrait] = useState(false)
+  const [voiceAudioUrl, setVoiceAudioUrl] = useState<string | null>(null)
+  const [isGeneratingVoice, setIsGeneratingVoice] = useState(false)
+  const [isPlayingVoice, setIsPlayingVoice] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
 
   const handleGeneratePortrait = async () => {
@@ -41,6 +47,81 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
       notify.error('Failed to generate portrait')
     } finally {
       setIsGeneratingPortrait(false)
+    }
+  }
+
+  const handleGenerateVoice = async () => {
+    if (content.type !== 'npc') return
+
+    const npc = content.data as NPCData
+
+    try {
+      setIsGeneratingVoice(true)
+
+      // Get voice library to select an appropriate voice
+      const voices = await audioClient.getVoiceLibrary()
+
+      // Simple voice selection based on archetype
+      let selectedVoice = voices[0] // default
+
+      // Try to match archetype to voice category
+      const archetypeLower = npc.archetype.toLowerCase()
+      if (archetypeLower.includes('warrior') || archetypeLower.includes('knight')) {
+        selectedVoice = voices.find(v => v.category === 'strong' || v.name.toLowerCase().includes('male')) || voices[0]
+      } else if (archetypeLower.includes('mage') || archetypeLower.includes('wizard')) {
+        selectedVoice = voices.find(v => v.category === 'wise' || v.name.toLowerCase().includes('old')) || voices[0]
+      } else if (archetypeLower.includes('merchant') || archetypeLower.includes('noble')) {
+        selectedVoice = voices.find(v => v.category === 'smooth' || v.category === 'professional') || voices[0]
+      }
+
+      // Generate voice using greeting dialogue
+      const audioData = await audioClient.generateVoice({
+        text: npc.dialogue.greeting,
+        voiceId: selectedVoice.voiceId,
+        settings: {
+          stability: 0.5,
+          similarityBoost: 0.75,
+          style: 0.0,
+          useSpeakerBoost: true
+        }
+      })
+
+      // Convert base64 to blob URL
+      const binaryString = atob(audioData)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: 'audio/mpeg' })
+      const url = URL.createObjectURL(blob)
+
+      setVoiceAudioUrl(url)
+      notify.success('Voice generated successfully!')
+    } catch (error) {
+      console.error('Failed to generate voice:', error)
+      notify.error('Failed to generate voice')
+    } finally {
+      setIsGeneratingVoice(false)
+    }
+  }
+
+  const handlePlayVoice = () => {
+    if (!voiceAudioUrl) return
+
+    if (audioRef.current) {
+      if (isPlayingVoice) {
+        audioRef.current.pause()
+        setIsPlayingVoice(false)
+      } else {
+        audioRef.current.play()
+        setIsPlayingVoice(true)
+      }
+    } else {
+      const audio = new Audio(voiceAudioUrl)
+      audioRef.current = audio
+      audio.onended = () => setIsPlayingVoice(false)
+      audio.play()
+      setIsPlayingVoice(true)
     }
   }
 
@@ -158,6 +239,53 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
                   </>
                 )}
               </Button>
+            </div>
+
+            {/* Voice Generation Section */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-32 h-32 rounded-lg overflow-hidden bg-bg-tertiary/50 border-2 border-border-primary/50 flex items-center justify-center">
+                <Volume2 className={`w-12 h-12 ${voiceAudioUrl ? 'text-green-500' : 'text-text-tertiary/40'}`} />
+              </div>
+              <div className="w-full space-y-2">
+                <Button
+                  onClick={handleGenerateVoice}
+                  disabled={isGeneratingVoice}
+                  size="sm"
+                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                >
+                  {isGeneratingVoice ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      Generate Voice
+                    </>
+                  )}
+                </Button>
+                {voiceAudioUrl && (
+                  <Button
+                    onClick={handlePlayVoice}
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {isPlayingVoice ? (
+                      <>
+                        <Pause className="w-3.5 h-3.5 mr-1.5" />
+                        Pause
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5 mr-1.5" />
+                        Play Sample
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
