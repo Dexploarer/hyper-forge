@@ -1,0 +1,121 @@
+# Dependencies
+node_modules/
+# bun.lockb - MUST be committed for Railway to detect Bun
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+env.local
+
+# IDE and editors
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+*~
+*.sublime-workspace
+*.sublime-project
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+test-results/
+playwright-report/
+playwright/.cache/
+test-*.json
+test-*.png
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.temp
+.temp/
+.tmp/
+
+# Cache
+.npm
+.eslintcache
+.stylelintcache
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+.serverless/
+.turbo/
+
+# Database
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.db
+
+# Qdrant vector storage
+qdrant_storage/
+
+# Claude Code
+.claude/logs/
+
+# Production
+*.production
+*.production.js
+*.production.ts
+
+# Certificates
+*.p12
+*.key
+*.crt
+*.csr
+*.der
+*.pem
+
+# Backup files
+*.backup
+*_backup.*
+backup/
+
+# Large archive files
+*.tar.gz
+*.tar
+*.zip
+
+.cursor/rules/kluster-code-verify.mdc
+.kluster

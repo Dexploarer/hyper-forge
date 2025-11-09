@@ -1,0 +1,95 @@
+import React, { useState } from 'react'
+import { NavigationView } from '@/types'
+import { Sidebar } from './Sidebar'
+import { TopBar } from './TopBar'
+import { MobileTopBar } from './MobileTopBar'
+import { BottomNav } from './BottomNav'
+import { MobileMenuDrawer } from './MobileMenuDrawer'
+
+interface MainLayoutProps {
+  currentView: NavigationView
+  onViewChange: (view: NavigationView) => void
+  children: React.ReactNode
+}
+
+export function MainLayout({ currentView, onViewChange, children }: MainLayoutProps) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
+  return (
+    <>
+      {/* Mobile Layout (< 1024px) */}
+      <div className="lg:hidden flex flex-col h-screen bg-gradient-to-br from-bg-primary to-bg-secondary overflow-hidden">
+        {/* Mobile Top Bar */}
+        <MobileTopBar
+          currentView={currentView}
+          onMenuClick={() => setIsMenuOpen(true)}
+        />
+
+        {/* Main Content with bottom padding for nav */}
+        <main className="flex-1 overflow-auto relative pb-16">
+          {/* Subtle grid background */}
+          <div className="absolute inset-0 pointer-events-none opacity-[0.02]">
+            <div
+              className="h-full w-full"
+              style={{
+                backgroundImage: 'linear-gradient(rgba(139, 92, 246, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(139, 92, 246, 0.3) 1px, transparent 1px)',
+                backgroundSize: '50px 50px'
+              }}
+            />
+          </div>
+
+          {/* Page content */}
+          <div className="relative z-10 h-full">
+            {children}
+          </div>
+        </main>
+
+        {/* Bottom Navigation */}
+        <BottomNav
+          currentView={currentView}
+          onViewChange={onViewChange}
+          onMoreClick={() => setIsMenuOpen(true)}
+        />
+
+        {/* Mobile Menu Drawer */}
+        <MobileMenuDrawer
+          isOpen={isMenuOpen}
+          currentView={currentView}
+          onClose={() => setIsMenuOpen(false)}
+          onViewChange={onViewChange}
+        />
+      </div>
+
+      {/* Desktop Layout (>= 1024px) */}
+      <div className="hidden lg:flex h-screen bg-gradient-to-br from-bg-primary to-bg-secondary overflow-hidden">
+        {/* Left Sidebar */}
+        <Sidebar currentView={currentView} onViewChange={onViewChange} />
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Top Bar */}
+          <TopBar currentView={currentView} />
+
+          {/* Main Canvas/Workspace */}
+          <main className="flex-1 overflow-auto relative">
+            {/* Subtle grid background */}
+            <div className="absolute inset-0 pointer-events-none opacity-[0.02]">
+              <div
+                className="h-full w-full"
+                style={{
+                  backgroundImage: 'linear-gradient(rgba(139, 92, 246, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(139, 92, 246, 0.3) 1px, transparent 1px)',
+                  backgroundSize: '50px 50px'
+                }}
+              />
+            </div>
+
+            {/* Page content */}
+            <div className="relative z-10 h-full">
+              {children}
+            </div>
+          </main>
+        </div>
+      </div>
+    </>
+  )
+}

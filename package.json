@@ -1,0 +1,63 @@
+{
+  "name": "asset-forge",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "AI-powered 3D asset generation platform for game development",
+  "keywords": [
+    "ai",
+    "3d",
+    "generation",
+    "meshy",
+    "game-assets",
+    "rpg",
+    "asset-forge",
+    "three.js",
+    "react"
+  ],
+  "author": "Asset-Forge Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourorg/asset-forge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourorg/asset-forge/issues"
+  },
+  "homepage": "https://github.com/yourorg/asset-forge#readme",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:core": "cd packages/core && bun run dev",
+    "build": "turbo run build",
+    "build:core": "cd packages/core && bun run build",
+    "start": "cd packages/core && bun run start",
+    "test": "turbo run test",
+    "test:core": "cd packages/core && bun test",
+    "lint": "turbo run lint",
+    "lint:core": "cd packages/core && bun run lint",
+    "clean": "turbo run clean && rm -rf test-*.json test-*.png *.log **/*.log",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "cd packages/core && bun run db:generate",
+    "db:migrate": "cd packages/core && bun run db:migrate",
+    "db:push": "cd packages/core && bun run db:push",
+    "db:studio": "cd packages/core && bun run db:studio"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "bun": ">=1.1.38"
+  },
+  "packageManager": "bun@1.1.38"
+}
