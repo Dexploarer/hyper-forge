@@ -163,10 +163,16 @@ const MaterialPresetItem: React.FC<{
             style={{ backgroundColor: preset.color }}
           />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-text-primary truncate leading-tight">
+            <p 
+              className="text-xs font-semibold text-text-primary truncate leading-tight"
+              title={preset.displayName}
+            >
               {preset.displayName}
             </p>
-            <p className="text-[10px] text-text-secondary truncate">
+            <p 
+              className="text-xs text-text-secondary truncate"
+              title={`${preset.category} • Tier ${preset.tier}`}
+            >
               {preset.category} • T{preset.tier}
             </p>
           </div>
@@ -176,7 +182,7 @@ const MaterialPresetItem: React.FC<{
         </div>
         
         {/* Enhanced Tooltip on Hover */}
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-50">
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-[70]">
           <div className="bg-bg-primary/95 backdrop-blur-sm border border-border-primary rounded-lg shadow-xl p-3 min-w-[200px] max-w-[300px]">
             <p className="text-sm font-medium text-text-primary">{preset.displayName}</p>
             <p className="text-xs text-text-secondary mt-1 break-words">{preset.description || preset.stylePrompt}</p>

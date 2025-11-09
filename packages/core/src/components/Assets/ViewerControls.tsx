@@ -139,6 +139,8 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
             }`}
             title="Toggle Wireframe (W)"
+            aria-label="Toggle wireframe mode"
+            aria-pressed={isWireframe}
           >
             {isWireframe ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
@@ -151,6 +153,8 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
             }`}
             title="Toggle Ground Plane (G)"
+            aria-label="Toggle ground plane"
+            aria-pressed={showGroundPlane}
           >
             <Grid size={18} />
           </button>
@@ -163,6 +167,8 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
             }`}
             title="Toggle Background (B)"
+            aria-label="Toggle background color"
+            aria-pressed={isLightBackground}
           >
             {isLightBackground ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -173,6 +179,7 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
             onClick={onViewerReset}
             className="p-2 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all duration-200"
             title="Reset Camera (R)"
+            aria-label="Reset camera"
           >
             <RotateCw size={18} />
           </button>
@@ -181,6 +188,7 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
             onClick={onDownload}
             className="p-2 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all duration-200"
             title="Screenshot (S)"
+            aria-label="Take screenshot"
           >
             <Camera size={18} />
           </button>
@@ -193,6 +201,8 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
                 : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
             }`}
             title="Toggle Details (D)"
+            aria-label="Toggle details panel"
+            aria-pressed={showDetailsPanel}
           >
             {showDetailsPanel ? <X size={18} /> : <Layers size={18} />}
           </button>

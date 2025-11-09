@@ -218,7 +218,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-medium">Size</label>
-                  <span className="text-[10px] text-text-secondary font-mono">
+                  <span className="text-xs text-text-secondary font-mono">
                     {(helmetSizeMultiplier * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -235,7 +235,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-medium">Fit Tightness</label>
-                  <span className="text-[10px] text-text-secondary font-mono">
+                  <span className="text-xs text-text-secondary font-mono">
                     {(helmetFitTightness * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -253,7 +253,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-medium">Vertical Offset</label>
-                  <span className="text-[10px] text-text-secondary font-mono">
+                  <span className="text-xs text-text-secondary font-mono">
                     {helmetVerticalOffset.toFixed(2)}m
                   </span>
                 </div>
@@ -269,7 +269,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-medium">Forward Offset</label>
-                  <span className="text-[10px] text-text-secondary font-mono">
+                  <span className="text-xs text-text-secondary font-mono">
                     {helmetForwardOffset.toFixed(2)}m
                   </span>
                 </div>
@@ -288,8 +288,8 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
                 {(['x', 'y', 'z'] as const).map((axis) => (
                   <div key={axis}>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-text-secondary">{axis.toUpperCase()}</label>
-                      <span className="text-[10px] text-text-secondary font-mono">
+                      <label className="text-xs text-text-secondary">{axis.toUpperCase()}</label>
+                      <span className="text-xs text-text-secondary font-mono">
                         {helmetRotation[axis].toFixed(0)}°
                       </span>
                     </div>
@@ -367,7 +367,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium">Iterations</label>
-                <span className="text-[10px] text-text-secondary font-mono">
+                <span className="text-xs text-text-secondary font-mono">
                   {fittingConfig.iterations || 8}
                 </span>
               </div>
@@ -385,7 +385,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium">Step Size</label>
-                <span className="text-[10px] text-text-secondary font-mono">
+                <span className="text-xs text-text-secondary font-mono">
                   {(fittingConfig.stepSize || 0.1).toFixed(2)}
                 </span>
               </div>
@@ -404,7 +404,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium">Smoothing Radius</label>
-                <span className="text-[10px] text-text-secondary font-mono">
+                <span className="text-xs text-text-secondary font-mono">
                   {(fittingConfig.smoothingRadius || 2).toFixed(1)}
                 </span>
               </div>
@@ -423,7 +423,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium">Smoothing Strength</label>
-                <span className="text-[10px] text-text-secondary font-mono">
+                <span className="text-xs text-text-secondary font-mono">
                   {(fittingConfig.smoothingStrength || 0.2).toFixed(2)}
                 </span>
               </div>
@@ -442,7 +442,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium">Target Offset</label>
-                <span className="text-[10px] text-text-secondary font-mono">
+                <span className="text-xs text-text-secondary font-mono">
                   {((fittingConfig.targetOffset || 0.01) * 100).toFixed(1)}cm
                 </span>
               </div>
@@ -461,7 +461,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-medium">Sample Rate</label>
-                <span className="text-[10px] text-text-secondary font-mono">
+                <span className="text-xs text-text-secondary font-mono">
                   {((fittingConfig.sampleRate || 0.5) * 100).toFixed(0)}%
                 </span>
               </div>
@@ -542,7 +542,7 @@ export const ArmorFittingControls: React.FC<ArmorFittingControlsProps> = ({
                 key={mode}
                 onClick={() => onVisualizationModeChange(mode as 'none' | 'regions' | 'collisions' | 'weights' | 'hull')}
                 className={cn(
-                  "px-2 py-1.5 text-[11px] rounded-md transition-colors flex items-center gap-1.5 justify-center",
+                  "px-2 py-1.5 text-xs rounded-md transition-colors flex items-center gap-1.5 justify-center",
                   visualizationMode === mode
                     ? "bg-primary text-primary-foreground"
                     : "bg-bg-tertiary text-text-secondary hover:text-text-primary"

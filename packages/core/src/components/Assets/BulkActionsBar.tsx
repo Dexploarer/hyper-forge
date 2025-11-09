@@ -82,8 +82,9 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
             <button
               onClick={() => handleBulkFavorite(true)}
               disabled={isProcessing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-yellow-500/10 text-text-secondary hover:text-yellow-400 disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-yellow-500/10 text-text-secondary hover:text-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed"
               title="Add to favorites"
+              aria-label="Add to favorites"
             >
               <Star size={14} />
               <span>Favorite</span>
@@ -93,8 +94,9 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
             <button
               onClick={() => handleBulkFavorite(false)}
               disabled={isProcessing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-secondary hover:text-text-primary disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-secondary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
               title="Remove from favorites"
+              aria-label="Remove from favorites"
             >
               <Star size={14} />
               <span>Unfavorite</span>
@@ -105,8 +107,9 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
               <button
                 onClick={() => setShowStatusMenu(!showStatusMenu)}
                 disabled={isProcessing}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-secondary hover:text-text-primary disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-secondary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Change status"
+                aria-label="Change status"
               >
                 <CheckCircle size={14} />
                 <span>Status</span>
@@ -116,12 +119,12 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
                 <>
                   {/* Backdrop to close menu */}
                   <div
-                    className="fixed inset-0 z-40"
+                    className="fixed inset-0 z-[45]"
                     onClick={() => setShowStatusMenu(false)}
                   />
 
                   {/* Status menu */}
-                  <div className="absolute bottom-full left-0 mb-2 bg-bg-secondary border border-border-primary rounded-lg shadow-xl overflow-hidden z-50 min-w-[140px]">
+                  <div className="absolute bottom-full left-0 mb-2 bg-bg-secondary border border-border-primary rounded-lg shadow-xl overflow-hidden z-[60] min-w-[140px]">
                     {statusOptions.map((option) => {
                       const Icon = option.icon
                       return (
@@ -148,8 +151,9 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
           <button
             onClick={clearSelection}
             disabled={isProcessing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-tertiary hover:text-text-primary disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-tertiary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
             title="Clear selection"
+            aria-label="Clear selection"
           >
             <X size={14} />
             <span>Clear</span>

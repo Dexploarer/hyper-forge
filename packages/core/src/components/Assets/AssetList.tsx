@@ -476,11 +476,11 @@ const AssetList: React.FC<AssetListProps> = ({
                                   </button>
                                 </div>
 
-                                <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">
-                                  <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-[0.625rem] font-medium">
+                                <div className="flex items-center gap-2 text-xs mt-0.5">
+                                  <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
                                     BASE
                                   </span>
-                                  <span className="text-text-tertiary capitalize">{group.base.type}</span>
+                                  <span className="text-text-secondary capitalize">{group.base.type}</span>
                                 </div>
                               </div>
                             </div>
@@ -561,7 +561,7 @@ const AssetList: React.FC<AssetListProps> = ({
                                           style={{ backgroundColor: getTierColor(variant.metadata.tier) }}
                                         />
                                         <span
-                                          className="text-[0.625rem] font-medium capitalize"
+                                          className="text-xs font-medium capitalize"
                                           style={{ color: getTierColor(variant.metadata.tier) }}
                                         >
                                           {variant.metadata.tier}
@@ -654,7 +654,7 @@ const AssetList: React.FC<AssetListProps> = ({
                             <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">
                               {asset.metadata?.isBaseModel && (
                                 <>
-                                  <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-[0.625rem] font-medium">
+                                  <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
                                     BASE
                                   </span>
                                   <span className="text-text-muted">•</span>
@@ -683,7 +683,7 @@ const AssetList: React.FC<AssetListProps> = ({
                               {asset.metadata?.isPlaceholder && (
                                 <>
                                   <span className="text-text-muted">•</span>
-                                  <span className="bg-warning bg-opacity-15 text-warning px-1.5 py-0.5 rounded text-[0.625rem] font-medium">
+                                  <span className="bg-warning bg-opacity-15 text-warning px-1.5 py-0.5 rounded text-xs font-medium">
                                     PLACEHOLDER
                                   </span>
                                 </>
@@ -796,7 +796,7 @@ const AssetList: React.FC<AssetListProps> = ({
                               <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">
                                 {asset.metadata?.isBaseModel && (
                                   <>
-                                    <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-[0.625rem] font-medium">
+                                    <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
                                       BASE
                                     </span>
                                     <span className="text-text-muted">•</span>
@@ -835,7 +835,7 @@ const AssetList: React.FC<AssetListProps> = ({
                                 {asset.metadata?.isPlaceholder && (
                                   <>
                                     <span className="text-text-muted">•</span>
-                                    <span className="bg-warning bg-opacity-15 text-warning px-1.5 py-0.5 rounded text-[0.625rem] font-medium">
+                                    <span className="bg-warning bg-opacity-15 text-warning px-1.5 py-0.5 rounded text-xs font-medium">
                                       PLACEHOLDER
                                     </span>
                                   </>

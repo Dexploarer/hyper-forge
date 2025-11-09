@@ -68,7 +68,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({ asset, isOpen, on
             <div className="flex flex-wrap gap-1.5 mt-3">
               {asset.metadata.tier && (
                 <div 
-                  className="px-2 py-1 rounded-full text-[0.625rem] font-medium flex items-center gap-1"
+                  className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
                   style={{ 
                     backgroundColor: `${getTierColor(asset.metadata.tier)}20`,
                     color: getTierColor(asset.metadata.tier),
@@ -80,13 +80,13 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({ asset, isOpen, on
                 </div>
               )}
               {asset.metadata.isPlaceholder && (
-                <div className="px-2 py-1 bg-warning bg-opacity-20 text-warning rounded-full text-[0.625rem] font-medium border border-warning border-opacity-40 flex items-center gap-1">
+                <div className="px-2 py-1 bg-warning bg-opacity-20 text-warning rounded-full text-xs font-medium border border-warning border-opacity-40 flex items-center gap-1">
                   <AlertCircle size={10} />
                   Placeholder
                 </div>
               )}
               {asset.hasModel && (
-                <div className="px-2 py-1 bg-success bg-opacity-20 text-success rounded-full text-[0.625rem] font-medium border border-success border-opacity-40 flex items-center gap-1">
+                <div className="px-2 py-1 bg-success bg-opacity-20 text-success rounded-full text-xs font-medium border border-success border-opacity-40 flex items-center gap-1">
                   <Sparkles size={10} />
                   3D Model
                 </div>
@@ -148,7 +148,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({ asset, isOpen, on
                 <div className="flex items-start gap-3 group">
                   <Hash className="text-text-muted mt-0.5" size={14} />
                   <div className="flex-1">
-                    <p className="text-[0.625rem] text-text-tertiary uppercase tracking-wider">Asset ID</p>
+                    <p className="text-xs text-text-secondary uppercase tracking-wider">Asset ID</p>
                     <div className="flex items-center gap-2">
                       <p className="text-xs text-text-secondary font-mono">{asset.id}</p>
                       <button
@@ -168,7 +168,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({ asset, isOpen, on
                 <div className="flex items-start gap-3">
                   <Package className="text-text-muted mt-0.5" size={14} />
                   <div className="flex-1">
-                    <p className="text-[0.625rem] text-text-tertiary uppercase tracking-wider">Type</p>
+                    <p className="text-xs text-text-secondary uppercase tracking-wider">Type</p>
                     <p className="text-xs text-text-secondary capitalize">{asset.type}</p>
                   </div>
                 </div>
@@ -177,7 +177,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({ asset, isOpen, on
                   <div className="flex items-start gap-3">
                     <Tag className="text-text-muted mt-0.5" size={14} />
                     <div className="flex-1">
-                      <p className="text-[0.625rem] text-text-tertiary uppercase tracking-wider">Subtype</p>
+                      <p className="text-xs text-text-secondary uppercase tracking-wider">Subtype</p>
                       <p className="text-xs text-text-secondary capitalize">{asset.metadata.subtype}</p>
                     </div>
                   </div>
@@ -187,7 +187,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({ asset, isOpen, on
                   <div className="flex items-start gap-3">
                     <Calendar className="text-text-muted mt-0.5" size={14} />
                     <div className="flex-1">
-                      <p className="text-[0.625rem] text-text-tertiary uppercase tracking-wider">Created</p>
+                      <p className="text-xs text-text-secondary uppercase tracking-wider">Created</p>
                       <p className="text-xs text-text-secondary">
                         {new Date(asset.metadata.generatedAt).toLocaleDateString('en-US', {
                           year: 'numeric',
@@ -209,25 +209,25 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({ asset, isOpen, on
                   </h3>
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <p className="text-text-tertiary text-[0.625rem]">Polygons</p>
+                      <p className="text-text-secondary text-xs">Polygons</p>
                       <p className="text-text-secondary font-medium">
                         {modelInfo?.faces ? modelInfo.faces.toLocaleString() : 'Loading...'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-text-tertiary text-[0.625rem]">File Size</p>
+                      <p className="text-text-secondary text-xs">File Size</p>
                       <p className="text-text-secondary font-medium">
                         {modelInfo?.fileSize ? formatFileSize(modelInfo.fileSize) : 'N/A'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-text-tertiary text-[0.625rem]">Format</p>
+                      <p className="text-text-secondary text-xs">Format</p>
                       <p className="text-text-secondary font-medium uppercase">
                         {asset.metadata.format || 'GLB'}
                       </p>
                     </div>
                     <div>
-                      <p className="text-text-tertiary text-[0.625rem]">Vertices</p>
+                      <p className="text-text-secondary text-xs">Vertices</p>
                       <p className="text-text-secondary font-medium">
                         {modelInfo?.vertices ? modelInfo.vertices.toLocaleString() : 'Loading...'}
                       </p>
@@ -262,7 +262,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({ asset, isOpen, on
                     .filter(([key]) => !['tier', 'subtype', 'isPlaceholder', 'generatedAt', 'polygon_count', 'file_size', 'format', 'lod_count'].includes(key))
                     .map(([key, value]) => (
                       <div key={key} className="py-2 border-b border-border-primary last:border-0">
-                        <p className="text-[0.625rem] text-text-tertiary uppercase tracking-wider mb-1">
+                        <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">
                           {key.replace(/([A-Z])/g, ' $1').trim()}
                         </p>
                         <p className="text-xs text-text-secondary font-medium">

@@ -137,6 +137,9 @@ export function LandingPage() {
           <p className="text-center text-text-tertiary text-sm mt-4">
             Early access for administrators only
           </p>
+          <p className="text-center text-text-tertiary text-xs mt-2">
+            © {new Date().getFullYear()} Asset-Forge. MIT License.
+          </p>
         </div>
       </footer>
 

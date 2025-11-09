@@ -158,7 +158,7 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
             </div>
             <div>
               <h2 className="text-base font-bold text-text-primary">Asset Forge</h2>
-              <p className="text-[10px] text-text-tertiary">Alpha</p>
+              <p className="text-xs text-text-secondary">Alpha</p>
             </div>
           </div>
           <button

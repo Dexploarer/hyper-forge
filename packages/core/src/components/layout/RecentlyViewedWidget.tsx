@@ -61,11 +61,11 @@ export function RecentlyViewedWidget({ onAssetClick }: RecentlyViewedWidgetProps
                 {item.name}
               </div>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="text-[0.625rem] text-text-tertiary capitalize">
+                <span className="text-xs text-text-secondary capitalize">
                   {item.type}
                 </span>
                 <span className="text-text-muted">•</span>
-                <span className="text-[0.625rem] text-text-tertiary">
+                <span className="text-xs text-text-secondary">
                   {formatRelativeTime(item.timestamp)}
                 </span>
               </div>

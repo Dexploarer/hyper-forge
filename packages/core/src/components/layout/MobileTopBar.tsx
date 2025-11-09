@@ -50,7 +50,7 @@ export function MobileTopBar({ currentView, onMenuClick }: MobileTopBarProps) {
             <h1 className="text-sm font-bold text-text-primary leading-none">
               {VIEW_TITLES[currentView]}
             </h1>
-            <p className="text-[10px] text-text-tertiary leading-none mt-0.5">ALPHA</p>
+            <p className="text-xs text-text-secondary leading-none mt-0.5">ALPHA</p>
           </div>
         </div>
 

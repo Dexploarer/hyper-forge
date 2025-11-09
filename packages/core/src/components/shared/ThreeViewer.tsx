@@ -4195,7 +4195,7 @@ const ThreeViewer = forwardRef(({
             {assetInfo?.name && (
               <div className="pb-2 border-b border-border-primary">
                 <div className="font-semibold text-text-primary">{assetInfo.name}</div>
-                <div className="flex gap-2 text-[0.625rem] text-text-tertiary mt-0.5">
+                <div className="flex gap-2 text-xs text-text-secondary mt-0.5">
                   {assetInfo.type && <span className="capitalize">{assetInfo.type}</span>}
                   {assetInfo.tier && (
                     <>
@@ -4268,6 +4268,7 @@ const ThreeViewer = forwardRef(({
               onClick={exportTPoseModel}
               className="p-2 rounded-md bg-bg-secondary bg-opacity-90 text-text-secondary hover:text-text-primary border border-transparent backdrop-blur-sm hover:scale-105 active:scale-95 transition-all duration-200"
               title="Export T-pose Model"
+              aria-label="Export T-pose Model"
             >
               <Download size={16} />
             </button>
@@ -4281,6 +4282,8 @@ const ThreeViewer = forwardRef(({
                 : 'bg-bg-secondary bg-opacity-90 text-text-secondary hover:text-text-primary border border-transparent'
             } backdrop-blur-sm hover:scale-105 active:scale-95`}
             title="Auto Rotate (A)"
+            aria-label="Toggle auto rotate"
+            aria-pressed={autoRotate}
           >
             <RotateCw size={16} className={`transition-transform duration-500 ${autoRotate ? 'animate-[spin_3s_linear_infinite]' : ''}`} />
           </button>
@@ -4293,6 +4296,8 @@ const ThreeViewer = forwardRef(({
                 : 'bg-bg-secondary bg-opacity-90 text-text-secondary hover:text-text-primary border border-transparent'
             } backdrop-blur-sm hover:scale-105 active:scale-95`}
             title="Toggle Grid (G)"
+            aria-label="Toggle grid"
+            aria-pressed={showGrid}
           >
             <Grid3X3 size={16} />
           </button>
@@ -4305,12 +4310,16 @@ const ThreeViewer = forwardRef(({
                 : 'bg-bg-secondary bg-opacity-90 text-text-secondary hover:text-text-primary border border-transparent'
             } backdrop-blur-sm hover:scale-105 active:scale-95`}
             title="Toggle Bounds (B)"
+            aria-label="Toggle bounds"
+            aria-pressed={showBounds}
           >
             <Box size={16} />
           </button>
           
           <button
             onClick={() => setShowStats(!showStats)}
+            aria-label="Toggle stats"
+            aria-pressed={showStats}
             className={`p-2 rounded-md transition-all duration-200 ${
               showStats 
                 ? 'bg-primary bg-opacity-20 text-primary border border-primary border-opacity-50' 
@@ -4659,43 +4668,43 @@ const ThreeViewer = forwardRef(({
             <div className="absolute bottom-16 left-4 bg-bg-secondary bg-opacity-95 backdrop-blur-md rounded-lg border border-border-primary p-4 z-20 min-w-[240px] animate-scale-in">
               <div className="space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">F</kbd>
-                  <span className="text-text-muted ml-3">Focus on model</span>
+                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">F</kbd>
+                  <span className="text-text-secondary ml-3">Focus on model</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">R</kbd>
-                  <span className="text-text-muted ml-3">Reset camera</span>
+                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">R</kbd>
+                  <span className="text-text-secondary ml-3">Reset camera</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">1/2/3</kbd>
-                  <span className="text-text-muted ml-3">Camera views</span>
+                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">1/2/3</kbd>
+                  <span className="text-text-secondary ml-3">Camera views</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">G</kbd>
-                  <span className="text-text-muted ml-3">Toggle grid</span>
+                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">G</kbd>
+                  <span className="text-text-secondary ml-3">Toggle grid</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">B</kbd>
-                  <span className="text-text-muted ml-3">Toggle bounds</span>
+                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">B</kbd>
+                  <span className="text-text-secondary ml-3">Toggle bounds</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">S</kbd>
-                  <span className="text-text-muted ml-3">Toggle stats</span>
+                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">S</kbd>
+                  <span className="text-text-secondary ml-3">Toggle stats</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">A</kbd>
-                  <span className="text-text-muted ml-3">Auto rotate</span>
+                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">A</kbd>
+                  <span className="text-text-secondary ml-3">Auto rotate</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">H</kbd>
-                  <span className="text-text-muted ml-3">Hand controls</span>
+                  <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">H</kbd>
+                  <span className="text-text-secondary ml-3">Hand controls</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex gap-1">
-                    <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">?</kbd>
-                    <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-secondary font-mono text-[11px]">/</kbd>
+                    <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">?</kbd>
+                    <kbd className="px-2 py-1 bg-bg-primary rounded border border-border-primary text-text-primary font-mono text-xs">/</kbd>
                   </div>
-                  <span className="text-text-muted ml-3">Toggle help</span>
+                  <span className="text-text-secondary ml-3">Toggle help</span>
                 </div>
               </div>
             </div>

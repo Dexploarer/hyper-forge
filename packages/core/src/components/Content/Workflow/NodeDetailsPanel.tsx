@@ -199,7 +199,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
                           {field.label}
                         </div>
                         {field.description && (
-                          <div className="text-[var(--text-tertiary)] text-[10px] mt-0.5">
+                          <div className="text-[var(--text-secondary)] text-xs mt-0.5">
                             {field.description}
                           </div>
                         )}
@@ -213,7 +213,7 @@ export const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({
                       <td className="px-3 py-2.5 text-center">
                         <span
                           className={cn(
-                            'inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-semibold',
+                            'inline-flex items-center justify-center w-5 h-5 rounded text-xs font-semibold',
                             field.nullable
                               ? 'bg-yellow-500/10 text-yellow-600'
                               : 'bg-green-500/10 text-green-600'

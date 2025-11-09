@@ -70,7 +70,7 @@ export function BottomNav({ currentView, onViewChange, onMoreClick }: BottomNavP
                 )}
               />
               <span className={cn(
-                'text-[10px] font-medium mt-0.5 leading-none',
+                'text-xs font-medium mt-0.5 leading-none',
                 isActive && 'text-primary'
               )}>
                 {item.label}
