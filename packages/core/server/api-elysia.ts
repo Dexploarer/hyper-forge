@@ -41,6 +41,7 @@ import { voiceGenerationRoutes } from "./routes/voice-generation";
 import { musicRoutes } from "./routes/music";
 import { soundEffectsRoutes } from "./routes/sound-effects";
 import { contentGenerationRoutes } from "./routes/content-generation";
+import { usersRoutes } from "./routes/users";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -204,6 +205,7 @@ const app = new Elysia()
   .use(healthRoutes)
   .use(promptRoutes)
   .use(aiVisionRoutes)
+  .use(usersRoutes)
   .use(createAssetRoutes(ROOT_DIR, assetService))
   .use(createMaterialRoutes(ROOT_DIR))
   .use(createRetextureRoutes(ROOT_DIR, retextureService))

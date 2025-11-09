@@ -14,6 +14,8 @@ import {
   integer,
   index,
 } from "drizzle-orm/pg-core";
+import { users } from "./users.schema";
+import { projects } from "./users.schema";
 
 /**
  * Assets table
@@ -29,6 +31,14 @@ export const assets = pgTable(
     description: text("description"),
     type: varchar("type", { length: 100 }).notNull(), // character, item, environment, equipment
     category: varchar("category", { length: 100 }),
+
+    // Ownership (for organization, not access control)
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
 
     // File storage (paths relative to gdd-assets directory)
     filePath: varchar("file_path", { length: 512 }), // e.g., "asset-id/model.glb"
@@ -74,6 +84,8 @@ export const assets = pgTable(
     publishedAt: timestamp("published_at", { withTimezone: true }),
   },
   (table) => ({
+    ownerIdx: index("idx_assets_owner").on(table.ownerId),
+    projectIdx: index("idx_assets_project").on(table.projectId),
     typeIdx: index("idx_assets_type").on(table.type),
     statusIdx: index("idx_assets_status").on(table.status),
     tagsIdx: index("idx_assets_tags").using("gin", table.tags),

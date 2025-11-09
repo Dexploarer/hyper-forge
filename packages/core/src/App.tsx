@@ -16,6 +16,7 @@ import { GenerationPage } from "./pages/GenerationPage";
 import { HandRiggingPage } from "./pages/HandRiggingPage";
 import { PlaytesterSwarmPage } from "./pages/PlaytesterSwarmPage";
 import { RetargetAnimatePage } from "./pages/RetargetAnimatePage";
+import { AdminDashboardPage } from "./pages/AdminDashboardPage";
 
 function AppContent() {
   const { isAuthenticated } = useAuth();
@@ -44,8 +45,10 @@ function AppContent() {
         {currentView === NAVIGATION_VIEWS.PLAYTESTER && <PlaytesterSwarmPage />}
         {currentView === NAVIGATION_VIEWS.EQUIPMENT && <UnifiedEquipmentPage />}
         {currentView === NAVIGATION_VIEWS.HAND_RIGGING && <HandRiggingPage />}
+        {/* ARMOR_FITTING route kept for backward compatibility - redirects to unified equipment page */}
         {currentView === NAVIGATION_VIEWS.ARMOR_FITTING && <UnifiedEquipmentPage />}
         {currentView === NAVIGATION_VIEWS.RETARGET_ANIMATE && <RetargetAnimatePage />}
+        {currentView === NAVIGATION_VIEWS.ADMIN_DASHBOARD && <AdminDashboardPage />}
       </MainLayout>
     </>
   );

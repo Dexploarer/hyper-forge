@@ -57,7 +57,7 @@ interface SwarmPlaytestResult {
   recommendations: ActionableRecommendation[];
 }
 
-interface ConsensusResult {
+export interface ConsensusResult {
   recommendation: Recommendation;
   confidence: number;
   agreement: "strong" | "moderate";

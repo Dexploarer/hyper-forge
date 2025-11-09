@@ -43,7 +43,7 @@ export const musicRoutes = new Elysia({
           const audioBuffer = await musicService.generateMusic(body);
 
           // Return audio file directly as binary
-          return new Response(new Blob([audioBuffer], { type: "audio/mpeg" }), {
+          return new Response(new Blob([new Uint8Array(audioBuffer)], { type: "audio/mpeg" }), {
             headers: {
               "Content-Type": "audio/mpeg",
               "Content-Length": audioBuffer.length.toString(),

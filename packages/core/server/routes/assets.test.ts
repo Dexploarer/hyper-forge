@@ -7,7 +7,6 @@ import { describe, it, expect, beforeAll, afterEach } from "bun:test";
 import { Elysia } from "elysia";
 import { createAssetRoutes } from "./assets";
 import path from "path";
-import fs from "fs";
 
 // Mock AssetService
 const mockAssets = [

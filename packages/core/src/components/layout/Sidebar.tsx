@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import {
   Sparkles,
   Package,
-  Wrench,
   Hand,
   Shield,
   Play,
@@ -12,7 +11,8 @@ import {
   Music,
   ScrollText,
   Library,
-  TestTube2
+  TestTube2,
+  Users
 } from 'lucide-react'
 import { NavigationView } from '@/types'
 import { NAVIGATION_VIEWS } from '@/constants'
@@ -70,9 +70,9 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     view: NAVIGATION_VIEWS.EQUIPMENT,
-    icon: Wrench,
-    label: 'Equipment',
-    description: 'Weapon & armor fitting'
+    icon: Shield,
+    label: 'Equipment Fitting',
+    description: 'Weapons, armor & helmets'
   },
   {
     view: NAVIGATION_VIEWS.HAND_RIGGING,
@@ -81,16 +81,16 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Auto-grip detection'
   },
   {
-    view: NAVIGATION_VIEWS.ARMOR_FITTING,
-    icon: Shield,
-    label: 'Armor Fitting',
-    description: 'Character armor placement'
-  },
-  {
     view: NAVIGATION_VIEWS.RETARGET_ANIMATE,
     icon: Play,
     label: 'Animation',
     description: 'Retarget & animate'
+  },
+  {
+    view: NAVIGATION_VIEWS.ADMIN_DASHBOARD,
+    icon: Users,
+    label: 'Admin Dashboard',
+    description: 'Manage users & admins'
   }
 ]
 

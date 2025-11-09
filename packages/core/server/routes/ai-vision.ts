@@ -125,11 +125,11 @@ ONLY select the cylindrical grip area where fingers would wrap around.`
         throw new Error(`OpenAI API error: ${response.status} - ${error}`)
       }
 
-      const data = await response.json()
+      const data = await response.json() as unknown as { choices: { message: { content: string } }[] }
       let gripData
 
       try {
-        gripData = JSON.parse(data.choices[0].message.content)
+        gripData = JSON.parse((data as { choices: { message: { content: string } }[] }).choices[0].message.content as unknown as string)
       } catch (parseError) {
         // If parsing fails, return default values
         gripData = {
@@ -218,12 +218,13 @@ Respond with ONLY a JSON object:
         throw new Error(`OpenAI API error: ${response.status} - ${error}`)
       }
 
-      const data = await response.json()
+      const data = await response.json() as unknown as { choices: { message: { content: string } }[] }
       let orientationData
 
       try {
-        orientationData = JSON.parse(data.choices[0].message.content)
-      } catch (parseError) {
+        orientationData = JSON.parse((data as { choices: { message: { content: string } }[] }).choices[0].message.content as unknown as string)
+      } catch (parseError: unknown) {
+        console.error('Error parsing AI response:', parseError)
         orientationData = {
           needsFlip: false,
           currentOrientation: "Unable to parse AI response",
