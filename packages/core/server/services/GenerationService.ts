@@ -1182,12 +1182,16 @@ export class GenerationService extends EventEmitter {
       pipeline.progress = 100;
 
       // Compile final asset info
+      const textureResult = pipeline.results.textureGeneration as
+        | { variants: VariantResult[]; totalVariants: number }
+        | undefined;
+
       pipeline.finalAsset = {
         id: pipeline.config.assetId,
         name: pipeline.config.name,
         modelUrl: `/assets/${pipeline.config.assetId}/${pipeline.config.assetId}.glb`,
         conceptArtUrl: `/assets/${pipeline.config.assetId}/concept-art.png`,
-        variants: pipeline.results.textureGeneration?.variants || [],
+        variants: textureResult?.variants || [],
       };
     } catch (error) {
       pipeline.status = "failed";
