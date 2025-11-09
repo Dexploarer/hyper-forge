@@ -43,6 +43,7 @@ import { soundEffectsRoutes } from "./routes/sound-effects";
 import { contentGenerationRoutes } from "./routes/content-generation";
 import { usersRoutes } from "./routes/users";
 import { vectorSearchRoutes } from "./routes/vector-search";
+import { createSeedDataRoutes } from "./routes/seed-data";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -145,6 +146,14 @@ const app = new Elysia()
             name: "Vector Search",
             description: "Semantic search using Qdrant vector database",
           },
+          {
+            name: "Seed Data",
+            description: "Generate interconnected game worlds with NPCs, quests, lore, and music",
+          },
+          {
+            name: "Relationships",
+            description: "Entity relationship management and graph queries",
+          },
         ],
         components: {
           securitySchemes: {
@@ -225,6 +234,7 @@ const app = new Elysia()
   .use(soundEffectsRoutes)
   .use(contentGenerationRoutes)
   .use(vectorSearchRoutes)
+  .use(createSeedDataRoutes())
 
   // TEMPORARY: Debug endpoint to check paths
   .get("/api/admin/debug-paths", async () => {

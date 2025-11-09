@@ -7,3 +7,5 @@ export * from "./ElevenLabsVoiceService";
 export * from "./ElevenLabsMusicService";
 export * from "./ElevenLabsSoundEffectsService";
 export * from "./ContentGenerationService";
+export * from "./SeedDataService";
+export * from "./RelationshipService";
