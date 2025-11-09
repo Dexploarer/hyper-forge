@@ -26,7 +26,7 @@ const Badge = React.forwardRef<HTMLSpanElement, BadgeProps>(
       <span
         ref={ref}
         className={cn(
-          'badge',
+          'badge micro-badge-pulse',
           variants[variant],
           sizes[size],
           className

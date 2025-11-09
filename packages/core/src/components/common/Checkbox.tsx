@@ -51,7 +51,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             {...props}
           />
           <div className={cn(
-            "flex items-center justify-center rounded-sm border-2 transition-all duration-200",
+            "flex items-center justify-center rounded-sm border-2 transition-all duration-200 micro-checkbox-interactive",
             sizes[size],
             "bg-bg-secondary",
             props.checked 
@@ -65,7 +65,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             {props.checked && (
               <Check 
                 size={iconSizes[size]} 
-                className="text-white animate-scale-in"
+                className="text-white micro-checkbox-check"
                 strokeWidth={3}
               />
             )}

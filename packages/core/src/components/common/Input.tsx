@@ -12,7 +12,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, error = false, ...props }, ref) => {
     return (
       <input
-        className={cn("input", error && "input-error", className)}
+        className={cn(
+          "input micro-input-focus",
+          error && "input-error",
+          className
+        )}
         ref={ref}
         {...props}
       />
@@ -33,7 +37,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <textarea
         className={cn(
-          "input min-h-[80px] resize-y",
+          "input min-h-[80px] resize-y micro-input-focus",
           error && "input-error",
           className,
         )}
@@ -56,7 +60,11 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, error = false, children, ...props }, ref) => {
     return (
       <select
-        className={cn("input", error && "input-error", className)}
+        className={cn(
+          "input micro-input-focus micro-select-interactive",
+          error && "input-error",
+          className
+        )}
         ref={ref}
         {...props}
       >

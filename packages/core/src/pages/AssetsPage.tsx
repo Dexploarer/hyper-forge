@@ -13,6 +13,7 @@ import { BulkActionsBar } from "@/components/Assets/BulkActionsBar";
 import { EmptyAssetState } from "@/components/Assets/EmptyAssetState";
 import { GenerationHistoryTimeline } from "@/components/Assets/GenerationHistoryTimeline";
 import { LoadingState } from "@/components/Assets/LoadingState";
+import { SkeletonList } from "@/components/common";
 import RegenerateModal from "@/components/Assets/RegenerateModal";
 import RetextureModal from "@/components/Assets/RetextureModal";
 import SpriteGenerationModal from "@/components/Assets/SpriteGenerationModal";
@@ -88,7 +89,18 @@ export const AssetsPage: React.FC = () => {
   );
 
   if (loading) {
-    return <LoadingState />;
+    return (
+      <div className="h-full overflow-y-auto p-4">
+        <div className="card overflow-hidden flex flex-col h-full bg-gradient-to-br from-bg-primary to-bg-secondary">
+          <div className="p-4 border-b border-border-primary bg-bg-primary bg-opacity-30">
+            <div className="h-6 w-48 bg-bg-tertiary rounded skeleton-shimmer" />
+          </div>
+          <div className="flex-1 overflow-y-auto p-2">
+            <SkeletonList count={10} />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

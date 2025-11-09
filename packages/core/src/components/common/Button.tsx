@@ -40,6 +40,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           variants[variant],
           sizes[size],
           loading && 'cursor-wait',
+          'micro-interactive-button',
           className
         )}
         ref={ref}
@@ -49,7 +50,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {loading && (
           <span className="spinner" />
         )}
-        {children}
+        <span className="button-content">{children}</span>
       </button>
     )
   }

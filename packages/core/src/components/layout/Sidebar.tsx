@@ -162,7 +162,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+      <nav id="navigation" aria-label="Main navigation" className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
           const isActive = currentView === item.view

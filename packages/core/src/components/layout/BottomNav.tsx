@@ -55,7 +55,7 @@ export function BottomNav({ currentView, onViewChange, onMoreClick }: BottomNavP
               key={item.view}
               onClick={handleClick}
               className={cn(
-                'flex flex-col items-center justify-center min-w-[64px] h-12 px-3 rounded-xl transition-all duration-200 active:scale-95',
+                'flex flex-col items-center justify-center min-w-[64px] h-12 px-3 rounded-xl transition-all duration-200 micro-bounce',
                 isActive
                   ? 'bg-gradient-to-br from-primary/20 to-accent/20 text-primary'
                   : 'text-text-secondary hover:text-text-primary hover:bg-white/5'

@@ -7,13 +7,16 @@ import { useState, useCallback } from 'react'
 
 import { useApp } from '../contexts/AppContext'
 
-import { apiFetch } from '@/utils/api'
+import { apiFetch, RequestOptions } from '@/utils/api'
+import { RetryOptions } from '@/utils/retry'
 
 
 interface ApiOptions extends RequestInit {
   showError?: boolean
   showSuccess?: boolean
   successMessage?: string
+  retry?: RetryOptions | boolean
+  timeoutMs?: number
 }
 
 export function useApi() {
@@ -34,13 +37,16 @@ export function useApi() {
     setLoading(true)
     
     try {
+      const { retry, timeoutMs, ...restFetchOptions } = fetchOptions
       const response = await apiFetch(url, {
-        ...fetchOptions,
+        ...restFetchOptions,
+        retry: retry ?? true, // Default to retry enabled
+        timeoutMs: timeoutMs ?? 15000,
         headers: {
           'Content-Type': 'application/json',
-          ...fetchOptions.headers
+          ...restFetchOptions.headers
         }
-      })
+      } as RequestOptions)
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ 

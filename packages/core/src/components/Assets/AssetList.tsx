@@ -45,17 +45,29 @@ const AssetList: React.FC<AssetListProps> = ({
     e.stopPropagation() // Prevent asset selection
     setUpdatingFavorites(prev => new Set(prev).add(asset.id))
 
+    // Optimistic update - update UI immediately
+    const previousFavoriteState = asset.metadata.isFavorite
+    asset.metadata.isFavorite = !asset.metadata.isFavorite
+
+    // Trigger re-render immediately for optimistic update
+    if (onAssetDelete) {
+      if (selectedAsset?.id === asset.id) {
+        handleAssetSelect(asset)
+      }
+    }
+
     try {
       await apiFetch(`/api/assets/${asset.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          isFavorite: !asset.metadata.isFavorite
-        })
+          isFavorite: asset.metadata.isFavorite
+        }),
+        retry: {
+          maxRetries: 3,
+          initialDelay: 1000,
+        }
       })
-
-      // Update local asset metadata
-      asset.metadata.isFavorite = !asset.metadata.isFavorite
 
       // Show success notification
       showNotification(
@@ -64,16 +76,19 @@ const AssetList: React.FC<AssetListProps> = ({
           : 'Removed from favorites',
         'success'
       )
-
-      // Trigger re-render by calling onAssetDelete (which triggers reload)
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error)
+      
+      // Rollback optimistic update on error
+      asset.metadata.isFavorite = previousFavoriteState
+      
+      // Trigger re-render to show rollback
       if (onAssetDelete) {
-        // Force a re-render by selecting the same asset again if it's selected
         if (selectedAsset?.id === asset.id) {
           handleAssetSelect(asset)
         }
       }
-    } catch (error) {
-      console.error('Failed to toggle favorite:', error)
+      
       showNotification(
         'Failed to update favorite. Please try again.',
         'error'
@@ -406,9 +421,9 @@ const AssetList: React.FC<AssetListProps> = ({
 
                     {/* Base Items with Variants */}
                     {typeData.groups.map((group, groupIndex) => (
-                      <div key={group.base.id} className="animate-scale-in-top" style={{ animationDelay: `${(typeIndex * 50) + (groupIndex * 30)}ms` }}>
+                      <div key={group.base.id} className="micro-list-item" style={{ animationDelay: `${(typeIndex * 50) + (groupIndex * 30)}ms` }}>
                         {/* Base Item */}
-                        <div className={`group relative rounded-lg transition-all duration-200 ${selectedAsset?.id === group.base.id
+                        <div className={`group relative rounded-lg transition-all duration-200 micro-state-transition ${selectedAsset?.id === group.base.id
                             ? 'bg-primary bg-opacity-5'
                             : 'hover:bg-bg-primary hover:bg-opacity-50'
                           }`}>
@@ -514,11 +529,11 @@ const AssetList: React.FC<AssetListProps> = ({
 
                         {/* Variants */}
                         {expandedGroups.has(group.base.id) && (
-                          <div className="ml-10 mt-0.5 space-y-0.5 animate-scale-in-top">
+                          <div className="ml-10 mt-0.5 space-y-0.5">
                             {group.variants.map((variant, variantIndex) => (
                               <div
                                 key={variant.id}
-                                className={`group relative rounded-md cursor-pointer transition-all duration-200 ${selectedAsset?.id === variant.id
+                                className={`group relative rounded-md cursor-pointer transition-all duration-200 micro-state-transition ${selectedAsset?.id === variant.id
                                     ? 'bg-primary bg-opacity-5'
                                     : 'hover:bg-bg-primary hover:bg-opacity-30'
                                   }`}
@@ -614,7 +629,7 @@ const AssetList: React.FC<AssetListProps> = ({
                     {typeData.standalone.map((asset, index) => (
                       <div
                         key={asset.id}
-                        className={`group relative rounded-lg transition-all duration-200 animate-scale-in-top ${selectedAsset?.id === asset.id
+                        className={`group relative rounded-lg transition-all duration-200 micro-list-item micro-state-transition ${selectedAsset?.id === asset.id
                             ? 'bg-primary bg-opacity-5'
                             : 'hover:bg-bg-primary hover:bg-opacity-50'
                           }`}
@@ -764,7 +779,7 @@ const AssetList: React.FC<AssetListProps> = ({
                       return (
                         <div
                           key={asset.id}
-                          className={`group relative rounded-lg transition-all duration-200 animate-scale-in-top ${selectedAsset?.id === asset.id
+                          className={`group relative rounded-lg transition-all duration-200 micro-list-item micro-state-transition ${selectedAsset?.id === asset.id
                               ? 'bg-primary bg-opacity-5'
                               : 'hover:bg-bg-primary hover:bg-opacity-50'
                             }`}

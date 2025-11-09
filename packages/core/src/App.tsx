@@ -1,3 +1,4 @@
+import { SkipLinks } from "./components/common";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import NotificationBar from "./components/shared/NotificationBar";
 import { MainLayout } from "./components/layout";
@@ -31,6 +32,7 @@ function AppContent() {
   // Show main app with Canva-style layout
   return (
     <>
+      <SkipLinks />
       <NotificationBar />
       <MainLayout currentView={currentView} onViewChange={navigateTo}>
         {currentView === NAVIGATION_VIEWS.ASSETS && <AssetsPage />}

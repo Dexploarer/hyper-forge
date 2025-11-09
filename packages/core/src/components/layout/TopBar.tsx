@@ -3,6 +3,7 @@ import { NavigationView } from '@/types'
 import { NAVIGATION_VIEWS } from '@/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { UserProfileMenu, UserProfileModal } from '@/components/User'
+import { ThemeSwitcher } from '@/components/common'
 
 interface TopBarProps {
   currentView: NavigationView
@@ -57,6 +58,9 @@ export function TopBar({ currentView }: TopBarProps) {
 
         {/* Right side - User info & actions */}
         <div className="flex items-center gap-3">
+          {/* Theme Switcher */}
+          <ThemeSwitcher size="md" />
+          
           {/* User Profile Menu */}
           <UserProfileMenu
             user={user}

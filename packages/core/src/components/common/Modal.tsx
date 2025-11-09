@@ -57,7 +57,7 @@ const Modal: React.FC<ModalProps> = ({
   
   return (
     <div
-      className="modal-overlay animate-fade-in"
+      className="modal-overlay animate-fade-in micro-modal-backdrop"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose()
@@ -67,12 +67,13 @@ const Modal: React.FC<ModalProps> = ({
       <div
         ref={modalRef}
         className={cn(
-          'modal-content w-full animate-modal-appear',
+          'modal-content w-full animate-modal-appear micro-modal-content',
           sizes[size],
           className
         )}
         role="dialog"
         aria-modal="true"
+        onClick={(e) => e.stopPropagation()}
       >
         {children}
       </div>
@@ -159,7 +160,7 @@ const ModalHeader = React.forwardRef<HTMLDivElement, ModalHeaderProps>(
       {onClose && (
         <button
           onClick={onClose}
-          className="icon-btn"
+          className="icon-btn micro-icon-rotate"
           aria-label="Close modal"
         >
           <svg

@@ -178,6 +178,28 @@
     to { opacity: 1; }
   }
   
+  @keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  @keyframes slideDown {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  @keyframes bounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
   @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
@@ -207,10 +229,47 @@
     0% { transform: translateX(-100%); }
     100% { transform: translateX(100%); }
   }
+  
+  @keyframes skeleton-shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  
+  @keyframes skeleton-wave {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.4;
+    }
+  }
 }
 
 /* Component Classes */
 @layer components {
+  /* Skip Links - Accessibility (WCAG 2.1 Level A) */
+  .skip-links-container {
+    @apply absolute top-0 left-0 z-[9999];
+  }
+  
+  .skip-link {
+    @apply absolute -top-12 left-4 z-[9999]
+           px-4 py-2 bg-[var(--bg-primary)] text-[var(--text-primary)]
+           border-2 border-[var(--color-primary)] rounded-md
+           font-medium text-sm
+           transition-all duration-200
+           focus:top-4 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2;
+    will-change: top;
+  }
+  
+  .skip-link:focus {
+    @apply top-4;
+  }
+  
   /* Layout Components */
   .container {
     @apply mx-auto px-4 sm:px-6 lg:px-8;
@@ -227,14 +286,43 @@
   /* Card Components */
   .card {
     @apply bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg;
+    transition: all 0.2s ease-out;
+    will-change: transform, box-shadow, border-color;
   }
   
   .card-hover {
-    @apply card hover:border-[var(--border-hover)] transition-colors duration-[var(--duration-base)];
+    @apply card hover:border-[var(--border-hover)] transition-all duration-[var(--duration-base)];
   }
   
   .card-interactive {
     @apply card-hover cursor-pointer hover:shadow-md;
+  }
+  
+  /* Enhanced Card Micro-interactions */
+  .micro-card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .micro-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-color: var(--border-hover);
+  }
+  
+  .micro-card-interactive {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+  
+  .micro-card-interactive:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    border-color: var(--color-primary);
+  }
+  
+  .micro-card-interactive:active {
+    transform: translateY(-2px) scale(1);
+    transition: all 0.1s ease-out;
   }
   
   /* Button Components */
@@ -243,26 +331,93 @@
            rounded-md transition-all duration-[var(--duration-base)]
            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[var(--color-primary)]
            disabled:opacity-50 disabled:cursor-not-allowed;
+    will-change: transform, box-shadow, background-color;
   }
   
   .btn-primary {
     @apply btn bg-[var(--color-primary)] text-white
            hover:bg-[var(--color-primary-dark)] active:scale-[0.98];
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+  
+  .btn-primary:active {
+    transform: translateY(0) scale(0.98);
   }
   
   .btn-secondary {
     @apply btn bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border-primary)]
            hover:bg-[var(--bg-hover)] hover:border-[var(--border-hover)];
+    transition: all 0.2s ease-out;
+  }
+  
+  .btn-secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
   
   .btn-ghost {
     @apply btn bg-transparent text-[var(--text-secondary)]
            hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)];
+    transition: all 0.2s ease-out;
+  }
+  
+  .btn-ghost:hover {
+    transform: translateY(-1px);
   }
   
   .btn-danger {
     @apply btn bg-[var(--color-error)] text-white
            hover:bg-[var(--color-error-dark)] active:scale-[0.98];
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .btn-danger:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  }
+  
+  /* Enhanced Button Micro-interactions */
+  .micro-interactive-button {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .micro-interactive-button .button-content {
+    position: relative;
+    z-index: 1;
+    transition: transform 0.2s ease-out;
+  }
+  
+  .micro-interactive-button:hover .button-content {
+    transform: translateY(-1px);
+  }
+  
+  .micro-interactive-button:active .button-content {
+    transform: translateY(0);
+  }
+  
+  .micro-interactive-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.4s ease-out, height 0.4s ease-out;
+    pointer-events: none;
+  }
+  
+  .micro-interactive-button:hover::before {
+    width: 300px;
+    height: 300px;
   }
   
   /* Icon Button */
@@ -280,18 +435,325 @@
            border-[var(--color-primary)] border-opacity-50;
   }
   
+  /* Skeleton Loaders */
+  .skeleton {
+    @apply bg-[var(--bg-tertiary)] relative overflow-hidden;
+    will-change: background-position, opacity;
+  }
+  
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--bg-tertiary) 0%,
+      var(--bg-hover) 50%,
+      var(--bg-tertiary) 100%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite ease-in-out;
+  }
+  
+  .skeleton-wave {
+    animation: skeleton-wave 1.5s infinite ease-in-out;
+  }
+  
+  .skeleton-group {
+    @apply flex flex-col gap-3;
+  }
+  
+  /* Micro-interactions - Enhanced UX */
+  .micro-bounce {
+    transition: transform 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    will-change: transform;
+  }
+  
+  .micro-bounce:active {
+    transform: scale(0.95);
+  }
+  
+  .micro-lift {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+    will-change: transform, box-shadow;
+  }
+  
+  .micro-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .micro-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .micro-ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+  
+  .micro-ripple:active::after {
+    width: 300px;
+    height: 300px;
+  }
+  
+  /* Icon Micro-interactions */
+  .micro-icon-rotate {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+  
+  .micro-icon-rotate:hover {
+    transform: rotate(90deg) scale(1.1);
+  }
+  
+  .micro-icon-scale {
+    transition: transform 0.2s ease-out;
+    will-change: transform;
+  }
+  
+  .micro-icon-scale:hover {
+    transform: scale(1.15);
+  }
+  
+  .micro-icon-bounce {
+    transition: transform 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    will-change: transform;
+  }
+  
+  .micro-icon-bounce:hover {
+    transform: translateY(-2px) scale(1.1);
+  }
+  
+  /* Badge Micro-interactions */
+  .micro-badge-pulse {
+    animation: badgePulse 2s ease-in-out infinite;
+    will-change: opacity, transform;
+  }
+  
+  @keyframes badgePulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+  }
+  
+  /* Modal Micro-interactions */
+  .micro-modal-backdrop {
+    backdrop-filter: blur(4px);
+    transition: backdrop-filter 0.3s ease-out;
+  }
+  
+  .micro-modal-content {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform, opacity;
+  }
+  
+  /* Checkbox Micro-interactions */
+  .micro-checkbox-check {
+    animation: checkboxCheck 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform, opacity;
+  }
+  
+  @keyframes checkboxCheck {
+    0% {
+      opacity: 0;
+      transform: scale(0) rotate(-180deg);
+    }
+    50% {
+      transform: scale(1.2) rotate(10deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+  }
+  
+  .micro-checkbox-interactive {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, background-color, border-color;
+  }
+  
+  .micro-checkbox-interactive:hover:not(:has(input:disabled)) {
+    transform: scale(1.1);
+  }
+  
+  .micro-checkbox-interactive:has(input:checked) {
+    animation: checkboxPulse 0.3s ease-out;
+  }
+  
+  @keyframes checkboxPulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.15);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+  
+  /* List Item Stagger Animation */
+  .micro-list-item {
+    animation: listItemFadeIn 0.4s ease-out backwards;
+  }
+  
+  @keyframes listItemFadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Smooth State Transitions */
+  .micro-state-transition {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform, opacity, background-color, border-color;
+  }
+  
+  /* Glow Effects */
+  .micro-glow {
+    transition: box-shadow 0.3s ease-out;
+    will-change: box-shadow;
+  }
+  
+  .micro-glow:hover {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  }
+  
+  .micro-glow-primary {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+    transition: box-shadow 0.3s ease-out;
+  }
+  
+  .micro-glow-primary:hover {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+  }
+  
+  /* Smooth Scale Animations */
+  .micro-scale-on-hover {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+  }
+  
+  .micro-scale-on-hover:hover {
+    transform: scale(1.05);
+  }
+  
+  .micro-scale-on-active {
+    transition: transform 0.1s ease-out;
+    will-change: transform;
+  }
+  
+  .micro-scale-on-active:active {
+    transform: scale(0.95);
+  }
+  
+  /* Smooth Fade Transitions */
+  .micro-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .micro-fade-out {
+    animation: fadeOut 0.3s ease-out;
+  }
+  
+  /* Smooth Slide Animations */
+  .micro-slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .micro-slide-down {
+    animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Animation performance hints */
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+    will-change: transform, opacity;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+    will-change: opacity;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+    will-change: transform, opacity;
+  }
+  
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+    will-change: transform, opacity;
+  }
+  
+  .animate-bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    will-change: transform, opacity;
+  }
+  
   /* Form Components */
   .input {
     @apply w-full px-3 py-2 text-sm
            bg-[var(--bg-secondary)] text-[var(--text-primary)]
            border border-[var(--border-primary)] rounded-md
            placeholder:text-[var(--text-muted)]
-           transition-colors duration-[var(--duration-base)]
+           transition-all duration-[var(--duration-base)]
            focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent;
+    will-change: transform, box-shadow, border-color;
   }
   
   .input-error {
     @apply border-[var(--color-error)] focus:ring-[var(--color-error)];
+  }
+  
+  /* Enhanced Input Micro-interactions */
+  .micro-input-focus {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .micro-input-focus:focus {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  }
+  
+  .micro-input-focus:hover:not(:focus):not(:disabled) {
+    border-color: var(--border-hover);
+    box-shadow: 0 0 0 1px var(--border-hover);
+  }
+  
+  .micro-select-interactive {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+    transition: all 0.2s ease-out;
+  }
+  
+  .micro-select-interactive:hover {
+    border-color: var(--border-hover);
+  }
+  
+  .micro-select-interactive:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236366f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
   }
   
   .label {
@@ -364,10 +826,40 @@
   .modal-overlay {
     @apply fixed inset-0 z-50 flex items-center justify-center p-4
            bg-black bg-opacity-50 backdrop-blur-sm;
+    animation: modalBackdropFadeIn 0.3s ease-out;
+    will-change: opacity, backdrop-filter;
+  }
+  
+  @keyframes modalBackdropFadeIn {
+    from {
+      opacity: 0;
+      backdrop-filter: blur(0px);
+    }
+    to {
+      opacity: 1;
+      backdrop-filter: blur(4px);
+    }
   }
   
   .modal-content {
     @apply bg-[var(--bg-secondary)] rounded-xl shadow-xl max-h-[90vh] overflow-hidden;
+    animation: modalContentAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform, opacity;
+  }
+  
+  @keyframes modalContentAppear {
+    from {
+      opacity: 0;
+      transform: scale(0.9) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+  
+  .animate-modal-appear {
+    animation: modalContentAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 }
 

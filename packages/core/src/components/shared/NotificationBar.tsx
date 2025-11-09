@@ -24,10 +24,14 @@ const NotificationBar: React.FC = () => {
   const bgColor = notification.type === 'success' ? 'bg-success' : 'bg-error'
 
   return (
-    <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${bgColor} text-white animate-slide-up`}>
+    <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${bgColor} text-white animate-slide-up micro-lift`}>
       {icon}
       <span className="font-medium">{notification.message}</span>
-      <button onClick={clearNotification} className="ml-2 hover:opacity-80">
+      <button 
+        onClick={clearNotification} 
+        className="ml-2 hover:opacity-80 micro-bounce transition-opacity"
+        aria-label="Close notification"
+      >
         <X size={18} />
       </button>
     </div>

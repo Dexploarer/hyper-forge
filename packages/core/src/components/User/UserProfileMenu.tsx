@@ -196,7 +196,7 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
                 setIsOpen(false)
                 onOpenProfile()
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-bg-tertiary rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset micro-bounce"
               role="menuitem"
               aria-label="Edit profile"
             >
@@ -209,7 +209,7 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
                   setIsOpen(false)
                   onLogout()
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-inset"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-inset micro-bounce"
                 role="menuitem"
                 aria-label="Logout"
               >

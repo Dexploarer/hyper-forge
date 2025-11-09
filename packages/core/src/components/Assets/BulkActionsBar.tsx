@@ -138,7 +138,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
             <button
               onClick={() => handleBulkFavorite(true)}
               disabled={isProcessing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-yellow-500/10 text-text-secondary hover:text-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-yellow-500/10 text-text-secondary hover:text-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed micro-bounce"
               title="Add to favorites"
               aria-label="Add to favorites"
             >
@@ -150,7 +150,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
             <button
               onClick={() => handleBulkFavorite(false)}
               disabled={isProcessing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-secondary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-secondary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed micro-bounce"
               title="Remove from favorites"
               aria-label="Remove from favorites"
             >
@@ -218,7 +218,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
           <button
             onClick={clearSelection}
             disabled={isProcessing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-tertiary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-bg-hover text-text-tertiary hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed micro-bounce"
             title="Clear selection"
             aria-label="Clear selection"
           >

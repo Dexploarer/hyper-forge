@@ -26,7 +26,7 @@ export function MainLayout({ currentView, onViewChange, children }: MainLayoutPr
         />
 
         {/* Main Content with bottom padding for nav */}
-        <main className="flex-1 overflow-auto relative pb-16">
+        <main id="main-content" className="flex-1 overflow-auto relative pb-16" tabIndex={-1}>
           {/* Subtle grid background */}
           <div className="absolute inset-0 pointer-events-none opacity-[0.02]">
             <div
@@ -71,7 +71,7 @@ export function MainLayout({ currentView, onViewChange, children }: MainLayoutPr
           <TopBar currentView={currentView} />
 
           {/* Main Canvas/Workspace */}
-          <main className="flex-1 overflow-auto relative">
+          <main id="main-content" className="flex-1 overflow-auto relative" tabIndex={-1}>
             {/* Subtle grid background */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.02]">
               <div
