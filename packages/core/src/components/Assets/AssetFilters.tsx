@@ -39,14 +39,23 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
 
   // Load material presets
   useEffect(() => {
-    apiFetch('/prompts/material-presets.json')
+    apiFetch('/api/prompts/material-presets')
       .then(res => res.json())
       .then(data => {
-        // Sort by tier to display in logical order
-        const sorted = data.sort((a: MaterialPreset, b: MaterialPreset) => a.tier - b.tier)
-        setMaterialPresets(sorted)
+        // Ensure data is an array before sorting
+        if (Array.isArray(data)) {
+          // Sort by tier to display in logical order
+          const sorted = data.sort((a: MaterialPreset, b: MaterialPreset) => a.tier - b.tier)
+          setMaterialPresets(sorted)
+        } else {
+          console.error('Material presets response is not an array:', data)
+          setMaterialPresets([])
+        }
       })
-      .catch(err => console.error('Failed to load material presets:', err))
+      .catch(err => {
+        console.error('Failed to load material presets:', err)
+        setMaterialPresets([])
+      })
   }, [])
   
   const hasActiveFilters = searchTerm || typeFilter || materialFilter || showFavoritesOnly
