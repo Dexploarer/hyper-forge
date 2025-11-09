@@ -102,7 +102,7 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-bg-primary border border-border-primary rounded-lg shadow-2xl z-50 overflow-hidden animate-fade-in">
+        <div className="absolute right-0 mt-2 w-80 bg-bg-primary border border-border-primary rounded-lg shadow-2xl z-[9999] overflow-hidden animate-fade-in">
           {/* Header */}
           <div className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-b border-border-primary">
             <div className="flex items-start gap-3">
