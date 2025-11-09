@@ -215,7 +215,7 @@ export class GenerationService extends EventEmitter {
     super();
 
     this.activePipelines = new Map();
-    this.fetchFn = config?.fetchFn || fetch;
+    this.fetchFn = (config?.fetchFn || fetch) as FetchFunction;
 
     // Check for required API keys
     if (
@@ -239,8 +239,9 @@ export class GenerationService extends EventEmitter {
         apiKey: process.env.MESHY_API_KEY || "",
         baseUrl: "https://api.meshy.ai",
       },
-      // node-fetch is compatible with our FetchFunction type
-      fetchFn: this.fetchFn as unknown as typeof fetch,
+      // node-fetch is compatible with our FetchFunction type but lacks preconnect property
+      // @ts-expect-error - node-fetch doesn't have preconnect but is otherwise compatible
+      fetchFn: this.fetchFn,
     });
 
     // Initialize image hosting service
@@ -740,7 +741,7 @@ export class GenerationService extends EventEmitter {
           meshyStatus: "completed",
           variants: [], // Will be populated as variants are generated
           variantCount: 0,
-          lastVariantGenerated: null,
+          lastVariantGenerated: undefined,
           updatedAt: new Date().toISOString(),
           // Normalization info
           normalized: pipeline.stages.image3D.normalized || false,

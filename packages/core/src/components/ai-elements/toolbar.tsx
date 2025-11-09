@@ -1,4 +1,4 @@
-import { cn } from "@/utils";
+import { cn } from "@/styles/utils";
 import { NodeToolbar, Position } from "@xyflow/react";
 import type { ComponentProps } from "react";
 

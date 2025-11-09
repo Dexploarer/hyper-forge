@@ -19,7 +19,7 @@ import '@xyflow/react/dist/style.css'
 import { X, GitBranch } from 'lucide-react'
 
 import type { Asset } from '@/types'
-import { VariantTreeNode, type VariantTreeNodeData } from './VariantTreeNode'
+import { VariantTreeNodeComponent, type VariantTreeNodeData, type VariantTreeNode as VariantTreeNodeType } from './VariantTreeNode'
 import { useAssetsStore } from '@/store'
 
 interface VariantTreeViewerProps {
@@ -34,8 +34,8 @@ interface VariantTreeViewerProps {
 function layoutVariantTree(
   baseAssets: Asset[],
   variantMap: Map<string, Asset[]>
-): { nodes: Node<VariantTreeNodeData>[]; edges: Edge[] } {
-  const nodes: Node<VariantTreeNodeData>[] = []
+): { nodes: VariantTreeNodeType[]; edges: Edge[] } {
+  const nodes: VariantTreeNodeType[] = []
   const edges: Edge[] = []
 
   const HORIZONTAL_SPACING = 300
@@ -130,7 +130,7 @@ export const VariantTreeViewer: React.FC<VariantTreeViewerProps> = ({ assets, on
   // Node types
   const nodeTypes: NodeTypes = useMemo(
     () => ({
-      variantTree: VariantTreeNode
+      variantTree: VariantTreeNodeComponent
     }),
     []
   )

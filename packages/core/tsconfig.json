@@ -47,7 +47,6 @@
     "dist",
     "**/*.spec.ts",
     "**/*.test.ts",
-    "**/*.d.ts",
     "src/tests/**/*"
   ]
 } 

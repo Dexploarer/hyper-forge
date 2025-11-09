@@ -4,7 +4,7 @@
  */
 
 import React, { memo } from 'react'
-import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
 import { Package, Layers } from 'lucide-react'
 
 import type { Asset } from '@/types'
@@ -16,7 +16,9 @@ export interface VariantTreeNodeData extends Record<string, unknown> {
   variantCount?: number
 }
 
-export const VariantTreeNode = memo(({ data, selected }: NodeProps<VariantTreeNodeData>) => {
+export type VariantTreeNode = Node<VariantTreeNodeData, 'variantTree'>
+
+export const VariantTreeNodeComponent = memo(({ data, selected }: NodeProps<VariantTreeNode>) => {
   const { asset, isRoot, variantCount } = data as VariantTreeNodeData
   const isBase = asset.metadata.isBaseModel
   const isVariant = asset.metadata.isVariant
@@ -107,4 +109,4 @@ export const VariantTreeNode = memo(({ data, selected }: NodeProps<VariantTreeNo
   )
 })
 
-VariantTreeNode.displayName = 'VariantTreeNode'
+VariantTreeNodeComponent.displayName = 'VariantTreeNode'

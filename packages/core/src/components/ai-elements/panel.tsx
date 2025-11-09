@@ -1,4 +1,4 @@
-import { cn } from "@/utils";
+import { cn } from "@/styles/utils";
 import { Panel as PanelPrimitive } from "@xyflow/react";
 import type { ComponentProps } from "react";
 

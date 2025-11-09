@@ -54,11 +54,14 @@ interface CustomTooltipProps {
   payload?: TooltipPayloadItem[]
 }
 
-// Pie chart label entry type
-interface PieLabelEntry {
-  name: string
-  percent: number
-  value: number
+// Pie chart label render props type (from recharts)
+interface PieLabelRenderProps {
+  name?: string
+  percent?: number
+  value?: number
+  x: number
+  y: number
+  [key: string]: any
 }
 
 export const AssetStatisticsCard: React.FC<AssetStatisticsCardProps> = ({ assets }) => {
@@ -294,7 +297,7 @@ export const AssetStatisticsCard: React.FC<AssetStatisticsCardProps> = ({ assets
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={(entry: PieLabelEntry) => `${entry.name} ${(entry.percent * 100).toFixed(0)}%`}
+                      label={(entry: PieLabelRenderProps) => `${entry.name || ''} ${((entry.percent || 0) * 100).toFixed(0)}%`}
                       labelLine={{ stroke: '#9ca3af', strokeWidth: 1 }}
                     >
                       {statusChartData.map((entry, index) => (

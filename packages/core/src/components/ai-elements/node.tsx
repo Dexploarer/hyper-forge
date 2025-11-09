@@ -1,13 +1,12 @@
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { cn } from "@/utils";
+import { cn } from "@/styles/utils";
 import { Handle, Position } from "@xyflow/react";
 import type { ComponentProps } from "react";
 
@@ -51,9 +50,7 @@ export const NodeDescription = (props: NodeDescriptionProps) => (
   <CardDescription {...props} />
 );
 
-export type NodeActionProps = ComponentProps<typeof CardAction>;
-
-export const NodeAction = (props: NodeActionProps) => <CardAction {...props} />;
+// CardAction is not exported from card.tsx, removing this export
 
 export type NodeContentProps = ComponentProps<typeof CardContent>;
 
