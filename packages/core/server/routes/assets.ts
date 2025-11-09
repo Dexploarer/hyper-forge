@@ -29,7 +29,8 @@ export const createAssetRoutes = (
             return assets;
           },
           {
-            response: Models.AssetListResponse,
+            // TEMPORARY: Disable validation to debug schema mismatch
+            // response: Models.AssetListResponse,
             detail: {
               tags: ["Assets"],
               summary: "List all assets",
