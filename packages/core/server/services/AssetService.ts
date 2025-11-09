@@ -82,6 +82,11 @@ export class AssetService {
             metadata.name = assetDir;
           }
 
+          // Normalize empty tier to undefined for schema validation
+          if (metadata.tier === "" || metadata.tier === null) {
+            delete metadata.tier;
+          }
+
           // Normalize tier property for frontend compatibility
           // For variants: extract tier from materialPreset.id or materialPreset.tier
           // For base models: tier is optional
