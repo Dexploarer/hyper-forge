@@ -338,7 +338,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
                     onClick={handleSavePortrait}
                     disabled={isSavingPortrait}
                     size="sm"
-                    variant="outline"
+                    variant="secondary"
                     className="w-full"
                   >
                     {isSavingPortrait ? (
@@ -392,7 +392,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
                     <Button
                       onClick={handlePlayVoice}
                       size="sm"
-                      variant="outline"
+                      variant="secondary"
                       className="w-full"
                     >
                       {isPlayingVoice ? (
@@ -412,7 +412,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
                         onClick={handleSaveVoice}
                         disabled={isSavingVoice}
                         size="sm"
-                        variant="outline"
+                        variant="secondary"
                         className="w-full"
                       >
                         {isSavingVoice ? (

@@ -231,7 +231,7 @@ export const LoreGenerationModal: React.FC<LoreGenerationModalProps> = ({
       <ModalFooter>
         {status === 'config' && (
           <>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <Button onClick={handleGenerate} disabled={isGenerating || !topic.trim()}>
@@ -243,7 +243,7 @@ export const LoreGenerationModal: React.FC<LoreGenerationModalProps> = ({
 
         {status === 'success' && (
           <>
-            <Button variant="outline" onClick={handleReset}>
+            <Button variant="secondary" onClick={handleReset}>
               Generate Another
             </Button>
             <Button onClick={handleComplete}>

@@ -141,8 +141,14 @@ export function useAssetTypePrompts() {
     loadPrompts()
   }, [setAssetTypePrompts])
 
-  const saveCustomAssetType = useCallback(async (typeId: string, prompt: AssetTypePrompt, generationType: 'avatar' | 'item' = 'item') => {
+  const saveCustomAssetType = useCallback(async (typeId: string, prompt: AssetTypePrompt, generationType: 'avatar' | 'item' | 'building' | 'environment' | 'prop' = 'item') => {
     try {
+      // Only avatar and item are supported currently, ignore others
+      if (generationType !== 'avatar' && generationType !== 'item') {
+        console.warn(`[usePrompts] Generation type "${generationType}" is not supported for custom asset types yet`)
+        return false
+      }
+
       const updatedPrompts = {
         ...prompts,
         [generationType]: {
@@ -155,13 +161,13 @@ export function useAssetTypePrompts() {
       }
       await PromptService.saveAssetTypePrompts(updatedPrompts)
       setPrompts(updatedPrompts)
-      
+
       // Update store
       setAssetTypePrompts({
         ...assetTypePrompts,
         [typeId]: prompt.prompt
       })
-      
+
       return true
     } catch (err) {
       console.error('Failed to save custom asset type:', err)
@@ -204,8 +210,13 @@ export function useAssetTypePrompts() {
   }, [prompts])
   
   // Get types by generation type
-  const getTypesByGeneration = useCallback((generationType: 'avatar' | 'item') => {
-    return PromptService.mergePrompts(prompts[generationType].default, prompts[generationType].custom)
+  const getTypesByGeneration = useCallback((generationType: 'avatar' | 'item' | 'building' | 'environment' | 'prop') => {
+    // Only avatar and item have prompt configurations currently
+    if (generationType === 'avatar' || generationType === 'item') {
+      return PromptService.mergePrompts(prompts[generationType].default, prompts[generationType].custom)
+    }
+    // Return empty object for unsupported types
+    return {}
   }, [prompts])
 
   return {

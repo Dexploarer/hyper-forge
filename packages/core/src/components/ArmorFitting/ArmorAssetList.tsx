@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react'
 import { cn } from '../../styles'
 import { Asset } from '../../types'
 import { Badge, Input } from '../common'
+import { useInfiniteScroll } from '../../hooks/useInfiniteScroll'
 
 interface ArmorAssetListProps {
   assets: Asset[]
@@ -59,7 +60,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
     }),
     [assets]
   )
-  
+
   // NEW - Separate helmet assets
   const helmetAssets = useMemo(() =>
     assets.filter(a => {
@@ -94,7 +95,21 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
     )
   }, [assetType, avatarAssets, armorAssets, helmetAssets, weaponAssets, searchTerm, equipmentSlot])
 
-  // Group armor by slot
+  // Infinite scroll
+  const { displayCount, isLoadingMore, containerRef } = useInfiniteScroll({
+    totalItems: filteredAssets.length,
+    initialCount: 20,
+    loadIncrement: 10,
+    threshold: 300
+  })
+
+  // Slice assets for infinite scroll
+  const visibleAssets = useMemo(() =>
+    filteredAssets.slice(0, displayCount),
+    [filteredAssets, displayCount]
+  )
+
+  // Group armor by slot (using visible assets for infinite scroll)
   const groupedArmorAssets = useMemo(() => {
     if (assetType !== 'armor') return {}
 
@@ -104,7 +119,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
       legs: []
     }
 
-    filteredAssets.forEach(asset => {
+    visibleAssets.forEach(asset => {
       const name = asset.name.toLowerCase()
       if (name.includes('helmet') || name.includes('head')) {
         groups.helmet.push(asset)
@@ -116,7 +131,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
     })
 
     return groups
-  }, [assetType, filteredAssets])
+  }, [assetType, visibleAssets])
 
   // Get icon for asset type
   const getAssetIcon = (asset: Asset) => {
@@ -204,7 +219,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar">
         {/* Search */}
         <div className="p-4 sticky top-0 bg-bg-primary bg-opacity-95 z-10 backdrop-blur-sm">
           <div className="relative">
@@ -226,7 +241,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
               <Loader2 className="animate-spin text-primary" size={28} />
               <p className="text-sm text-text-tertiary">Loading assets...</p>
             </div>
-          ) : filteredAssets.length === 0 ? (
+          ) : visibleAssets.length === 0 && !isLoadingMore ? (
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-bg-secondary/50 rounded-2xl mb-4">
                 {assetType === 'avatar' ? <User size={24} className="text-text-tertiary" /> :
@@ -242,7 +257,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
           ) : assetType === 'avatar' || assetType === 'helmet' || assetType === 'weapon' ? (
             // Avatar, Helmet, or Weapon list (simple lists, not grouped)
             <div className="space-y-1.5">
-              {filteredAssets.map((asset) => {
+              {visibleAssets.map((asset) => {
                 const Icon = getAssetIcon(asset)
                 return (
                   <button
@@ -345,6 +360,14 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* Loading indicator for infinite scroll */}
+          {isLoadingMore && (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+              <span className="ml-2 text-sm text-text-secondary">Loading more assets...</span>
             </div>
           )}
         </div>

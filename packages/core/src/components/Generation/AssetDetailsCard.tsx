@@ -7,7 +7,7 @@ import { CustomAssetType } from '../../types/generation'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
 
 interface AssetDetailsCardProps {
-  generationType: 'item' | 'avatar' | undefined
+  generationType: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined
   assetName: string
   assetType: string
   description: string

@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badg
 
 interface PipelineProgressCardProps {
   pipelineStages: PipelineStage[]
-  generationType: 'item' | 'avatar' | undefined
+  generationType: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined
   isGenerating: boolean
   onBackToConfig: () => void
   onBack: () => void

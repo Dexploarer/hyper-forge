@@ -232,7 +232,7 @@ export const QuestGenerationModal: React.FC<QuestGenerationModalProps> = ({
       <ModalFooter>
         {status === 'config' && (
           <>
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <Button onClick={handleGenerate} disabled={isGenerating}>
@@ -244,7 +244,7 @@ export const QuestGenerationModal: React.FC<QuestGenerationModalProps> = ({
 
         {status === 'success' && (
           <>
-            <Button variant="outline" onClick={handleReset}>
+            <Button variant="secondary" onClick={handleReset}>
               Generate Another
             </Button>
             <Button onClick={handleComplete}>

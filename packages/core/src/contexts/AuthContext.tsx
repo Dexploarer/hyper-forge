@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const response = await fetch('/users/me', {
+      const response = await fetch('/api/users/me', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
         },
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Not authenticated')
     }
 
-    const response = await fetch('/users/complete-profile', {
+    const response = await fetch('/api/users/complete-profile', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

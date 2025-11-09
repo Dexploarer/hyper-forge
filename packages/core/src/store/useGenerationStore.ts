@@ -117,7 +117,7 @@ interface GenerationState {
   } | null
   
   // Actions
-  setGenerationType: (type: 'item' | 'avatar' | undefined) => void
+  setGenerationType: (type: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined) => void
   setActiveView: (view: 'config' | 'progress' | 'results') => void
   setShowAdvancedPrompts: (show: boolean) => void
   setShowAssetTypeEditor: (show: boolean) => void

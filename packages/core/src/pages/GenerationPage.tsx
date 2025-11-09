@@ -281,7 +281,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
           })
 
           if (error || !data) {
-            throw new Error(error || 'Failed to generate world')
+            throw new Error(typeof error === 'string' ? error : JSON.stringify(error) || 'Failed to generate world')
           }
 
           notify.success(`World "${data.world.worldName}" generated successfully!`)
@@ -495,13 +495,10 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
 
       loadExistingAssets();
     }
-  }, [
-    activeView,
-    generatedAssets,
-    selectedAsset,
-    setGeneratedAssets,
-    setSelectedAsset,
-  ]);
+    // Only depend on activeView and generatedAssets.length to avoid infinite loop
+    // setGeneratedAssets and setSelectedAsset are stable and don't need to be in deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView, generatedAssets.length]);
 
   // Use the pipeline status hook
   usePipelineStatus({ apiClient });
@@ -714,7 +711,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
       })
 
       if (error || !data) {
-        throw new Error(error || 'Failed to generate world')
+        throw new Error(typeof error === 'string' ? error : JSON.stringify(error) || 'Failed to generate world')
       }
 
       notify.success(`World "${data.world.worldName}" generated successfully!`)

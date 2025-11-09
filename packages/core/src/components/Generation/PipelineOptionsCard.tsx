@@ -14,7 +14,7 @@ interface PipelineOption {
 }
 
 interface PipelineOptionsCardProps {
-  generationType: 'item' | 'avatar' | undefined
+  generationType: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined
   useGPT4Enhancement: boolean
   enableRetexturing: boolean
   enableSprites: boolean

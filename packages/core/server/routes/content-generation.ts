@@ -578,7 +578,7 @@ export const contentGenerationRoutes = new Elysia({
           // Save media file and create database record
           const result = await mediaStorageService.saveMedia({
             type: "portrait",
-            entityType: body.entityType,
+            entityType: body.entityType as "npc" | "quest" | "lore" | "location" | "world" | "dialogue",
             entityId: body.entityId,
             fileName,
             data: imageData,
@@ -645,7 +645,7 @@ export const contentGenerationRoutes = new Elysia({
           // Save media file and create database record
           const result = await mediaStorageService.saveMedia({
             type: "voice",
-            entityType: body.entityType,
+            entityType: body.entityType as "npc" | "quest" | "lore" | "location" | "world" | "dialogue",
             entityId: body.entityId,
             fileName,
             data: audioData,
@@ -761,8 +761,9 @@ export const contentGenerationRoutes = new Elysia({
             generationParams: {
               npcId: body.npcId,
               npcName: body.npcName,
+              archetype: body.archetype,
+              personality: body.personality,
               theme: body.theme,
-              context: body.context,
               quality: body.quality,
             },
             tags: [body.questType, body.difficulty, body.npcName],

@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Inpu
 interface AdvancedPromptsCardProps {
   showAdvancedPrompts: boolean
   showAssetTypeEditor: boolean
-  generationType: 'item' | 'avatar' | undefined
+  generationType: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined
   defaultAssetTypes?: string[]
   assetType?: string
   customGamePrompt: string
@@ -479,7 +479,7 @@ const StyleCreator: React.FC<{
 
 // Types Editor Component
 const TypesEditor: React.FC<{
-  generationType: 'item' | 'avatar' | undefined
+  generationType: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined
   defaultAssetTypes: string[]
   assetTypePrompts: Record<string, string>
   customAssetTypes: CustomAssetType[]

@@ -5,7 +5,7 @@ import { cn } from '../../styles'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, Input, Button } from '@/components/common'
 
 interface ReferenceImageCardProps {
-  generationType: 'item' | 'avatar'
+  generationType: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined
   mode: 'auto' | 'custom'
   source: 'upload' | 'url' | null
   url: string | null

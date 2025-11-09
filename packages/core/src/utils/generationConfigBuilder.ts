@@ -4,7 +4,7 @@ interface BuildConfigOptions {
   assetName: string
   assetType: string
   description: string
-  generationType?: 'item' | 'avatar'
+  generationType?: 'item' | 'avatar' | 'building' | 'environment' | 'prop'
   gameStyle: string
   customStyle?: string
   customGamePrompt?: string

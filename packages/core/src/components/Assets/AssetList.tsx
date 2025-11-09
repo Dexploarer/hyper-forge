@@ -1,13 +1,14 @@
 import {
   Package, Shield, Swords, Diamond, Hammer, Building,
   User, Trees, Box, Target, HelpCircle, Sparkles,
-  ChevronRight, Layers, Star, CheckSquare, Square
+  ChevronRight, Layers, Star, CheckSquare, Square, Loader2
 } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 
 import { getTierColor } from '../../constants'
 import { useAssetsStore } from '../../store'
 import { Asset } from '../../types'
+import { useInfiniteScroll } from '../../hooks/useInfiniteScroll'
 
 import { apiFetch } from '@/utils/api'
 import { useApp } from '@/contexts/AppContext'
@@ -40,6 +41,17 @@ const AssetList: React.FC<AssetListProps> = ({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped')
   const [updatingFavorites, setUpdatingFavorites] = useState<Set<string>>(new Set())
+
+  // Infinite scroll
+  const { displayCount, isLoadingMore, containerRef } = useInfiniteScroll({
+    totalItems: assets.length,
+    initialCount: 20,
+    loadIncrement: 10,
+    threshold: 300
+  })
+
+  // Slice assets for infinite scroll
+  const visibleAssets = useMemo(() => assets.slice(0, displayCount), [assets, displayCount])
 
   const toggleFavorite = async (asset: Asset, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent asset selection
@@ -102,20 +114,20 @@ const AssetList: React.FC<AssetListProps> = ({
     }
   }
 
-  // Group assets by base/variants
+  // Group assets by base/variants (using visible assets for infinite scroll)
   const assetGroups = useMemo(() => {
     const groups: Record<string, AssetGroup> = {}
     const standaloneAssets: Asset[] = []
 
     // First pass: identify base models
-    assets.forEach(asset => {
+    visibleAssets.forEach(asset => {
       if (asset.metadata?.isBaseModel) {
         groups[asset.id] = { base: asset, variants: [] }
       }
     })
 
     // Second pass: assign variants to their base models
-    assets.forEach(asset => {
+    visibleAssets.forEach(asset => {
       if (!asset.metadata) {
         standaloneAssets.push(asset)
         return
@@ -144,13 +156,13 @@ const AssetList: React.FC<AssetListProps> = ({
     })
 
     return { groups: Object.values(groups), standalone: standaloneAssets }
-  }, [assets])
+  }, [visibleAssets])
 
-  // Group assets by type for flat view
+  // Group assets by type for flat view (using visible assets for infinite scroll)
   const assetsByType = useMemo(() => {
     const typeGroups: Record<string, Asset[]> = {}
 
-    assets.forEach(asset => {
+    visibleAssets.forEach(asset => {
       const type = asset.type || 'other'
       if (!typeGroups[type]) {
         typeGroups[type] = []
@@ -181,7 +193,7 @@ const AssetList: React.FC<AssetListProps> = ({
     })
 
     return orderedTypes
-  }, [assets])
+  }, [visibleAssets])
 
   // Group the grouped view by type as well
   const groupedAssetsByType = useMemo(() => {
@@ -390,7 +402,7 @@ const AssetList: React.FC<AssetListProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
+      <div ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar">
         <div className="p-2 space-y-1">
           {viewMode === 'grouped' ? (
             <>
@@ -907,6 +919,14 @@ const AssetList: React.FC<AssetListProps> = ({
             </>
           )}
         </div>
+
+        {/* Loading indicator */}
+        {isLoadingMore && (
+          <div className="flex items-center justify-center p-4">
+            <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            <span className="ml-2 text-sm text-text-secondary">Loading more assets...</span>
+          </div>
+        )}
       </div>
     </div>
   )

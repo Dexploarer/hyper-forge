@@ -106,7 +106,7 @@ export interface GenerationConfig {
   }
   
   // Generation type
-  generationType?: 'item' | 'avatar'
+  generationType?: 'item' | 'avatar' | 'building' | 'environment' | 'prop'
   
   // Optional user-provided reference image to bypass auto image generation
   referenceImage?: {

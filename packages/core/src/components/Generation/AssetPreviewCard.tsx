@@ -8,7 +8,7 @@ import ThreeViewer from '../shared/ThreeViewer'
 
 interface AssetPreviewCardProps {
   selectedAsset: GeneratedAsset | null
-  generationType: 'item' | 'avatar' | undefined
+  generationType: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined
 }
 
 export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({

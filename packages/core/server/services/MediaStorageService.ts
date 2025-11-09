@@ -5,6 +5,7 @@
 
 import { db } from "../db";
 import { mediaAssets, type NewMediaAsset } from "../db/schema";
+import { eq, and } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -119,8 +120,10 @@ export class MediaStorageService {
       .select()
       .from(mediaAssets)
       .where(
-        (t) =>
-          t.entityType === entityType && t.entityId === entityId,
+        and(
+          eq(mediaAssets.entityType, entityType),
+          eq(mediaAssets.entityId, entityId)
+        )
       );
 
     console.log(
@@ -137,17 +140,20 @@ export class MediaStorageService {
     type: string,
     options?: { limit?: number; createdBy?: string },
   ): Promise<typeof mediaAssets.$inferSelect[]> {
-    let query = db.select().from(mediaAssets).where((t) => t.type === type);
-
+    // Build where conditions
+    const conditions = [eq(mediaAssets.type, type)];
     if (options?.createdBy) {
-      query = query.where((t) => t.createdBy === options.createdBy);
+      conditions.push(eq(mediaAssets.createdBy, options.createdBy));
     }
 
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
+    const baseQuery = db
+      .select()
+      .from(mediaAssets)
+      .where(conditions.length > 1 ? and(...conditions) : conditions[0]);
 
-    const assets = await query;
+    const assets = options?.limit
+      ? await baseQuery.limit(options.limit)
+      : await baseQuery;
 
     console.log(`[MediaStorage] Found ${assets.length} ${type} assets`);
 
@@ -162,7 +168,7 @@ export class MediaStorageService {
     const [asset] = await db
       .select()
       .from(mediaAssets)
-      .where((t) => t.id === mediaId)
+      .where(eq(mediaAssets.id, mediaId))
       .limit(1);
 
     if (!asset) {
@@ -184,7 +190,7 @@ export class MediaStorageService {
     }
 
     // Delete database record
-    await db.delete(mediaAssets).where((t) => t.id === mediaId);
+    await db.delete(mediaAssets).where(eq(mediaAssets.id, mediaId));
 
     console.log(`[MediaStorage] Deleted media asset: ${mediaId}`);
 
@@ -200,7 +206,7 @@ export class MediaStorageService {
     const [asset] = await db
       .select()
       .from(mediaAssets)
-      .where((t) => t.id === mediaId)
+      .where(eq(mediaAssets.id, mediaId))
       .limit(1);
 
     return asset || null;
