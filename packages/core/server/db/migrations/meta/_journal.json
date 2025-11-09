@@ -15,6 +15,20 @@
       "when": 1762489200253,
       "tag": "0001_eager_violations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762690316587,
+      "tag": "0002_content_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1762690400000,
+      "tag": "0003_add_asset_columns",
+      "breakpoints": true
     }
   ]
 }
