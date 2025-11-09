@@ -655,7 +655,7 @@ const AssetList: React.FC<AssetListProps> = ({
                               )}
                             </button>
                           ) : (
-                            <div className="w-6" /> {/* Spacer for alignment */}
+                            <div className="w-6" />
                           )}
 
                           <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${selectedAsset?.id === asset.id
