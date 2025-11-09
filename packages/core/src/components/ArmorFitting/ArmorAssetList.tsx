@@ -13,6 +13,7 @@ interface ArmorAssetListProps {
   selectedAvatar?: Asset | null
   selectedArmor?: Asset | null
   selectedHelmet?: Asset | null // NEW
+  selectedWeapon?: Asset | null // NEW - for weapon selection
   onAssetSelect: (asset: Asset) => void
   onAssetTypeChange: (type: 'avatar' | 'armor' | 'helmet' | 'weapon') => void // UPDATED - added weapon
   hideTypeToggle?: boolean // NEW - for armor fitting page
@@ -27,6 +28,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
   selectedAvatar,
   selectedArmor,
   selectedHelmet, // NEW
+  selectedWeapon, // NEW
   onAssetSelect,
   onAssetTypeChange,
   hideTypeToggle = false, // NEW
@@ -160,11 +162,22 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
               Avatars
             </button>
             <button
-              onClick={() => onAssetTypeChange(equipmentSlot === 'Head' ? 'helmet' : 'armor')}
+              onClick={() => {
+                const isHandSlot = equipmentSlot === 'Hand_R' || equipmentSlot === 'Hand_L'
+                onAssetTypeChange(
+                  equipmentSlot === 'Head' ? 'helmet' :
+                  isHandSlot ? 'weapon' :
+                  'armor'
+                )
+              }}
               className={cn(
                 "flex-1 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                 "flex items-center justify-center gap-2",
-                assetType === (equipmentSlot === 'Head' ? 'helmet' : 'armor')
+                assetType === (
+                  equipmentSlot === 'Head' ? 'helmet' :
+                  (equipmentSlot === 'Hand_R' || equipmentSlot === 'Hand_L') ? 'weapon' :
+                  'armor'
+                )
                   ? "bg-primary/80 text-white shadow-lg shadow-primary/20"
                   : "text-text-secondary hover:text-text-primary hover:bg-bg-tertiary/20"
               )}
@@ -174,9 +187,14 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
                   <HardHat size={16} />
                   Helmets
                 </>
-              ) : (
+              ) : (equipmentSlot === 'Hand_R' || equipmentSlot === 'Hand_L') ? (
                 <>
                   <Sword size={16} />
+                  Weapons
+                </>
+              ) : (
+                <>
+                  <Shirt size={16} />
                   Armor
                 </>
               )}
@@ -211,15 +229,18 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
           ) : filteredAssets.length === 0 ? (
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-bg-secondary/50 rounded-2xl mb-4">
-                {assetType === 'avatar' ? <User size={24} className="text-text-tertiary" /> : <HardHat size={24} className="text-text-tertiary" />}
+                {assetType === 'avatar' ? <User size={24} className="text-text-tertiary" /> :
+                 assetType === 'weapon' ? <Sword size={24} className="text-text-tertiary" /> :
+                 assetType === 'helmet' ? <HardHat size={24} className="text-text-tertiary" /> :
+                 <Shirt size={24} className="text-text-tertiary" />}
               </div>
               <p className="text-text-tertiary text-sm">No {assetType}s found</p>
               {searchTerm && (
                 <p className="text-text-tertiary/60 text-xs mt-1">Try a different search term</p>
               )}
             </div>
-          ) : assetType === 'avatar' || assetType === 'helmet' ? (
-            // Avatar or Helmet list
+          ) : assetType === 'avatar' || assetType === 'helmet' || assetType === 'weapon' ? (
+            // Avatar, Helmet, or Weapon list (simple lists, not grouped)
             <div className="space-y-2">
               {filteredAssets.map((asset) => {
                 const Icon = getAssetIcon(asset)
@@ -243,7 +264,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
                           <p className="text-sm font-medium text-text-primary">{asset.name}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="secondary" size="sm" className="capitalize bg-bg-tertiary/50 text-text-secondary border border-white/10">
-                              {assetType === 'avatar' ? 'Character' : 'Helmet'}
+                              {assetType === 'avatar' ? 'Character' : assetType === 'helmet' ? 'Helmet' : 'Weapon'}
                             </Badge>
                             <Badge variant="primary" size="sm" className="bg-primary/20 text-primary border border-primary/30">
                               <Box size={10} className="mr-1" />
@@ -372,6 +393,23 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
                   <p className="text-xs text-text-tertiary">Helmet</p>
                   <p className="text-sm font-medium text-text-primary">
                     {selectedHelmet?.name || 'None selected'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Show weapon only for hand slots */}
+            {(equipmentSlot === 'Hand_R' || equipmentSlot === 'Hand_L') && (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+                  <Sword size={16} className="text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-text-tertiary">
+                    {equipmentSlot === 'Hand_R' ? 'Right Hand' : 'Left Hand'}
+                  </p>
+                  <p className="text-sm font-medium text-text-primary">
+                    {selectedWeapon?.name || 'None selected'}
                   </p>
                 </div>
               </div>

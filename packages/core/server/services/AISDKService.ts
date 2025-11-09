@@ -5,7 +5,7 @@
  */
 
 import { createOpenAI } from "@ai-sdk/openai";
-import type { LanguageModelV1 } from "ai";
+import type { LanguageModel } from "ai";
 
 type ModelQuality = "quality" | "speed" | "balanced";
 
@@ -71,7 +71,7 @@ class AISDKService {
    */
   async getConfiguredModel(
     quality: ModelQuality = "balanced",
-  ): Promise<LanguageModelV1> {
+  ): Promise<LanguageModel> {
     const config = this.modelConfigs[quality];
 
     if (!config) {

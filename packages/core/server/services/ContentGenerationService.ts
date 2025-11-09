@@ -135,7 +135,7 @@ export class ContentGenerationService {
       model,
       prompt,
       temperature: 0.8,
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
     });
 
     const nodes = this.parseDialogueResponse(result.text);
@@ -179,7 +179,7 @@ export class ContentGenerationService {
       model,
       prompt: aiPrompt,
       temperature: 0.8,
-      maxTokens: 3000,
+      maxOutputTokens: 3000,
     });
 
     const npcData = this.parseNPCResponse(result.text);
@@ -246,7 +246,7 @@ export class ContentGenerationService {
       model,
       prompt: aiPrompt,
       temperature: 0.7,
-      maxTokens: 3000,
+      maxOutputTokens: 3000,
     });
 
     const questData = this.parseQuestResponse(result.text);
@@ -297,7 +297,7 @@ export class ContentGenerationService {
       model,
       prompt: aiPrompt,
       temperature: 0.7,
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
     });
 
     const loreData = this.parseLoreResponse(result.text);

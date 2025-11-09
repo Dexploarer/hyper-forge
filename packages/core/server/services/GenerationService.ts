@@ -182,7 +182,7 @@ interface VariantResult {
 
 export class GenerationService extends EventEmitter {
   private activePipelines: Map<string, Pipeline>;
-  private aiService: AICreationService;
+  public aiService: AICreationService;
   private imageHostingService: ImageHostingService;
   private fetchFn: FetchFunction;
 

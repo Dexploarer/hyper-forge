@@ -93,7 +93,7 @@ export const MusicGenerationCard: React.FC<MusicGenerationCardProps> = ({ onGene
           <Checkbox
             id="instrumental"
             checked={forceInstrumental}
-            onCheckedChange={(checked) => setForceInstrumental(checked as boolean)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForceInstrumental(e.target.checked)}
           />
           <label htmlFor="instrumental" className="text-sm text-text-primary cursor-pointer">
             Instrumental only (no vocals)

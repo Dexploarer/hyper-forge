@@ -808,6 +808,7 @@ export const ArmorFittingViewer = forwardRef<
     equipmentSlot,
     helmetMeshRef,
     armorMeshRef,
+    weaponMeshRef,
   });
 
   // Visualization state

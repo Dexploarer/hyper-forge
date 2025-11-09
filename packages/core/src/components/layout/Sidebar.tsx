@@ -12,7 +12,8 @@ import {
   ScrollText,
   Library,
   TestTube2,
-  Users
+  Users,
+  Settings
 } from 'lucide-react'
 import { NavigationView } from '@/types'
 import { NAVIGATION_VIEWS } from '@/constants'
@@ -87,6 +88,12 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Retarget & animate'
   },
   {
+    view: NAVIGATION_VIEWS.SETTINGS,
+    icon: Settings,
+    label: 'Settings',
+    description: 'View prompts & config'
+  },
+  {
     view: NAVIGATION_VIEWS.ADMIN_DASHBOARD,
     icon: Users,
     label: 'Admin Dashboard',
@@ -139,7 +146,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
           const isActive = currentView === item.view
@@ -149,7 +156,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
               key={item.view}
               onClick={() => onViewChange(item.view)}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 group',
+                'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group',
                 isActive
                   ? 'bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 text-primary shadow-lg shadow-primary/10'
                   : 'hover:bg-white/5 text-text-secondary hover:text-text-primary border border-transparent'
@@ -186,10 +193,10 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
       </nav>
 
       {/* Footer - Logout */}
-      <div className="p-3 border-t border-white/10">
+      <div className="p-2 border-t border-white/10">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-red-500/10 text-text-secondary hover:text-red-400 transition-colors group border border-transparent hover:border-red-500/30"
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 text-text-secondary hover:text-red-400 transition-colors group border border-transparent hover:border-red-500/30"
           title={isCollapsed ? 'Logout' : undefined}
         >
           <LogOut className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />

@@ -56,7 +56,7 @@ export function AssetListExample() {
 
       if (data) {
         // Extract assets array from paginated response
-        const assetsArray = Array.isArray(data) ? data : data.data;
+        const assetsArray = Array.isArray(data) ? data : (data as any).data || [];
         setAssets(assetsArray);
       }
 

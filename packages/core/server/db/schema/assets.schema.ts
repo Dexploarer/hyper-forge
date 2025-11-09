@@ -12,6 +12,7 @@ import {
   jsonb,
   bigint,
   integer,
+  boolean,
   index,
 } from "drizzle-orm/pg-core";
 import { users } from "./users.schema";
@@ -30,6 +31,7 @@ export const assets = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     type: varchar("type", { length: 100 }).notNull(), // character, item, environment, equipment
+    subtype: varchar("subtype", { length: 100 }), // sword, axe, helmet, etc.
     category: varchar("category", { length: 100 }),
 
     // Ownership (for organization, not access control)
@@ -39,28 +41,44 @@ export const assets = pgTable(
     projectId: uuid("project_id").references(() => projects.id, {
       onDelete: "set null",
     }),
+    gameId: uuid("game_id"), // Optional game/project association
 
     // File storage (paths relative to gdd-assets directory)
     filePath: varchar("file_path", { length: 512 }), // e.g., "asset-id/model.glb"
     fileSize: bigint("file_size", { mode: "number" }),
     fileType: varchar("file_type", { length: 100 }),
     thumbnailPath: varchar("thumbnail_path", { length: 512 }),
+    conceptArtPath: varchar("concept_art_path", { length: 512 }), // Generated concept art
+    hasConceptArt: boolean("has_concept_art").default(false),
+    riggedModelPath: varchar("rigged_model_path", { length: 512 }), // Rigged/animated model
 
     // Generation metadata
     prompt: text("prompt"),
+    detailedPrompt: text("detailed_prompt"), // Enhanced prompt with details
     negativePrompt: text("negative_prompt"),
     modelUsed: varchar("model_used", { length: 255 }),
     generationParams: jsonb("generation_params").notNull().default({}),
+    workflow: varchar("workflow", { length: 100 }), // text-to-3d, image-to-3d, etc.
+    meshyTaskId: varchar("meshy_task_id", { length: 255 }), // Meshy API task ID
+    generatedAt: timestamp("generated_at", { withTimezone: true }), // When generation completed
 
     // Asset properties
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
     metadata: jsonb("metadata").notNull().default({}),
 
-    // Versioning
+    // Versioning and variants
     version: integer("version").notNull().default(1),
     parentAssetId: uuid("parent_asset_id").references((): any => assets.id, {
       onDelete: "set null",
     }),
+    isBaseModel: boolean("is_base_model").default(false), // Is this a base model for variants?
+    isVariant: boolean("is_variant").default(false), // Is this a variant of another asset?
+    parentBaseModel: uuid("parent_base_model").references((): any => assets.id, {
+      onDelete: "set null",
+    }), // Reference to base model for variants
+    variants: jsonb("variants").$type<string[]>().default([]), // Array of variant asset IDs
+    variantCount: integer("variant_count").default(0), // Number of variants created
+    lastVariantGenerated: timestamp("last_variant_generated", { withTimezone: true }), // Last variant creation time
 
     // Status: 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived'
     status: varchar("status", { length: 50 }).notNull().default("draft"),

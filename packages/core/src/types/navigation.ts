@@ -1,4 +1,4 @@
-export type NavigationView = 'assets' | 'generation' | 'audio' | 'content' | 'contentLibrary' | 'playtester' | 'equipment' | 'handRigging' | 'armorFitting' | 'retargetAnimate' | 'adminDashboard'
+export type NavigationView = 'assets' | 'generation' | 'audio' | 'content' | 'contentLibrary' | 'playtester' | 'equipment' | 'handRigging' | 'armorFitting' | 'retargetAnimate' | 'adminDashboard' | 'settings'
 
 export interface NavigationState {
   currentView: NavigationView

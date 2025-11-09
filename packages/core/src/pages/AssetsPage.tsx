@@ -1,4 +1,4 @@
-import { Activity, Edit3, Layers } from "lucide-react";
+import { Activity, Edit3, Layers, Palette } from "lucide-react";
 import React, { useRef, useCallback, useState } from "react";
 
 import { API_ENDPOINTS } from "../constants";
@@ -15,6 +15,7 @@ import RetextureModal from "@/components/Assets/RetextureModal";
 import SpriteGenerationModal from "@/components/Assets/SpriteGenerationModal";
 import { TransitionOverlay } from "@/components/Assets/TransitionOverlay";
 import ViewerControls from "@/components/Assets/ViewerControls";
+import { MaterialPresetEditor } from "@/components/Materials";
 import { AnimationPlayer } from "@/components/shared/AnimationPlayer";
 import ThreeViewer, { ThreeViewerRef } from "@/components/shared/ThreeViewer";
 import { useAssetActions } from "@/hooks";
@@ -22,6 +23,9 @@ import { useAssets } from "@/hooks";
 
 export const AssetsPage: React.FC = () => {
   const { assets, loading, reloadAssets, forceReload } = useAssets();
+
+  // Local state for Material Preset Editor
+  const [showPresetEditor, setShowPresetEditor] = useState(false);
 
   // Get state and actions from store
   const {
@@ -87,12 +91,23 @@ export const AssetsPage: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Sidebar - Full width mobile, 4 cols desktop */}
-          <div className="lg:col-span-4 space-y-6 animate-slide-in-left">
+          <div className="lg:col-span-4 space-y-3 animate-slide-in-left">
             {/* Filters */}
             <AssetFilters
               totalAssets={assets.length}
               filteredCount={filteredAssets.length}
             />
+
+            {/* Material Preset Editor Button */}
+            <button
+              onClick={() => setShowPresetEditor(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500/10 to-purple-600/10 hover:from-purple-500/20 hover:to-purple-600/20 border border-purple-500/30 hover:border-purple-500/50 rounded-lg transition-all duration-200 group"
+            >
+              <Palette className="w-4 h-4 text-purple-400 group-hover:text-purple-300 transition-colors" />
+              <span className="text-sm font-medium text-purple-400 group-hover:text-purple-300 transition-colors">
+                Edit Material Presets
+              </span>
+            </button>
 
             {/* Asset List */}
             <AssetList assets={filteredAssets} />
@@ -289,6 +304,15 @@ export const AssetsPage: React.FC = () => {
           }}
         />
       )}
+
+      {/* Material Preset Editor */}
+      <MaterialPresetEditor
+        isOpen={showPresetEditor}
+        onClose={() => setShowPresetEditor(false)}
+        onSuccess={() => {
+          // Presets saved successfully - filters will reload them automatically
+        }}
+      />
     </div>
   );
 };

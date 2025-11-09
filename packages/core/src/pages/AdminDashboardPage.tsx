@@ -16,10 +16,13 @@ interface User {
   lastLoginAt: string | null
 }
 
+type AdminTab = 'overview' | 'profiles'
+
 export const AdminDashboardPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview')
 
   useEffect(() => {
     fetchUsers()
@@ -53,10 +56,10 @@ export const AdminDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-6">
+    <div className="h-full overflow-y-auto p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
               <Users className="w-6 h-6 text-primary" />
@@ -64,13 +67,42 @@ export const AdminDashboardPage: React.FC = () => {
             <div>
               <h1 className="text-3xl font-bold text-text-primary">Admin Dashboard</h1>
               <p className="text-text-secondary">
-                Manage users and view admin team members
+                Manage users and view system statistics
               </p>
             </div>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Tabs */}
+        <div className="mb-4 border-b border-border-primary">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                activeTab === 'overview'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('profiles')}
+              className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                activeTab === 'profiles'
+                  ? 'text-primary border-b-2 border-primary'
+                  : 'text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              User Profiles
+            </button>
+          </div>
+        </div>
+
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="card p-4 bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
             <div className="flex items-center justify-between">
@@ -107,11 +139,24 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Users Table */}
-        <div className="card overflow-hidden">
-          <div className="p-4 border-b border-border-primary bg-bg-secondary/30">
-            <h2 className="text-lg font-semibold text-text-primary">Admin Team Members</h2>
-          </div>
+            {/* Quick Summary */}
+            <div className="card p-6">
+              <h2 className="text-lg font-semibold text-text-primary mb-4">Quick Summary</h2>
+              <p className="text-text-secondary">
+                Welcome to the Admin Dashboard. Here you can view statistics and manage user profiles.
+                Use the tabs above to navigate between different sections.
+              </p>
+            </div>
+          </>
+        )}
+
+        {/* User Profiles Tab */}
+        {activeTab === 'profiles' && (
+          <div className="card overflow-hidden">
+            <div className="p-4 border-b border-border-primary bg-bg-secondary/30">
+              <h2 className="text-lg font-semibold text-text-primary">User Profiles</h2>
+              <p className="text-sm text-text-tertiary mt-1">View and manage all registered users</p>
+            </div>
 
           {loading ? (
             <div className="flex items-center justify-center h-64">
@@ -224,7 +269,8 @@ export const AdminDashboardPage: React.FC = () => {
               </table>
             </div>
           )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

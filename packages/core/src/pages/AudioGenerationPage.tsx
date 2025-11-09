@@ -10,6 +10,7 @@ import {
   GeneratedAudioList,
   AudioPreviewCard
 } from '@/components/Audio'
+import { VoiceServiceStatus } from '@/components/Voice'
 import { Button } from '@/components/common'
 import type { AudioType, AudioView, GeneratedAudio } from '@/types/audio'
 
@@ -107,8 +108,14 @@ export const AudioGenerationPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Sidebar - Recent Audios */}
-              <div className="space-y-4">
+              {/* Sidebar */}
+              <div className="space-y-3">
+                {/* Voice Service Status - Only show for voice generation */}
+                {audioType === 'voice' && (
+                  <VoiceServiceStatus autoRefresh={true} refreshInterval={60000} />
+                )}
+
+                {/* Recent Audios */}
                 <GeneratedAudioList
                   audios={generatedAudios.slice(0, 5)}
                   selectedAudio={selectedAudio}

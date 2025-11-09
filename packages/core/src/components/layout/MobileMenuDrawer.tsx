@@ -174,7 +174,7 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
         <nav className="flex-1 overflow-y-auto py-3 px-3">
           <div className="space-y-1">
             {NAV_ITEMS.map((item) => {
-              const Icon = item.icon
+              const Icon = item.icon as React.FC<{ className?: string }>
               const isActive = currentView === item.view
 
               return (

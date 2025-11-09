@@ -3,15 +3,18 @@ import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
 
 export function useArmorExport(params: {
   sceneRef: React.RefObject<THREE.Scene | null>;
-  equipmentSlot: "Head" | "Spine2" | "Pelvis";
+  equipmentSlot: "Head" | "Spine2" | "Pelvis" | "Hand_R" | "Hand_L";
   helmetMeshRef: React.RefObject<THREE.Mesh | null>;
   armorMeshRef: React.RefObject<THREE.Mesh | null>;
+  weaponMeshRef?: React.RefObject<THREE.Mesh | null>;
 }) {
-  const { sceneRef, equipmentSlot, helmetMeshRef, armorMeshRef } = params;
+  const { sceneRef, equipmentSlot, helmetMeshRef, armorMeshRef, weaponMeshRef } = params;
 
   const exportFittedModel = async (): Promise<ArrayBuffer> => {
     const meshToExport =
-      equipmentSlot === "Head" ? helmetMeshRef.current : armorMeshRef.current;
+      equipmentSlot === "Head" ? helmetMeshRef.current
+      : (equipmentSlot === "Hand_R" || equipmentSlot === "Hand_L") ? weaponMeshRef?.current
+      : armorMeshRef.current;
 
     if (!meshToExport || !sceneRef.current) {
       console.error("No mesh to export");

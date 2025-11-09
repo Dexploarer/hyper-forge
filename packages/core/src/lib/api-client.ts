@@ -114,7 +114,7 @@ export const api = treaty<App>(API_BASE_URL, {
   fetch: {
     credentials: "include",
     headers: () => getAuthHeaders(),
-  },
+  } as any,
 });
 
 /**

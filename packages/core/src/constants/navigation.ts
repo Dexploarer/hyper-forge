@@ -12,7 +12,8 @@ export const NAVIGATION_VIEWS = {
   HAND_RIGGING: 'handRigging',
   ARMOR_FITTING: 'armorFitting',
   RETARGET_ANIMATE: 'retargetAnimate',
-  ADMIN_DASHBOARD: 'adminDashboard'
+  ADMIN_DASHBOARD: 'adminDashboard',
+  SETTINGS: 'settings'
 } as const satisfies Record<string, NavigationView>
 
 // Grid background styles for the app

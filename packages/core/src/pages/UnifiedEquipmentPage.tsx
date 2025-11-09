@@ -174,10 +174,11 @@ export const UnifiedEquipmentPage: React.FC = () => {
                 selectedAvatar={selectedAvatar}
                 selectedArmor={selectedArmor}
                 selectedHelmet={selectedHelmet}
+                selectedWeapon={selectedWeapon}
                 onAssetSelect={handleAssetSelect}
                 onAssetTypeChange={setAssetTypeFilter}
                 hideTypeToggle={true}
-                equipmentSlot={equipmentSlot as 'Head' | 'Spine2' | 'Pelvis'}
+                equipmentSlot={equipmentSlot as 'Head' | 'Spine2' | 'Pelvis' | 'Hand_R' | 'Hand_L'}
               />
             </div>
           </div>

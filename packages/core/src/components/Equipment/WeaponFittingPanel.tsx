@@ -7,6 +7,8 @@ import React from 'react'
 import { Asset } from '@/types'
 import type { HandleDetectionResult } from '@/services/processing/WeaponHandleDetector'
 import { cn } from '@/styles'
+import { WeaponDetectionVisualizer } from './WeaponDetectionVisualizer'
+import { WeaponOrientationIndicator } from './WeaponOrientationIndicator'
 
 interface WeaponFittingPanelProps {
   // Mode
@@ -136,14 +138,20 @@ export const WeaponFittingPanel: React.FC<WeaponFittingPanelProps> = ({
             )}
           </button>
 
-          {handleDetectionResult && (
-            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-              <p className="text-xs text-green-400 font-medium">
-                ✓ Grip detected with {(handleDetectionResult.confidence * 100).toFixed(0)}% confidence
-              </p>
-            </div>
-          )}
         </div>
+
+        {/* Detection Visualization */}
+        <WeaponDetectionVisualizer
+          detectionResult={handleDetectionResult}
+          isDetecting={isDetectingHandle}
+        />
+
+        {/* Orientation Indicator */}
+        <WeaponOrientationIndicator
+          orientationFlipped={handleDetectionResult?.orientationFlipped}
+          onRedetect={onDetectGripPoint}
+          isDetecting={isDetectingHandle}
+        />
 
         {/* Creature Size Presets */}
         <div className="space-y-2">
@@ -276,14 +284,20 @@ export const WeaponFittingPanel: React.FC<WeaponFittingPanelProps> = ({
           )}
         </button>
 
-        {handleDetectionResult && (
-          <div className="p-2 rounded bg-green-500/10 border border-green-500/30">
-            <p className="text-xs text-green-400">
-              Confidence: {(handleDetectionResult.confidence * 100).toFixed(0)}%
-            </p>
-          </div>
-        )}
       </div>
+
+      {/* Detection Visualization */}
+      <WeaponDetectionVisualizer
+        detectionResult={handleDetectionResult}
+        isDetecting={isDetectingHandle}
+      />
+
+      {/* Orientation Indicator */}
+      <WeaponOrientationIndicator
+        orientationFlipped={handleDetectionResult?.orientationFlipped}
+        onRedetect={onDetectGripPoint}
+        isDetecting={isDetectingHandle}
+      />
 
       {/* Creature Sizing */}
       <div className="space-y-3">

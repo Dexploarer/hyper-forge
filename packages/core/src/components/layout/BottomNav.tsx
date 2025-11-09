@@ -44,7 +44,7 @@ export function BottomNav({ currentView, onViewChange, onMoreClick }: BottomNavP
     <nav className="h-16 bg-bg-secondary/98 backdrop-blur-sm border-t border-white/10 fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom">
       <div className="h-full flex items-center justify-around px-2">
         {NAV_ITEMS.map((item) => {
-          const Icon = item.icon
+          const Icon = item.icon as React.FC<{ className?: string }>
           const isActive = item.view !== 'more' && currentView === item.view
           const handleClick = item.view === 'more'
             ? onMoreClick
