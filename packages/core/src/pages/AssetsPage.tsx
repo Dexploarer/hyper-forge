@@ -104,8 +104,23 @@ export const AssetsPage: React.FC = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-full overflow-y-auto p-4 relative">
+      {/* Background decoration - top right */}
+      <div 
+        className="absolute top-0 right-0 pointer-events-none z-0"
+        style={{
+          backgroundImage: 'url(/Untitled%20design%20(3)/4.svg)',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'top right',
+          backgroundSize: 'contain',
+          width: '50%',
+          height: '50%',
+          minWidth: '400px',
+          minHeight: '400px',
+          opacity: 0.3
+        }}
+      />
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Sidebar - Full width mobile, 4 cols desktop */}
           <div className="lg:col-span-4 space-y-3 animate-slide-in-left">

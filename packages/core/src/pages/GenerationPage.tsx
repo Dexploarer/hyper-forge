@@ -669,9 +669,24 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
   }
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto relative">
+      {/* Background decoration - top left */}
+      <div 
+        className="absolute top-0 left-0 pointer-events-none z-0"
+        style={{
+          backgroundImage: 'url(/Untitled%20design%20(3)/3.svg)',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'top left',
+          backgroundSize: 'contain',
+          width: '50%',
+          height: '50%',
+          minWidth: '400px',
+          minHeight: '400px',
+          opacity: 0.3
+        }}
+      />
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto py-4 pb-6">
+      <div className="max-w-7xl mx-auto py-4 pb-6 relative z-10">
           {/* Header with tabs */}
           <div className="mb-4">
             {/* Tab Navigation */}

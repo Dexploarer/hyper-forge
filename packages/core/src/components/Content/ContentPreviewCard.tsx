@@ -1,4 +1,4 @@
-import { Download, FileJson, FileText, Copy, Check, Sparkles, Loader2, User, Volume2, Play, Pause } from 'lucide-react'
+import { Download, FileJson, FileText, Copy, Check, Sparkles, Loader2, User, Volume2, Play, Pause, Save, Scroll, Book } from 'lucide-react'
 import React, { useState, useRef } from 'react'
 
 import { Card, CardHeader, CardTitle, CardContent, Button } from '../common'
@@ -9,6 +9,8 @@ import type { GeneratedContent, NPCData, QuestData, DialogueNode, LoreData, Dial
 import { ViewModeToggle, type ViewMode } from './Workflow/ViewModeToggle'
 import { DialogueWorkflowView } from './Workflow/DialogueWorkflowView'
 import { QuestWorkflowView } from './Workflow/QuestWorkflowView'
+import { QuestGenerationModal } from './QuestGenerationModal'
+import { LoreGenerationModal } from './LoreGenerationModal'
 
 interface ContentPreviewCardProps {
   content: GeneratedContent
@@ -20,11 +22,19 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
   const [copied, setCopied] = useState(false)
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null)
   const [isGeneratingPortrait, setIsGeneratingPortrait] = useState(false)
+  const [isSavingPortrait, setIsSavingPortrait] = useState(false)
   const [voiceAudioUrl, setVoiceAudioUrl] = useState<string | null>(null)
   const [isGeneratingVoice, setIsGeneratingVoice] = useState(false)
+  const [isSavingVoice, setIsSavingVoice] = useState(false)
   const [isPlayingVoice, setIsPlayingVoice] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [savedPortraitId, setSavedPortraitId] = useState<string | null>(null)
+  const [savedVoiceId, setSavedVoiceId] = useState<string | null>(null)
+  const [showQuestModal, setShowQuestModal] = useState(false)
+  const [showLoreModal, setShowLoreModal] = useState(false)
+  const [generatedQuestId, setGeneratedQuestId] = useState<string | null>(null)
+  const [generatedLoreId, setGeneratedLoreId] = useState<string | null>(null)
 
   const handleGeneratePortrait = async () => {
     if (content.type !== 'npc') return
@@ -125,6 +135,88 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
     }
   }
 
+  const handleSavePortrait = async () => {
+    if (!portraitUrl || !content.id) return
+
+    try {
+      setIsSavingPortrait(true)
+
+      // Fetch the image and convert to base64
+      const response = await fetch(portraitUrl)
+      const blob = await response.blob()
+      const reader = new FileReader()
+
+      reader.onloadend = async () => {
+        const base64data = reader.result as string
+        const base64Image = base64data.split(',')[1] // Remove data:image/png;base64, prefix
+
+        // Save to backend
+        const result = await apiClient.savePortrait({
+          entityType: 'npc',
+          entityId: content.id!,
+          imageData: base64Image,
+        })
+
+        setSavedPortraitId(result.mediaId)
+        notify.success('Portrait saved successfully!')
+      }
+
+      reader.readAsDataURL(blob)
+    } catch (error) {
+      console.error('Failed to save portrait:', error)
+      notify.error('Failed to save portrait')
+    } finally {
+      setIsSavingPortrait(false)
+    }
+  }
+
+  const handleSaveVoice = async () => {
+    if (!voiceAudioUrl || !content.id) return
+
+    try {
+      setIsSavingVoice(true)
+
+      // Fetch the audio and convert to base64
+      const response = await fetch(voiceAudioUrl)
+      const blob = await response.blob()
+      const reader = new FileReader()
+
+      reader.onloadend = async () => {
+        const base64data = reader.result as string
+        const base64Audio = base64data.split(',')[1] // Remove data:audio/mpeg;base64, prefix
+
+        // Save to backend
+        const result = await apiClient.saveVoice({
+          entityType: 'npc',
+          entityId: content.id!,
+          audioData: base64Audio,
+        })
+
+        setSavedVoiceId(result.mediaId)
+        notify.success('Voice saved successfully!')
+      }
+
+      reader.readAsDataURL(blob)
+    } catch (error) {
+      console.error('Failed to save voice:', error)
+      notify.error('Failed to save voice')
+    } finally {
+      setIsSavingVoice(false)
+    }
+  }
+
+  const handleQuestSuccess = (quest: QuestData & { id: string }) => {
+    setGeneratedQuestId(quest.id)
+    notify.success('Quest generated and linked!')
+    setShowQuestModal(false)
+  }
+
+  const handleLoreSuccess = (lore: LoreData & { id: string }) => {
+    setGeneratedLoreId(lore.id)
+    notify.success('Lore generated and linked!')
+    setShowLoreModal(false)
+  }
+
   const handleCopyJSON = () => {
     const jsonData = JSON.stringify(content.data, null, 2)
     navigator.clipboard.writeText(jsonData)
@@ -201,13 +293,14 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
       const npc = content.data as NPCData
       return (
         <div className="space-y-6">
-          <div className="flex items-start gap-6">
-            {/* Name and Archetype */}
-            <div className="flex-1">
-              <h3 className="text-xl font-bold text-text-primary mb-1">{npc.name}</h3>
-              <p className="text-sm text-text-secondary capitalize">{npc.archetype}</p>
-            </div>
+          {/* Name and Archetype Header */}
+          <div className="pb-4 border-b border-border-primary">
+            <h3 className="text-xl font-bold text-text-primary mb-1">{npc.name}</h3>
+            <p className="text-sm text-text-secondary capitalize">{npc.archetype}</p>
+          </div>
 
+          {/* 2x2 Grid: Portrait, Voice, Quest, Lore */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Profile Picture Section */}
             <div className="flex flex-col items-center gap-3">
               <div className="w-32 h-32 rounded-lg overflow-hidden bg-bg-tertiary/50 border-2 border-border-primary/50 flex items-center justify-center">
@@ -221,24 +314,53 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
                   <User className="w-12 h-12 text-text-tertiary/40" />
                 )}
               </div>
-              <Button
-                onClick={handleGeneratePortrait}
-                disabled={isGeneratingPortrait}
-                size="sm"
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-              >
-                {isGeneratingPortrait ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                    Generate Portrait
-                  </>
+              <div className="w-full space-y-2">
+                <Button
+                  onClick={handleGeneratePortrait}
+                  disabled={isGeneratingPortrait}
+                  size="sm"
+                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                >
+                  {isGeneratingPortrait ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                      Generate Portrait
+                    </>
+                  )}
+                </Button>
+                {portraitUrl && !savedPortraitId && (
+                  <Button
+                    onClick={handleSavePortrait}
+                    disabled={isSavingPortrait}
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {isSavingPortrait ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-3.5 h-3.5 mr-1.5" />
+                        Save Portrait
+                      </>
+                    )}
+                  </Button>
                 )}
-              </Button>
+                {savedPortraitId && (
+                  <div className="text-xs text-green-500 text-center">
+                    <Check className="w-3.5 h-3.5 inline mr-1" />
+                    Saved
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Voice Generation Section */}
@@ -266,24 +388,109 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
                   )}
                 </Button>
                 {voiceAudioUrl && (
-                  <Button
-                    onClick={handlePlayVoice}
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                  >
-                    {isPlayingVoice ? (
-                      <>
-                        <Pause className="w-3.5 h-3.5 mr-1.5" />
-                        Pause
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-3.5 h-3.5 mr-1.5" />
-                        Play Sample
-                      </>
+                  <>
+                    <Button
+                      onClick={handlePlayVoice}
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                    >
+                      {isPlayingVoice ? (
+                        <>
+                          <Pause className="w-3.5 h-3.5 mr-1.5" />
+                          Pause
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3.5 h-3.5 mr-1.5" />
+                          Play Sample
+                        </>
+                      )}
+                    </Button>
+                    {!savedVoiceId && (
+                      <Button
+                        onClick={handleSaveVoice}
+                        disabled={isSavingVoice}
+                        size="sm"
+                        variant="outline"
+                        className="w-full"
+                      >
+                        {isSavingVoice ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-3.5 h-3.5 mr-1.5" />
+                            Save Voice
+                          </>
+                        )}
+                      </Button>
                     )}
-                  </Button>
+                    {savedVoiceId && (
+                      <div className="text-xs text-green-500 text-center">
+                        <Check className="w-3.5 h-3.5 inline mr-1" />
+                        Saved
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Quest Generation Section */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-32 h-32 rounded-lg overflow-hidden bg-bg-tertiary/50 border-2 border-border-primary/50 flex items-center justify-center">
+                {generatedQuestId ? (
+                  <Check className="w-12 h-12 text-amber-500" />
+                ) : (
+                  <Scroll className="w-12 h-12 text-text-tertiary/40" />
+                )}
+              </div>
+              <div className="w-full space-y-2">
+                <Button
+                  onClick={() => setShowQuestModal(true)}
+                  disabled={!content.id}
+                  size="sm"
+                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  Generate Quest
+                </Button>
+                {generatedQuestId && (
+                  <div className="text-xs text-green-500 text-center">
+                    <Check className="w-3.5 h-3.5 inline mr-1" />
+                    Quest Linked
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Lore Generation Section */}
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-32 h-32 rounded-lg overflow-hidden bg-bg-tertiary/50 border-2 border-border-primary/50 flex items-center justify-center">
+                {generatedLoreId ? (
+                  <Check className="w-12 h-12 text-purple-500" />
+                ) : (
+                  <Book className="w-12 h-12 text-text-tertiary/40" />
+                )}
+              </div>
+              <div className="w-full space-y-2">
+                <Button
+                  onClick={() => setShowLoreModal(true)}
+                  disabled={!content.id}
+                  size="sm"
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  Generate Lore
+                </Button>
+                {generatedLoreId && (
+                  <div className="text-xs text-green-500 text-center">
+                    <Check className="w-3.5 h-3.5 inline mr-1" />
+                    Lore Linked
+                  </div>
                 )}
               </div>
             </div>
@@ -319,6 +526,28 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
             <p className="text-sm text-text-secondary mb-1"><span className="text-text-tertiary">Role:</span> {npc.behavior.role}</p>
             <p className="text-sm text-text-secondary"><span className="text-text-tertiary">Schedule:</span> {npc.behavior.schedule}</p>
           </div>
+
+          {/* Quest Generation Modal */}
+          {content.id && (
+            <QuestGenerationModal
+              open={showQuestModal}
+              onClose={() => setShowQuestModal(false)}
+              npc={npc}
+              npcId={content.id}
+              onSuccess={handleQuestSuccess}
+            />
+          )}
+
+          {/* Lore Generation Modal */}
+          {content.id && (
+            <LoreGenerationModal
+              open={showLoreModal}
+              onClose={() => setShowLoreModal(false)}
+              npc={npc}
+              npcId={content.id}
+              onSuccess={handleLoreSuccess}
+            />
+          )}
         </div>
       )
     } else if (content.type === 'quest') {

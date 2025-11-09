@@ -12,13 +12,18 @@ export * from "./assets.schema";
 // Content
 export * from "./content.schema";
 
+// Media
+export * from "./media.schema";
+
 // Re-export everything for drizzle
 import * as usersSchema from "./users.schema";
 import * as assetsSchema from "./assets.schema";
 import * as contentSchema from "./content.schema";
+import * as mediaSchema from "./media.schema";
 
 export const schema = {
   ...usersSchema,
   ...assetsSchema,
   ...contentSchema,
+  ...mediaSchema,
 };

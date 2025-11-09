@@ -7,9 +7,13 @@ import { Elysia, t } from "elysia";
 import { ContentGenerationService } from "../services/ContentGenerationService";
 import { AICreationService } from "../services/AICreationService";
 import { contentDatabaseService } from "../services/ContentDatabaseService";
+import { MediaStorageService } from "../services/MediaStorageService";
+import { RelationshipService } from "../services/RelationshipService";
 import * as Models from "../models";
 
 const contentGenService = new ContentGenerationService();
+const mediaStorageService = new MediaStorageService();
+const relationshipService = new RelationshipService();
 
 export const contentGenerationRoutes = new Elysia({
   prefix: "/api/content",
@@ -549,6 +553,355 @@ export const contentGenerationRoutes = new Elysia({
             tags: ["Content Management"],
             summary: "Delete Lore",
             description: "Delete a lore entry from the database",
+          },
+        },
+      )
+
+      // ========================
+      // Media Asset Endpoints
+      // ========================
+
+      // POST /api/content/media/save-portrait
+      .post(
+        "/media/save-portrait",
+        async ({ body }) => {
+          console.log(
+            `[Media] Saving portrait for ${body.entityType}:${body.entityId}`,
+          );
+
+          // Decode base64 image data
+          const imageData = Buffer.from(body.imageData, "base64");
+
+          // Generate filename
+          const fileName = `portrait_${Date.now()}.png`;
+
+          // Save media file and create database record
+          const result = await mediaStorageService.saveMedia({
+            type: "portrait",
+            entityType: body.entityType,
+            entityId: body.entityId,
+            fileName,
+            data: imageData,
+            metadata: {
+              prompt: body.prompt,
+              model: body.model || "dall-e-3",
+              mimeType: "image/png",
+            },
+            createdBy: body.createdBy,
+          });
+
+          // Create relationship between media and entity
+          await relationshipService.createRelationship({
+            sourceType: "npc", // Assuming portrait is for NPC
+            sourceId: body.entityId,
+            targetType: "npc" as any, // Media relationship
+            targetId: result.id,
+            relationshipType: "related_to" as any,
+            strength: "strong",
+            metadata: { mediaType: "portrait" },
+            createdBy: body.createdBy,
+          });
+
+          console.log(`[Media] Portrait saved successfully: ${result.fileUrl}`);
+
+          return {
+            success: true,
+            mediaId: result.id,
+            fileUrl: result.fileUrl,
+          };
+        },
+        {
+          body: t.Object({
+            entityType: t.String(),
+            entityId: t.String(),
+            imageData: t.String(), // base64 encoded
+            prompt: t.Optional(t.String()),
+            model: t.Optional(t.String()),
+            createdBy: t.Optional(t.String()),
+          }),
+          detail: {
+            tags: ["Media Assets"],
+            summary: "Save portrait image",
+            description:
+              "Save a generated portrait image to persistent storage and link it to an entity",
+          },
+        },
+      )
+
+      // POST /api/content/media/save-voice
+      .post(
+        "/media/save-voice",
+        async ({ body }) => {
+          console.log(
+            `[Media] Saving voice for ${body.entityType}:${body.entityId}`,
+          );
+
+          // Decode base64 audio data
+          const audioData = Buffer.from(body.audioData, "base64");
+
+          // Generate filename
+          const fileName = `voice_${Date.now()}.mp3`;
+
+          // Save media file and create database record
+          const result = await mediaStorageService.saveMedia({
+            type: "voice",
+            entityType: body.entityType,
+            entityId: body.entityId,
+            fileName,
+            data: audioData,
+            metadata: {
+              voiceId: body.voiceId,
+              voiceSettings: body.voiceSettings,
+              text: body.text,
+              duration: body.duration,
+              mimeType: "audio/mpeg",
+            },
+            createdBy: body.createdBy,
+          });
+
+          // Create relationship between media and entity
+          await relationshipService.createRelationship({
+            sourceType: "npc",
+            sourceId: body.entityId,
+            targetType: "npc" as any,
+            targetId: result.id,
+            relationshipType: "related_to" as any,
+            strength: "strong",
+            metadata: { mediaType: "voice" },
+            createdBy: body.createdBy,
+          });
+
+          console.log(`[Media] Voice saved successfully: ${result.fileUrl}`);
+
+          return {
+            success: true,
+            mediaId: result.id,
+            fileUrl: result.fileUrl,
+          };
+        },
+        {
+          body: t.Object({
+            entityType: t.String(),
+            entityId: t.String(),
+            audioData: t.String(), // base64 encoded
+            voiceId: t.Optional(t.String()),
+            voiceSettings: t.Optional(t.Any()),
+            text: t.Optional(t.String()),
+            duration: t.Optional(t.Number()),
+            createdBy: t.Optional(t.String()),
+          }),
+          detail: {
+            tags: ["Media Assets"],
+            summary: "Save voice audio",
+            description:
+              "Save a generated voice audio file to persistent storage and link it to an entity",
+          },
+        },
+      )
+
+      // GET /api/content/media/:entityType/:entityId
+      .get(
+        "/media/:entityType/:entityId",
+        async ({ params }) => {
+          console.log(
+            `[Media] Fetching media for ${params.entityType}:${params.entityId}`,
+          );
+
+          const media = await mediaStorageService.getMediaForEntity(
+            params.entityType,
+            params.entityId,
+          );
+
+          return {
+            success: true,
+            media,
+          };
+        },
+        {
+          params: t.Object({
+            entityType: t.String(),
+            entityId: t.String(),
+          }),
+          detail: {
+            tags: ["Media Assets"],
+            summary: "Get entity media",
+            description:
+              "Retrieve all media assets (portraits, voices, etc.) for a specific entity",
+          },
+        },
+      )
+
+      // ========================
+      // Linked Content Generation
+      // ========================
+
+      // POST /api/content/generate-quest-for-npc
+      .post(
+        "/generate-quest-for-npc",
+        async ({ body }) => {
+          console.log(
+            `[ContentGeneration] Generating quest for NPC: ${body.npcName}`,
+          );
+
+          // Generate quest with NPC context
+          const result = await contentGenService.generateQuest({
+            questType: body.questType,
+            difficulty: body.difficulty,
+            theme: body.theme,
+            context: `This quest is given by ${body.npcName}, a ${body.archetype}. ${body.personality ? `Personality: ${body.personality}` : ""}`,
+            quality: body.quality,
+          });
+
+          // Save to database
+          const quest = await contentDatabaseService.createQuest({
+            title: result.quest.title,
+            questType: result.quest.questType,
+            difficulty: result.quest.difficulty,
+            data: result.quest,
+            generationParams: {
+              npcId: body.npcId,
+              npcName: body.npcName,
+              theme: body.theme,
+              context: body.context,
+              quality: body.quality,
+            },
+            tags: [body.questType, body.difficulty, body.npcName],
+          });
+
+          // Create relationship: NPC gives quest
+          const relationship = await relationshipService.createRelationship({
+            sourceType: "npc",
+            sourceId: body.npcId,
+            targetType: "quest",
+            targetId: quest.id,
+            relationshipType: "gives_quest",
+            strength: "strong",
+            metadata: {
+              questGiver: body.npcName,
+            },
+            createdBy: body.createdBy,
+          });
+
+          console.log(
+            `[ContentGeneration] Quest generated and linked to NPC: ${quest.id}`,
+          );
+
+          return {
+            success: true,
+            quest: { ...result.quest, id: quest.id },
+            questId: quest.id,
+            relationship,
+          };
+        },
+        {
+          body: t.Object({
+            npcId: t.String(),
+            npcName: t.String(),
+            archetype: t.String(),
+            personality: t.Optional(t.String()),
+            questType: t.String(),
+            difficulty: t.String(),
+            theme: t.Optional(t.String()),
+            quality: t.Optional(
+              t.Union([
+                t.Literal("quality"),
+                t.Literal("speed"),
+                t.Literal("balanced"),
+              ]),
+            ),
+            createdBy: t.Optional(t.String()),
+          }),
+          detail: {
+            tags: ["Content Generation"],
+            summary: "Generate quest for NPC",
+            description:
+              "Generate a quest given by a specific NPC, automatically creating the relationship",
+          },
+        },
+      )
+
+      // POST /api/content/generate-lore-for-npc
+      .post(
+        "/generate-lore-for-npc",
+        async ({ body }) => {
+          console.log(
+            `[ContentGeneration] Generating lore for NPC: ${body.npcName}`,
+          );
+
+          // Generate lore that mentions the NPC
+          const result = await contentGenService.generateLore({
+            category: body.category,
+            topic: body.topic,
+            context: `This lore should feature or mention ${body.npcName}, a ${body.archetype}. ${body.additionalContext || ""}`,
+            quality: body.quality,
+          });
+
+          // Save to database with NPC mentioned in characters
+          const lore = await contentDatabaseService.createLore({
+            title: result.lore.title,
+            category: result.lore.category,
+            summary: result.lore.summary,
+            data: {
+              ...result.lore,
+              characters: [body.npcName, ...(result.lore.characters || [])],
+            },
+            generationParams: {
+              npcId: body.npcId,
+              npcName: body.npcName,
+              topic: body.topic,
+              context: body.additionalContext,
+              quality: body.quality,
+            },
+            tags: [body.category, body.npcName, ...(result.lore.relatedTopics || [])],
+          });
+
+          // Create relationship: Lore mentions NPC
+          const relationship = await relationshipService.createRelationship({
+            sourceType: "lore",
+            sourceId: lore.id,
+            targetType: "npc",
+            targetId: body.npcId,
+            relationshipType: "mentions",
+            strength: "medium",
+            metadata: {
+              character: body.npcName,
+            },
+            createdBy: body.createdBy,
+          });
+
+          console.log(
+            `[ContentGeneration] Lore generated and linked to NPC: ${lore.id}`,
+          );
+
+          return {
+            success: true,
+            lore: { ...result.lore, id: lore.id },
+            loreId: lore.id,
+            relationship,
+          };
+        },
+        {
+          body: t.Object({
+            npcId: t.String(),
+            npcName: t.String(),
+            archetype: t.String(),
+            category: t.String(),
+            topic: t.String(),
+            additionalContext: t.Optional(t.String()),
+            quality: t.Optional(
+              t.Union([
+                t.Literal("quality"),
+                t.Literal("speed"),
+                t.Literal("balanced"),
+              ]),
+            ),
+            createdBy: t.Optional(t.String()),
+          }),
+          detail: {
+            tags: ["Content Generation"],
+            summary: "Generate lore for NPC",
+            description:
+              "Generate lore that features/mentions a specific NPC, automatically creating the relationship",
           },
         },
       ),

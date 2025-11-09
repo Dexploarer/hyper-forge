@@ -302,4 +302,145 @@ export class ContentAPIClient {
 
     return await response.json()
   }
+
+  // ==================== Media Assets ====================
+
+  /**
+   * Save a portrait image to persistent storage
+   */
+  async savePortrait(params: {
+    entityType: string
+    entityId: string
+    imageData: string // base64 encoded
+    prompt?: string
+    model?: string
+    createdBy?: string
+  }): Promise<{
+    success: boolean
+    mediaId: string
+    fileUrl: string
+  }> {
+    const response = await fetch(`${API_BASE}/content/media/save-portrait`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to save portrait: ${response.statusText}`)
+    }
+
+    return await response.json()
+  }
+
+  /**
+   * Save a voice audio to persistent storage
+   */
+  async saveVoice(params: {
+    entityType: string
+    entityId: string
+    audioData: string // base64 encoded
+    voiceId?: string
+    voiceSettings?: any
+    text?: string
+    duration?: number
+    createdBy?: string
+  }): Promise<{
+    success: boolean
+    mediaId: string
+    fileUrl: string
+  }> {
+    const response = await fetch(`${API_BASE}/content/media/save-voice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to save voice: ${response.statusText}`)
+    }
+
+    return await response.json()
+  }
+
+  /**
+   * Get all media assets for an entity
+   */
+  async getMediaForEntity(entityType: string, entityId: string): Promise<{
+    success: boolean
+    media: any[]
+  }> {
+    const response = await fetch(`${API_BASE}/content/media/${entityType}/${entityId}`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to get media for entity: ${response.statusText}`)
+    }
+
+    return await response.json()
+  }
+
+  // ==================== Linked Content Generation ====================
+
+  /**
+   * Generate a quest given by a specific NPC
+   */
+  async generateQuestForNPC(params: {
+    npcId: string
+    npcName: string
+    archetype: string
+    personality?: string
+    questType: string
+    difficulty: string
+    theme?: string
+    quality?: 'quality' | 'speed' | 'balanced'
+    createdBy?: string
+  }): Promise<{
+    success: boolean
+    quest: any
+    questId: string
+    relationship: any
+  }> {
+    const response = await fetch(`${API_BASE}/content/generate-quest-for-npc`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to generate quest for NPC: ${response.statusText}`)
+    }
+
+    return await response.json()
+  }
+
+  /**
+   * Generate lore that features/mentions a specific NPC
+   */
+  async generateLoreForNPC(params: {
+    npcId: string
+    npcName: string
+    archetype: string
+    category: string
+    topic: string
+    additionalContext?: string
+    quality?: 'quality' | 'speed' | 'balanced'
+    createdBy?: string
+  }): Promise<{
+    success: boolean
+    lore: any
+    loreId: string
+    relationship: any
+  }> {
+    const response = await fetch(`${API_BASE}/content/generate-lore-for-npc`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to generate lore for NPC: ${response.statusText}`)
+    }
+
+    return await response.json()
+  }
 }

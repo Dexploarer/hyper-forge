@@ -129,14 +129,28 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
     >
       {/* Logo/Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
-        {!isCollapsed && (
+        {!isCollapsed ? (
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-primary to-accent rounded-lg">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="p-2 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+              <img 
+                src="/Untitled%20design%20(3)/1.png" 
+                alt="Asset Forge Logo" 
+                className="w-5 h-5 object-contain"
+              />
             </div>
             <div>
               <h1 className="text-lg font-bold text-text-primary">Asset Forge</h1>
               <p className="text-xs text-text-tertiary">Alpha</p>
+            </div>
+          </div>
+        ) : (
+          <div className="w-full flex items-center justify-center">
+            <div className="p-2 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
+              <img 
+                src="/Untitled%20design%20(3)/1.png" 
+                alt="Asset Forge Logo" 
+                className="w-5 h-5 object-contain"
+              />
             </div>
           </div>
         )}

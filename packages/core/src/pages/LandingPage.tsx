@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Sparkles, Lock, ArrowRight } from 'lucide-react'
+import { Lock, ArrowRight } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 export function LandingPage() {
@@ -50,8 +50,12 @@ export function LandingPage() {
         <div className="mb-8 animate-float">
           <div className="relative">
             <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
-            <div className="relative bg-gradient-to-br from-primary to-accent p-6 rounded-2xl shadow-2xl">
-              <Sparkles className="w-16 h-16 text-white" />
+            <div className="relative bg-gradient-to-br from-primary to-accent p-6 rounded-2xl shadow-2xl flex items-center justify-center">
+              <img 
+                src="/Untitled%20design%20(3)/1.png" 
+                alt="Asset Forge Logo" 
+                className="w-16 h-16 object-contain"
+              />
             </div>
           </div>
         </div>

@@ -38,6 +38,22 @@ export function MainLayout({ currentView, onViewChange, children }: MainLayoutPr
             />
           </div>
 
+          {/* Background image - bottom right corner */}
+          <div 
+            className="absolute bottom-0 right-0 pointer-events-none z-0"
+            style={{
+              backgroundImage: 'url(/Untitled%20design%20(3)/2.svg)',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'bottom right',
+              backgroundSize: 'contain',
+              width: '50%',
+              height: '50%',
+              minWidth: '400px',
+              minHeight: '400px',
+              opacity: 0.3
+            }}
+          />
+
           {/* Page content */}
           <div className="relative z-10 h-full">
             {children}
@@ -82,6 +98,22 @@ export function MainLayout({ currentView, onViewChange, children }: MainLayoutPr
                 }}
               />
             </div>
+
+            {/* Background image - bottom right corner */}
+            <div 
+              className="absolute bottom-0 right-0 pointer-events-none z-0"
+              style={{
+                backgroundImage: 'url(/Untitled%20design%20(3)/2.svg)',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'bottom right',
+                backgroundSize: 'contain',
+                width: '50%',
+                height: '50%',
+                minWidth: '400px',
+                minHeight: '400px',
+                opacity: 0.3
+              }}
+            />
 
             {/* Page content */}
             <div className="relative z-10 h-full">
