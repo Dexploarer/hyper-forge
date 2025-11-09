@@ -91,6 +91,10 @@ export const AssetMetadata = t.Object({
   isPublic: t.Optional(t.Boolean()), // Default true
   createdAt: t.Optional(t.String()),
   updatedAt: t.Optional(t.String()),
+  // User preferences and metadata
+  isFavorite: t.Optional(t.Boolean()), // Bookmark/favorite flag
+  notes: t.Optional(t.String()), // User notes for this asset
+  lastViewedAt: t.Optional(t.String()), // Last time asset was viewed
 });
 
 export const AssetList = t.Array(AssetMetadata);
@@ -118,6 +122,27 @@ export const AssetUpdate = t.Object({
   type: t.Optional(t.String()),
   tier: t.Optional(t.Number()),
   category: t.Optional(t.String()),
+  isFavorite: t.Optional(t.Boolean()),
+  notes: t.Optional(t.String()),
+  status: t.Optional(t.String()),
+});
+
+export const BulkUpdateRequest = t.Object({
+  assetIds: t.Array(t.String({ minLength: 1 }), { minItems: 1 }),
+  updates: t.Object({
+    status: t.Optional(t.String()),
+    isFavorite: t.Optional(t.Boolean()),
+  })
+});
+
+export const BulkUpdateResponse = t.Object({
+  success: t.Boolean(),
+  updated: t.Number(),
+  failed: t.Number(),
+  errors: t.Optional(t.Array(t.Object({
+    assetId: t.String(),
+    error: t.String()
+  })))
 });
 
 export const DeleteAssetQuery = t.Object({
@@ -153,7 +178,11 @@ export const MaterialPresetSaveResponse = t.Object({
 
 export const RetextureRequest = t.Object({
   baseAssetId: t.String({ minLength: 1 }),
-  materialPreset: MaterialPreset,
+  // Support three modes: preset, custom prompt, or image reference
+  materialPreset: t.Optional(MaterialPreset),
+  customPrompt: t.Optional(t.String()),
+  imageUrl: t.Optional(t.String()),
+  artStyle: t.Optional(t.Union([t.Literal('realistic'), t.Literal('cartoon')])),
   outputName: t.Optional(t.String()),
   // User context for ownership tracking
   user: t.Optional(UserContext),

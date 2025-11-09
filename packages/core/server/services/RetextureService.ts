@@ -30,7 +30,8 @@ interface MeshyClientConfig {
 
 interface RetextureOptions {
   inputTaskId: string;
-  textStylePrompt: string;
+  textStylePrompt?: string;
+  imageStyleUrl?: string;
   artStyle?: string;
   aiModel?: string;
   enableOriginalUV?: boolean;
@@ -49,7 +50,10 @@ interface TaskStatus {
 
 interface RetextureParams {
   baseAssetId: string;
-  materialPreset: MaterialPreset;
+  materialPreset?: MaterialPreset;
+  customPrompt?: string;
+  imageUrl?: string;
+  artStyle?: 'realistic' | 'cartoon';
   outputName?: string;
   assetsDir: string;
   user?: UserContextType | null;
@@ -134,13 +138,21 @@ class MeshyClient {
   }
 
   async startRetexture(options: RetextureOptions): Promise<string> {
-    const body = {
+    const body: any = {
       input_task_id: options.inputTaskId,
-      text_style_prompt: options.textStylePrompt,
       art_style: options.artStyle || "realistic",
       ai_model: options.aiModel || "meshy-5",
       enable_original_uv: options.enableOriginalUV ?? true,
     };
+
+    // Add text prompt or image URL (image takes precedence per Meshy API docs)
+    if (options.imageStyleUrl) {
+      body.image_style_url = options.imageStyleUrl;
+    } else if (options.textStylePrompt) {
+      body.text_style_prompt = options.textStylePrompt;
+    } else {
+      throw new Error("Either textStylePrompt or imageStyleUrl is required");
+    }
 
     const response = await this.fetchFn(
       `${this.baseUrl}/openapi/v1/retexture`,
@@ -268,6 +280,9 @@ export class RetextureService {
   async retexture({
     baseAssetId,
     materialPreset,
+    customPrompt,
+    imageUrl,
+    artStyle,
     outputName,
     assetsDir,
     user = null,
@@ -285,17 +300,36 @@ export class RetextureService {
         );
       }
 
-      console.log(
-        `🎨 Starting retexture for ${baseAssetId} with material: ${materialPreset.displayName}`,
-      );
+      // Determine retexture mode and build appropriate parameters
+      let textPrompt: string | undefined;
+      let imageStyleUrl: string | undefined;
+      let mode: string;
+
+      if (imageUrl) {
+        // Image-based retexturing (takes precedence)
+        imageStyleUrl = imageUrl;
+        mode = "image reference";
+        console.log(`🎨 Starting image-based retexture for ${baseAssetId}`);
+      } else if (customPrompt) {
+        // Custom prompt retexturing
+        textPrompt = customPrompt;
+        mode = "custom prompt";
+        console.log(`🎨 Starting custom prompt retexture for ${baseAssetId}: "${customPrompt.substring(0, 50)}..."`);
+      } else if (materialPreset) {
+        // Preset-based retexturing (legacy mode)
+        textPrompt = materialPreset.stylePrompt || `Apply ${materialPreset.displayName} material texture`;
+        mode = `preset: ${materialPreset.displayName}`;
+        console.log(`🎨 Starting preset retexture for ${baseAssetId} with material: ${materialPreset.displayName}`);
+      } else {
+        throw new Error("Either materialPreset, customPrompt, or imageUrl must be provided");
+      }
 
       // Start retexture task using the new MeshyClient
       const taskId = await this.meshyClient.startRetexture({
         inputTaskId: baseMetadata.meshyTaskId,
-        textStylePrompt:
-          materialPreset.stylePrompt ||
-          `Apply ${materialPreset.displayName} material texture`,
-        artStyle: "realistic",
+        textStylePrompt: textPrompt,
+        imageStyleUrl: imageStyleUrl,
+        artStyle: artStyle || "realistic",
         aiModel: "meshy-5",
         enableOriginalUV: true,
       });
@@ -313,14 +347,23 @@ export class RetextureService {
       // Download and save the retextured model
       const variantName =
         outputName ||
-        `${baseAssetId.replace("-base", "")}-${materialPreset.id}`;
+        (materialPreset
+          ? `${baseAssetId.replace("-base", "")}-${materialPreset.id}`
+          : `${baseAssetId.replace("-base", "")}-custom-${Date.now()}`);
 
       const savedAsset = await this.saveRetexturedAsset({
         result,
         variantName,
         baseAssetId,
         baseMetadata,
-        materialPreset,
+        materialPreset: materialPreset || {
+          id: "custom",
+          displayName: customPrompt ? "Custom Prompt" : "Image Reference",
+          stylePrompt: customPrompt || imageUrl || "",
+          category: "custom",
+          tier: 1,
+          color: "#666666",
+        } as MaterialPreset,
         taskId,
         assetsDir,
         user,
@@ -330,7 +373,7 @@ export class RetextureService {
         success: true,
         assetId: variantName,
         url: `/gdd-assets/${variantName}/${variantName}.glb`,
-        message: "Asset retextured successfully using Meshy AI",
+        message: `Asset retextured successfully using ${mode}`,
         asset: savedAsset,
       };
     } catch (error) {

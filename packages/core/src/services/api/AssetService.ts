@@ -22,7 +22,11 @@ export interface Asset {
 
 export interface RetextureRequest {
   baseAssetId: string;
-  materialPreset: MaterialPreset;
+  // Support three modes: preset, custom prompt, or image reference
+  materialPreset?: MaterialPreset;
+  customPrompt?: string;
+  imageUrl?: string;
+  artStyle?: 'realistic' | 'cartoon';
   outputName?: string;
 }
 

@@ -15,6 +15,9 @@ export const createRetextureRoutes = (rootDir: string, retextureService: Retextu
       const result = await retextureService.retexture({
         baseAssetId: body.baseAssetId,
         materialPreset: body.materialPreset,
+        customPrompt: body.customPrompt,
+        imageUrl: body.imageUrl,
+        artStyle: body.artStyle,
         outputName: body.outputName,
         assetsDir: path.join(rootDir, 'gdd-assets'),
         user: body.user // User context is already part of the body schema

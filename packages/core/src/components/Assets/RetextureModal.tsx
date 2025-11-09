@@ -556,14 +556,69 @@ const RetextureModal: React.FC<RetextureModalProps> = ({
                 }, 1000)
                 
               } else if (workflowMode === 'custom') {
-                // TODO: Implement custom prompt retexturing
-                console.error('Custom prompt retexturing not yet implemented')
-                setStatus('idle')
-                
+                // Generate using custom prompt
+                const variantName = `${asset.name.replace('-base', '')}-custom-${Date.now()}`;
+
+                setResults([{ name: 'Custom Texture', status: 'pending' }]);
+                setProgress(0);
+
+                const result = await retextureAsset({
+                  baseAssetId: asset.id,
+                  customPrompt: customPrompt,
+                  artStyle: customStyle,
+                  outputName: variantName
+                });
+
+                setProgress(100);
+                setResults([{
+                  name: 'Custom Texture',
+                  status: result ? 'done' : 'error'
+                }]);
+
+                setTimeout(() => setStatus('success'), 1000);
+
               } else if (workflowMode === 'image') {
-                // TODO: Implement image-based retexturing
-                console.error('Image-based retexturing not yet implemented')
-                setStatus('idle')
+                // Generate using image reference
+                const variantName = `${asset.name.replace('-base', '')}-image-${Date.now()}`;
+
+                setResults([{ name: 'Image Reference Texture', status: 'pending' }]);
+                setProgress(0);
+
+                // For now, only URL-based image references are supported
+                // File upload would require an additional endpoint to host the image
+                if (!imageUrl && uploadedImage) {
+                  // TODO: Implement image upload endpoint
+                  console.warn('File upload not yet implemented. Please use an image URL instead.');
+                  setResults([{
+                    name: 'Image Reference Texture',
+                    status: 'error'
+                  }]);
+                  setStatus('idle');
+                  return;
+                }
+
+                if (!imageUrl) {
+                  setResults([{
+                    name: 'Image Reference Texture',
+                    status: 'error'
+                  }]);
+                  setStatus('idle');
+                  return;
+                }
+
+                const result = await retextureAsset({
+                  baseAssetId: asset.id,
+                  imageUrl: imageUrl,
+                  outputName: variantName
+                });
+
+                setProgress(100);
+                setResults([{
+                  name: 'Image Reference Texture',
+                  status: result ? 'done' : 'error'
+                }]);
+
+                setTimeout(() => setStatus('success'), 1000);
               }
               
             } catch (error) {
