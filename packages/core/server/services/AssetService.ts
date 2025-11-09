@@ -74,6 +74,14 @@ export class AssetService {
             await fs.readFile(metadataPath, "utf-8"),
           ) as AssetMetadataType;
 
+          // Ensure required fields for schema validation
+          if (!metadata.id) {
+            metadata.id = assetDir;
+          }
+          if (!metadata.name) {
+            metadata.name = assetDir;
+          }
+
           // Normalize tier property for frontend compatibility
           // For variants: extract tier from materialPreset.id or materialPreset.tier
           // For base models: tier is optional
