@@ -49,7 +49,8 @@ export class AssetService {
       const assets: Asset[] = [];
 
       for (const assetDir of assetDirs) {
-        if (assetDir.startsWith(".") || assetDir.endsWith(".json")) {
+        // Skip hidden files, JSON files, and system directories
+        if (assetDir.startsWith(".") || assetDir.endsWith(".json") || assetDir === "lost+found") {
           continue;
         }
 
@@ -60,6 +61,15 @@ export class AssetService {
           if (!stats.isDirectory()) continue;
 
           const metadataPath = path.join(assetPath, "metadata.json");
+
+          // Check if metadata.json exists before trying to read it
+          try {
+            await fs.access(metadataPath);
+          } catch {
+            // Skip directories without metadata.json (not assets)
+            continue;
+          }
+
           const metadata = JSON.parse(
             await fs.readFile(metadataPath, "utf-8"),
           ) as AssetMetadataType;
@@ -92,9 +102,12 @@ export class AssetService {
             generatedAt: metadata.generatedAt,
           });
         } catch (error) {
-          // Skip assets that can't be loaded
+          // Skip assets that can't be loaded due to malformed metadata or other errors
           const err = error as Error;
-          console.warn(`Failed to load asset ${assetDir}:`, err.message);
+          // Only log if it's not a simple "file not found" error (those are now handled above)
+          if (!err.message.includes("ENOENT") && !err.message.includes("no such file")) {
+            console.error(`Error loading asset ${assetDir}:`, err.message);
+          }
         }
       }
 
