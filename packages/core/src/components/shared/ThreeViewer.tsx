@@ -2130,12 +2130,9 @@ const ThreeViewer = forwardRef(({
         }
       }
 
-      const tcObj = transformControlsRef.current as any as THREE.Object3D
       console.log('[bone-edit] TransformControls state:')
       console.log('  - enabled:', transformControlsRef.current.enabled)
-      console.log('  - visible:', tcObj.visible)
-      console.log('  - in scene:', sceneRef.current?.children.includes(tcObj))
-      console.log('  - parent:', tcObj.parent?.type)
+      console.log('  - mode:', transformControlsRef.current.mode)
 
       // Detach from any object when disabling
       if (!enabled && transformControlsRef.current.object) {
@@ -2299,14 +2296,11 @@ const ThreeViewer = forwardRef(({
             // Gizmo should now be visible - TransformControls handles its own rendering
             console.log('[selection] ✅ Gizmo attached and should be visible')
 
-            const tcObj = transformControlsRef.current as any as THREE.Object3D
             console.log(`[selection] 🎯 3-Axis Gizmo attached to bone "${closestBone.name}"`)
             console.log('  - Mode:', transformControlsRef.current.mode, '(drag arrows to move)')
             console.log('  - Space:', transformControlsRef.current.space)
             console.log('  - Size:', transformControlsRef.current.size)
             console.log('  - Attached object position:', closestBone.position.toArray())
-            console.log('  - TransformControls in scene:', sceneRef.current?.children.includes(tcObj))
-            console.log('  - TransformControls parent:', tcObj.parent?.type)
           } else {
             console.log(`[selection] ❌ No bone within ${closestDistance}m`)
           }
@@ -2363,16 +2357,12 @@ const ThreeViewer = forwardRef(({
       console.log('TransformControls ref:', !!transformControlsRef.current)
       if (transformControlsRef.current) {
         const tc = transformControlsRef.current
-        const tcObj = tc as any as THREE.Object3D
         console.log('  enabled:', tc.enabled)
-        console.log('  visible:', tcObj.visible)
         console.log('  mode:', tc.mode)
         console.log('  space:', tc.space)
         console.log('  size:', tc.size)
         console.log('  object attached:', tc.object?.name)
-        console.log('  in scene:', sceneRef.current?.children.includes(tcObj))
-        console.log('  parent:', tcObj.parent?.type)
-        
+
         const helper = tc.getHelper()
         console.log('  helper:', !!helper)
         if (helper) {
@@ -2718,20 +2708,13 @@ const ThreeViewer = forwardRef(({
         }
       }
     })
-    
-    // Add TransformControls to scene
-    // CRITICAL: Cast to any first, then to Object3D to satisfy TypeScript
-    // TransformControls extends Object3D but TypeScript doesn't know that
-    const tControlsObj = tControls as any as THREE.Object3D
-    scene.add(tControlsObj)
+
+    // Store TransformControls reference (it manages its own rendering, no need to add to scene)
     transformControlsRef.current = tControls
 
-    console.log('✅ TransformControls initialized and added to scene')
-    console.log('   TransformControls type:', tControls.constructor.name)
-    console.log('   TransformControls in scene:', scene.children.includes(tControlsObj))
+    console.log('✅ TransformControls initialized')
     console.log('   TransformControls enabled:', tControls.enabled)
     console.log('   TransformControls size:', tControls.size)
-    console.log('   Scene children count:', scene.children.length)
 
     // Create bone highlight sphere (will be positioned on selected bone)
     const highlightSphere = new THREE.Mesh(
