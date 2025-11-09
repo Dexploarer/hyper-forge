@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ChevronLeft } from 'lucide-react'
 
 import {
@@ -14,7 +14,11 @@ import { VoiceServiceStatus } from '@/components/Voice'
 import { Button } from '@/components/common'
 import type { AudioType, AudioView, GeneratedAudio } from '@/types/audio'
 
-export const AudioGenerationPage: React.FC = () => {
+interface AudioGenerationPageProps {
+  initialPrompt?: string
+}
+
+export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initialPrompt }) => {
   // Audio type selection
   const [audioType, setAudioType] = useState<AudioType | null>(null)
 
@@ -24,6 +28,24 @@ export const AudioGenerationPage: React.FC = () => {
   // Generated audios
   const [generatedAudios, setGeneratedAudios] = useState<GeneratedAudio[]>([])
   const [selectedAudio, setSelectedAudio] = useState<GeneratedAudio | null>(null)
+
+  // Auto-detect audio type from prompt and set it
+  useEffect(() => {
+    if (initialPrompt && !audioType) {
+      const lowerPrompt = initialPrompt.toLowerCase()
+      // Detect audio type from keywords
+      if (lowerPrompt.includes('voice') || lowerPrompt.includes('speech') || lowerPrompt.includes('tts') || lowerPrompt.includes('narrat')) {
+        setAudioType('voice')
+      } else if (lowerPrompt.includes('sfx') || lowerPrompt.includes('sound effect') || lowerPrompt.includes('effect')) {
+        setAudioType('sfx')
+      } else if (lowerPrompt.includes('music') || lowerPrompt.includes('song') || lowerPrompt.includes('track') || lowerPrompt.includes('soundtrack')) {
+        setAudioType('music')
+      } else {
+        // Default to music if unclear
+        setAudioType('music')
+      }
+    }
+  }, [initialPrompt, audioType])
 
   // Handle audio generation completion
   const handleAudioGenerated = (audioData: string | Blob, metadata: any) => {
@@ -98,13 +120,13 @@ export const AudioGenerationPage: React.FC = () => {
                 </Button>
 
                 {audioType === 'voice' && (
-                  <VoiceGenerationCard onGenerated={handleAudioGenerated} />
+                  <VoiceGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
                 )}
                 {audioType === 'sfx' && (
-                  <SFXGenerationCard onGenerated={handleAudioGenerated} />
+                  <SFXGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
                 )}
                 {audioType === 'music' && (
-                  <MusicGenerationCard onGenerated={handleAudioGenerated} />
+                  <MusicGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
                 )}
               </div>
 

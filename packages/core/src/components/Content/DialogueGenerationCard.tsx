@@ -1,5 +1,5 @@
 import { MessageSquare, Loader2, Zap, Shield, Sparkles } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
@@ -8,15 +8,24 @@ import type { DialogueNode, QualityLevel } from '@/types/content'
 
 interface DialogueGenerationCardProps {
   onGenerated?: (nodes: DialogueNode[], rawResponse: string) => void
+  initialPrompt?: string
 }
 
-export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({ onGenerated }) => {
+export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
   const [apiClient] = useState(() => new ContentAPIClient())
   const [npcName, setNpcName] = useState('')
   const [personality, setPersonality] = useState('')
   const [context, setContext] = useState('')
   const [quality, setQuality] = useState<QualityLevel>('speed')
   const [isGenerating, setIsGenerating] = useState(false)
+
+  // Populate personality or context from initialPrompt
+  useEffect(() => {
+    if (initialPrompt && !personality && !context) {
+      // Use personality field for dialogue prompts
+      setPersonality(initialPrompt)
+    }
+  }, [initialPrompt, personality, context])
 
   const handleGenerate = async () => {
     if (!npcName || !personality) {

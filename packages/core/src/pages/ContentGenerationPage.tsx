@@ -14,9 +14,14 @@ import {
 import { Button } from '@/components/common'
 import type { ContentType, ContentView, GeneratedContent, NPCData, QuestData, DialogueNode, LoreData } from '@/types/content'
 
-export const ContentGenerationPage: React.FC = () => {
+interface ContentGenerationPageProps {
+  initialType?: ContentType // Optional initial content type to skip selector
+  initialPrompt?: string // Optional initial prompt to pre-fill forms
+}
+
+export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ initialType, initialPrompt }) => {
   // Content type selection
-  const [contentType, setContentType] = useState<ContentType | null>(null)
+  const [contentType, setContentType] = useState<ContentType | null>(initialType || null)
 
   // View management
   const [activeView, setActiveView] = useState<ContentView>('config')
@@ -111,16 +116,16 @@ export const ContentGenerationPage: React.FC = () => {
                 </Button>
 
                 {contentType === 'npc' && (
-                  <NPCGenerationCard onGenerated={(npc, raw) => handleContentGenerated(npc, raw, 'npc')} />
+                  <NPCGenerationCard onGenerated={(npc, raw) => handleContentGenerated(npc, raw, 'npc')} initialPrompt={initialPrompt} />
                 )}
                 {contentType === 'quest' && (
-                  <QuestGenerationCard onGenerated={(quest, raw) => handleContentGenerated(quest, raw, 'quest')} />
+                  <QuestGenerationCard onGenerated={(quest, raw) => handleContentGenerated(quest, raw, 'quest')} initialPrompt={initialPrompt} />
                 )}
                 {contentType === 'dialogue' && (
-                  <DialogueGenerationCard onGenerated={(nodes, raw) => handleContentGenerated(nodes, raw, 'dialogue')} />
+                  <DialogueGenerationCard onGenerated={(nodes, raw) => handleContentGenerated(nodes, raw, 'dialogue')} initialPrompt={initialPrompt} />
                 )}
                 {contentType === 'lore' && (
-                  <LoreGenerationCard onGenerated={(lore, raw) => handleContentGenerated(lore, raw, 'lore')} />
+                  <LoreGenerationCard onGenerated={(lore, raw) => handleContentGenerated(lore, raw, 'lore')} initialPrompt={initialPrompt} />
                 )}
               </div>
 

@@ -9,10 +9,8 @@ import { useNavigation } from "./hooks/useNavigation";
 import { LandingPage } from "./pages/LandingPage";
 import { UnifiedEquipmentPage } from "./pages/UnifiedEquipmentPage";
 import { AssetsPage } from "./pages/AssetsPage";
-import { AudioGenerationPage } from "./pages/AudioGenerationPage";
-import { ContentGenerationPage } from "./pages/ContentGenerationPage";
+import { ChatGenerationPage } from "./pages/ChatGenerationPage";
 import { ContentLibraryPage } from "./pages/ContentLibraryPage";
-import { GenerationPage } from "./pages/GenerationPage";
 import { HandRiggingPage } from "./pages/HandRiggingPage";
 import { PlaytesterSwarmPage } from "./pages/PlaytesterSwarmPage";
 import { RetargetAnimatePage } from "./pages/RetargetAnimatePage";
@@ -35,13 +33,11 @@ function AppContent() {
       <MainLayout currentView={currentView} onViewChange={navigateTo}>
         {currentView === NAVIGATION_VIEWS.ASSETS && <AssetsPage />}
         {currentView === NAVIGATION_VIEWS.GENERATION && (
-          <GenerationPage
+          <ChatGenerationPage
             onNavigateToAssets={() => navigateTo(NAVIGATION_VIEWS.ASSETS)}
             onNavigateToAsset={navigateToAsset}
           />
         )}
-        {currentView === NAVIGATION_VIEWS.AUDIO && <AudioGenerationPage />}
-        {currentView === NAVIGATION_VIEWS.CONTENT && <ContentGenerationPage />}
         {currentView === NAVIGATION_VIEWS.CONTENT_LIBRARY && <ContentLibraryPage />}
         {currentView === NAVIGATION_VIEWS.PLAYTESTER && <PlaytesterSwarmPage />}
         {currentView === NAVIGATION_VIEWS.EQUIPMENT && <UnifiedEquipmentPage />}

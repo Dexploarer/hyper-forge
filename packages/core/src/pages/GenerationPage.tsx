@@ -49,15 +49,20 @@ import { usePipelineStatus } from "@/hooks";
 import { useMaterialPresets } from "@/hooks";
 import { Asset, AssetService } from "@/services/api/AssetService";
 import { GenerationAPIClient } from "@/services/api/GenerationAPIClient";
+import { api } from "@/lib/api-client";
 
 interface GenerationPageProps {
   onClose?: () => void;
   onNavigateToAssets?: () => void;
   onNavigateToAsset?: (assetId: string) => void;
+  initialPrompt?: string;
+  shouldGenerateWorld?: boolean;
 }
 
 export const GenerationPage: React.FC<GenerationPageProps> = ({
   onClose: _onClose,
+  initialPrompt,
+  shouldGenerateWorld = false,
 }) => {
   const [apiClient] = useState(() => new GenerationAPIClient());
 
@@ -253,6 +258,44 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
 
     return [...savedCustomTypes, ...tempTypes];
   }, [currentGenerationTypes, customAssetTypes, generationType]);
+
+  // Populate description from initial prompt if provided
+  useEffect(() => {
+    if (initialPrompt && !description) {
+      setDescription(initialPrompt);
+    }
+  }, [initialPrompt, description, setDescription]);
+
+  // Auto-trigger world generation if requested
+  useEffect(() => {
+    if (shouldGenerateWorld && !isGenerating) {
+      // Small delay to ensure component is fully mounted and generationType is set
+      const timer = setTimeout(async () => {
+        try {
+          notify.info('Generating world... This may take a few minutes.')
+
+          // Call world generation seed endpoint
+          const { data, error } = await api.api.content['generate-world'].post({
+            theme: 'fantasy',
+            complexity: 'medium'
+          })
+
+          if (error || !data) {
+            throw new Error(error || 'Failed to generate world')
+          }
+
+          notify.success(`World "${data.world.worldName}" generated successfully!`)
+
+          // Log the world data for now (could navigate to a world view page later)
+          console.log('Generated world:', data.world)
+        } catch (error) {
+          console.error('Failed to generate world:', error)
+          notify.error('Failed to generate world. Please try again.')
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [shouldGenerateWorld, isGenerating]);
 
   // Load prompts on mount and update store
   useEffect(() => {
@@ -659,11 +702,39 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
     };
   }, []);
 
+  // World generation handler
+  const handleGenerateWorld = async () => {
+    try {
+      notify.info('Generating world... This may take a few minutes.')
+
+      // Call world generation seed endpoint
+      const { data, error } = await api.api.content['generate-world'].post({
+        theme: 'fantasy',
+        complexity: 'medium'
+      })
+
+      if (error || !data) {
+        throw new Error(error || 'Failed to generate world')
+      }
+
+      notify.success(`World "${data.world.worldName}" generated successfully!`)
+
+      // Log the world data for now (could navigate to a world view page later)
+      console.log('Generated world:', data.world)
+    } catch (error) {
+      console.error('Failed to generate world:', error)
+      notify.error('Failed to generate world. Please try again.')
+    }
+  }
+
   // Show generation type selector first
   if (!generationType) {
     return (
       <div className="h-full flex items-center justify-center overflow-hidden">
-        <GenerationTypeSelector onSelectType={setGenerationType} />
+        <GenerationTypeSelector
+          onSelectType={setGenerationType}
+          onGenerateWorld={handleGenerateWorld}
+        />
       </div>
     );
   }

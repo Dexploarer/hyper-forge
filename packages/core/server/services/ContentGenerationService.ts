@@ -320,6 +320,64 @@ export class ContentGenerationService {
     };
   }
 
+  /**
+   * Generate entire world seed
+   */
+  async generateWorld(params: {
+    theme?: string;
+    complexity?: "simple" | "medium" | "complex";
+    customPrompt?: string;
+    quality?: "quality" | "speed" | "balanced";
+  }): Promise<{
+    world: any;
+    rawResponse: string;
+  }> {
+    const {
+      theme = "fantasy",
+      complexity = "medium",
+      customPrompt,
+      quality = "quality",
+    } = params;
+
+    const model = this.getModel(quality);
+
+    const aiPrompt = this.buildWorldPrompt(theme, complexity, customPrompt);
+
+    console.log(
+      `[ContentGeneration] Generating ${complexity} ${theme} world`,
+    );
+
+    const result = await generateText({
+      model,
+      prompt: aiPrompt,
+      temperature: 0.8,
+      maxOutputTokens: 4000,
+    });
+
+    const worldData = this.parseWorldResponse(result.text);
+
+    const completeWorld = {
+      id: `world_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      ...worldData,
+      theme,
+      complexity,
+      metadata: {
+        generatedBy: "AI",
+        model: quality,
+        timestamp: new Date().toISOString(),
+      },
+    };
+
+    console.log(
+      `[ContentGeneration] Generated world: ${completeWorld.worldName}`,
+    );
+
+    return {
+      world: completeWorld,
+      rawResponse: result.text,
+    };
+  }
+
   // ============================================================================
   // Prompt Building
   // ============================================================================
@@ -452,6 +510,59 @@ Generate lore content in JSON format:
 Return ONLY the JSON object, no explanation.`;
   }
 
+  private buildWorldPrompt(
+    theme: string,
+    complexity: string,
+    customPrompt?: string,
+  ): string {
+    const complexityGuide = {
+      simple: "3-5 key NPCs, 5-8 asset types, 2-3 main locations",
+      medium: "5-8 key NPCs, 10-15 asset types, 4-6 main locations",
+      complex: "10-15 key NPCs, 20-30 asset types, 8-12 main locations",
+    };
+
+    return `You are a world designer for a game development platform. Generate a complete, cohesive game world seed.
+
+Theme: ${theme}
+Complexity: ${complexity} (${complexityGuide[complexity as keyof typeof complexityGuide]})
+${customPrompt ? `Additional Requirements: ${customPrompt}` : ""}
+
+Create a world that is internally consistent, with interconnected elements that tell a story. Each asset, NPC, and location should feel like part of the same world.
+
+Generate a world seed in JSON format:
+{
+  "worldName": "World Name",
+  "narrative": "2-3 paragraph narrative describing the world's current state, history, and key conflicts",
+  "keyFeatures": ["feature1", "feature2", "feature3"],
+  "suggestedAssets": {
+    "items": [
+      {"name": "Item Name", "description": "Item description", "category": "weapon|armor|tool|consumable"}
+    ],
+    "environments": [
+      {"name": "Environment Name", "description": "Environment description", "category": "nature|urban|dungeon"}
+    ],
+    "buildings": [
+      {"name": "Building Name", "description": "Building description", "category": "residential|commercial|temple|fortress"}
+    ]
+  },
+  "suggestedNPCs": [
+    {"name": "NPC Name", "role": "Their role in the world", "archetype": "merchant|warrior|mage|villain|quest_giver"}
+  ],
+  "suggestedLocations": [
+    {"name": "Location Name", "type": "town|dungeon|wilderness|castle", "description": "Location description"}
+  ],
+  "loreHooks": ["Intriguing lore element 1", "Intriguing lore element 2"]
+}
+
+IMPORTANT:
+- All elements should be thematically consistent with the ${theme} theme
+- NPCs should have roles that connect to the locations and narrative
+- Assets should make sense within the world context
+- Include variety but maintain coherence
+
+Return ONLY the JSON object, no explanation.`;
+  }
+
   // ============================================================================
   // Response Parsing
   // ============================================================================
@@ -493,6 +604,16 @@ Return ONLY the JSON object, no explanation.`;
       return JSON.parse(cleaned);
     } catch (error) {
       console.error("[Parse Error] Failed to parse lore response:", error);
+      throw new Error("Invalid JSON response from AI");
+    }
+  }
+
+  private parseWorldResponse(text: string): any {
+    try {
+      let cleaned = this.cleanJSONResponse(text);
+      return JSON.parse(cleaned);
+    } catch (error) {
+      console.error("[Parse Error] Failed to parse world response:", error);
       throw new Error("Invalid JSON response from AI");
     }
   }

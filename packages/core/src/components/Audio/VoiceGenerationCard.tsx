@@ -9,9 +9,10 @@ import { cn } from '@/styles'
 
 interface VoiceGenerationCardProps {
   onGenerated?: (audioData: string, metadata: any) => void
+  initialPrompt?: string
 }
 
-export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({ onGenerated }) => {
+export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
   const [apiClient] = useState(() => new AudioAPIClient())
 
   // Mode toggle
@@ -29,6 +30,19 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({ onGene
   const [previews, setPreviews] = useState<VoicePreview[]>([])
   const [selectedPreview, setSelectedPreview] = useState<string>('')
   const [newVoiceName, setNewVoiceName] = useState('')
+
+  // Populate prompt from initialPrompt
+  useEffect(() => {
+    if (initialPrompt && !ttsText && !voiceDescription) {
+      // If prompt mentions voice design keywords, use voiceDescription, otherwise use ttsText
+      const lowerPrompt = initialPrompt.toLowerCase()
+      if (lowerPrompt.includes('voice') && (lowerPrompt.includes('design') || lowerPrompt.includes('create') || lowerPrompt.includes('new'))) {
+        setVoiceDescription(initialPrompt)
+      } else {
+        setTtsText(initialPrompt)
+      }
+    }
+  }, [initialPrompt, ttsText, voiceDescription])
 
   // Voice settings
   const [showSettings, setShowSettings] = useState(false)

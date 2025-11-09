@@ -79,20 +79,35 @@
     --bg-hover: #f3f4f6;
     --bg-elevated: #ffffff;
     
-    --text-primary: #111827;
-    --text-secondary: #6b7280;
-    --text-tertiary: #9ca3af;
-    --text-muted: #d1d5db;
+    /* Improved text contrast for light mode */
+    --text-primary: #0f172a;        /* Darker for better contrast */
+    --text-secondary: #475569;      /* Darker gray - was #6b7280 */
+    --text-tertiary: #64748b;       /* Medium gray - was #9ca3af */
+    --text-muted: #94a3b8;          /* Lighter but still readable - was #d1d5db */
     
-    --border-primary: #e5e7eb;
-    --border-secondary: #d1d5db;
-    --border-hover: #9ca3af;
+    /* Stronger borders for better separation */
+    --border-primary: #cbd5e1;      /* Darker - was #e5e7eb */
+    --border-secondary: #94a3b8;    /* Darker - was #d1d5db */
+    --border-hover: #64748b;        /* Darker - was #9ca3af */
     
-    /* Light theme shadows */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    /* Icon background opacity - higher for light mode visibility */
+    --icon-bg-opacity: 0.2;          /* 20% opacity for light mode */
+    
+    /* Enhanced shadows for depth and separation */
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Dark theme icon opacity */
+  :root {
+    --icon-bg-opacity: 0.1;          /* 10% opacity for dark mode */
+  }
+  
+  /* Icon background - ensures visibility in light mode */
+  .icon-bg-hover {
+    transition: background-color 0.2s ease-out;
   }
   
   /* Global Reset */
@@ -822,12 +837,17 @@
     @apply p-4;
   }
   
-  /* Modal Overlay */
+  /* Modal Overlay - theme aware */
   .modal-overlay {
     @apply fixed inset-0 z-50 flex items-center justify-center p-4
-           bg-black bg-opacity-50 backdrop-blur-sm;
+           backdrop-blur-sm;
+    background-color: rgba(0, 0, 0, 0.5);
     animation: modalBackdropFadeIn 0.3s ease-out;
     will-change: opacity, backdrop-filter;
+  }
+  
+  .light-theme .modal-overlay {
+    background-color: rgba(0, 0, 0, 0.4);
   }
   
   @keyframes modalBackdropFadeIn {
@@ -891,9 +911,16 @@
     animation: scaleIn var(--duration-base) var(--easing-out);
   }
   
-  /* Glass effect */
+  /* Glass effect - theme aware */
   .glass {
-    @apply bg-white bg-opacity-5 backdrop-blur-md border border-white border-opacity-10;
+    @apply backdrop-blur-md;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .light-theme .glass {
+    background-color: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   /* Interactive states */

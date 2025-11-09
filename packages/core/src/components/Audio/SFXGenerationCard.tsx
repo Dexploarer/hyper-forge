@@ -1,5 +1,5 @@
 import { Radio, Loader2 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Textarea } from '../common'
 import { AudioAPIClient } from '@/services/api/AudioAPIClient'
@@ -7,11 +7,19 @@ import { notify } from '@/utils/notify'
 
 interface SFXGenerationCardProps {
   onGenerated?: (audioBlob: Blob, metadata: any) => void
+  initialPrompt?: string
 }
 
-export const SFXGenerationCard: React.FC<SFXGenerationCardProps> = ({ onGenerated }) => {
+export const SFXGenerationCard: React.FC<SFXGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
   const [apiClient] = useState(() => new AudioAPIClient())
   const [description, setDescription] = useState('')
+
+  // Populate description from initialPrompt
+  useEffect(() => {
+    if (initialPrompt && !description) {
+      setDescription(initialPrompt)
+    }
+  }, [initialPrompt, description])
   const [duration, setDuration] = useState(3)
   const [promptInfluence, setPromptInfluence] = useState(0.3)
   const [isGenerating, setIsGenerating] = useState(false)

@@ -1,5 +1,5 @@
 import { Scroll, Loader2, Zap, Shield, Sparkles } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
@@ -8,6 +8,7 @@ import type { QuestData, QualityLevel } from '@/types/content'
 
 interface QuestGenerationCardProps {
   onGenerated?: (quest: QuestData & { id: string; difficulty: string; questType: string; metadata: any }, rawResponse: string) => void
+  initialPrompt?: string
 }
 
 const QUEST_TYPES = [
@@ -17,12 +18,19 @@ const QUEST_TYPES = [
 
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Very Hard', 'Epic']
 
-export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGenerated }) => {
+export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
   const [apiClient] = useState(() => new ContentAPIClient())
   const [questType, setQuestType] = useState('Side Quest')
   const [difficulty, setDifficulty] = useState('Medium')
   const [theme, setTheme] = useState('')
   const [context, setContext] = useState('')
+
+  // Populate theme from initialPrompt
+  useEffect(() => {
+    if (initialPrompt && !theme) {
+      setTheme(initialPrompt)
+    }
+  }, [initialPrompt, theme])
   const [quality, setQuality] = useState<QualityLevel>('quality')
   const [isGenerating, setIsGenerating] = useState(false)
 

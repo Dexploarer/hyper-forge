@@ -50,7 +50,7 @@ export interface GeneratedAsset extends Asset {
 
 interface GenerationState {
   // UI State
-  generationType: 'item' | 'avatar' | undefined
+  generationType: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined
   activeView: 'config' | 'progress' | 'results'
   showAdvancedPrompts: boolean
   showAssetTypeEditor: boolean

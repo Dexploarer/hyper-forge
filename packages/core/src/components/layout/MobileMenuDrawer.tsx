@@ -7,8 +7,6 @@ import {
   Play,
   X,
   LogOut,
-  Music,
-  ScrollText,
   Library,
   TestTube2,
   Users,
@@ -39,25 +37,13 @@ const NAV_ITEMS: NavItem[] = [
     view: NAVIGATION_VIEWS.GENERATION,
     icon: Sparkles,
     label: 'Generate',
-    description: 'AI-powered asset generation'
+    description: 'AI-powered content generation'
   },
   {
     view: NAVIGATION_VIEWS.ASSETS,
     icon: Package,
     label: 'Assets',
     description: 'Browse & manage assets'
-  },
-  {
-    view: NAVIGATION_VIEWS.AUDIO,
-    icon: Music,
-    label: 'Audio',
-    description: 'Voice, music & sound effects'
-  },
-  {
-    view: NAVIGATION_VIEWS.CONTENT,
-    icon: ScrollText,
-    label: 'Content',
-    description: 'NPCs, quests & lore'
   },
   {
     view: NAVIGATION_VIEWS.CONTENT_LIBRARY,
@@ -144,14 +130,14 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
       {/* Drawer */}
       <aside
         className={cn(
-          'fixed top-0 left-0 bottom-0 w-[280px] max-w-[85vw] bg-bg-secondary/98 backdrop-blur-sm border-r border-white/10 transform transition-transform duration-300 ease-out z-[70] flex flex-col',
+          'fixed top-0 left-0 bottom-0 w-[280px] max-w-[85vw] bg-bg-secondary/98 backdrop-blur-sm border-r border-border-primary transform transition-transform duration-300 ease-out z-[70] flex flex-col',
           isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         aria-label="Main navigation"
         aria-hidden={!isOpen}
       >
         {/* Header */}
-        <div className="h-14 px-4 flex items-center justify-between border-b border-white/10">
+        <div className="h-14 px-4 flex items-center justify-between border-b border-border-primary">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-primary to-accent rounded-lg">
               <Sparkles className="w-4 h-4 text-white" />
@@ -163,7 +149,7 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
           </div>
           <button
             onClick={onClose}
-            className="p-2 -mr-2 hover:bg-white/5 rounded-lg transition-colors text-text-tertiary active:scale-95"
+            className="p-2 -mr-2 hover:bg-bg-hover rounded-lg transition-colors text-text-tertiary active:scale-95"
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />
@@ -185,7 +171,7 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
                     'w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 active:scale-98',
                     isActive
                       ? 'bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 text-primary shadow-lg shadow-primary/10'
-                      : 'hover:bg-white/5 text-text-secondary border border-transparent'
+                      : 'hover:bg-bg-hover text-text-secondary border border-transparent'
                   )}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -213,10 +199,10 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
         </nav>
 
         {/* Footer - Profile & Logout */}
-        <div className="p-3 border-t border-white/10 space-y-2">
+        <div className="p-3 border-t border-border-primary space-y-2">
           <button
             onClick={handleProfileClick}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white/5 text-text-secondary transition-colors border border-transparent hover:border-white/10 active:scale-98"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-bg-hover text-text-secondary transition-colors border border-transparent hover:border-border-hover active:scale-98"
             aria-label="Profile settings"
           >
             <User className="w-5 h-5 flex-shrink-0" />

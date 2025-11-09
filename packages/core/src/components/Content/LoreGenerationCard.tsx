@@ -1,5 +1,5 @@
 import { Book, Loader2, Zap, Shield, Sparkles } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
@@ -8,6 +8,7 @@ import type { LoreData, QualityLevel } from '@/types/content'
 
 interface LoreGenerationCardProps {
   onGenerated?: (lore: LoreData & { id: string; metadata: any }, rawResponse: string) => void
+  initialPrompt?: string
 }
 
 const CATEGORIES = [
@@ -15,13 +16,20 @@ const CATEGORIES = [
   'Mythology', 'Politics', 'Technology', 'Factions', 'Artifacts', 'Events'
 ]
 
-export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({ onGenerated }) => {
+export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
   const [apiClient] = useState(() => new ContentAPIClient())
   const [category, setCategory] = useState('History')
   const [topic, setTopic] = useState('')
   const [context, setContext] = useState('')
   const [quality, setQuality] = useState<QualityLevel>('balanced')
   const [isGenerating, setIsGenerating] = useState(false)
+
+  // Populate topic from initialPrompt
+  useEffect(() => {
+    if (initialPrompt && !topic) {
+      setTopic(initialPrompt)
+    }
+  }, [initialPrompt, topic])
 
   const handleGenerate = async () => {
     if (!category || !topic) {

@@ -742,6 +742,59 @@ export const GenerateLoreResponse = t.Object({
   rawResponse: t.String(),
 });
 
+// World Generation
+export const WorldSeedAsset = t.Object({
+  name: t.String(),
+  description: t.String(),
+  category: t.String(),
+});
+
+export const WorldSeedNPC = t.Object({
+  name: t.String(),
+  role: t.String(),
+  archetype: t.String(),
+});
+
+export const WorldSeedLocation = t.Object({
+  name: t.String(),
+  type: t.String(),
+  description: t.String(),
+});
+
+export const WorldDataResponse = t.Object({
+  id: t.String(),
+  worldName: t.String(),
+  theme: t.String(),
+  complexity: t.String(),
+  narrative: t.String(),
+  keyFeatures: t.Array(t.String()),
+  suggestedAssets: t.Object({
+    items: t.Array(WorldSeedAsset),
+    environments: t.Array(WorldSeedAsset),
+    buildings: t.Array(WorldSeedAsset),
+  }),
+  suggestedNPCs: t.Array(WorldSeedNPC),
+  suggestedLocations: t.Array(WorldSeedLocation),
+  loreHooks: t.Array(t.String()),
+  metadata: t.Record(t.String(), t.Unknown()),
+});
+
+export const GenerateWorldRequest = t.Object({
+  theme: t.Optional(t.String()),
+  complexity: t.Optional(t.Union([
+    t.Literal("simple"),
+    t.Literal("medium"),
+    t.Literal("complex"),
+  ])),
+  customPrompt: t.Optional(t.String()),
+  quality: t.Optional(ModelQuality),
+});
+
+export const GenerateWorldResponse = t.Object({
+  world: WorldDataResponse,
+  rawResponse: t.String(),
+});
+
 // ==================== Type Exports ====================
 // Export TypeScript types for use in implementation
 

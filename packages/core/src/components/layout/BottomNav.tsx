@@ -41,7 +41,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function BottomNav({ currentView, onViewChange, onMoreClick }: BottomNavProps) {
   return (
-    <nav className="h-16 bg-bg-secondary/98 backdrop-blur-sm border-t border-white/10 fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom">
+    <nav className="h-16 bg-bg-secondary/98 backdrop-blur-sm border-t border-border-primary fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom">
       <div className="h-full flex items-center justify-around px-2">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon as React.FC<{ className?: string }>
@@ -58,7 +58,7 @@ export function BottomNav({ currentView, onViewChange, onMoreClick }: BottomNavP
                 'flex flex-col items-center justify-center min-w-[64px] h-12 px-3 rounded-xl transition-all duration-200 micro-bounce',
                 isActive
                   ? 'bg-gradient-to-br from-primary/20 to-accent/20 text-primary'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
               )}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}

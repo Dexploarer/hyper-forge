@@ -1,5 +1,5 @@
 import { BookOpen, Loader2, Zap, Shield, Sparkles } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
@@ -8,6 +8,7 @@ import type { NPCData, QualityLevel } from '@/types/content'
 
 interface NPCGenerationCardProps {
   onGenerated?: (npc: NPCData & { id: string; metadata: any }, rawResponse: string) => void
+  initialPrompt?: string
 }
 
 const ARCHETYPES = [
@@ -16,13 +17,20 @@ const ARCHETYPES = [
   'Villager', 'Hunter', 'Scholar', 'Healer', 'Bard'
 ]
 
-export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({ onGenerated }) => {
+export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
   const [apiClient] = useState(() => new ContentAPIClient())
   const [archetype, setArchetype] = useState('Merchant')
   const [prompt, setPrompt] = useState('')
   const [context, setContext] = useState('')
   const [quality, setQuality] = useState<QualityLevel>('quality')
   const [isGenerating, setIsGenerating] = useState(false)
+
+  // Populate prompt from initialPrompt
+  useEffect(() => {
+    if (initialPrompt && !prompt) {
+      setPrompt(initialPrompt)
+    }
+  }, [initialPrompt, prompt])
 
   const handleGenerate = async () => {
     if (!archetype || !prompt) {

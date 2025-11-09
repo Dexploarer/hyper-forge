@@ -1,5 +1,5 @@
 import { Music, Loader2 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Textarea, Checkbox } from '../common'
 import { AudioAPIClient } from '@/services/api/AudioAPIClient'
@@ -7,11 +7,19 @@ import { notify } from '@/utils/notify'
 
 interface MusicGenerationCardProps {
   onGenerated?: (audioBlob: Blob, metadata: any) => void
+  initialPrompt?: string
 }
 
-export const MusicGenerationCard: React.FC<MusicGenerationCardProps> = ({ onGenerated }) => {
+export const MusicGenerationCard: React.FC<MusicGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
   const [apiClient] = useState(() => new AudioAPIClient())
   const [prompt, setPrompt] = useState('')
+
+  // Populate prompt from initialPrompt
+  useEffect(() => {
+    if (initialPrompt && !prompt) {
+      setPrompt(initialPrompt)
+    }
+  }, [initialPrompt, prompt])
   const [lengthSeconds, setLengthSeconds] = useState(30)
   const [forceInstrumental, setForceInstrumental] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)

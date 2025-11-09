@@ -45,7 +45,7 @@ export function TopBar({ currentView }: TopBarProps) {
 
   return (
     <>
-      <header className="h-16 bg-bg-secondary/95 backdrop-blur-sm border-b border-white/10 flex items-center justify-between px-6 relative z-50">
+      <header className="h-16 bg-bg-secondary/95 backdrop-blur-sm border-b border-border-primary flex items-center justify-between px-6 relative z-50">
         {/* Current page title */}
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-semibold text-text-primary">

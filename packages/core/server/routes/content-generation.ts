@@ -904,5 +904,46 @@ export const contentGenerationRoutes = new Elysia({
               "Generate lore that features/mentions a specific NPC, automatically creating the relationship",
           },
         },
+      )
+
+      // ========================
+      // World Generation
+      // ========================
+
+      // POST /api/content/generate-world
+      .post(
+        "/generate-world",
+        async ({ body }) => {
+          console.log(
+            `[ContentGeneration] Generating ${body.complexity || "medium"} ${body.theme || "fantasy"} world`,
+          );
+
+          const result = await contentGenService.generateWorld({
+            theme: body.theme,
+            complexity: body.complexity,
+            customPrompt: body.customPrompt,
+            quality: body.quality,
+          });
+
+          console.log(
+            `[ContentGeneration] Successfully generated world: ${result.world.worldName}`,
+          );
+
+          return {
+            success: true,
+            world: result.world,
+            rawResponse: result.rawResponse,
+          };
+        },
+        {
+          body: Models.GenerateWorldRequest,
+          response: Models.GenerateWorldResponse,
+          detail: {
+            tags: ["Content Generation"],
+            summary: "Generate complete game world",
+            description:
+              "Generate a complete, cohesive game world with interconnected NPCs, assets, locations, and lore using AI.",
+          },
+        },
       ),
 );

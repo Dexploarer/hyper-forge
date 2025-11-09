@@ -420,7 +420,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm pt-16">
             <div className="relative w-[90vw] h-[85vh] max-w-[1600px] bg-bg-primary rounded-2xl shadow-2xl flex overflow-hidden">
                 {/* Header */}
-                <div className="absolute top-0 left-0 right-0 h-16 bg-bg-secondary/80 backdrop-blur-sm border-b border-white/10 flex items-center justify-between px-6 z-20">
+                <div className="absolute top-0 left-0 right-0 h-16 bg-bg-secondary/80 backdrop-blur-sm border-b border-border-primary flex items-center justify-between px-6 z-20">
                     <h2 className="text-xl font-semibold text-text-primary">Mesh Fitting Debugger</h2>
                     
                     {/* View Mode Selection - Centered */}
@@ -431,7 +431,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
                                 "px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
                                 viewMode === 'sphereCube'
                                     ? "bg-primary text-white"
-                                    : "bg-bg-tertiary text-text-secondary hover:bg-white/10"
+                                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-hover"
                             )}
                         >
                             Basic Demo
@@ -442,7 +442,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
                                 "px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
                                 viewMode === 'avatarArmor'
                                     ? "bg-primary text-white"
-                                    : "bg-bg-tertiary text-text-secondary hover:bg-white/10"
+                                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-hover"
                             )}
                         >
                             Avatar/Armor
@@ -453,7 +453,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
                                 "px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
                                 viewMode === 'helmetFitting'
                                     ? "bg-primary text-white"
-                                    : "bg-bg-tertiary text-text-secondary hover:bg-white/10"
+                                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-hover"
                             )}
                         >
                             Helmet Fitting
@@ -586,7 +586,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
                                                 "px-2 py-1.5 rounded text-xs font-medium transition-all",
                                                 currentAnimation === 'tpose'
                                                     ? "bg-primary text-white"
-                                                    : "bg-bg-tertiary text-text-secondary hover:bg-white/10"
+                                                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-hover"
                                             )}
                                         >
                                             T-Pose
@@ -597,7 +597,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
                                                 "px-2 py-1.5 rounded text-xs font-medium transition-all",
                                                 currentAnimation === 'walking'
                                                     ? "bg-primary text-white"
-                                                    : "bg-bg-tertiary text-text-secondary hover:bg-white/10"
+                                                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-hover"
                                             )}
                                         >
                                             Walk
@@ -608,7 +608,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
                                                 "px-2 py-1.5 rounded text-xs font-medium transition-all",
                                                 currentAnimation === 'running'
                                                     ? "bg-primary text-white"
-                                                    : "bg-bg-tertiary text-text-secondary hover:bg-white/10"
+                                                    : "bg-bg-tertiary text-text-secondary hover:bg-bg-hover"
                                             )}
                                         >
                                             Run

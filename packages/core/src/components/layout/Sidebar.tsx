@@ -8,8 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Music,
-  ScrollText,
   Library,
   TestTube2,
   Users,
@@ -39,25 +37,13 @@ const NAV_ITEMS: NavItem[] = [
     view: NAVIGATION_VIEWS.GENERATION,
     icon: Sparkles,
     label: 'Generate',
-    description: 'AI-powered asset generation'
+    description: 'AI-powered content generation'
   },
   {
     view: NAVIGATION_VIEWS.ASSETS,
     icon: Package,
     label: 'Assets',
     description: 'Browse & manage assets'
-  },
-  {
-    view: NAVIGATION_VIEWS.AUDIO,
-    icon: Music,
-    label: 'Audio',
-    description: 'Voice, music & sound effects'
-  },
-  {
-    view: NAVIGATION_VIEWS.CONTENT,
-    icon: ScrollText,
-    label: 'Content',
-    description: 'NPCs, quests & lore'
   },
   {
     view: NAVIGATION_VIEWS.CONTENT_LIBRARY,
@@ -123,12 +109,12 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'h-full bg-bg-secondary/95 backdrop-blur-sm border-r border-white/10 flex flex-col transition-all duration-300',
+        'h-full bg-bg-secondary/95 backdrop-blur-sm border-r border-border-primary flex flex-col transition-all duration-300',
         isCollapsed ? 'w-20' : 'w-64'
       )}
     >
       {/* Logo/Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between">
+      <div className="p-4 border-b border-border-primary flex items-center justify-between">
         {!isCollapsed ? (
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-br from-primary to-accent rounded-lg flex items-center justify-center">
@@ -157,7 +143,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
 
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-2 hover:bg-white/5 rounded-lg transition-colors text-text-tertiary hover:text-text-primary"
+          className="p-2 hover:bg-bg-hover rounded-lg transition-colors text-text-tertiary hover:text-text-primary"
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {isCollapsed ? (
@@ -189,7 +175,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
                 'w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group',
                 isActive
                   ? 'bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 text-primary shadow-lg shadow-primary/10'
-                  : 'hover:bg-white/5 text-text-secondary hover:text-text-primary border border-transparent'
+                  : 'hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-transparent'
               )}
               title={isCollapsed ? item.label : undefined}
             >
@@ -223,7 +209,7 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
       </nav>
 
       {/* Footer - Logout */}
-      <div className="p-2 border-t border-white/10">
+      <div className="p-2 border-t border-border-primary">
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-red-500/10 text-text-secondary hover:text-red-400 transition-colors group border border-transparent hover:border-red-500/30"
