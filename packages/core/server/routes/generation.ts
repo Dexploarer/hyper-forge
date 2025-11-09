@@ -15,13 +15,9 @@ export const createGenerationRoutes = (generationService: GenerationService) => 
       }
     }, (app) => app
       // Start generation pipeline
-      .post('/pipeline', async ({ body, user }) => {
-        // Merge user context from authentication into the pipeline config
-        const configWithUser = {
-          ...body,
-          user: user || undefined // Use authenticated user if available
-        }
-        const result = await generationService.startPipeline(configWithUser)
+      .post('/pipeline', async ({ body }) => {
+        // User context is already part of the body schema
+        const result = await generationService.startPipeline(body)
         return result
       }, {
         body: Models.PipelineConfig,

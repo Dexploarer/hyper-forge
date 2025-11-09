@@ -20,7 +20,7 @@ import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Badge } from '@/com
 import { cn } from '@/styles'
 
 interface MaterialPresetEditorProps {
-  isOpen: boolean
+  open: boolean
   onClose: () => void
   onSuccess?: () => void
 }
@@ -36,7 +36,7 @@ interface PresetFormData {
 }
 
 export const MaterialPresetEditor: React.FC<MaterialPresetEditorProps> = ({
-  isOpen,
+  open,
   onClose,
   onSuccess,
 }) => {
@@ -84,10 +84,10 @@ export const MaterialPresetEditor: React.FC<MaterialPresetEditorProps> = ({
   }
 
   useEffect(() => {
-    if (isOpen) {
+    if (open) {
       loadPresets()
     }
-  }, [isOpen])
+  }, [open])
 
   // Filter presets
   const filteredPresets = presets.filter((preset) => {
@@ -226,7 +226,7 @@ export const MaterialPresetEditor: React.FC<MaterialPresetEditorProps> = ({
   const isEditing = isAddingNew || editingPreset !== null
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl">
+    <Modal open={open} onClose={onClose} size="xl">
       <ModalHeader onClose={onClose}>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center">

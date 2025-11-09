@@ -1,13 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { ProfileCompletionModal } from '../components/auth/ProfileCompletionModal'
-
-interface User {
-  id: string
-  displayName: string | null
-  email: string | null
-  discordUsername: string | null
-  profileCompleted: string | null
-}
+import type { User } from '@/services/api/UsersAPIClient'
 
 interface AuthContextType {
   isAuthenticated: boolean

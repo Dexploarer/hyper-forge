@@ -671,9 +671,9 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
   return (
     <div className="h-full overflow-y-auto">
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-6">
           {/* Header with tabs */}
-          <div className="mb-6">
+          <div className="mb-4">
             {/* Tab Navigation */}
             <TabNavigation
               activeView={activeView}
@@ -683,10 +683,10 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
           </div>
           {/* Configuration Form View */}
           {activeView === "config" && (
-            <div className="animate-fade-in space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="animate-fade-in space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Main Form */}
-                <div className="lg:col-span-2 space-y-8">
+                <div className="lg:col-span-2 space-y-4">
                   {/* Asset Details Card */}
                   <AssetDetailsCard
                     generationType={generationType}
@@ -756,7 +756,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                 </div>
 
                 {/* Sidebar */}
-                <div className="space-y-8">
+                <div className="space-y-4">
                   {/* Pipeline Options */}
                   <PipelineOptionsCard
                     generationType={generationType}
@@ -860,7 +860,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
 
           {/* Progress View */}
           {activeView === "progress" && (
-            <div className="animate-fade-in space-y-8">
+            <div className="animate-fade-in space-y-4">
               <PipelineProgressCard
                 pipelineStages={pipelineStages}
                 generationType={generationType}
@@ -881,8 +881,8 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
 
           {/* Results View */}
           {activeView === "results" && (
-            <div className="animate-fade-in space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="animate-fade-in space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                 {/* Asset List */}
                 <GeneratedAssetsList
                   generatedAssets={generatedAssets}
@@ -897,7 +897,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                 />
 
                 {/* Asset Details */}
-                <div className="lg:col-span-3 space-y-8">
+                <div className="lg:col-span-3 space-y-4">
                   {selectedAsset ? (
                     <>
                       {/* 3D Preview */}
@@ -906,7 +906,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                         generationType={generationType}
                       />
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Material Variants */}
                         {generationType === "item" &&
                           selectedAsset.variants && (

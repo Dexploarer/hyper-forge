@@ -69,7 +69,7 @@ export function TopBar({ currentView }: TopBarProps) {
       {/* User Profile Modal */}
       {showProfileModal && user && (
         <UserProfileModal
-          isOpen={showProfileModal}
+          open={showProfileModal}
           user={user}
           sessionId={getSessionId()}
           onClose={() => setShowProfileModal(false)}

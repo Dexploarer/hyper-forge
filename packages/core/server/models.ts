@@ -8,14 +8,13 @@ import { t, Static } from "elysia";
 // ==================== Common Models ====================
 
 /**
- * User authentication context from Privy JWT
+ * User authentication context
  * Contains the authenticated user's identity information
  *
- * The UserContext is extracted from verified Privy authentication tokens
- * and provides user identity for ownership tracking and access control.
+ * Provides user identity for ownership tracking and access control.
  */
 export const UserContext = t.Object({
-  privyId: t.Optional(t.String()), // Privy DID (Decentralized Identifier) from verified JWT
+  userId: t.Optional(t.String()), // User identifier from authentication system
   walletAddress: t.Optional(t.String()), // User's Web3 wallet address (if linked to account)
   isAdmin: t.Optional(t.Boolean()), // Whether user is an admin (can modify any asset)
 });
@@ -60,15 +59,34 @@ export const SuccessResponse = t.Object({
 export const AssetMetadata = t.Object({
   id: t.String(),
   name: t.String(),
+  description: t.Optional(t.String()),
   type: t.Optional(t.String()),
+  subtype: t.Optional(t.String()),
   tier: t.Optional(t.Number()),
   category: t.Optional(t.String()),
   modelUrl: t.Optional(t.String()),
   thumbnailUrl: t.Optional(t.String()),
   hasSpriteSheet: t.Optional(t.Boolean()),
   spriteCount: t.Optional(t.Number()),
+  // Generation metadata
+  detailedPrompt: t.Optional(t.String()),
+  workflow: t.Optional(t.String()),
+  meshyTaskId: t.Optional(t.String()),
+  generatedAt: t.Optional(t.String()),
+  // File paths
+  conceptArtPath: t.Optional(t.String()),
+  hasConceptArt: t.Optional(t.Boolean()),
+  riggedModelPath: t.Optional(t.String()),
+  // Variant system
+  isBaseModel: t.Optional(t.Boolean()),
+  isVariant: t.Optional(t.Boolean()),
+  parentBaseModel: t.Optional(t.String()),
+  variants: t.Optional(t.Array(t.String())),
+  variantCount: t.Optional(t.Number()),
+  lastVariantGenerated: t.Optional(t.String()),
+  gameId: t.Optional(t.String()),
   // Ownership tracking (Phase 1)
-  createdBy: t.Optional(t.String()), // Privy DID
+  createdBy: t.Optional(t.String()), // User ID
   walletAddress: t.Optional(t.String()), // User's wallet address
   isPublic: t.Optional(t.Boolean()), // Default true
   createdAt: t.Optional(t.String()),

@@ -391,7 +391,9 @@ export class RetextureService {
     }
 
     // Create standardized metadata
-    const variantMetadata: AssetMetadataType = {
+    // Note: Using 'any' type here because we're adding extra fields (like materialPreset)
+    // that aren't in the AssetMetadataType schema but are needed for the JSON file
+    const variantMetadata: any = {
       // Identity
       id: variantName,
       gameId: variantName,
@@ -404,7 +406,7 @@ export class RetextureService {
       isVariant: true,
       parentBaseModel: baseAssetId,
 
-      // Material information
+      // Material information (extra field for JSON file)
       materialPreset: {
         id: materialPreset.id,
         displayName: materialPreset.displayName,
@@ -438,7 +440,7 @@ export class RetextureService {
       gddCompliant: true,
 
       // Ownership tracking (Phase 1) - inherit from parent or use provided user
-      createdBy: user?.privyId || baseMetadata.createdBy || undefined,
+      createdBy: user?.userId || baseMetadata.createdBy || undefined,
       walletAddress:
         user?.walletAddress || baseMetadata.walletAddress || undefined,
       isPublic:
@@ -455,7 +457,7 @@ export class RetextureService {
 
     console.log(`✅ Successfully retextured: ${variantName}`);
 
-    return variantMetadata;
+    return variantMetadata as AssetMetadataType;
   }
 
   async updateBaseAssetVariants(

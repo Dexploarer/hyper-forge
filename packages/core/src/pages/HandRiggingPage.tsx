@@ -248,9 +248,9 @@ export function HandRiggingPage() {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left Sidebar - Configuration */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-4">
 
             {/* Upload Card with Controls */}
             <HandAvatarSelector />
@@ -264,7 +264,7 @@ export function HandRiggingPage() {
           </div>
 
           {/* Center - 3D Viewer */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-4">
             <ModelViewer
               modelUrl={modelUrl}
               selectedAvatar={selectedAvatar}

@@ -420,7 +420,7 @@ export class GenerationService extends EventEmitter {
             }
           }
 
-          const imageResult = await this.aiService.imageService.generateImage(
+          const imageResult = await this.aiService.getImageService().generateImage(
             imagePrompt,
             pipeline.config.type,
             effectiveStyle,
@@ -528,7 +528,7 @@ export class GenerationService extends EventEmitter {
           process.env.MESHY_MODEL_DEFAULT;
         const aiModel = aiModelEnv || "meshy-5";
 
-        meshyTaskId = await this.aiService.meshyService.startImageTo3D(
+        meshyTaskId = await this.aiService.getMeshyService().startImageTo3D(
           imageUrlForMeshy,
           {
             enable_pbr: enablePbr,
@@ -562,7 +562,7 @@ export class GenerationService extends EventEmitter {
           await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
 
           const status =
-            await this.aiService.meshyService.getTaskStatus(meshyTaskId);
+            await this.aiService.getMeshyService().getTaskStatus(meshyTaskId);
           pipeline.stages.image3D.progress =
             status.progress || (attempts / maxAttempts) * 100;
 
@@ -603,7 +603,7 @@ export class GenerationService extends EventEmitter {
           console.log("🔧 Normalizing character model...");
           try {
             const { AssetNormalizationService } = await import(
-              "../../dist/services/processing/AssetNormalizationService.js"
+              "../../src/services/processing/AssetNormalizationService"
             );
             const normalizer = new AssetNormalizationService();
 
@@ -638,7 +638,7 @@ export class GenerationService extends EventEmitter {
           console.log("🔧 Normalizing weapon model...");
           try {
             const { WeaponHandleDetector } = await import(
-              "../../dist/services/processing/WeaponHandleDetector.js"
+              "../../src/services/processing/WeaponHandleDetector"
             );
             const detector = new WeaponHandleDetector();
 
@@ -711,7 +711,7 @@ export class GenerationService extends EventEmitter {
             : undefined,
           dimensions: pipeline.stages.image3D.dimensions || undefined,
           // Ownership tracking (Phase 1)
-          createdBy: pipeline.config.user?.privyId || null,
+          createdBy: pipeline.config.user?.userId || null,
           walletAddress: pipeline.config.user?.walletAddress || null,
           isPublic: true, // Default to public for Phase 1
         };
@@ -781,7 +781,7 @@ export class GenerationService extends EventEmitter {
 
             // Use Meshy retexture API
             const retextureTaskId =
-              await this.aiService.meshyService.startRetextureTask(
+              await this.aiService.getMeshyService().startRetextureTask(
                 { inputTaskId: meshyTaskId! },
                 { textStylePrompt: preset.stylePrompt },
                 {
@@ -800,7 +800,7 @@ export class GenerationService extends EventEmitter {
               await new Promise((resolve) => setTimeout(resolve, 5000));
 
               const status =
-                await this.aiService.meshyService.getRetextureTaskStatus(
+                await this.aiService.getMeshyService().getRetextureTaskStatus(
                   retextureTaskId,
                 );
 
@@ -881,7 +881,7 @@ export class GenerationService extends EventEmitter {
               isPlaceholder: false,
               gddCompliant: true,
               // Ownership tracking (Phase 1) - inherit from parent
-              createdBy: pipeline.config.user?.privyId || null,
+              createdBy: pipeline.config.user?.userId || null,
               walletAddress: pipeline.config.user?.walletAddress || null,
               isPublic: true, // Default to public for Phase 1
             };
@@ -958,7 +958,7 @@ export class GenerationService extends EventEmitter {
 
           // Start rigging task
           const riggingTaskId =
-            await this.aiService.meshyService.startRiggingTask(
+            await this.aiService.getMeshyService().startRiggingTask(
               { inputTaskId: meshyTaskId },
               {
                 heightMeters:
@@ -977,7 +977,7 @@ export class GenerationService extends EventEmitter {
             await new Promise((resolve) => setTimeout(resolve, 5000));
 
             const status =
-              await this.aiService.meshyService.getRiggingTaskStatus(
+              await this.aiService.getMeshyService().getRiggingTaskStatus(
                 riggingTaskId,
               );
             pipeline.stages.rigging!.progress =

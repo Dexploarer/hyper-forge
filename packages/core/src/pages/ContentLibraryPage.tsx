@@ -76,7 +76,7 @@ export const ContentLibraryPage: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Sidebar - Content List */}
           <div className="lg:col-span-4 space-y-4">
             {/* Search and Filters */}

@@ -311,7 +311,6 @@ export class AssetService {
       const updatedMetadata: AssetMetadataType = {
         ...currentMetadata,
         ...updates.metadata,
-        lastModified: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 

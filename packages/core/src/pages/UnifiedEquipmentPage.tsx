@@ -157,7 +157,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Error Toast */}
           {lastError && (
             <ErrorNotification error={lastError} onClose={clearError} />

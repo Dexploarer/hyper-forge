@@ -307,7 +307,7 @@ export const AssetsPage: React.FC = () => {
 
       {/* Material Preset Editor */}
       <MaterialPresetEditor
-        isOpen={showPresetEditor}
+        open={showPresetEditor}
         onClose={() => setShowPresetEditor(false)}
         onSuccess={() => {
           // Presets saved successfully - filters will reload them automatically

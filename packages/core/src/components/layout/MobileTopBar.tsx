@@ -21,7 +21,8 @@ const VIEW_TITLES: Record<NavigationView, string> = {
   [NAVIGATION_VIEWS.HAND_RIGGING]: 'Hand Rigging',
   [NAVIGATION_VIEWS.ARMOR_FITTING]: 'Armor Fitting',
   [NAVIGATION_VIEWS.RETARGET_ANIMATE]: 'Animation',
-  [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: 'Admin'
+  [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: 'Admin',
+  [NAVIGATION_VIEWS.SETTINGS]: 'Settings'
 }
 
 export function MobileTopBar({ currentView, onMenuClick }: MobileTopBarProps) {

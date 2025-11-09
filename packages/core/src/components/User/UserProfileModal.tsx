@@ -6,7 +6,7 @@ import { usersClient } from '@/services/api/UsersAPIClient'
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from '@/components/common'
 
 interface UserProfileModalProps {
-  isOpen: boolean
+  open: boolean
   user: User | null
   sessionId: string
   onClose: () => void
@@ -14,7 +14,7 @@ interface UserProfileModalProps {
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
-  isOpen,
+  open,
   user,
   sessionId,
   onClose,
@@ -59,7 +59,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const isValid = displayName.trim() !== '' && email.trim() !== ''
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="md">
+    <Modal open={open} onClose={onClose} size="md">
       <form onSubmit={handleSubmit}>
         <ModalHeader onClose={onClose}>
           <div className="flex items-center gap-3">

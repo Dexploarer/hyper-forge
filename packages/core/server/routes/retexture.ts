@@ -11,13 +11,13 @@ import * as Models from '../models'
 export const createRetextureRoutes = (rootDir: string, retextureService: RetextureService) => {
   return new Elysia({ prefix: '/api', name: 'retexture' })
     // Retexture endpoint
-    .post('/retexture', async ({ body, user }) => {
+    .post('/retexture', async ({ body }) => {
       const result = await retextureService.retexture({
         baseAssetId: body.baseAssetId,
         materialPreset: body.materialPreset,
         outputName: body.outputName,
         assetsDir: path.join(rootDir, 'gdd-assets'),
-        user: user || undefined // Use authenticated user if available
+        user: body.user // User context is already part of the body schema
       })
 
       return result

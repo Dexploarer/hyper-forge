@@ -83,9 +83,9 @@ export const ContentGenerationPage: React.FC = () => {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 pb-6">
         {/* Header with tabs */}
-        <div className="mb-6">
+        <div className="mb-4">
           <TabNavigation
             activeView={activeView}
             generatedContentsCount={generatedContents.length}
@@ -96,7 +96,7 @@ export const ContentGenerationPage: React.FC = () => {
         {/* Config View */}
         {activeView === 'config' && (
           <div className="animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Main Generation Card */}
               <div className="lg:col-span-2">
                 {/* Back Button */}
@@ -159,7 +159,7 @@ export const ContentGenerationPage: React.FC = () => {
         {/* Results View */}
         {activeView === 'results' && (
           <div className="animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               {/* Content List */}
               <GeneratedContentList
                 contents={generatedContents}

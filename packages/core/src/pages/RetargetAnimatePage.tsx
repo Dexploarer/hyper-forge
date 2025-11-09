@@ -237,9 +237,9 @@ export const RetargetAnimatePage: React.FC = () => {
   return (
     <div className="h-full overflow-y-auto p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Sidebar - Full width mobile, 4 cols desktop */}
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-4">
             <aside className="border border-border-primary bg-bg-secondary p-4 flex flex-col gap-4 rounded-xl">
         <div>
           <h2 className="text-lg font-semibold mb-2">Animation Retargeting</h2>
@@ -572,7 +572,7 @@ export const RetargetAnimatePage: React.FC = () => {
           </div>
 
           {/* Viewer - Full width mobile, 8 cols desktop */}
-          <div className="lg:col-span-8 space-y-6">
+          <div className="lg:col-span-8 space-y-4">
             <section className="relative rounded-xl overflow-hidden h-[600px] lg:h-[700px]">
         {/* Viewer Controls */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">

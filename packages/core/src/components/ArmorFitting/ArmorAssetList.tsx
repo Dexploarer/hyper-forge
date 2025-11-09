@@ -241,7 +241,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
             </div>
           ) : assetType === 'avatar' || assetType === 'helmet' || assetType === 'weapon' ? (
             // Avatar, Helmet, or Weapon list (simple lists, not grouped)
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {filteredAssets.map((asset) => {
                 const Icon = getAssetIcon(asset)
                 return (
@@ -249,7 +249,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
                     key={asset.id}
                     onClick={() => onAssetSelect(asset)}
                     className={cn(
-                      "w-full p-4 rounded-xl border transition-all duration-200 text-left group",
+                      "w-full p-3 rounded-lg border transition-all duration-200 text-left group",
                       selectedAsset?.id === asset.id
                         ? "bg-primary/20 border-primary shadow-md shadow-primary/20"
                         : "bg-bg-tertiary/20 border-white/10 hover:border-white/20 hover:bg-bg-tertiary/30"
@@ -297,7 +297,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
                     <h3 className="text-sm font-medium text-text-secondary mb-3 capitalize">
                       {slot} ({slotAssets.length})
                     </h3>
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {slotAssets.map((asset) => {
                         const Icon = getAssetIcon(asset)
                         return (
@@ -305,7 +305,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
                             key={asset.id}
                             onClick={() => onAssetSelect(asset)}
                             className={cn(
-                              "w-full p-4 rounded-xl border transition-all duration-200 text-left group",
+                              "w-full p-3 rounded-lg border transition-all duration-200 text-left group",
                               selectedAsset?.id === asset.id
                                 ? "bg-primary/20 border-primary shadow-md shadow-primary/20"
                                 : "bg-bg-tertiary/20 border-white/10 hover:border-white/20 hover:bg-bg-tertiary/30"
