@@ -46,80 +46,12 @@ import { vectorSearchRoutes } from "./routes/vector-search";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Determine ROOT_DIR - try multiple possible locations for Railway compatibility
-// Railway volumes can be mounted at different paths depending on the working directory
-const possibleRootDirs = [
-  path.join(__dirname, ".."), // Relative to server file: packages/core/server -> packages/core
-  process.cwd(), // Current working directory (Railway might set this to /app or /app/packages/core)
-  "/app/packages/core", // Absolute path if Railway sets working dir to /app
-  path.join(process.cwd(), "packages", "core"), // If cwd is /app
-];
-
-let ROOT_DIR = path.join(__dirname, "..");
-let gddAssetsPath = path.join(ROOT_DIR, "gdd-assets");
-
-// Try to find where gdd-assets actually exists
-for (const possibleRoot of possibleRootDirs) {
-  const testPath = path.join(possibleRoot, "gdd-assets");
-  if (fs.existsSync(testPath)) {
-    ROOT_DIR = possibleRoot;
-    gddAssetsPath = testPath;
-    console.log(`✅ Found gdd-assets at: ${gddAssetsPath}`);
-    console.log(`   Using ROOT_DIR: ${ROOT_DIR}`);
-    break;
-  }
-}
-
-// Log all paths we checked for debugging
-console.log(`[Path Resolution]`);
-console.log(`   __dirname: ${__dirname}`);
-console.log(`   process.cwd(): ${process.cwd()}`);
-console.log(`   Selected ROOT_DIR: ${ROOT_DIR}`);
-console.log(`   gdd-assets path: ${gddAssetsPath}`);
+const ROOT_DIR = path.join(__dirname, "..");
 
 // Ensure temp-images directory exists
 await fs.promises.mkdir(path.join(ROOT_DIR, "temp-images"), {
   recursive: true,
 });
-
-// Check if gdd-assets directory exists and log status
-try {
-  const exists = fs.existsSync(gddAssetsPath);
-  if (exists) {
-    const files = await fs.promises.readdir(gddAssetsPath);
-    const assetDirs = [];
-    for (const file of files) {
-      const filePath = path.join(gddAssetsPath, file);
-      try {
-        const stat = await fs.promises.stat(filePath);
-        if (stat.isDirectory() && !file.startsWith(".")) {
-          assetDirs.push(file);
-        }
-      } catch {
-        // Skip files we can't stat
-      }
-    }
-    console.log(`✅ gdd-assets directory found with ${assetDirs.length} asset directories`);
-    if (assetDirs.length > 0) {
-      console.log(`   Sample assets: ${assetDirs.slice(0, 5).join(", ")}`);
-    } else {
-      console.warn(`⚠️  gdd-assets directory exists but is empty`);
-      console.warn(`   Upload assets via /api/admin/download-assets or Railway file system`);
-    }
-  } else {
-    console.warn(`⚠️  gdd-assets directory NOT FOUND at ${gddAssetsPath}`);
-    console.warn(`   Checked paths:`);
-    possibleRootDirs.forEach((root, i) => {
-      console.warn(`     ${i + 1}. ${path.join(root, "gdd-assets")}`);
-    });
-    console.warn(`   Options:`);
-    console.warn(`   1. Mount a Railway Volume at /app/packages/core/gdd-assets`);
-    console.warn(`   2. Use /api/admin/download-assets endpoint to download assets`);
-  }
-} catch (error) {
-  console.error(`❌ Error checking gdd-assets directory:`, error);
-}
 
 // Initialize Qdrant vector database (async)
 import { initializeQdrantCollections } from "./db/qdrant";
@@ -302,49 +234,14 @@ const app = new Elysia()
 
     let files: string[] = [];
     let bowBaseFiles: string[] = [];
-    let assetCount = 0;
-    let sampleAssets: string[] = [];
-    const checkedPaths: Array<{ path: string; exists: boolean }> = [];
-
-    // Check all possible paths
-    const possiblePaths = [
-      path.join(__dirname, "..", "gdd-assets"),
-      path.join(process.cwd(), "gdd-assets"),
-      "/app/packages/core/gdd-assets",
-      path.join(process.cwd(), "packages", "core", "gdd-assets"),
-    ];
-
-    for (const testPath of possiblePaths) {
-      checkedPaths.push({
-        path: testPath,
-        exists: fs.existsSync(testPath),
-      });
-    }
 
     try {
-      if (fs.existsSync(assetsPath)) {
-        files = await fs.promises.readdir(assetsPath);
-        // Filter out non-directory entries
-        const assetDirs = [];
-        for (const file of files) {
-          const filePath = path.join(assetsPath, file);
-          try {
-            const stat = await fs.promises.stat(filePath);
-            if (stat.isDirectory() && !file.startsWith(".")) {
-              assetDirs.push(file);
-            }
-          } catch {
-            // Skip files we can't stat
-          }
-        }
-        assetCount = assetDirs.length;
-        sampleAssets = assetDirs.slice(0, 10);
-      }
+      files = await fs.promises.readdir(assetsPath);
       if (fs.existsSync(bowBasePath)) {
         bowBaseFiles = await fs.promises.readdir(bowBasePath);
       }
     } catch (e) {
-      console.error("[Debug] Error reading directories:", e);
+      // ignore
     }
 
     return {
@@ -353,18 +250,10 @@ const app = new Elysia()
       ROOT_DIR,
       gddAssetsPath: assetsPath,
       gddAssetsExists: fs.existsSync(assetsPath),
-      assetCount,
-      sampleAssets,
       bowBaseExists: fs.existsSync(bowBasePath),
       modelGlbExists: fs.existsSync(modelPath),
-      filesInGddAssets: files.slice(0, 20), // Limit to first 20
+      filesInGddAssets: files,
       filesInBowBase: bowBaseFiles,
-      checkedPaths,
-      env: {
-        NODE_ENV: process.env.NODE_ENV,
-        PORT: process.env.PORT,
-        API_PORT: process.env.API_PORT,
-      }
     };
   })
 
