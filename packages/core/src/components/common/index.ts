@@ -58,6 +58,7 @@ export {
   SkeletonList, 
   SkeletonTable 
 } from './SkeletonLoader'
+export { PageSkeleton } from './PageSkeleton'
 export { ThemeSwitcher, useTheme } from './ThemeSwitcher'
 export { Drawer } from './Drawer'
 export type { DrawerProps } from './Drawer'

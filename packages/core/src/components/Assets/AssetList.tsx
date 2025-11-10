@@ -430,7 +430,7 @@ const AssetList: React.FC<AssetListProps> = ({
         </div>
       </div>
 
-      <div ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar">
+      <div ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar scroll-container">
         {displayMode === 'cards' ? (
           /* Card Grid View */
           <div className="p-4">

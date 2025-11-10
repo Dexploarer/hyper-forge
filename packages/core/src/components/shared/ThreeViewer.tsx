@@ -8,7 +8,7 @@ import {
   X,
   Hand
 } from 'lucide-react'
-import { useRef, useImperativeHandle, forwardRef, useEffect, useState, useCallback, type Ref } from 'react'
+import React, { useRef, useImperativeHandle, forwardRef, useEffect, useState, useCallback, type Ref } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js'
@@ -88,7 +88,7 @@ export interface ThreeViewerRef {
   retargetAnimationsToCharacter: (animationRigUrl: string, animationsUrl: string) => Promise<boolean>
 }
 
-const ThreeViewer = forwardRef(({ 
+const ThreeViewerComponent = forwardRef(({ 
   modelUrl,
   isWireframe = false,
   showGroundPlane = false,
@@ -4736,6 +4736,23 @@ const ThreeViewer = forwardRef(({
     </div>
   )
 })
+
+ThreeViewerComponent.displayName = 'ThreeViewer'
+
+// Memoize ThreeViewer to prevent unnecessary re-renders
+// This is critical as Three.js rendering is very expensive
+const ThreeViewer = React.memo(ThreeViewerComponent, (prevProps, nextProps) => {
+  // Only re-render if these critical props change
+  return (
+    prevProps.modelUrl === nextProps.modelUrl &&
+    prevProps.isWireframe === nextProps.isWireframe &&
+    prevProps.showGroundPlane === nextProps.showGroundPlane &&
+    prevProps.isLightBackground === nextProps.isLightBackground &&
+    prevProps.lightMode === nextProps.lightMode &&
+    prevProps.isAnimationPlayer === nextProps.isAnimationPlayer &&
+    prevProps.assetInfo?.name === nextProps.assetInfo?.name
+  )
+}) as typeof ThreeViewerComponent
 
 ThreeViewer.displayName = 'ThreeViewer'
 

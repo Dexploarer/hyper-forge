@@ -322,12 +322,21 @@
   .main-content {
     @apply flex-1 overflow-hidden;
   }
+
+  /* List containers - optimize scrolling performance */
+  .asset-list-container,
+  .scroll-container {
+    contain: layout style;
+    will-change: scroll-position;
+  }
   
   /* Card Components */
   .card {
     @apply bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg;
     transition: all 0.2s ease-out;
     will-change: transform, box-shadow, border-color;
+    /* CSS containment for performance */
+    contain: layout style paint;
   }
   
   .card-hover {

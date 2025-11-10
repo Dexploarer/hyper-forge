@@ -30,6 +30,39 @@ export default defineConfig({
       resolveExtensions: ['.mjs', '.js', '.jsx', '.json', '.ts', '.tsx']
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          // React vendor chunk
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'react-vendor'
+          }
+          // Three.js vendor chunk (large)
+          if (id.includes('node_modules/three') || 
+              id.includes('node_modules/@react-three') ||
+              id.includes('node_modules/@pixiv')) {
+            return 'three-vendor'
+          }
+          // UI libraries chunk
+          if (id.includes('node_modules/lucide-react') ||
+              id.includes('node_modules/recharts') ||
+              id.includes('node_modules/@xyflow')) {
+            return 'ui-vendor'
+          }
+          // Other vendor code
+          if (id.includes('node_modules')) {
+            return 'vendor'
+          }
+        },
+        chunkSizeWarningLimit: 1000,
+      },
+    },
+    // Remove console.logs in production (esbuild handles this)
+    minify: 'esbuild',
+    // Note: To remove console.logs, add this to esbuild config if needed
+    // For now, esbuild minify is faster and sufficient
+  },
   server: {
     port: 3000,
     proxy: {

@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useApp } from '../contexts/AppContext'
 
 import { AssetService, Asset, MaterialPreset, RetextureRequest, RetextureResponse } from '@/services/api/AssetService'
+import { CachedAssetService } from '@/services/api/CachedAssetService'
 import { SkeletonList } from '@/components/common'
 
 export const useAssets = () => {
@@ -20,7 +21,8 @@ export const useAssets = () => {
     try {
       setLoading(true)
       setError(null)
-      const data = await AssetService.listAssets()
+      // Use cached service to prevent duplicate requests
+      const data = await CachedAssetService.listAssets()
       setAssets(data)
     } catch (_err) {
       const errorMessage = _err instanceof Error ? _err.message : 'Failed to load assets'
@@ -57,7 +59,8 @@ export const useMaterialPresets = () => {
   const fetchPresets = useCallback(async () => {
     try {
       setLoading(true)
-      const data = await AssetService.getMaterialPresets()
+      // Use cached service to prevent duplicate requests
+      const data = await CachedAssetService.getMaterialPresets()
       setPresets(data)
     } catch {
       showNotification(
