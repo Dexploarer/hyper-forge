@@ -45,6 +45,11 @@ import { usersRoutes } from "./routes/users";
 import { vectorSearchRoutes } from "./routes/vector-search";
 import { createSeedDataRoutes } from "./routes/seed-data";
 import { worldConfigRoutes } from "./routes/world-config";
+import { generationQueueRoutes } from "./routes/generation-queue";
+
+// Cron and job cleanup
+import { cron } from "@elysiajs/cron";
+import { generationJobService } from "./services/GenerationJobService";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -192,6 +197,22 @@ const app = new Elysia()
   .use(errorHandler)
   .use(loggingMiddleware)
 
+  // Cron jobs for background cleanup
+  .use(
+    cron({
+      name: "cleanup-expired-jobs",
+      pattern: "0 * * * *", // Every hour
+      async run() {
+        console.log("[Cron] Running job cleanup...");
+        const expiredCount = await generationJobService.cleanupExpiredJobs();
+        const failedCount = await generationJobService.cleanupOldFailedJobs();
+        console.log(
+          `[Cron] Cleaned up ${expiredCount} expired and ${failedCount} old failed jobs`,
+        );
+      },
+    }),
+  )
+
   // Static file serving using native Bun.file() for reliability
   // Bun.file() works better than @elysiajs/static on Railway
   .get("/gdd-assets/*", ({ params }) => {
@@ -303,6 +324,7 @@ const app = new Elysia()
   .use(vectorSearchRoutes)
   .use(createSeedDataRoutes())
   .use(worldConfigRoutes)
+  .use(generationQueueRoutes)
 
   // TEMPORARY: Debug endpoint to check paths
   .get("/api/admin/debug-paths", async () => {

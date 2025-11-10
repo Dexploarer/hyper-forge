@@ -23,6 +23,7 @@
         "@ai-sdk/openai": "^2.0.64",
         "@elevenlabs/elevenlabs-js": "^2.22.0",
         "@elysiajs/cors": "^1.4.0",
+        "@elysiajs/cron": "^1.4.1",
         "@elysiajs/eden": "^1.4.4",
         "@elysiajs/server-timing": "^1.4.0",
         "@elysiajs/static": "^1.4.6",
@@ -161,6 +162,8 @@
     "@elevenlabs/elevenlabs-js": ["@elevenlabs/elevenlabs-js@2.22.0", "", { "dependencies": { "command-exists": "^1.2.9", "node-fetch": "^2.7.0", "ws": "^8.18.3" } }, "sha512-+r9AnlSUbo3yj9Yt0PfeCV5K8x7mQbsnl/Tcwj+vBA/t6utLKDQSiumX5bw2GNss3OVsqK60CkV6xiO4Nfi9eQ=="],
 
     "@elysiajs/cors": ["@elysiajs/cors@1.4.0", "", { "peerDependencies": { "elysia": ">= 1.4.0" } }, "sha512-pb0SCzBfFbFSYA/U40HHO7R+YrcXBJXOWgL20eSViK33ol1e20ru2/KUaZYo5IMUn63yaTJI/bQERuQ+77ND8g=="],
+
+    "@elysiajs/cron": ["@elysiajs/cron@1.4.1", "", { "dependencies": { "croner": "^6.0.3" }, "peerDependencies": { "elysia": ">= 1.4.0" } }, "sha512-Y+jqXtMJ+m17QzNWlWc09ugd1Fn1Wh7lqE+y9qSW8eiQZEqsRADXWmbLuXRSRaSC5dkfOyRSiwNCp6n8L/yuqA=="],
 
     "@elysiajs/eden": ["@elysiajs/eden@1.4.4", "", { "peerDependencies": { "elysia": ">= 1.4.0-exp.0" } }, "sha512-/LVqflmgUcCiXb8rz1iRq9Rx3SWfIV/EkoNqDFGMx+TvOyo8QHAygFXAVQz7RHs+jk6n6mEgpI6KlKBANoErsQ=="],
 
@@ -981,6 +984,8 @@
     "cors": ["cors@2.8.5", "", { "dependencies": { "object-assign": "^4", "vary": "^1" } }, "sha512-KIHbLJqu73RGr/hnbrO9uBeixNGuvSQjul/jdFvS/KFSIH1hWVd1ng7zOHx+YrEfInLG7q4n6GHQ9cDtxv/P6g=="],
 
     "cosmiconfig": ["cosmiconfig@7.1.0", "", { "dependencies": { "@types/parse-json": "^4.0.0", "import-fresh": "^3.2.1", "parse-json": "^5.0.0", "path-type": "^4.0.0", "yaml": "^1.10.0" } }, "sha512-AdmX6xUzdNASswsFtmwSt7Vj8po9IuqXm0UXz7QKPuEUmPB4XyjGfaAr2PSuELMwkRMVH1EpIkX5bTZGRB3eCA=="],
+
+    "croner": ["croner@6.0.7", "", {}, "sha512-k3Xx3Rcclfr60Yx4TmvsF3Yscuiql8LSvYLaphTsaq5Hk8La4Z/udmUANMOTKpgGGroI2F6/XOr9cU9OFkYluQ=="],
 
     "cross-env": ["cross-env@7.0.3", "", { "dependencies": { "cross-spawn": "^7.0.1" }, "bin": { "cross-env": "src/bin/cross-env.js", "cross-env-shell": "src/bin/cross-env-shell.js" } }, "sha512-+/HKd6EgcQCJGh2PSjZuUitQBQynKor4wrFbRg4DtAgS1aWO+gU52xpH7M9ScGgXSYmAVS9bIJ8EzuaGw0oNAw=="],
 
