@@ -33,10 +33,6 @@ export default defineConfig({
       resolveExtensions: [".mjs", ".js", ".jsx", ".json", ".ts", ".tsx"],
     },
   },
-  build: {
-    chunkSizeWarningLimit: 1000,
-    minify: "esbuild",
-  },
   server: {
     port: 3000,
     proxy: {
