@@ -88,12 +88,14 @@ export const AssetMetadata = t.Object({
   workflow: t.Optional(t.String()),
   meshyTaskId: t.Optional(t.String()),
   generatedAt: t.Optional(t.String()),
-  generationMethod: t.Optional(t.Union([
-    t.Literal('gpt-image-meshy'),
-    t.Literal('direct-meshy'),
-    t.Literal('manual'),
-    t.Literal('placeholder')
-  ])),
+  generationMethod: t.Optional(
+    t.Union([
+      t.Literal("gpt-image-meshy"),
+      t.Literal("direct-meshy"),
+      t.Literal("manual"),
+      t.Literal("placeholder"),
+    ]),
+  ),
   quality: t.Optional(t.String()),
   // File paths
   modelPath: t.Optional(t.String()),
@@ -112,17 +114,21 @@ export const AssetMetadata = t.Object({
   materialPreset: t.Optional(MaterialPresetInfo),
   baseMaterial: t.Optional(t.String()),
   retextureTaskId: t.Optional(t.String()),
-  retextureMethod: t.Optional(t.Union([
-    t.Literal('meshy-retexture'),
-    t.Literal('manual-texture'),
-    t.Literal('ai-generated')
-  ])),
-  retextureStatus: t.Optional(t.Union([
-    t.Literal('pending'),
-    t.Literal('processing'),
-    t.Literal('completed'),
-    t.Literal('failed')
-  ])),
+  retextureMethod: t.Optional(
+    t.Union([
+      t.Literal("meshy-retexture"),
+      t.Literal("manual-texture"),
+      t.Literal("ai-generated"),
+    ]),
+  ),
+  retextureStatus: t.Optional(
+    t.Union([
+      t.Literal("pending"),
+      t.Literal("processing"),
+      t.Literal("completed"),
+      t.Literal("failed"),
+    ]),
+  ),
   retextureError: t.Optional(t.String()),
   baseModelTaskId: t.Optional(t.String()),
   // Other fields
@@ -147,15 +153,17 @@ export const AssetMetadata = t.Object({
   notes: t.Optional(t.String()), // User notes for this asset
   lastViewedAt: t.Optional(t.String()), // Last time asset was viewed
   // Workflow status
-  status: t.Optional(t.Union([
-    t.Literal('draft'),
-    t.Literal('processing'),
-    t.Literal('completed'),
-    t.Literal('failed'),
-    t.Literal('approved'),
-    t.Literal('published'),
-    t.Literal('archived')
-  ])),
+  status: t.Optional(
+    t.Union([
+      t.Literal("draft"),
+      t.Literal("processing"),
+      t.Literal("completed"),
+      t.Literal("failed"),
+      t.Literal("approved"),
+      t.Literal("published"),
+      t.Literal("archived"),
+    ]),
+  ),
   // Project Management
   projectId: t.Optional(t.String()),
 });
@@ -187,41 +195,49 @@ export const AssetUpdate = t.Object({
   category: t.Optional(t.String()),
   isFavorite: t.Optional(t.Boolean()),
   notes: t.Optional(t.String()),
-  status: t.Optional(t.Union([
-    t.Literal('draft'),
-    t.Literal('processing'),
-    t.Literal('completed'),
-    t.Literal('failed'),
-    t.Literal('approved'),
-    t.Literal('published'),
-    t.Literal('archived')
-  ])),
+  status: t.Optional(
+    t.Union([
+      t.Literal("draft"),
+      t.Literal("processing"),
+      t.Literal("completed"),
+      t.Literal("failed"),
+      t.Literal("approved"),
+      t.Literal("published"),
+      t.Literal("archived"),
+    ]),
+  ),
 });
 
 export const BulkUpdateRequest = t.Object({
   assetIds: t.Array(t.String({ minLength: 1 }), { minItems: 1 }),
   updates: t.Object({
-    status: t.Optional(t.Union([
-      t.Literal('draft'),
-      t.Literal('processing'),
-      t.Literal('completed'),
-      t.Literal('failed'),
-      t.Literal('approved'),
-      t.Literal('published'),
-      t.Literal('archived')
-    ])),
+    status: t.Optional(
+      t.Union([
+        t.Literal("draft"),
+        t.Literal("processing"),
+        t.Literal("completed"),
+        t.Literal("failed"),
+        t.Literal("approved"),
+        t.Literal("published"),
+        t.Literal("archived"),
+      ]),
+    ),
     isFavorite: t.Optional(t.Boolean()),
-  })
+  }),
 });
 
 export const BulkUpdateResponse = t.Object({
   success: t.Boolean(),
   updated: t.Number(),
   failed: t.Number(),
-  errors: t.Optional(t.Array(t.Object({
-    assetId: t.String(),
-    error: t.String()
-  })))
+  errors: t.Optional(
+    t.Array(
+      t.Object({
+        assetId: t.String(),
+        error: t.String(),
+      }),
+    ),
+  ),
 });
 
 export const DeleteAssetQuery = t.Object({
@@ -261,7 +277,7 @@ export const RetextureRequest = t.Object({
   materialPreset: t.Optional(MaterialPreset),
   customPrompt: t.Optional(t.String()),
   imageUrl: t.Optional(t.String()),
-  artStyle: t.Optional(t.Union([t.Literal('realistic'), t.Literal('cartoon')])),
+  artStyle: t.Optional(t.Union([t.Literal("realistic"), t.Literal("cartoon")])),
   outputName: t.Optional(t.String()),
   // User context for ownership tracking
   user: t.Optional(UserContext),
@@ -321,10 +337,10 @@ export const PipelineResponse = t.Object({
 export const PipelineStage = t.Object({
   name: t.String(),
   status: t.Union([
-    t.Literal('pending'),
-    t.Literal('processing'),
-    t.Literal('completed'),
-    t.Literal('failed')
+    t.Literal("pending"),
+    t.Literal("processing"),
+    t.Literal("completed"),
+    t.Literal("failed"),
   ]),
   progress: t.Optional(t.Number()),
   startedAt: t.Optional(t.String()),
@@ -781,11 +797,9 @@ export const WorldDataResponse = t.Object({
 
 export const GenerateWorldRequest = t.Object({
   theme: t.Optional(t.String()),
-  complexity: t.Optional(t.Union([
-    t.Literal("simple"),
-    t.Literal("medium"),
-    t.Literal("complex"),
-  ])),
+  complexity: t.Optional(
+    t.Union([t.Literal("simple"), t.Literal("medium"), t.Literal("complex")]),
+  ),
   customPrompt: t.Optional(t.String()),
   quality: t.Optional(ModelQuality),
 });
@@ -819,7 +833,9 @@ export type GenerateSfxRequestType = Static<typeof GenerateSfxRequest>;
 /**
  * Vector search result with semantic similarity score
  */
-export const VectorSearchResult = <T extends ReturnType<typeof t.Any>>(entitySchema: T) =>
+export const VectorSearchResult = <T extends ReturnType<typeof t.Any>>(
+  entitySchema: T,
+) =>
   t.Object({
     score: t.Number({ minimum: 0, maximum: 1 }),
     ...entitySchema.properties,
@@ -892,18 +908,22 @@ export const VectorSearchHealthResponse = t.Object({
     t.Literal("error"),
   ]),
   message: t.Optional(t.String()),
-  collections: t.Optional(t.Object({
-    assets: t.Number(),
-    npcs: t.Number(),
-    quests: t.Number(),
-    lore: t.Number(),
-    dialogues: t.Number(),
-  })),
-  embeddingModel: t.Optional(t.Object({
-    model: t.String(),
-    dimensions: t.Number(),
-    provider: t.String(),
-  })),
+  collections: t.Optional(
+    t.Object({
+      assets: t.Number(),
+      npcs: t.Number(),
+      quests: t.Number(),
+      lore: t.Number(),
+      dialogues: t.Number(),
+    }),
+  ),
+  embeddingModel: t.Optional(
+    t.Object({
+      model: t.String(),
+      dimensions: t.Number(),
+      provider: t.String(),
+    }),
+  ),
 });
 
 /**
@@ -922,4 +942,332 @@ export const VectorSearchQuery = t.Object({
 export const VectorSearchErrorResponse = t.Object({
   error: t.String(),
   message: t.Optional(t.String()),
+});
+
+// ==================== World Configuration Models ====================
+
+export const WorldRace = t.Object({
+  id: t.String(),
+  name: t.String({ minLength: 1 }),
+  description: t.String(),
+  traits: t.Array(t.String()),
+  culturalBackground: t.String(),
+  enabled: t.Boolean(),
+  createdAt: t.String(),
+});
+
+export const WorldFaction = t.Object({
+  id: t.String(),
+  name: t.String({ minLength: 1 }),
+  description: t.String(),
+  alignment: t.Union([
+    t.Literal("good"),
+    t.Literal("neutral"),
+    t.Literal("evil"),
+  ]),
+  goals: t.Array(t.String()),
+  rivals: t.Array(t.String()),
+  allies: t.Array(t.String()),
+  enabled: t.Boolean(),
+  createdAt: t.String(),
+});
+
+export const WorldSkill = t.Object({
+  id: t.String(),
+  name: t.String({ minLength: 1 }),
+  category: t.Union([
+    t.Literal("combat"),
+    t.Literal("magic"),
+    t.Literal("stealth"),
+    t.Literal("social"),
+    t.Literal("crafting"),
+  ]),
+  description: t.String(),
+  prerequisites: t.Array(t.String()),
+  tier: t.Number({ minimum: 1, maximum: 5 }),
+  enabled: t.Boolean(),
+  createdAt: t.String(),
+});
+
+export const NPCCategory = t.Object({
+  id: t.String(),
+  name: t.String({ minLength: 1 }),
+  archetypes: t.Array(t.String()),
+  commonTraits: t.Array(t.String()),
+  typicalRoles: t.Array(t.String()),
+  enabled: t.Boolean(),
+});
+
+export const QuestType = t.Object({
+  id: t.String(),
+  name: t.String(),
+  description: t.String(),
+  enabled: t.Boolean(),
+});
+
+export const QuestDifficulty = t.Object({
+  id: t.String(),
+  name: t.String(),
+  levelRange: t.Object({
+    min: t.Number(),
+    max: t.Number(),
+  }),
+  rewardMultiplier: t.Number(),
+  enabled: t.Boolean(),
+});
+
+export const QuestConfiguration = t.Object({
+  types: t.Array(QuestType),
+  difficulties: t.Array(QuestDifficulty),
+  objectiveTypes: t.Array(t.String()),
+  defaultRewards: t.Object({
+    experienceBase: t.Number(),
+    goldBase: t.Number(),
+  }),
+});
+
+export const ItemCategory = t.Object({
+  id: t.String(),
+  name: t.String(),
+  subcategories: t.Array(t.String()),
+  enabled: t.Boolean(),
+});
+
+export const ItemRarity = t.Object({
+  id: t.String(),
+  name: t.String(),
+  dropChance: t.Number(),
+  statMultiplier: t.Number(),
+  enabled: t.Boolean(),
+});
+
+export const ItemEnchantment = t.Object({
+  id: t.String(),
+  name: t.String(),
+  effect: t.String(),
+  tier: t.Number(),
+  enabled: t.Boolean(),
+});
+
+export const ItemsConfiguration = t.Object({
+  categories: t.Array(ItemCategory),
+  rarities: t.Array(ItemRarity),
+  enchantments: t.Array(ItemEnchantment),
+});
+
+export const Biome = t.Object({
+  id: t.String(),
+  name: t.String(),
+  climate: t.String(),
+  terrain: t.Array(t.String()),
+  dangerLevel: t.Number(),
+  enabled: t.Boolean(),
+});
+
+export const SettlementType = t.Object({
+  id: t.String(),
+  name: t.String(),
+  populationRange: t.Object({
+    min: t.Number(),
+    max: t.Number(),
+  }),
+  commonBuildings: t.Array(t.String()),
+  enabled: t.Boolean(),
+});
+
+export const DungeonType = t.Object({
+  id: t.String(),
+  name: t.String(),
+  themes: t.Array(t.String()),
+  difficultyRange: t.Object({
+    min: t.Number(),
+    max: t.Number(),
+  }),
+  enabled: t.Boolean(),
+});
+
+export const LocationsConfiguration = t.Object({
+  biomes: t.Array(Biome),
+  settlementTypes: t.Array(SettlementType),
+  dungeonTypes: t.Array(DungeonType),
+});
+
+export const EconomySettings = t.Object({
+  currencyName: t.String(),
+  priceRanges: t.Object({
+    consumables: t.Object({ min: t.Number(), max: t.Number() }),
+    equipment: t.Object({ min: t.Number(), max: t.Number() }),
+    services: t.Object({ min: t.Number(), max: t.Number() }),
+    housing: t.Object({ min: t.Number(), max: t.Number() }),
+  }),
+  tradingEnabled: t.Boolean(),
+  barterEnabled: t.Boolean(),
+  inflationRate: t.Number(),
+});
+
+export const AIGenerationPreferences = t.Object({
+  defaultQuality: t.Union([
+    t.Literal("quality"),
+    t.Literal("speed"),
+    t.Literal("balanced"),
+  ]),
+  toneAndStyle: t.Object({
+    narrative: t.Union([
+      t.Literal("dark"),
+      t.Literal("lighthearted"),
+      t.Literal("serious"),
+      t.Literal("humorous"),
+      t.Literal("epic"),
+    ]),
+    dialogueFormality: t.Union([
+      t.Literal("formal"),
+      t.Literal("casual"),
+      t.Literal("mixed"),
+    ]),
+    detailLevel: t.Union([
+      t.Literal("minimal"),
+      t.Literal("moderate"),
+      t.Literal("verbose"),
+    ]),
+  }),
+  contentGuidelines: t.Object({
+    violenceLevel: t.Union([
+      t.Literal("none"),
+      t.Literal("mild"),
+      t.Literal("moderate"),
+      t.Literal("high"),
+    ]),
+    magicPrevalence: t.Union([
+      t.Literal("none"),
+      t.Literal("rare"),
+      t.Literal("common"),
+      t.Literal("ubiquitous"),
+    ]),
+    technologyLevel: t.Union([
+      t.Literal("primitive"),
+      t.Literal("medieval"),
+      t.Literal("renaissance"),
+      t.Literal("industrial"),
+      t.Literal("modern"),
+      t.Literal("futuristic"),
+    ]),
+  }),
+  generationConstraints: t.Object({
+    maxNPCsPerLocation: t.Number(),
+    maxQuestChainLength: t.Number(),
+    minQuestObjectives: t.Number(),
+    maxQuestObjectives: t.Number(),
+  }),
+});
+
+export const WorldConfigurationData = t.Object({
+  id: t.String(),
+  name: t.String(),
+  description: t.String(),
+  genre: t.String(),
+  isActive: t.Boolean(),
+  createdBy: t.Optional(t.String()),
+  races: t.Array(WorldRace),
+  factions: t.Array(WorldFaction),
+  skills: t.Array(WorldSkill),
+  npcCategories: t.Array(NPCCategory),
+  questConfig: QuestConfiguration,
+  itemsConfig: ItemsConfiguration,
+  locationsConfig: LocationsConfiguration,
+  economySettings: EconomySettings,
+  aiPreferences: AIGenerationPreferences,
+  version: t.String(),
+  tags: t.Array(t.String()),
+  isTemplate: t.Boolean(),
+  templateName: t.Optional(t.String()),
+  createdAt: t.String(),
+  updatedAt: t.String(),
+});
+
+// Request/Response Models
+
+export const CreateWorldConfigRequest = t.Object({
+  name: t.String({ minLength: 1 }),
+  description: t.String(),
+  genre: t.String(),
+  races: t.Optional(t.Array(WorldRace)),
+  factions: t.Optional(t.Array(WorldFaction)),
+  skills: t.Optional(t.Array(WorldSkill)),
+  npcCategories: t.Optional(t.Array(NPCCategory)),
+  questConfig: t.Optional(QuestConfiguration),
+  itemsConfig: t.Optional(ItemsConfiguration),
+  locationsConfig: t.Optional(LocationsConfiguration),
+  economySettings: t.Optional(EconomySettings),
+  aiPreferences: t.Optional(AIGenerationPreferences),
+  tags: t.Optional(t.Array(t.String())),
+});
+
+export const UpdateWorldConfigRequest = t.Object({
+  name: t.Optional(t.String({ minLength: 1 })),
+  description: t.Optional(t.String()),
+  genre: t.Optional(t.String()),
+  races: t.Optional(t.Array(WorldRace)),
+  factions: t.Optional(t.Array(WorldFaction)),
+  skills: t.Optional(t.Array(WorldSkill)),
+  npcCategories: t.Optional(t.Array(NPCCategory)),
+  questConfig: t.Optional(QuestConfiguration),
+  itemsConfig: t.Optional(ItemsConfiguration),
+  locationsConfig: t.Optional(LocationsConfiguration),
+  economySettings: t.Optional(EconomySettings),
+  aiPreferences: t.Optional(AIGenerationPreferences),
+  tags: t.Optional(t.Array(t.String())),
+});
+
+export const PartialUpdateRequest = t.Object({
+  section: t.Union([
+    t.Literal("races"),
+    t.Literal("factions"),
+    t.Literal("skills"),
+    t.Literal("npcCategories"),
+    t.Literal("questConfig"),
+    t.Literal("itemsConfig"),
+    t.Literal("locationsConfig"),
+    t.Literal("economySettings"),
+    t.Literal("aiPreferences"),
+  ]),
+  data: t.Any(), // Dynamic based on section
+});
+
+export const CloneConfigRequest = t.Object({
+  sourceConfigId: t.String(),
+  newName: t.String({ minLength: 1 }),
+  newDescription: t.Optional(t.String()),
+});
+
+export const ToggleItemRequest = t.Object({
+  itemId: t.String(),
+  enabled: t.Boolean(),
+});
+
+export const ValidateConfigResponse = t.Object({
+  valid: t.Boolean(),
+  errors: t.Array(
+    t.Object({
+      field: t.String(),
+      message: t.String(),
+      severity: t.Union([t.Literal("error"), t.Literal("warning")]),
+    }),
+  ),
+});
+
+export const AIContextResponse = t.Object({
+  context: t.String(),
+  configId: t.String(),
+  configName: t.String(),
+  sections: t.Object({
+    races: t.String(),
+    factions: t.String(),
+    skills: t.String(),
+    npcCategories: t.String(),
+    questConfig: t.String(),
+    itemsConfig: t.String(),
+    locationsConfig: t.String(),
+    economySettings: t.String(),
+    aiPreferences: t.String(),
+  }),
 });

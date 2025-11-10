@@ -15,15 +15,20 @@ export * from "./content.schema";
 // Media
 export * from "./media.schema";
 
+// World Configuration
+export * from "./world-config.schema";
+
 // Re-export everything for drizzle
 import * as usersSchema from "./users.schema";
 import * as assetsSchema from "./assets.schema";
 import * as contentSchema from "./content.schema";
 import * as mediaSchema from "./media.schema";
+import * as worldConfigSchema from "./world-config.schema";
 
 export const schema = {
   ...usersSchema,
   ...assetsSchema,
   ...contentSchema,
   ...mediaSchema,
+  ...worldConfigSchema,
 };

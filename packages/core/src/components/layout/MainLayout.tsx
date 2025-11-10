@@ -23,8 +23,7 @@ export function MainLayout({ currentView, onViewChange, children }: MainLayoutPr
           {/* Subtle grid background */}
           <div className="absolute inset-0 pointer-events-none opacity-[0.02]">
             <div
-              className="h-full w-full"
-              className="grid-background"
+              className="h-full w-full grid-background"
               style={{
                 backgroundSize: '50px 50px'
               }}

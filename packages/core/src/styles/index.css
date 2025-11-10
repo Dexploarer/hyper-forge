@@ -4,12 +4,12 @@
    Foundation layer that applies design tokens as CSS variables
    This file should be imported at the root of the application */
 
+/* React Flow Workflow Components - @import must come before @tailwind */
+@import '../components/Content/Workflow/workflow.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* React Flow Workflow Components */
-@import '../components/Content/Workflow/workflow.css';
 
 /* CSS Variables from Design Tokens */
 @layer base {
@@ -865,7 +865,7 @@
   }
 
   .light-theme .badge-primary {
-    @apply bg-opacity-15;
+    background-color: rgba(99, 102, 241, 0.15);
     border-color: rgba(99, 102, 241, 0.2);
   }
   
@@ -875,7 +875,7 @@
   }
 
   .light-theme .badge-success {
-    @apply bg-opacity-15;
+    background-color: rgba(16, 185, 129, 0.15);
     border-color: rgba(16, 185, 129, 0.2);
   }
   
@@ -885,7 +885,7 @@
   }
 
   .light-theme .badge-warning {
-    @apply bg-opacity-15;
+    background-color: rgba(245, 158, 11, 0.15);
     border-color: rgba(245, 158, 11, 0.2);
   }
   
@@ -895,7 +895,7 @@
   }
 
   .light-theme .badge-error {
-    @apply bg-opacity-15;
+    background-color: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.2);
   }
   
