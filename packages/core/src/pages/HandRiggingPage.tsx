@@ -14,7 +14,7 @@ import {
   DebugImages,
   HelpSection,
   ExportModal
-} from '@/components/HandRigging'
+} from '@/components/hand-rigging'
 import { Drawer, CollapsibleSection, Tray } from '@/components/common'
 import { ThreeViewerRef } from '@/components/shared/ThreeViewer'
 import { HandRiggingService, HandRiggingResult } from '@/services/hand-rigging/HandRiggingService'

@@ -10,7 +10,7 @@ import {
   LoreGenerationCard,
   GeneratedContentList,
   ContentPreviewCard,
-} from "@/components/Content";
+} from "@/components/content";
 import { Button, Drawer } from "@/components/common";
 import {
   DialogueData,

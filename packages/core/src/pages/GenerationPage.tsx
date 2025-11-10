@@ -39,7 +39,7 @@ import {
   AssetActionsCard,
   NoAssetSelected,
   ReferenceImageCard,
-} from "@/components/Generation";
+} from "@/components/generation";
 import { Button, Card, CardContent, Drawer, CollapsibleSection } from "@/components/common";
 import { useCommandRegistration } from "@/hooks/useCommandRegistration";
 import { Sparkles as SparklesIcon, Play, Save } from "lucide-react";

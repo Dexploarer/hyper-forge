@@ -100,6 +100,34 @@ export class ContentGenerationService {
   }
 
   /**
+   * Inject world configuration context into generation prompts
+   */
+  async injectWorldContext(
+    basePrompt: string,
+    worldConfigId?: string,
+  ): Promise<string> {
+    if (!worldConfigId) {
+      // Try to get active configuration
+      const { WorldConfigService } = await import("./WorldConfigService");
+      const configService = new WorldConfigService();
+      const activeConfig = await configService.getActiveConfiguration();
+
+      if (!activeConfig) {
+        // No world config, use base prompt
+        return basePrompt;
+      }
+
+      worldConfigId = activeConfig.id;
+    }
+
+    const { WorldConfigService } = await import("./WorldConfigService");
+    const configService = new WorldConfigService();
+    const { context } = await configService.buildAIContext(worldConfigId);
+
+    return `${context}\n\n---\n\n${basePrompt}`;
+  }
+
+  /**
    * Generate NPC dialogue tree nodes
    */
   async generateDialogue(params: {
@@ -108,6 +136,7 @@ export class ContentGenerationService {
     context?: string;
     existingNodes?: DialogueNode[];
     quality?: "quality" | "speed" | "balanced";
+    worldConfigId?: string;
   }): Promise<{
     nodes: DialogueNode[];
     rawResponse: string;
@@ -118,16 +147,19 @@ export class ContentGenerationService {
       context,
       existingNodes = [],
       quality = "speed",
+      worldConfigId,
     } = params;
 
     const model = this.getModel(quality);
 
-    const prompt = this.buildDialoguePrompt(
+    const basePrompt = this.buildDialoguePrompt(
       npcName,
       npcPersonality,
       context || "",
       existingNodes,
     );
+
+    const prompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
     console.log(`[ContentGeneration] Generating dialogue for NPC: ${npcName}`);
 
@@ -156,6 +188,7 @@ export class ContentGenerationService {
     prompt: string;
     context?: string;
     quality?: "quality" | "speed" | "balanced";
+    worldConfigId?: string;
   }): Promise<{
     npc: NPCData & { id: string; metadata: any };
     rawResponse: string;
@@ -165,11 +198,13 @@ export class ContentGenerationService {
       prompt: userPrompt,
       context,
       quality = "quality",
+      worldConfigId,
     } = params;
 
     const model = this.getModel(quality);
 
-    const aiPrompt = this.buildNPCPrompt(archetype, userPrompt, context);
+    const basePrompt = this.buildNPCPrompt(archetype, userPrompt, context);
+    const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
     console.log(
       `[ContentGeneration] Generating NPC with archetype: ${archetype}`,
@@ -192,6 +227,7 @@ export class ContentGenerationService {
         model: quality,
         timestamp: new Date().toISOString(),
         archetype,
+        worldConfigId,
       },
     };
 
@@ -212,6 +248,7 @@ export class ContentGenerationService {
     theme?: string;
     context?: string;
     quality?: "quality" | "speed" | "balanced";
+    worldConfigId?: string;
   }): Promise<{
     quest: QuestData & {
       id: string;
@@ -227,16 +264,19 @@ export class ContentGenerationService {
       theme,
       context,
       quality = "quality",
+      worldConfigId,
     } = params;
 
     const model = this.getModel(quality);
 
-    const aiPrompt = this.buildQuestPrompt(
+    const basePrompt = this.buildQuestPrompt(
       questType,
       difficulty,
       theme,
       context,
     );
+
+    const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
     console.log(
       `[ContentGeneration] Generating ${difficulty} ${questType} quest`,
@@ -260,6 +300,7 @@ export class ContentGenerationService {
         generatedBy: "AI",
         model: quality,
         timestamp: new Date().toISOString(),
+        worldConfigId,
       },
     };
 
@@ -279,15 +320,23 @@ export class ContentGenerationService {
     topic: string;
     context?: string;
     quality?: "quality" | "speed" | "balanced";
+    worldConfigId?: string;
   }): Promise<{
     lore: LoreData & { id: string; metadata: any };
     rawResponse: string;
   }> {
-    const { category, topic, context, quality = "balanced" } = params;
+    const {
+      category,
+      topic,
+      context,
+      quality = "balanced",
+      worldConfigId,
+    } = params;
 
     const model = this.getModel(quality);
 
-    const aiPrompt = this.buildLorePrompt(category, topic, context);
+    const basePrompt = this.buildLorePrompt(category, topic, context);
+    const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
     console.log(
       `[ContentGeneration] Generating lore for: ${category} - ${topic}`,
@@ -309,6 +358,7 @@ export class ContentGenerationService {
         generatedBy: "AI",
         model: quality,
         timestamp: new Date().toISOString(),
+        worldConfigId,
       },
     };
 
@@ -343,9 +393,7 @@ export class ContentGenerationService {
 
     const aiPrompt = this.buildWorldPrompt(theme, complexity, customPrompt);
 
-    console.log(
-      `[ContentGeneration] Generating ${complexity} ${theme} world`,
-    );
+    console.log(`[ContentGeneration] Generating ${complexity} ${theme} world`);
 
     const result = await generateText({
       model,

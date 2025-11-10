@@ -2,14 +2,17 @@ import { create } from "zustand";
 import { devtools, persist, subscribeWithSelector } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 
-import { ArmorFittingViewerRef } from "../components/ArmorFitting/ArmorFittingViewer";
+import { ArmorFittingViewerRef } from "../components/armor-fitting/ArmorFittingViewer";
 import {
   FittingConfig,
   BodyRegion,
   CollisionPoint,
 } from "../services/fitting/ArmorFittingService";
 import { Asset } from "../types";
-import { WeaponHandleDetector, HandleDetectionResult } from "../services/processing/WeaponHandleDetector";
+import {
+  WeaponHandleDetector,
+  HandleDetectionResult,
+} from "../services/processing/WeaponHandleDetector";
 
 interface HistoryEntry {
   fittingConfig: FittingConfig;
@@ -17,7 +20,7 @@ interface HistoryEntry {
 }
 
 // Equipment slot type - determines which workflow to use
-type EquipmentSlotType = 'armor' | 'weapon';
+type EquipmentSlotType = "armor" | "weapon";
 
 interface EquipmentFittingState {
   // Selected items
@@ -31,7 +34,7 @@ interface EquipmentFittingState {
   equipmentSlot: string; // 'Head', 'Spine2', 'Hips', 'Hand_R', 'Hand_L'
 
   // UI State
-  currentTab: 'quick' | 'advanced'; // NEW - tab system
+  currentTab: "quick" | "advanced"; // NEW - tab system
   showDebugger: boolean;
 
   // === ARMOR FITTING STATE ===
@@ -68,7 +71,7 @@ interface EquipmentFittingState {
 
   // Creature sizing
   avatarHeight: number;
-  creatureCategory: 'tiny' | 'small' | 'medium' | 'large' | 'huge' | 'colossal';
+  creatureCategory: "tiny" | "small" | "medium" | "large" | "huge" | "colossal";
   autoScaleWeapon: boolean;
   weaponScaleOverride: number;
 
@@ -118,7 +121,7 @@ interface EquipmentFittingActions {
   getSlotType: () => EquipmentSlotType; // NEW - returns 'armor' or 'weapon'
 
   // UI state
-  setCurrentTab: (tab: 'quick' | 'advanced') => void; // NEW
+  setCurrentTab: (tab: "quick" | "advanced") => void; // NEW
   setShowDebugger: (show: boolean) => void;
 
   // === ARMOR FITTING ACTIONS ===
@@ -140,7 +143,9 @@ interface EquipmentFittingActions {
   setEnableWeightTransfer: (enabled: boolean) => void;
 
   // Armor visualization
-  setVisualizationMode: (mode: EquipmentFittingState["visualizationMode"]) => void;
+  setVisualizationMode: (
+    mode: EquipmentFittingState["visualizationMode"],
+  ) => void;
   setSelectedBone: (bone: number) => void;
 
   // Armor fitting results
@@ -173,7 +178,9 @@ interface EquipmentFittingActions {
 
   // Creature sizing
   setAvatarHeight: (height: number) => void;
-  setCreatureCategory: (category: EquipmentFittingState["creatureCategory"]) => void;
+  setCreatureCategory: (
+    category: EquipmentFittingState["creatureCategory"],
+  ) => void;
   setAutoScaleWeapon: (enabled: boolean) => void;
   setWeaponScaleOverride: (scale: number) => void;
 
@@ -255,7 +262,7 @@ const initialState: EquipmentFittingState = {
   equipmentSlot: "Spine2", // Default to armor chest
 
   // UI State
-  currentTab: 'quick',
+  currentTab: "quick",
   showDebugger: false,
 
   // === ARMOR FITTING STATE ===
@@ -298,7 +305,7 @@ const initialState: EquipmentFittingState = {
   isDetectingHandle: false,
 
   avatarHeight: 1.83, // Medium human height
-  creatureCategory: 'medium',
+  creatureCategory: "medium",
   autoScaleWeapon: true,
   weaponScaleOverride: 1.0,
 
@@ -381,7 +388,9 @@ export const useEquipmentFittingStore = create<EquipmentFittingStore>()(
           // Equipment slot management
           setEquipmentSlot: (slot, viewerRef) => {
             const prevSlot = get().equipmentSlot;
-            console.log(`=== SWITCHING EQUIPMENT SLOT: ${prevSlot} -> ${slot} ===`);
+            console.log(
+              `=== SWITCHING EQUIPMENT SLOT: ${prevSlot} -> ${slot} ===`,
+            );
 
             // Clear meshes from scene based on what we're leaving
             if (viewerRef?.current && prevSlot !== slot) {
@@ -444,10 +453,10 @@ export const useEquipmentFittingStore = create<EquipmentFittingStore>()(
 
           getSlotType: () => {
             const slot = get().equipmentSlot;
-            if (slot === 'Hand_R' || slot === 'Hand_L') {
-              return 'weapon';
+            if (slot === "Hand_R" || slot === "Hand_L") {
+              return "weapon";
             }
-            return 'armor';
+            return "armor";
           },
 
           // UI state
@@ -768,7 +777,8 @@ export const useEquipmentFittingStore = create<EquipmentFittingStore>()(
           detectGripPoint: async (weaponAsset: Asset) => {
             if (!weaponAsset || !weaponAsset.hasModel) {
               set((state) => {
-                state.lastError = "No weapon model available for grip detection";
+                state.lastError =
+                  "No weapon model available for grip detection";
               });
               return;
             }
@@ -852,7 +862,7 @@ export const useEquipmentFittingStore = create<EquipmentFittingStore>()(
               state.manualRotation = { x: 0, y: 0, z: 0 };
               state.weaponScaleOverride = 1.0;
               state.avatarHeight = 1.83;
-              state.creatureCategory = 'medium';
+              state.creatureCategory = "medium";
             }),
 
           // === SHARED ACTIONS ===
@@ -999,7 +1009,7 @@ export const useEquipmentFittingStore = create<EquipmentFittingStore>()(
               set((state) => {
                 state.lastError = `Export failed: ${(error as Error).message}`;
               });
-            } finally{
+            } finally {
               set((state) => {
                 state.isExporting = false;
               });
@@ -1058,7 +1068,10 @@ export const useEquipmentFittingStore = create<EquipmentFittingStore>()(
                 state.bodyRegions = null;
                 state.collisions = null;
                 state.fittingConfig = { ...initialState.fittingConfig };
-              } else if (equipmentSlot === "Hand_R" || equipmentSlot === "Hand_L") {
+              } else if (
+                equipmentSlot === "Hand_R" ||
+                equipmentSlot === "Hand_L"
+              ) {
                 state.handleDetectionResult = null;
                 state.manualPosition = { x: 0, y: 0, z: 0 };
                 state.manualRotation = { x: 0, y: 0, z: 0 };
@@ -1167,7 +1180,10 @@ export const useEquipmentFittingStore = create<EquipmentFittingStore>()(
               return !!(selectedAvatar && selectedHelmet);
             } else if (equipmentSlot === "Spine2" || equipmentSlot === "Hips") {
               return !!(selectedAvatar && selectedArmor);
-            } else if (equipmentSlot === "Hand_R" || equipmentSlot === "Hand_L") {
+            } else if (
+              equipmentSlot === "Hand_R" ||
+              equipmentSlot === "Hand_L"
+            ) {
               return !!(selectedAvatar && selectedWeapon);
             }
             return false;
@@ -1191,12 +1207,12 @@ export const useEquipmentFittingStore = create<EquipmentFittingStore>()(
 
           isArmorMode: () => {
             const slot = get().equipmentSlot;
-            return slot === 'Head' || slot === 'Spine2' || slot === 'Hips';
+            return slot === "Head" || slot === "Spine2" || slot === "Hips";
           },
 
           isWeaponMode: () => {
             const slot = get().equipmentSlot;
-            return slot === 'Hand_R' || slot === 'Hand_L';
+            return slot === "Hand_R" || slot === "Hand_L";
           },
         })),
         {

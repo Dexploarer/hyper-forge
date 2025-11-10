@@ -9,8 +9,8 @@ import {
   MusicGenerationCard,
   GeneratedAudioList,
   AudioPreviewCard
-} from '@/components/Audio'
-import { VoiceServiceStatus } from '@/components/Voice'
+} from '@/components/audio'
+import { VoiceServiceStatus } from '@/components/voice'
 import { Button, Drawer } from '@/components/common'
 import type { AudioType, AudioView, GeneratedAudio } from '@/types/audio'
 

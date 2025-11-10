@@ -5,7 +5,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/components/common";
 import { cn } from "@/styles/utils";
 import { Handle, Position } from "@xyflow/react";
 import type { ComponentProps } from "react";
@@ -21,7 +21,7 @@ export const Node = ({ handles, className, ...props }: NodeProps) => (
   <Card
     className={cn(
       "node-container relative size-full h-auto w-sm gap-0 rounded-md p-0",
-      className
+      className,
     )}
     {...props}
   >

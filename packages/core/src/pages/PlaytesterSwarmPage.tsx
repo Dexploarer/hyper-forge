@@ -8,7 +8,7 @@ import {
   PlaytestReportCard,
   TesterProfileList,
   GeneratedPlaytestList
-} from '@/components/Playtester'
+} from '@/components/playtester'
 import { Button } from '@/components/common'
 import { useNavigation } from '@/hooks/useNavigation'
 import type { PlaytestContentType, PlaytestView, GeneratedPlaytest, PlaytestResult } from '@/types/playtester'

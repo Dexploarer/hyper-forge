@@ -5,10 +5,13 @@ import { PageSkeleton } from "./components/common";
 import NotificationBar from "./components/shared/NotificationBar";
 import { MainLayout } from "./components/layout";
 import { NAVIGATION_VIEWS } from "./constants";
-import { AppProvider } from "./contexts/AppContext";
-import { NavigationProvider } from "./contexts/NavigationContext";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { CommandPaletteProvider } from "./contexts/CommandPaletteContext";
+import {
+  AppProvider,
+  AuthProvider,
+  useAuth,
+  NavigationProvider,
+  CommandPaletteProvider,
+} from "./contexts";
 import { useNavigation } from "./hooks/useNavigation";
 import { LandingPage } from "./pages/LandingPage";
 
@@ -17,11 +20,11 @@ const UnifiedEquipmentPage = lazy(() => import("./pages/UnifiedEquipmentPage"));
 const AssetsPage = lazy(() => import("./pages/AssetsPage"));
 const ChatGenerationPage = lazy(() => import("./pages/ChatGenerationPage"));
 const ContentLibraryPage = lazy(() => import("./pages/ContentLibraryPage"));
-const HandRiggingPage = lazy(() => import("./pages/HandRiggingPage"));
-const PlaytesterSwarmPage = lazy(() => import("./pages/PlaytesterSwarmPage"));
-const RetargetAnimatePage = lazy(() => import("./pages/RetargetAnimatePage"));
-const AdminDashboardPage = lazy(() => import("./pages/AdminDashboardPage"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const HandRiggingPage = lazy(() => import("./pages/HandRiggingPage").then(module => ({ default: module.HandRiggingPage })));
+const PlaytesterSwarmPage = lazy(() => import("./pages/PlaytesterSwarmPage").then(module => ({ default: module.PlaytesterSwarmPage })));
+const RetargetAnimatePage = lazy(() => import("./pages/RetargetAnimatePage").then(module => ({ default: module.RetargetAnimatePage })));
+const AdminDashboardPage = lazy(() => import("./pages/AdminDashboardPage").then(module => ({ default: module.AdminDashboardPage })));
+const SettingsPage = lazy(() => import("./pages/SettingsPage").then(module => ({ default: module.SettingsPage })));
 
 function AppContent() {
   const { isAuthenticated } = useAuth();

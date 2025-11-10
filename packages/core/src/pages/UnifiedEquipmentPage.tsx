@@ -11,13 +11,13 @@ import {
   ViewportControls,
   UndoRedoControls,
   FittingProgress,
-} from '@/components/ArmorFitting'
+} from '@/components/armor-fitting'
 import { ErrorNotification, EmptyState, Drawer, CollapsibleSection } from '@/components/common'
 import {
   TabSelector,
   ArmorFittingPanel,
   WeaponFittingPanel,
-} from '@/components/Equipment'
+} from '@/components/equipment'
 import { EQUIPMENT_SLOTS } from '@/constants/equipment'
 import { useAssets } from '@/hooks'
 

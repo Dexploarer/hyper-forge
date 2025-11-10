@@ -4,24 +4,25 @@ import React, { useRef, useCallback, useState, useEffect, useMemo } from "react"
 import { API_ENDPOINTS } from "../constants";
 import { useAssetsStore } from "../store";
 
-import AssetDetailsPanel from "@/components/Assets/AssetDetailsPanel";
-import { AssetEditModal } from "@/components/Assets/AssetEditModal";
-import AssetFilters from "@/components/Assets/AssetFilters";
-import AssetList from "@/components/Assets/AssetList";
-import { AssetStatisticsCard } from "@/components/Assets/AssetStatisticsCard";
-import { BulkActionsBar } from "@/components/Assets/BulkActionsBar";
-import { Tray } from "@/components/common";
-import { EmptyAssetState } from "@/components/Assets/EmptyAssetState";
-import { GenerationHistoryTimeline } from "@/components/Assets/GenerationHistoryTimeline";
-import { LoadingState } from "@/components/Assets/LoadingState";
-import { SkeletonList } from "@/components/common";
-import RegenerateModal from "@/components/Assets/RegenerateModal";
-import RetextureModal from "@/components/Assets/RetextureModal";
-import SpriteGenerationModal from "@/components/Assets/SpriteGenerationModal";
-import { TransitionOverlay } from "@/components/Assets/TransitionOverlay";
-import { VariantTreeViewer } from "@/components/Assets/VariantTreeViewer";
-import ViewerControls from "@/components/Assets/ViewerControls";
-import { MaterialPresetEditor } from "@/components/Materials";
+import {
+  AssetDetailsPanel,
+  AssetEditModal,
+  AssetFilters,
+  AssetList,
+  AssetStatisticsCard,
+  BulkActionsBar,
+  EmptyAssetState,
+  GenerationHistoryTimeline,
+  LoadingState,
+  RegenerateModal,
+  RetextureModal,
+  SpriteGenerationModal,
+  TransitionOverlay,
+  VariantTreeViewer,
+  ViewerControls,
+} from "@/components/assets";
+import { Tray, SkeletonList } from "@/components/common";
+import { MaterialPresetEditor } from "@/components/materials";
 import { AnimationPlayer } from "@/components/shared/AnimationPlayer";
 import ThreeViewer, { ThreeViewerRef } from "@/components/shared/ThreeViewer";
 import { useAssetActions } from "@/hooks";

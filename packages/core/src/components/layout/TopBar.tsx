@@ -4,7 +4,7 @@ import { NavigationView } from '@/types'
 import { NAVIGATION_VIEWS } from '@/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { useCommandPalette } from '@/contexts/CommandPaletteContext'
-import { UserProfileMenu, UserProfileModal } from '@/components/User'
+import { UserProfileMenu, UserProfileModal } from '@/components/user'
 import { ThemeSwitcher } from '@/components/common'
 import { cn } from '@/styles'
 

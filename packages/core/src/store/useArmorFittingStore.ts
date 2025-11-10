@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools, persist, subscribeWithSelector } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 
-import { ArmorFittingViewerRef } from "../components/ArmorFitting/ArmorFittingViewer";
+import { ArmorFittingViewerRef } from "../components/armor-fitting/ArmorFittingViewer";
 import {
   FittingConfig,
   BodyRegion,

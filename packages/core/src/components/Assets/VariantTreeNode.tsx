@@ -3,7 +3,7 @@
  * Custom node for React Flow variant relationship visualization
  */
 
-import React, { memo } from 'react'
+import { memo } from 'react'
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
 import { Package, Layers } from 'lucide-react'
 

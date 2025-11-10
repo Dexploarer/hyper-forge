@@ -19,7 +19,9 @@ import '@xyflow/react/dist/style.css'
 import { X, GitBranch } from 'lucide-react'
 
 import type { Asset } from '@/types'
-import { VariantTreeNodeComponent, type VariantTreeNodeData, type VariantTreeNode as VariantTreeNodeType } from './VariantTreeNode'
+import { VariantTreeNodeComponent } from './VariantTreeNode.jsx'
+import { type VariantTreeNodeData } from './VariantTreeNode.jsx'
+import { type VariantTreeNode as VariantTreeNodeType } from './VariantTreeNode.jsx'
 import { useAssetsStore } from '@/store'
 
 interface VariantTreeViewerProps {
