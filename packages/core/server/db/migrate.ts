@@ -27,8 +27,12 @@ async function main() {
     console.log("[Migrations] ✓ Migrations completed successfully");
   } catch (error: any) {
     // Check if it's a "relation already exists" error (PostgreSQL code 42P07)
+    // Drizzle wraps PostgreSQL errors, so check the cause as well
+    const errorCode = error?.code || error?.cause?.code;
+    const errorMessage = error?.message || error?.cause?.message || "";
+
     const isAlreadyExistsError =
-      error?.code === "42P07" || error?.message?.includes("already exists");
+      errorCode === "42P07" || errorMessage.includes("already exists");
 
     if (isAlreadyExistsError) {
       console.warn("[Migrations] ⚠️  Some tables already exist - skipping");
