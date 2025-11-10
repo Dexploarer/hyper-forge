@@ -921,7 +921,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                     title="Reference Image"
                     defaultOpen={false}
                     icon={Camera}
-                    badge={referenceImageMode !== "none" ? 1 : undefined}
+                    badge={referenceImageMode === "custom" ? 1 : undefined}
                   >
                     <ReferenceImageCard
                       generationType={generationType}

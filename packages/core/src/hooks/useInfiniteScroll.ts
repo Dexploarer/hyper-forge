@@ -19,7 +19,7 @@ interface UseInfiniteScrollReturn {
   /** Whether there are more items to load */
   hasMore: boolean
   /** Ref to attach to scrollable container */
-  containerRef: React.RefObject<HTMLDivElement>
+  containerRef: React.RefObject<HTMLDivElement | null>
   /** Manually load more items */
   loadMore: () => void
   /** Reset to initial count */
@@ -57,7 +57,7 @@ export function useInfiniteScroll({
   const [displayCount, setDisplayCount] = useState(initialCount)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
-  const loadingTimeoutRef = useRef<NodeJS.Timeout>()
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   const hasMore = displayCount < totalItems
 
