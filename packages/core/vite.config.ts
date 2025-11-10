@@ -31,6 +31,7 @@ export default defineConfig({
     }
   },
   build: {
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks: (id) => {
@@ -55,7 +56,6 @@ export default defineConfig({
             return 'vendor'
           }
         },
-        chunkSizeWarningLimit: 1000,
       },
     },
     // Remove console.logs in production (esbuild handles this)
