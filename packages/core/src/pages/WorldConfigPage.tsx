@@ -11,6 +11,7 @@ import {
 import {
   WorldConfigList,
   TabNavigation,
+  WorldConfigEditor,
   type WorldConfigTab,
 } from "@/components/world-config";
 import {
@@ -37,6 +38,9 @@ export const WorldConfigPage: React.FC = () => {
   const [deleteConfigId, setDeleteConfigId] = useState<string | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewContext, setPreviewContext] = useState<string>("");
+  const [showEditor, setShowEditor] = useState(false);
+  const [editingConfig, setEditingConfig] =
+    useState<WorldConfigurationData | null>(null);
 
   // Load configurations on mount
   useEffect(() => {
@@ -87,8 +91,8 @@ export const WorldConfigPage: React.FC = () => {
   const handleEdit = (id: string) => {
     const config = configurations.find((c) => c.id === id);
     if (config) {
-      setSelectedConfig(config);
-      setActiveTab("create");
+      setEditingConfig(config);
+      setShowEditor(true);
     }
   };
 
@@ -139,8 +143,17 @@ export const WorldConfigPage: React.FC = () => {
   };
 
   const handleCreateNew = () => {
-    setSelectedConfig(null);
-    setActiveTab("create");
+    setEditingConfig(null);
+    setShowEditor(true);
+  };
+
+  const handleEditorSave = () => {
+    loadConfigurations();
+  };
+
+  const handleEditorClose = () => {
+    setShowEditor(false);
+    setEditingConfig(null);
   };
 
   // Tab counts
@@ -207,28 +220,7 @@ export const WorldConfigPage: React.FC = () => {
             />
           )}
 
-          {/* Create Tab */}
-          {activeTab === "create" && (
-            <div className="p-8 bg-bg-secondary border border-border-primary rounded-xl text-center">
-              <Settings className="w-12 h-12 text-text-tertiary mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold text-text-primary mb-2">
-                Configuration Editor
-              </h3>
-              <p className="text-sm text-text-secondary mb-4">
-                {selectedConfig
-                  ? `Editing: ${selectedConfig.name}`
-                  : "The configuration editor will be available in the next sprint."}
-              </p>
-              {selectedConfig && (
-                <Button
-                  variant="secondary"
-                  onClick={() => setActiveTab("list")}
-                >
-                  Back to List
-                </Button>
-              )}
-            </div>
-          )}
+          {/* Create Tab - Removed, now using drawer editor */}
 
           {/* Templates Tab */}
           {activeTab === "templates" && (
@@ -319,6 +311,14 @@ export const WorldConfigPage: React.FC = () => {
           <Button onClick={() => setShowPreviewModal(false)}>Close</Button>
         </ModalFooter>
       </Modal>
+
+      {/* Configuration Editor */}
+      <WorldConfigEditor
+        open={showEditor}
+        onClose={handleEditorClose}
+        onSave={handleEditorSave}
+        editConfig={editingConfig}
+      />
     </div>
   );
 };

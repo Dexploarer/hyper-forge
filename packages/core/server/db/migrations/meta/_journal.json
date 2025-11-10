@@ -64,6 +64,13 @@
       "when": 1762790894502,
       "tag": "0008_freezing_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1762799743078,
+      "tag": "0009_many_lady_mastermind",
+      "breakpoints": true
     }
   ]
 }

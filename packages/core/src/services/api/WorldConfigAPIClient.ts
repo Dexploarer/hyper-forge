@@ -20,6 +20,11 @@ export interface WorldConfigurationData {
   locationsConfig: LocationsConfiguration;
   economySettings: EconomySettings;
   aiPreferences: AIGenerationPreferences;
+  characterClasses: CharacterClass[];
+  magicSystems: MagicSystem[];
+  creatureTypes: CreatureType[];
+  religions: Religion[];
+  culturalElements: CulturalElement[];
   version: string;
   tags: string[];
   isTemplate: boolean;
@@ -178,6 +183,63 @@ export interface AIGenerationPreferences {
   };
 }
 
+export interface CharacterClass {
+  id: string;
+  name: string;
+  description: string;
+  primaryStats: string[];
+  abilities: string[];
+  startingEquipment: string[];
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface MagicSystem {
+  id: string;
+  name: string;
+  description: string;
+  sourceType: string;
+  spellCategories: string[];
+  restrictions: string[];
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface CreatureType {
+  id: string;
+  name: string;
+  description: string;
+  habitat: string;
+  dangerLevel: number;
+  behaviors: string[];
+  lootTables: string[];
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface Religion {
+  id: string;
+  name: string;
+  description: string;
+  deity: string;
+  tenets: string[];
+  rituals: string[];
+  followers: string[];
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface CulturalElement {
+  id: string;
+  name: string;
+  type: "tradition" | "festival" | "art" | "language" | "custom" | "taboo";
+  description: string;
+  prevalence: "rare" | "uncommon" | "common" | "widespread";
+  associatedRaces: string[];
+  enabled: boolean;
+  createdAt: string;
+}
+
 export interface CreateWorldConfigParams {
   name: string;
   description: string;
@@ -191,6 +253,11 @@ export interface CreateWorldConfigParams {
   locationsConfig?: LocationsConfiguration;
   economySettings?: EconomySettings;
   aiPreferences?: AIGenerationPreferences;
+  characterClasses?: CharacterClass[];
+  magicSystems?: MagicSystem[];
+  creatureTypes?: CreatureType[];
+  religions?: Religion[];
+  culturalElements?: CulturalElement[];
   tags?: string[];
   isTemplate?: boolean;
   templateName?: string;
@@ -210,7 +277,14 @@ export interface UpdateWorldConfigParams {
   locationsConfig?: LocationsConfiguration;
   economySettings?: EconomySettings;
   aiPreferences?: AIGenerationPreferences;
+  characterClasses?: CharacterClass[];
+  magicSystems?: MagicSystem[];
+  creatureTypes?: CreatureType[];
+  religions?: Religion[];
+  culturalElements?: CulturalElement[];
   tags?: string[];
+  isTemplate?: boolean;
+  templateName?: string;
 }
 
 export interface AIContextResponse {
@@ -226,6 +300,11 @@ export interface AIContextResponse {
     locations: string;
     economy: string;
     ai: string;
+    characterClasses?: string;
+    magicSystems?: string;
+    creatureTypes?: string;
+    religions?: string;
+    culturalElements?: string;
   };
 }
 

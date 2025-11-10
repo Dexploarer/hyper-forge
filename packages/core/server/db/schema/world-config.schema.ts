@@ -55,6 +55,25 @@ export const worldConfigurations = pgTable(
       .$type<AIGenerationPreferences>()
       .notNull(),
 
+    // Enhanced Configuration (Optional)
+    characterClasses: jsonb("character_classes")
+      .$type<CharacterClass[]>()
+      .notNull()
+      .default([]),
+    magicSystems: jsonb("magic_systems")
+      .$type<MagicSystem[]>()
+      .notNull()
+      .default([]),
+    creatureTypes: jsonb("creature_types")
+      .$type<CreatureType[]>()
+      .notNull()
+      .default([]),
+    religions: jsonb("religions").$type<Religion[]>().notNull().default([]),
+    culturalElements: jsonb("cultural_elements")
+      .$type<CulturalElement[]>()
+      .notNull()
+      .default([]),
+
     // Metadata
     version: varchar("version", { length: 50 }).notNull().default("1.0.0"),
     tags: jsonb("tags").$type<string[]>().notNull().default([]),
@@ -266,6 +285,64 @@ export interface AIGenerationPreferences {
     minQuestObjectives: number;
     maxQuestObjectives: number;
   };
+}
+
+// Enhanced Configuration Types (Optional)
+export interface CharacterClass {
+  id: string;
+  name: string;
+  description: string;
+  primaryStats: string[]; // e.g., ["strength", "constitution"]
+  abilities: string[];
+  startingEquipment: string[];
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface MagicSystem {
+  id: string;
+  name: string;
+  description: string;
+  sourceType: string; // e.g., "divine", "arcane", "elemental", "psionic"
+  spellCategories: string[];
+  restrictions: string[]; // e.g., ["requires focus", "verbal components"]
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface CreatureType {
+  id: string;
+  name: string;
+  description: string;
+  habitat: string; // e.g., "forest", "mountains", "underground"
+  dangerLevel: number; // 1-10
+  behaviors: string[]; // e.g., ["aggressive", "territorial", "nocturnal"]
+  lootTables: string[];
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface Religion {
+  id: string;
+  name: string;
+  description: string;
+  deity: string; // Name of the deity or pantheon
+  tenets: string[]; // Core beliefs
+  rituals: string[];
+  followers: string[]; // Race/faction IDs that follow this religion
+  enabled: boolean;
+  createdAt: string;
+}
+
+export interface CulturalElement {
+  id: string;
+  name: string;
+  type: "tradition" | "festival" | "art" | "language" | "custom" | "taboo";
+  description: string;
+  prevalence: "rare" | "uncommon" | "common" | "widespread";
+  associatedRaces: string[]; // Race IDs
+  enabled: boolean;
+  createdAt: string;
 }
 
 // Type exports

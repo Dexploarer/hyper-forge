@@ -18,6 +18,11 @@ import {
   type LocationsConfiguration,
   type EconomySettings,
   type AIGenerationPreferences,
+  type CharacterClass,
+  type MagicSystem,
+  type CreatureType,
+  type Religion,
+  type CulturalElement,
 } from "../db/schema/world-config.schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -145,6 +150,12 @@ export class WorldConfigService {
         economySettings:
           data.economySettings || this.getDefaultEconomySettings(),
         aiPreferences: data.aiPreferences || this.getDefaultAIPreferences(),
+        // Enhanced configuration (optional)
+        characterClasses: (data as any).characterClasses || [],
+        magicSystems: (data as any).magicSystems || [],
+        creatureTypes: (data as any).creatureTypes || [],
+        religions: (data as any).religions || [],
+        culturalElements: (data as any).culturalElements || [],
         version: data.version || "1.0.0",
         tags: data.tags || [],
         isTemplate: data.isTemplate || false,
@@ -246,7 +257,12 @@ export class WorldConfigService {
       | "itemsConfig"
       | "locationsConfig"
       | "economySettings"
-      | "aiPreferences",
+      | "aiPreferences"
+      | "characterClasses"
+      | "magicSystems"
+      | "creatureTypes"
+      | "religions"
+      | "culturalElements",
     data: any,
     updatedBy?: string,
   ): Promise<WorldConfiguration> {
@@ -399,6 +415,12 @@ export class WorldConfigService {
         locationsConfig: source.locationsConfig,
         economySettings: source.economySettings,
         aiPreferences: source.aiPreferences,
+        // Enhanced configuration (optional)
+        characterClasses: source.characterClasses || [],
+        magicSystems: source.magicSystems || [],
+        creatureTypes: source.creatureTypes || [],
+        religions: source.religions || [],
+        culturalElements: source.culturalElements || [],
         version: source.version,
         tags: [...source.tags, "cloned"],
         isTemplate: false, // Clones are never templates
@@ -550,6 +572,12 @@ export class WorldConfigService {
         economySettings:
           jsonData.economySettings || this.getDefaultEconomySettings(),
         aiPreferences: jsonData.aiPreferences || this.getDefaultAIPreferences(),
+        // Enhanced configuration (optional)
+        characterClasses: jsonData.characterClasses || [],
+        magicSystems: jsonData.magicSystems || [],
+        creatureTypes: jsonData.creatureTypes || [],
+        religions: jsonData.religions || [],
+        culturalElements: jsonData.culturalElements || [],
         version: jsonData.version || "1.0.0",
         tags: [...(jsonData.tags || []), "imported"],
         isTemplate: false,
@@ -590,9 +618,7 @@ export class WorldConfigService {
   /**
    * Validate configuration and return errors/warnings
    */
-  async validateConfiguration(
-    id: string,
-  ): Promise<{
+  async validateConfiguration(id: string): Promise<{
     valid: boolean;
     errors: Array<{
       field: string;
@@ -810,6 +836,69 @@ Detail Level: ${config.aiPreferences.toneAndStyle.detailLevel}
 Violence Level: ${config.aiPreferences.contentGuidelines.violenceLevel}
 Magic Prevalence: ${config.aiPreferences.contentGuidelines.magicPrevalence}
 Technology Level: ${config.aiPreferences.contentGuidelines.technologyLevel}`;
+
+      // Enhanced Configuration (Optional sections)
+      if (config.characterClasses && config.characterClasses.length > 0) {
+        const enabledClasses = config.characterClasses.filter((c) => c.enabled);
+        if (enabledClasses.length > 0) {
+          sections.characterClasses = `Character Classes:\n${enabledClasses
+            .map(
+              (c) =>
+                `- ${c.name}: ${c.description}\n  Primary Stats: ${c.primaryStats.join(", ")}\n  Abilities: ${c.abilities.join(", ")}`,
+            )
+            .join("\n\n")}`;
+        }
+      }
+
+      if (config.magicSystems && config.magicSystems.length > 0) {
+        const enabledSystems = config.magicSystems.filter((m) => m.enabled);
+        if (enabledSystems.length > 0) {
+          sections.magicSystems = `Magic Systems:\n${enabledSystems
+            .map(
+              (m) =>
+                `- ${m.name} (${m.sourceType}): ${m.description}\n  Categories: ${m.spellCategories.join(", ")}`,
+            )
+            .join("\n\n")}`;
+        }
+      }
+
+      if (config.creatureTypes && config.creatureTypes.length > 0) {
+        const enabledCreatures = config.creatureTypes.filter((c) => c.enabled);
+        if (enabledCreatures.length > 0) {
+          sections.creatureTypes = `Creature Types:\n${enabledCreatures
+            .map(
+              (c) =>
+                `- ${c.name} (Danger Level ${c.dangerLevel}): ${c.description}\n  Habitat: ${c.habitat}\n  Behaviors: ${c.behaviors.join(", ")}`,
+            )
+            .join("\n\n")}`;
+        }
+      }
+
+      if (config.religions && config.religions.length > 0) {
+        const enabledReligions = config.religions.filter((r) => r.enabled);
+        if (enabledReligions.length > 0) {
+          sections.religions = `Religions:\n${enabledReligions
+            .map(
+              (r) =>
+                `- ${r.name} (${r.deity}): ${r.description}\n  Tenets: ${r.tenets.join(", ")}`,
+            )
+            .join("\n\n")}`;
+        }
+      }
+
+      if (config.culturalElements && config.culturalElements.length > 0) {
+        const enabledElements = config.culturalElements.filter(
+          (c) => c.enabled,
+        );
+        if (enabledElements.length > 0) {
+          sections.culturalElements = `Cultural Elements:\n${enabledElements
+            .map(
+              (c) =>
+                `- ${c.name} (${c.type}, ${c.prevalence}): ${c.description}`,
+            )
+            .join("\n")}`;
+        }
+      }
 
       // Build full context
       const context = `World Configuration: ${config.name}
