@@ -17,9 +17,11 @@ import {
   Button,
   Input,
   Textarea,
+  SelectOrCustom,
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
 import { notify } from "@/utils/notify";
 import { useNavigation } from "@/hooks/useNavigation";
 import type { QuestData, QualityLevel } from "@/types/content";
@@ -64,6 +66,9 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
   const [theme, setTheme] = useState("");
   const [context, setContext] = useState("");
   const [worldConfigId, setWorldConfigId] = useState<string | null>(null);
+
+  // Fetch world config options
+  const worldConfigOptions = useWorldConfigOptions(worldConfigId);
   const [lastGeneratedQuest, setLastGeneratedQuest] = useState<
     | (QuestData & {
         id: string;
@@ -150,61 +155,34 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
         </div>
 
         {/* Quest Type Selection */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">
-            Quest Type{" "}
-            <span className="text-text-tertiary font-normal text-xs">
-              (Optional)
-            </span>
-          </label>
-          <select
-            value={questType}
-            onChange={(e) => setQuestType(e.target.value)}
-            className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
-          >
-            <option value="">Any / Let AI decide</option>
-            {QUEST_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectOrCustom
+          value={questType}
+          onChange={setQuestType}
+          options={[
+            ...QUEST_TYPES,
+            ...(worldConfigOptions.questTypes || []),
+          ].filter((v, i, a) => a.indexOf(v) === i)} // Remove duplicates
+          label="Quest Type"
+          required={false}
+          disabled={isGenerating}
+          customPlaceholder="Enter custom quest type..."
+          allowEmpty={true}
+        />
 
         {/* Difficulty Selection */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">
-            Difficulty{" "}
-            <span className="text-text-tertiary font-normal text-xs">
-              (Optional)
-            </span>
-          </label>
-          <div className="grid grid-cols-5 gap-2">
-            <button
-              onClick={() => setDifficulty("")}
-              className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${
-                difficulty === ""
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
-              }`}
-            >
-              Any
-            </button>
-            {DIFFICULTIES.map((diff) => (
-              <button
-                key={diff}
-                onClick={() => setDifficulty(diff)}
-                className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${
-                  difficulty === diff
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
-                }`}
-              >
-                {diff}
-              </button>
-            ))}
-          </div>
-        </div>
+        <SelectOrCustom
+          value={difficulty}
+          onChange={setDifficulty}
+          options={[
+            ...DIFFICULTIES,
+            ...(worldConfigOptions.difficulties || []),
+          ].filter((v, i, a) => a.indexOf(v) === i)} // Remove duplicates
+          label="Difficulty"
+          required={false}
+          disabled={isGenerating}
+          customPlaceholder="Enter custom difficulty..."
+          allowEmpty={true}
+        />
 
         {/* Theme */}
         <div className="space-y-2">
