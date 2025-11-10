@@ -39,29 +39,35 @@ export const contentGenerationRoutes = new Elysia({
         async ({ body }) => {
           try {
             console.log(
-              `[ContentGeneration] Generating dialogue for NPC: ${body.npcName}`,
+              `[ContentGeneration] Generating dialogue${body.npcName ? ` for NPC: ${body.npcName}` : ""}`,
             );
 
             const result = await contentGenService.generateDialogue({
               npcName: body.npcName,
               npcPersonality: body.npcPersonality,
+              prompt: body.prompt,
               context: body.context,
               existingNodes: body.existingNodes,
               quality: body.quality,
+              worldConfigId: body.worldConfigId,
             });
 
             // Save to database
             const dialogue = await contentDatabaseService.createDialogue({
-              npcName: body.npcName,
+              npcName: body.npcName || "Unknown",
               context: body.context,
               nodes: result.nodes,
               generationParams: {
                 npcPersonality: body.npcPersonality,
+                prompt: body.prompt,
                 quality: body.quality,
+                worldConfigId: body.worldConfigId,
               },
             });
 
-            console.log(`[ContentGeneration] Successfully generated and saved dialogue`);
+            console.log(
+              `[ContentGeneration] Successfully generated and saved dialogue`,
+            );
             return { ...result, id: dialogue.id };
           } catch (error) {
             console.error(
@@ -88,14 +94,15 @@ export const contentGenerationRoutes = new Elysia({
         "/generate-npc",
         async ({ body }) => {
           console.log(
-            `[ContentGeneration] Generating NPC with archetype: ${body.archetype}`,
+            `[ContentGeneration] Generating NPC${body.archetype ? ` with archetype: ${body.archetype}` : ""}`,
           );
 
           const result = await contentGenService.generateNPC({
-            archetype: body.archetype,
             prompt: body.prompt,
+            archetype: body.archetype,
             context: body.context,
             quality: body.quality,
+            worldConfigId: body.worldConfigId,
           });
 
           // Save to database
@@ -105,13 +112,17 @@ export const contentGenerationRoutes = new Elysia({
             data: result.npc,
             generationParams: {
               prompt: body.prompt,
+              archetype: body.archetype,
               context: body.context,
               quality: body.quality,
+              worldConfigId: body.worldConfigId,
             },
             tags: [], // Could extract from archetype or personality
           });
 
-          console.log(`[ContentGeneration] Successfully generated and saved NPC`);
+          console.log(
+            `[ContentGeneration] Successfully generated and saved NPC`,
+          );
           return { ...result, id: npc.id };
         },
         {
@@ -131,15 +142,17 @@ export const contentGenerationRoutes = new Elysia({
         "/generate-quest",
         async ({ body }) => {
           console.log(
-            `[ContentGeneration] Generating ${body.difficulty} ${body.questType} quest`,
+            `[ContentGeneration] Generating${body.difficulty ? ` ${body.difficulty}` : ""}${body.questType ? ` ${body.questType}` : ""} quest`,
           );
 
           const result = await contentGenService.generateQuest({
+            prompt: body.prompt,
             questType: body.questType,
             difficulty: body.difficulty,
             theme: body.theme,
             context: body.context,
             quality: body.quality,
+            worldConfigId: body.worldConfigId,
           });
 
           // Save to database
@@ -149,14 +162,18 @@ export const contentGenerationRoutes = new Elysia({
             difficulty: result.quest.difficulty,
             data: result.quest,
             generationParams: {
+              prompt: body.prompt,
               theme: body.theme,
               context: body.context,
               quality: body.quality,
+              worldConfigId: body.worldConfigId,
             },
             tags: [], // Could extract from quest objectives or theme
           });
 
-          console.log(`[ContentGeneration] Successfully generated and saved Quest`);
+          console.log(
+            `[ContentGeneration] Successfully generated and saved Quest`,
+          );
           return { ...result, id: quest.id };
         },
         {
@@ -176,14 +193,16 @@ export const contentGenerationRoutes = new Elysia({
         "/generate-lore",
         async ({ body }) => {
           console.log(
-            `[ContentGeneration] Generating lore: ${body.category} - ${body.topic}`,
+            `[ContentGeneration] Generating lore${body.category ? `: ${body.category}` : ""}${body.topic ? ` - ${body.topic}` : ""}`,
           );
 
           const result = await contentGenService.generateLore({
+            prompt: body.prompt,
             category: body.category,
             topic: body.topic,
             context: body.context,
             quality: body.quality,
+            worldConfigId: body.worldConfigId,
           });
 
           // Save to database
@@ -193,14 +212,18 @@ export const contentGenerationRoutes = new Elysia({
             summary: result.lore.summary,
             data: result.lore,
             generationParams: {
+              prompt: body.prompt,
               topic: body.topic,
               context: body.context,
               quality: body.quality,
+              worldConfigId: body.worldConfigId,
             },
             tags: result.lore.relatedTopics || [],
           });
 
-          console.log(`[ContentGeneration] Successfully generated and saved Lore`);
+          console.log(
+            `[ContentGeneration] Successfully generated and saved Lore`,
+          );
           return { ...result, id: lore.id };
         },
         {
@@ -432,7 +455,10 @@ export const contentGenerationRoutes = new Elysia({
           const limit = query.limit ? parseInt(query.limit) : 50;
           const offset = query.offset ? parseInt(query.offset) : 0;
 
-          const dialogues = await contentDatabaseService.listDialogues(limit, offset);
+          const dialogues = await contentDatabaseService.listDialogues(
+            limit,
+            offset,
+          );
           return { success: true, dialogues };
         },
         {
@@ -578,7 +604,13 @@ export const contentGenerationRoutes = new Elysia({
           // Save media file and create database record
           const result = await mediaStorageService.saveMedia({
             type: "portrait",
-            entityType: body.entityType as "npc" | "quest" | "lore" | "location" | "world" | "dialogue",
+            entityType: body.entityType as
+              | "npc"
+              | "quest"
+              | "lore"
+              | "location"
+              | "world"
+              | "dialogue",
             entityId: body.entityId,
             fileName,
             data: imageData,
@@ -645,7 +677,13 @@ export const contentGenerationRoutes = new Elysia({
           // Save media file and create database record
           const result = await mediaStorageService.saveMedia({
             type: "voice",
-            entityType: body.entityType as "npc" | "quest" | "lore" | "location" | "world" | "dialogue",
+            entityType: body.entityType as
+              | "npc"
+              | "quest"
+              | "lore"
+              | "location"
+              | "world"
+              | "dialogue",
             entityId: body.entityId,
             fileName,
             data: audioData,
@@ -853,7 +891,11 @@ export const contentGenerationRoutes = new Elysia({
               context: body.additionalContext,
               quality: body.quality,
             },
-            tags: [body.category, body.npcName, ...(result.lore.relatedTopics || [])],
+            tags: [
+              body.category,
+              body.npcName,
+              ...(result.lore.relatedTopics || []),
+            ],
           });
 
           // Create relationship: Lore mentions NPC

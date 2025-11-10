@@ -676,10 +676,11 @@ export const NPCDataResponse = t.Object({
 });
 
 export const GenerateNPCRequest = t.Object({
-  archetype: t.String({ minLength: 1 }),
   prompt: t.String({ minLength: 1 }),
+  archetype: t.Optional(t.String({ minLength: 1 })),
   context: t.Optional(t.String()),
   quality: t.Optional(ModelQuality),
+  worldConfigId: t.Optional(t.String()),
 });
 
 export const GenerateNPCResponse = t.Object({
@@ -723,11 +724,13 @@ export const QuestDataResponse = t.Object({
 });
 
 export const GenerateQuestRequest = t.Object({
-  questType: t.String({ minLength: 1 }),
-  difficulty: t.String({ minLength: 1 }),
+  prompt: t.Optional(t.String({ minLength: 1 })),
+  questType: t.Optional(t.String({ minLength: 1 })),
+  difficulty: t.Optional(t.String({ minLength: 1 })),
   theme: t.Optional(t.String()),
   context: t.Optional(t.String()),
   quality: t.Optional(ModelQuality),
+  worldConfigId: t.Optional(t.String()),
 });
 
 export const GenerateQuestResponse = t.Object({
@@ -749,10 +752,12 @@ export const LoreDataResponse = t.Object({
 });
 
 export const GenerateLoreRequest = t.Object({
-  category: t.String({ minLength: 1 }),
-  topic: t.String({ minLength: 1 }),
+  prompt: t.Optional(t.String({ minLength: 1 })),
+  category: t.Optional(t.String({ minLength: 1 })),
+  topic: t.Optional(t.String({ minLength: 1 })),
   context: t.Optional(t.String()),
   quality: t.Optional(ModelQuality),
+  worldConfigId: t.Optional(t.String()),
 });
 
 export const GenerateLoreResponse = t.Object({

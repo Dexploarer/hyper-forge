@@ -131,8 +131,9 @@ export class ContentGenerationService {
    * Generate NPC dialogue tree nodes
    */
   async generateDialogue(params: {
-    npcName: string;
-    npcPersonality: string;
+    npcName?: string;
+    npcPersonality?: string;
+    prompt?: string;
     context?: string;
     existingNodes?: DialogueNode[];
     quality?: "quality" | "speed" | "balanced";
@@ -144,6 +145,7 @@ export class ContentGenerationService {
     const {
       npcName,
       npcPersonality,
+      prompt: userPrompt,
       context,
       existingNodes = [],
       quality = "speed",
@@ -155,17 +157,20 @@ export class ContentGenerationService {
     const basePrompt = this.buildDialoguePrompt(
       npcName,
       npcPersonality,
-      context || "",
+      userPrompt,
+      context,
       existingNodes,
     );
 
-    const prompt = await this.injectWorldContext(basePrompt, worldConfigId);
+    const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
-    console.log(`[ContentGeneration] Generating dialogue for NPC: ${npcName}`);
+    console.log(
+      `[ContentGeneration] Generating dialogue${npcName ? ` for NPC: ${npcName}` : ""}`,
+    );
 
     const result = await generateText({
       model,
-      prompt,
+      prompt: aiPrompt,
       temperature: 0.8,
       maxOutputTokens: 2000,
     });
@@ -184,8 +189,8 @@ export class ContentGenerationService {
    * Generate complete NPC character
    */
   async generateNPC(params: {
-    archetype: string;
     prompt: string;
+    archetype?: string;
     context?: string;
     quality?: "quality" | "speed" | "balanced";
     worldConfigId?: string;
@@ -194,8 +199,8 @@ export class ContentGenerationService {
     rawResponse: string;
   }> {
     const {
-      archetype,
       prompt: userPrompt,
+      archetype,
       context,
       quality = "quality",
       worldConfigId,
@@ -203,11 +208,11 @@ export class ContentGenerationService {
 
     const model = this.getModel(quality);
 
-    const basePrompt = this.buildNPCPrompt(archetype, userPrompt, context);
+    const basePrompt = this.buildNPCPrompt(userPrompt, archetype, context);
     const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
     console.log(
-      `[ContentGeneration] Generating NPC with archetype: ${archetype}`,
+      `[ContentGeneration] Generating NPC${archetype ? ` with archetype: ${archetype}` : ""}`,
     );
 
     const result = await generateText({
@@ -226,7 +231,7 @@ export class ContentGenerationService {
         generatedBy: "AI",
         model: quality,
         timestamp: new Date().toISOString(),
-        archetype,
+        archetype: archetype || npcData.archetype,
         worldConfigId,
       },
     };
@@ -243,8 +248,9 @@ export class ContentGenerationService {
    * Generate game quest
    */
   async generateQuest(params: {
-    questType: string;
-    difficulty: string;
+    prompt?: string;
+    questType?: string;
+    difficulty?: string;
     theme?: string;
     context?: string;
     quality?: "quality" | "speed" | "balanced";
@@ -259,6 +265,7 @@ export class ContentGenerationService {
     rawResponse: string;
   }> {
     const {
+      prompt: userPrompt,
       questType,
       difficulty,
       theme,
@@ -270,6 +277,7 @@ export class ContentGenerationService {
     const model = this.getModel(quality);
 
     const basePrompt = this.buildQuestPrompt(
+      userPrompt,
       questType,
       difficulty,
       theme,
@@ -279,7 +287,7 @@ export class ContentGenerationService {
     const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
     console.log(
-      `[ContentGeneration] Generating ${difficulty} ${questType} quest`,
+      `[ContentGeneration] Generating${difficulty ? ` ${difficulty}` : ""}${questType ? ` ${questType}` : ""} quest`,
     );
 
     const result = await generateText({
@@ -294,8 +302,8 @@ export class ContentGenerationService {
     const completeQuest = {
       id: `quest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       ...questData,
-      difficulty,
-      questType,
+      difficulty: difficulty || "medium",
+      questType: questType || "general",
       metadata: {
         generatedBy: "AI",
         model: quality,
@@ -316,8 +324,9 @@ export class ContentGenerationService {
    * Generate lore content
    */
   async generateLore(params: {
-    category: string;
-    topic: string;
+    prompt?: string;
+    category?: string;
+    topic?: string;
     context?: string;
     quality?: "quality" | "speed" | "balanced";
     worldConfigId?: string;
@@ -326,6 +335,7 @@ export class ContentGenerationService {
     rawResponse: string;
   }> {
     const {
+      prompt: userPrompt,
       category,
       topic,
       context,
@@ -335,11 +345,16 @@ export class ContentGenerationService {
 
     const model = this.getModel(quality);
 
-    const basePrompt = this.buildLorePrompt(category, topic, context);
+    const basePrompt = this.buildLorePrompt(
+      userPrompt,
+      category,
+      topic,
+      context,
+    );
     const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
     console.log(
-      `[ContentGeneration] Generating lore for: ${category} - ${topic}`,
+      `[ContentGeneration] Generating lore${category ? ` for: ${category}` : ""}${topic ? ` - ${topic}` : ""}`,
     );
 
     const result = await generateText({
@@ -431,17 +446,19 @@ export class ContentGenerationService {
   // ============================================================================
 
   private buildDialoguePrompt(
-    npcName: string,
-    personality: string,
-    context: string,
-    existingNodes: DialogueNode[],
+    npcName?: string,
+    personality?: string,
+    userPrompt?: string,
+    context?: string,
+    existingNodes?: DialogueNode[],
   ): string {
     return `You are a dialogue writer for an RPG game. Generate dialogue tree nodes for an NPC.
 
-NPC Name: ${npcName}
-Personality: ${personality}
+${npcName ? `NPC Name: ${npcName}` : ""}
+${personality ? `Personality: ${personality}` : ""}
+${userPrompt ? `User Request: ${userPrompt}` : ""}
 ${context ? `Context: ${context}` : ""}
-${existingNodes.length > 0 ? `Existing Nodes: ${JSON.stringify(existingNodes, null, 2)}` : ""}
+${existingNodes && existingNodes.length > 0 ? `Existing Nodes: ${JSON.stringify(existingNodes, null, 2)}` : ""}
 
 Generate 3-5 dialogue nodes in JSON format:
 [
@@ -458,20 +475,20 @@ Return ONLY the JSON array, no explanation.`;
   }
 
   private buildNPCPrompt(
-    archetype: string,
     userPrompt: string,
+    archetype?: string,
     context?: string,
   ): string {
     return `You are an NPC character designer for an RPG game. Generate a complete NPC character.
 
-Archetype: ${archetype}
 Requirements: ${userPrompt}
+${archetype ? `Suggested Archetype: ${archetype}` : ""}
 ${context ? `Context: ${context}` : ""}
 
 Generate a complete NPC in JSON format:
 {
   "name": "NPC Name",
-  "archetype": "${archetype}",
+  "archetype": "${archetype || "appropriate archetype"}",
   "personality": {
     "traits": ["trait1", "trait2", "trait3"],
     "background": "background story",
@@ -497,15 +514,17 @@ Return ONLY the JSON object, no explanation.`;
   }
 
   private buildQuestPrompt(
-    questType: string,
-    difficulty: string,
+    userPrompt?: string,
+    questType?: string,
+    difficulty?: string,
     theme?: string,
     context?: string,
   ): string {
     return `You are a quest designer for an RPG game. Generate a complete quest.
 
-Quest Type: ${questType}
-Difficulty: ${difficulty}
+${userPrompt ? `User Request: ${userPrompt}` : ""}
+${questType ? `Quest Type: ${questType}` : ""}
+${difficulty ? `Difficulty: ${difficulty}` : ""}
 ${theme ? `Theme: ${theme}` : ""}
 ${context ? `Context: ${context}` : ""}
 
@@ -534,20 +553,22 @@ Return ONLY the JSON object, no explanation.`;
   }
 
   private buildLorePrompt(
-    category: string,
-    topic: string,
+    userPrompt?: string,
+    category?: string,
+    topic?: string,
     context?: string,
   ): string {
     return `You are a lore writer for an RPG game. Generate rich lore content.
 
-Category: ${category}
-Topic: ${topic}
+${userPrompt ? `User Request: ${userPrompt}` : ""}
+${category ? `Category: ${category}` : ""}
+${topic ? `Topic: ${topic}` : ""}
 ${context ? `Context: ${context}` : ""}
 
 Generate lore content in JSON format:
 {
   "title": "Lore Title",
-  "category": "${category}",
+  "category": "${category || "appropriate category"}",
   "content": "Detailed lore content (2-3 paragraphs)",
   "summary": "Brief summary (1-2 sentences)",
   "relatedTopics": ["topic1", "topic2"],
