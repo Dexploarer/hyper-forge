@@ -737,26 +737,10 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden">
-      {/* Background decoration - top left */}
-      <div
-        className="absolute top-0 left-0 pointer-events-none z-0"
-        style={{
-          backgroundImage: 'url(/Untitled%20design%20(3)/3.svg)',
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'top left',
-          backgroundSize: 'contain',
-          width: '50%',
-          height: '50%',
-          minWidth: '400px',
-          minHeight: '400px',
-          opacity: 0.3
-        }}
-      />
-      {/* Main Content Area */}
-      <div className={`flex-1 max-w-7xl mx-auto py-4 pb-6 w-full relative z-10 px-4 ${
-        activeView === "results" ? "overflow-hidden flex flex-col" : "overflow-y-auto custom-scrollbar"
-      }`}>
+    <>
+    <div className="fixed inset-0 pt-[60px] bg-bg-primary overflow-hidden">
+      <div className="h-full w-full overflow-y-auto custom-scrollbar">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
           {/* Header with tabs */}
           <div className="mb-4">
             {/* Tab Navigation */}
@@ -966,10 +950,10 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
 
           {/* Results View */}
           {activeView === "results" && (
-            <div className="animate-fade-in flex-1 flex flex-col overflow-hidden">
-              <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden">
-                {/* Asset List - SCROLLABLE */}
-                <div className="lg:col-span-3 overflow-y-auto custom-scrollbar">
+            <div className="animate-fade-in space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                {/* Asset List */}
+                <div>
                   <GeneratedAssetsList
                     generatedAssets={generatedAssets}
                     selectedAsset={selectedAsset}
@@ -983,21 +967,17 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                   />
                 </div>
 
-                {/* Asset Details - FIXED PREVIEW WITH SCROLLABLE DETAILS */}
-                <div className="lg:col-span-9 flex flex-col overflow-hidden">
+                {/* Asset Details */}
+                <div className="lg:col-span-3 space-y-4">
                   {selectedAsset ? (
                     <>
-                      {/* 3D Preview - FIXED */}
-                      <div className="flex-1 overflow-hidden mb-4">
-                        <AssetPreviewCard
-                          selectedAsset={selectedAsset}
-                          generationType={generationType}
-                        />
-                      </div>
+                      {/* 3D Preview */}
+                      <AssetPreviewCard
+                        selectedAsset={selectedAsset}
+                        generationType={generationType}
+                      />
 
-                      {/* Details Below Preview - SCROLLABLE */}
-                      <div className="overflow-y-auto custom-scrollbar space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Material Variants */}
                           {generationType === "item" &&
                             selectedAsset.variants && (
@@ -1024,18 +1004,17 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                             setDescription("");
                           }}
                         />
-                      </div>
                     </>
                   ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <NoAssetSelected />
-                    </div>
+                    <NoAssetSelected />
                   )}
                 </div>
               </div>
             </div>
           )}
         </div>
+      </div>
+    </div>
 
       {/* Edit Material Preset Modal */}
       {editingPreset && (
@@ -1055,7 +1034,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
           onConfirm={handleDeletePreset}
         />
       )}
-    </div>
+    </>
   );
 };
 

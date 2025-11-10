@@ -104,27 +104,19 @@ export const AssetsPage: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col p-4 relative overflow-hidden">
-      {/* Background decoration - top right */}
-      <div
-        className="absolute top-0 right-0 pointer-events-none z-0"
-        style={{
-          backgroundImage: 'url(/Untitled%20design%20(3)/4.svg)',
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'top right',
-          backgroundSize: 'contain',
-          width: '50%',
-          height: '50%',
-          minWidth: '400px',
-          minHeight: '400px',
-          opacity: 0.3
-        }}
-      />
-      <div className="flex-1 max-w-7xl mx-auto w-full relative z-10 overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-          {/* Sidebar - Full width mobile, 4 cols desktop - SCROLLABLE */}
-          <div className="lg:col-span-4 overflow-y-auto custom-scrollbar pr-2">
-            <div className="space-y-3 animate-slide-in-left">
+    <>
+    <div className="page-container">
+      {/* Sidebar - SCROLLABLE */}
+      <div className="card overflow-hidden w-80 flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary">
+        {/* Header Section */}
+        <div className="p-4 border-b border-border-primary bg-bg-primary bg-opacity-30">
+          <h2 className="text-lg font-semibold text-text-primary">Asset Library</h2>
+          <p className="text-sm text-text-tertiary mt-1">Browse and manage your 3D assets</p>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+          <div className="space-y-3">
             {/* Asset Statistics */}
             <AssetStatisticsCard assets={assets} />
 
@@ -150,12 +142,13 @@ export const AssetsPage: React.FC = () => {
 
             {/* Asset List */}
             <AssetList assets={filteredAssets} />
-            </div>
           </div>
+        </div>
+      </div>
 
-          {/* Main Viewer Area - Full width mobile, 8 cols desktop - FIXED HEIGHT */}
-          <div className="lg:col-span-8 flex flex-col animate-fade-in overflow-hidden">
-            <div className="relative rounded-xl border border-border-primary shadow-2xl overflow-hidden flex-1">
+      {/* Center - 3D Viewport - FIXED */}
+      <div className="flex-1 flex flex-col">
+        <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl">
             {selectedAsset ? (
               <>
                 <div className="absolute inset-0">
@@ -291,7 +284,9 @@ export const AssetsPage: React.FC = () => {
                 />
               </>
             ) : (
-              <EmptyAssetState />
+              <div className="flex items-center justify-center h-full">
+                <EmptyAssetState />
+              </div>
             )}
           </div>
         </div>
@@ -365,7 +360,7 @@ export const AssetsPage: React.FC = () => {
 
       {/* Bulk Actions Bar */}
       <BulkActionsBar onActionComplete={reloadAssets} />
-    </div>
+    </>
   );
 };
 

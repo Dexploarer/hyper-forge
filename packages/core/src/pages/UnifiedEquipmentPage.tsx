@@ -155,18 +155,15 @@ export const UnifiedEquipmentPage: React.FC = () => {
       : selectedArmor
 
   return (
-    <div className="h-full flex flex-col p-4 overflow-hidden">
-      <div className="flex-1 max-w-7xl mx-auto w-full overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-          {/* Error Toast */}
-          {lastError && (
-            <ErrorNotification error={lastError} onClose={clearError} />
-          )}
+    <div className="page-container">
+      {/* Error Toast */}
+      {lastError && (
+        <ErrorNotification error={lastError} onClose={clearError} />
+      )}
 
-          {/* Left Panel - Asset Selection - SCROLLABLE */}
-          <div className="lg:col-span-3 overflow-y-auto custom-scrollbar">
-            <div className="card overflow-hidden flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary p-6 border-r border-border-primary">
-              <ArmorAssetList
+      {/* Left Panel - Asset Selection - SCROLLABLE */}
+      <div className="card overflow-hidden w-80 flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary border-r border-border-primary p-6">
+        <ArmorAssetList
                 assets={assets}
                 loading={loading}
                 assetType={assetTypeFilter}
@@ -178,14 +175,12 @@ export const UnifiedEquipmentPage: React.FC = () => {
                 onAssetSelect={handleAssetSelect}
                 onAssetTypeChange={setAssetTypeFilter}
                 hideTypeToggle={true}
-                equipmentSlot={equipmentSlot as 'Head' | 'Spine2' | 'Pelvis' | 'Hand_R' | 'Hand_L'}
-              />
-            </div>
-          </div>
+          equipmentSlot={equipmentSlot as 'Head' | 'Spine2' | 'Pelvis' | 'Hand_R' | 'Hand_L'}
+        />
+      </div>
 
-          {/* Center - 3D Viewport - FIXED HEIGHT */}
-          <div className="lg:col-span-6 flex flex-col overflow-hidden">
-            <div className="flex flex-col flex-1 p-6">
+      {/* Center - 3D Viewport - FIXED */}
+      <div className="flex-1 flex flex-col">
               <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl flex items-center justify-center">
                 {selectedAvatar || selectedEquipment ? (
                   <>
@@ -253,12 +248,10 @@ export const UnifiedEquipmentPage: React.FC = () => {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
+      </div>
 
-          {/* Right Panel - Fitting Controls - SCROLLABLE */}
-          <div className="lg:col-span-3 overflow-hidden flex flex-col">
-            <div className="card overflow-hidden flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary border-l border-border-primary h-full">
+      {/* Right Panel - Fitting Controls - SCROLLABLE */}
+      <div className="card overflow-hidden w-96 flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary border-l border-border-primary">
               {/* Header with Equipment Slot Selector */}
               <div className="p-6 border-b border-border-primary bg-bg-primary bg-opacity-30 space-y-3">
                 <h2 className="text-lg font-semibold text-text-primary">Equipment Fitting</h2>
@@ -374,10 +367,6 @@ export const UnifiedEquipmentPage: React.FC = () => {
                   />
                 )}
               </div>
-            </div>
-          </div>
-
-        </div>
       </div>
     </div>
   )
