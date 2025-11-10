@@ -104,9 +104,9 @@ export const AssetsPage: React.FC = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4 relative">
+    <div className="h-full flex flex-col p-4 relative overflow-hidden">
       {/* Background decoration - top right */}
-      <div 
+      <div
         className="absolute top-0 right-0 pointer-events-none z-0"
         style={{
           backgroundImage: 'url(/Untitled%20design%20(3)/4.svg)',
@@ -120,10 +120,11 @@ export const AssetsPage: React.FC = () => {
           opacity: 0.3
         }}
       />
-      <div className="max-w-7xl mx-auto relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Sidebar - Full width mobile, 4 cols desktop */}
-          <div className="lg:col-span-4 space-y-3 animate-slide-in-left">
+      <div className="flex-1 max-w-7xl mx-auto w-full relative z-10 overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+          {/* Sidebar - Full width mobile, 4 cols desktop - SCROLLABLE */}
+          <div className="lg:col-span-4 overflow-y-auto custom-scrollbar pr-2">
+            <div className="space-y-3 animate-slide-in-left">
             {/* Asset Statistics */}
             <AssetStatisticsCard assets={assets} />
 
@@ -149,11 +150,12 @@ export const AssetsPage: React.FC = () => {
 
             {/* Asset List */}
             <AssetList assets={filteredAssets} />
+            </div>
           </div>
 
-          {/* Main Viewer Area - Full width mobile, 8 cols desktop */}
-          <div className="lg:col-span-8 space-y-6 animate-fade-in">
-            <div className="relative rounded-xl border border-border-primary shadow-2xl overflow-hidden" style={{ minHeight: '600px' }}>
+          {/* Main Viewer Area - Full width mobile, 8 cols desktop - FIXED HEIGHT */}
+          <div className="lg:col-span-8 flex flex-col animate-fade-in overflow-hidden">
+            <div className="relative rounded-xl border border-border-primary shadow-2xl overflow-hidden flex-1">
             {selectedAsset ? (
               <>
                 <div className="absolute inset-0">

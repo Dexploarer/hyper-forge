@@ -155,16 +155,16 @@ export const UnifiedEquipmentPage: React.FC = () => {
       : selectedArmor
 
   return (
-    <div className="h-full overflow-y-auto p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <div className="h-full flex flex-col p-4 overflow-hidden">
+      <div className="flex-1 max-w-7xl mx-auto w-full overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
           {/* Error Toast */}
           {lastError && (
             <ErrorNotification error={lastError} onClose={clearError} />
           )}
 
-          {/* Left Panel - Asset Selection */}
-          <div className="lg:col-span-3">
+          {/* Left Panel - Asset Selection - SCROLLABLE */}
+          <div className="lg:col-span-3 overflow-y-auto custom-scrollbar">
             <div className="card overflow-hidden flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary p-6 border-r border-border-primary">
               <ArmorAssetList
                 assets={assets}
@@ -183,9 +183,9 @@ export const UnifiedEquipmentPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Center - 3D Viewport */}
-          <div className="lg:col-span-6">
-            <div className="flex flex-col h-[600px] lg:h-[700px] p-6">
+          {/* Center - 3D Viewport - FIXED HEIGHT */}
+          <div className="lg:col-span-6 flex flex-col overflow-hidden">
+            <div className="flex flex-col flex-1 p-6">
               <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl flex items-center justify-center">
                 {selectedAvatar || selectedEquipment ? (
                   <>
@@ -256,9 +256,9 @@ export const UnifiedEquipmentPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Panel - Fitting Controls */}
-          <div className="lg:col-span-3">
-            <div className="card overflow-hidden flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary border-l border-border-primary">
+          {/* Right Panel - Fitting Controls - SCROLLABLE */}
+          <div className="lg:col-span-3 overflow-hidden flex flex-col">
+            <div className="card overflow-hidden flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary border-l border-border-primary h-full">
               {/* Header with Equipment Slot Selector */}
               <div className="p-6 border-b border-border-primary bg-bg-primary bg-opacity-30 space-y-3">
                 <h2 className="text-lg font-semibold text-text-primary">Equipment Fitting</h2>

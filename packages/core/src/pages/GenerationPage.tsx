@@ -737,9 +737,9 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
   }
 
   return (
-    <div className="h-full overflow-y-auto relative">
+    <div className="h-full flex flex-col relative overflow-hidden">
       {/* Background decoration - top left */}
-      <div 
+      <div
         className="absolute top-0 left-0 pointer-events-none z-0"
         style={{
           backgroundImage: 'url(/Untitled%20design%20(3)/3.svg)',
@@ -754,7 +754,9 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
         }}
       />
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto py-4 pb-6 relative z-10">
+      <div className={`flex-1 max-w-7xl mx-auto py-4 pb-6 w-full relative z-10 px-4 ${
+        activeView === "results" ? "overflow-hidden flex flex-col" : "overflow-y-auto custom-scrollbar"
+      }`}>
           {/* Header with tabs */}
           <div className="mb-4">
             {/* Tab Navigation */}
@@ -964,61 +966,70 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
 
           {/* Results View */}
           {activeView === "results" && (
-            <div className="animate-fade-in space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                {/* Asset List */}
-                <GeneratedAssetsList
-                  generatedAssets={generatedAssets}
-                  selectedAsset={selectedAsset}
-                  onAssetSelect={setSelectedAsset}
-                  onBack={() => {
-                    setGenerationType(undefined);
-                    setActiveView("config");
-                    resetForm();
-                    resetPipeline();
-                  }}
-                />
+            <div className="animate-fade-in flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-hidden">
+                {/* Asset List - SCROLLABLE */}
+                <div className="lg:col-span-3 overflow-y-auto custom-scrollbar">
+                  <GeneratedAssetsList
+                    generatedAssets={generatedAssets}
+                    selectedAsset={selectedAsset}
+                    onAssetSelect={setSelectedAsset}
+                    onBack={() => {
+                      setGenerationType(undefined);
+                      setActiveView("config");
+                      resetForm();
+                      resetPipeline();
+                    }}
+                  />
+                </div>
 
-                {/* Asset Details */}
-                <div className="lg:col-span-3 space-y-4">
+                {/* Asset Details - FIXED PREVIEW WITH SCROLLABLE DETAILS */}
+                <div className="lg:col-span-9 flex flex-col overflow-hidden">
                   {selectedAsset ? (
                     <>
-                      {/* 3D Preview */}
-                      <AssetPreviewCard
-                        selectedAsset={selectedAsset}
-                        generationType={generationType}
-                      />
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Material Variants */}
-                        {generationType === "item" &&
-                          selectedAsset.variants && (
-                            <MaterialVariantsDisplay
-                              variants={selectedAsset.variants}
-                            />
-                          )}
-
-                        {/* 2D Sprites */}
-                        {generationType === "item" && (
-                          <SpritesDisplay
-                            selectedAsset={selectedAsset}
-                            isGeneratingSprites={isGeneratingSprites}
-                            onGenerateSprites={handleGenerateSprites}
-                          />
-                        )}
+                      {/* 3D Preview - FIXED */}
+                      <div className="flex-1 overflow-hidden mb-4">
+                        <AssetPreviewCard
+                          selectedAsset={selectedAsset}
+                          generationType={generationType}
+                        />
                       </div>
 
-                      {/* Actions */}
-                      <AssetActionsCard
-                        onGenerateNew={() => {
-                          setActiveView("config");
-                          setAssetName("");
-                          setDescription("");
-                        }}
-                      />
+                      {/* Details Below Preview - SCROLLABLE */}
+                      <div className="overflow-y-auto custom-scrollbar space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Material Variants */}
+                          {generationType === "item" &&
+                            selectedAsset.variants && (
+                              <MaterialVariantsDisplay
+                                variants={selectedAsset.variants}
+                              />
+                            )}
+
+                          {/* 2D Sprites */}
+                          {generationType === "item" && (
+                            <SpritesDisplay
+                              selectedAsset={selectedAsset}
+                              isGeneratingSprites={isGeneratingSprites}
+                              onGenerateSprites={handleGenerateSprites}
+                            />
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <AssetActionsCard
+                          onGenerateNew={() => {
+                            setActiveView("config");
+                            setAssetName("");
+                            setDescription("");
+                          }}
+                        />
+                      </div>
                     </>
                   ) : (
-                    <NoAssetSelected />
+                    <div className="flex items-center justify-center h-full">
+                      <NoAssetSelected />
+                    </div>
                   )}
                 </div>
               </div>
