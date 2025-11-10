@@ -95,8 +95,8 @@ export const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
         <div
           ref={menuRef}
           className={cn(
-            'absolute z-50 min-w-[180px] bg-bg-secondary border border-border-primary rounded-lg shadow-xl overflow-hidden',
-            'animate-fade-in',
+            'absolute z-50 min-w-[180px] bg-bg-secondary/95 backdrop-blur-md border border-border-primary rounded-lg shadow-xl overflow-hidden',
+            'animate-fade-in [&_*]:drop-shadow-md',
             positionClasses[position]
           )}
           role="menu"
@@ -123,8 +123,8 @@ export const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
                   )}
                   role="menuitem"
                 >
-                  {Icon && <Icon className="w-4 h-4" />}
-                  <span className="flex-1 text-left">{action.label}</span>
+                  {Icon && <Icon className="w-4 h-4 drop-shadow-sm" />}
+                  <span className="flex-1 text-left drop-shadow-sm">{action.label}</span>
                 </button>
               </React.Fragment>
             )

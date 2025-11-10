@@ -123,7 +123,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       {/* Palette */}
       <div
         ref={listRef}
-        className="relative z-[201] w-full max-w-2xl mx-4 bg-bg-secondary border border-border-primary rounded-xl shadow-2xl overflow-hidden"
+        className="relative z-[201] w-full max-w-2xl mx-4 bg-bg-secondary/95 backdrop-blur-md border border-border-primary rounded-xl shadow-2xl overflow-hidden [&_*]:drop-shadow-sm"
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"

@@ -48,18 +48,18 @@ export const GlassModal: React.FC<GlassModalProps> = ({
         <div className="glass-modal-content rounded-xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-white/10">
-            <h2 className="text-xl font-semibold text-text-primary">{title}</h2>
+            <h2 className="text-xl font-semibold text-text-primary drop-shadow-lg">{title}</h2>
             <button
               onClick={onClose}
               className="p-2 rounded-lg hover:bg-white/10 transition-colors"
               aria-label="Close"
             >
-              <X size={20} className="text-text-secondary" />
+              <X size={20} className="text-text-primary drop-shadow-md" />
             </button>
           </div>
 
           {/* Content */}
-          <div className="p-6">{children}</div>
+          <div className="p-6 [&>*]:drop-shadow-md">{children}</div>
         </div>
       </GlassEffect>
     </div>

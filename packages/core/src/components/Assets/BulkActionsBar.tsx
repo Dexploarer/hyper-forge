@@ -190,7 +190,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
                   {/* Status menu */}
                   <div
                     ref={statusMenuRef}
-                    className="absolute bottom-full left-0 mb-2 bg-bg-secondary border border-border-primary rounded-lg shadow-xl overflow-hidden z-[60] min-w-[140px]"
+                    className="absolute bottom-full left-0 mb-2 bg-bg-secondary/95 backdrop-blur-md border border-border-primary rounded-lg shadow-xl overflow-hidden z-[60] min-w-[140px] [&_*]:drop-shadow-sm"
                     role="menu"
                     aria-label="Status options"
                   >

@@ -79,7 +79,7 @@ const Modal: React.FC<ModalProps> = ({
       >
         <div
           ref={modalRef}
-          className="rounded-xl overflow-hidden"
+          className="glass-modal-content rounded-xl overflow-hidden"
           role="dialog"
           aria-modal="true"
           onClick={(e) => e.stopPropagation()}
@@ -130,12 +130,12 @@ const ModalSection: React.FC<ModalSectionProps> = ({
       {(title || description) && (
         <div className="space-y-1">
           {title && (
-            <h3 className="text-lg font-semibold text-text-primary">
+            <h3 className="text-lg font-semibold text-text-primary drop-shadow-lg">
               {title}
             </h3>
           )}
           {description && (
-            <p className="text-sm text-text-secondary">
+            <p className="text-sm text-text-secondary drop-shadow-md">
               {description}
             </p>
           )}
@@ -163,7 +163,7 @@ const ModalHeader = React.forwardRef<HTMLDivElement, ModalHeaderProps>(
       {...props}
     >
       {title ? (
-        <h2 className="text-xl font-semibold text-text-primary">{title}</h2>
+        <h2 className="text-xl font-semibold text-text-primary drop-shadow-lg">{title}</h2>
       ) : (
         children
       )}

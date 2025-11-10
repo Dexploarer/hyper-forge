@@ -18,7 +18,7 @@ const Container = styled.div`
   width: 100%;
   height: 600px;
   position: relative;
-  background: #1a1a1a;
+  background: var(--bg-secondary);
   border-radius: 8px;
   overflow: hidden;
 `
@@ -35,29 +35,40 @@ const Controls = styled.div`
   transform: translateX(-50%);
   display: flex;
   gap: 10px;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--bg-primary);
+  opacity: 0.95;
   padding: 15px;
   border-radius: 8px;
   backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
 `
 
 const Button = styled.button<{ active?: boolean }>`
   padding: 10px 20px;
-  background: ${props => props.active ? '#4CAF50' : '#2196F3'};
+  background: ${props => props.active ? 'var(--color-success)' : 'var(--color-info)'};
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.2s;
+  transition: all 0.2s ease-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   &:hover {
-    background: ${props => props.active ? '#45a049' : '#0b7dda'};
+    background: ${props => props.active ? 'var(--color-success-dark)' : 'var(--color-info-dark)'};
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 
   &:disabled {
-    background: #666;
+    background: var(--bg-tertiary);
+    color: var(--text-tertiary);
     cursor: not-allowed;
+    opacity: 0.5;
   }
 `
 
@@ -65,22 +76,28 @@ const Info = styled.div`
   position: absolute;
   top: 20px;
   left: 20px;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
+  background: var(--bg-primary);
+  opacity: 0.95;
+  color: var(--text-primary);
   padding: 15px;
   border-radius: 8px;
   font-size: 14px;
   backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-md);
 `
 
 const UploadBox = styled.div`
   position: absolute;
   top: 20px;
   right: 20px;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--bg-primary);
+  opacity: 0.95;
   padding: 15px;
   border-radius: 8px;
   backdrop-filter: blur(10px);
+  border: 1px solid var(--border-primary);
+  box-shadow: var(--shadow-md);
 `
 
 const FileInput = styled.input`
@@ -90,15 +107,22 @@ const FileInput = styled.input`
 const UploadButton = styled.label`
   display: inline-block;
   padding: 10px 20px;
-  background: #9C27B0;
+  background: var(--color-secondary);
   color: white;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.2s;
+  transition: all 0.2s ease-out;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   &:hover {
-    background: #7B1FA2;
+    background: var(--color-secondary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 `
 
@@ -623,7 +647,7 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
       )}
 
       {error && (
-        <Info style={{ background: 'rgba(220, 53, 69, 0.9)' }}>
+        <Info style={{ background: 'var(--color-error)', opacity: 0.9 }}>
           ❌ {error}
         </Info>
       )}

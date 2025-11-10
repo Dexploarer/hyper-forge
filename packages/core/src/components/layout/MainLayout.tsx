@@ -24,8 +24,8 @@ export function MainLayout({ currentView, onViewChange, children }: MainLayoutPr
           <div className="absolute inset-0 pointer-events-none opacity-[0.02]">
             <div
               className="h-full w-full"
+              className="grid-background"
               style={{
-                backgroundImage: 'linear-gradient(rgba(139, 92, 246, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(139, 92, 246, 0.3) 1px, transparent 1px)',
                 backgroundSize: '50px 50px'
               }}
             />

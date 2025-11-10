@@ -73,6 +73,17 @@
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
   }
   
+  /* Grid background pattern */
+  .grid-background {
+    background-image: linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px), 
+                      linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px);
+  }
+
+  .light-theme .grid-background {
+    background-image: linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px), 
+                      linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+  }
+
   /* Light Theme */
   .light-theme {
     --bg-primary: #ffffff;
@@ -124,6 +135,8 @@
     height: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Smooth theme transitions */
+    transition: background-color 0.3s ease-out, color 0.3s ease-out;
   }
   
   body {
@@ -134,6 +147,15 @@
     color: var(--text-primary);
     background-color: var(--bg-primary);
     overflow: hidden;
+    /* Smooth theme transitions */
+    transition: background-color 0.3s ease-out, color 0.3s ease-out;
+  }
+
+  /* Smooth transitions for theme-aware elements - selective approach */
+  [class*="bg-"], [class*="text-"], [class*="border-"] {
+    transition-property: background-color, border-color, color;
+    transition-duration: 0.2s;
+    transition-timing-function: ease-out;
   }
   
   #root {
@@ -323,8 +345,13 @@
   
   .micro-card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-lg);
     border-color: var(--border-hover);
+  }
+
+  /* Light theme card hover */
+  .light-theme .micro-card-hover:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
   
   .micro-card-interactive {
@@ -334,8 +361,13 @@
   
   .micro-card-interactive:hover {
     transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-xl);
     border-color: var(--color-primary);
+  }
+
+  /* Light theme interactive card */
+  .light-theme .micro-card-interactive:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.05);
   }
   
   .micro-card-interactive:active {
@@ -362,6 +394,11 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
   }
+
+  /* Light theme button adjustments */
+  .light-theme .btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
   
   .btn-primary:active {
     transform: translateY(0) scale(0.98);
@@ -375,7 +412,12 @@
   
   .btn-secondary:hover {
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Light theme secondary button */
+  .light-theme .btn-secondary:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
   
   .btn-ghost {
@@ -397,6 +439,11 @@
   .btn-danger:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  }
+
+  /* Light theme danger button */
+  .light-theme .btn-danger:hover {
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
   /* Enhanced Button Micro-interactions */
@@ -451,6 +498,12 @@
   .icon-btn:hover {
     @apply bg-[var(--color-primary)] bg-opacity-10 text-[var(--color-primary)] 
            border-[var(--color-primary)] border-opacity-50;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+  }
+
+  /* Light theme icon button */
+  .light-theme .icon-btn:hover {
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
   }
   
   /* Skeleton Loaders */
@@ -749,6 +802,12 @@
   .micro-input-focus:focus {
     transform: scale(1.01);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: var(--color-primary);
+  }
+
+  /* Light theme input focus */
+  .light-theme .micro-input-focus:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15), 0 0 0 1px var(--color-primary);
   }
   
   .micro-input-focus:hover:not(:focus):not(:disabled) {
@@ -793,18 +852,42 @@
   
   .badge-primary {
     @apply badge bg-[var(--color-primary)] bg-opacity-10 text-[var(--color-primary)];
+    border: 1px solid transparent;
+  }
+
+  .light-theme .badge-primary {
+    @apply bg-opacity-15;
+    border-color: rgba(99, 102, 241, 0.2);
   }
   
   .badge-success {
     @apply badge bg-[var(--color-success)] bg-opacity-10 text-[var(--color-success)];
+    border: 1px solid transparent;
+  }
+
+  .light-theme .badge-success {
+    @apply bg-opacity-15;
+    border-color: rgba(16, 185, 129, 0.2);
   }
   
   .badge-warning {
     @apply badge bg-[var(--color-warning)] bg-opacity-10 text-[var(--color-warning)];
+    border: 1px solid transparent;
+  }
+
+  .light-theme .badge-warning {
+    @apply bg-opacity-15;
+    border-color: rgba(245, 158, 11, 0.2);
   }
   
   .badge-error {
     @apply badge bg-[var(--color-error)] bg-opacity-10 text-[var(--color-error)];
+    border: 1px solid transparent;
+  }
+
+  .light-theme .badge-error {
+    @apply bg-opacity-15;
+    border-color: rgba(239, 68, 68, 0.2);
   }
   
   /* Loading States */
@@ -1236,6 +1319,90 @@ body {
 .glass-modal-content {
   position: relative;
   z-index: 1;
+}
+
+/* Enhanced text readability on glass surfaces */
+.glass-modal-content,
+.glass-effect,
+.glass {
+  /* Ensure text has proper contrast and readability */
+  color: var(--text-primary);
+}
+
+/* General rule for text in backdrop-blur containers - Dark theme (default) */
+[class*="backdrop-blur"] *,
+.backdrop-blur-sm *,
+.backdrop-blur-md *,
+.backdrop-blur-lg *,
+.backdrop-blur-xl * {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Light theme overrides for backdrop-blur containers */
+.light-theme [class*="backdrop-blur"] *,
+.light-theme .backdrop-blur-sm *,
+.light-theme .backdrop-blur-md *,
+.light-theme .backdrop-blur-lg *,
+.light-theme .backdrop-blur-xl * {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
+}
+
+/* Text shadows for better legibility on glass backgrounds - Dark theme (default) */
+.glass-modal-content h1,
+.glass-modal-content h2,
+.glass-modal-content h3,
+.glass-modal-content h4,
+.glass-modal-content h5,
+.glass-modal-content h6 {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5),
+               0 0 8px rgba(0, 0, 0, 0.3);
+  font-weight: 600;
+}
+
+.glass-modal-content p,
+.glass-modal-content span,
+.glass-modal-content div:not([class*="drop-shadow"]):not([class*="shadow"]),
+.glass-modal-content li,
+.glass-modal-content label,
+.glass-modal-content input,
+.glass-modal-content textarea,
+.glass-modal-content select {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4),
+               0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+.glass-modal-content button,
+.glass-modal-content a {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Light theme adjustments - Higher specificity to override dark theme */
+.light-theme .glass-modal-content h1,
+.light-theme .glass-modal-content h2,
+.light-theme .glass-modal-content h3,
+.light-theme .glass-modal-content h4,
+.light-theme .glass-modal-content h5,
+.light-theme .glass-modal-content h6 {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8),
+               0 0 8px rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+}
+
+.light-theme .glass-modal-content p,
+.light-theme .glass-modal-content span,
+.light-theme .glass-modal-content div:not([class*="drop-shadow"]):not([class*="shadow"]),
+.light-theme .glass-modal-content li,
+.light-theme .glass-modal-content label,
+.light-theme .glass-modal-content input,
+.light-theme .glass-modal-content textarea,
+.light-theme .glass-modal-content select {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7),
+               0 0 4px rgba(255, 255, 255, 0.4);
+}
+
+.light-theme .glass-modal-content button,
+.light-theme .glass-modal-content a {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
 }
 
 /* Enhanced glass effects */
