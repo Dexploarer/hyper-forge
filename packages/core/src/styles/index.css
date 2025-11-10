@@ -5,7 +5,7 @@
    This file should be imported at the root of the application */
 
 /* React Flow Workflow Components - @import must come before @tailwind */
-@import '../components/Content/Workflow/workflow.css';
+@import '../components/content/Workflow/workflow.css';
 
 @tailwind base;
 @tailwind components;

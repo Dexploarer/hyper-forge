@@ -58,8 +58,9 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
 }) => {
   const { navigateToPlaytester } = useNavigation();
   const [apiClient] = useState(() => new ContentAPIClient());
-  const [questType, setQuestType] = useState("Side Quest");
-  const [difficulty, setDifficulty] = useState("Medium");
+  const [questType, setQuestType] = useState("");
+  const [difficulty, setDifficulty] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [theme, setTheme] = useState("");
   const [context, setContext] = useState("");
   const [worldConfigId, setWorldConfigId] = useState<string | null>(null);
@@ -73,26 +74,27 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
     | null
   >(null);
 
-  // Populate theme from initialPrompt
+  // Populate prompt from initialPrompt
   useEffect(() => {
-    if (initialPrompt && !theme) {
-      setTheme(initialPrompt);
+    if (initialPrompt && !prompt) {
+      setPrompt(initialPrompt);
     }
-  }, [initialPrompt, theme]);
+  }, [initialPrompt, prompt]);
   const [quality, setQuality] = useState<QualityLevel>("quality");
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
-    if (!questType || !difficulty) {
-      notify.warning("Please select quest type and difficulty");
+    if (!prompt && !theme) {
+      notify.warning("Please enter a prompt or theme to generate a quest");
       return;
     }
 
     try {
       setIsGenerating(true);
       const result = await apiClient.generateQuest({
-        questType,
-        difficulty,
+        prompt: prompt || undefined,
+        questType: questType || undefined,
+        difficulty: difficulty || undefined,
         theme: theme || undefined,
         context: context || undefined,
         quality,
@@ -129,16 +131,38 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
       </CardHeader>
 
       <CardContent className="p-6 space-y-5">
+        {/* Prompt */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-text-primary">
+            Description / Requirements{" "}
+            <span className="text-red-400 ml-1">*</span>
+          </label>
+          <Textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="e.g., A quest where the player must retrieve a stolen artifact from a dragon's lair..."
+            className="w-full min-h-[100px] bg-bg-secondary/70 border-border-primary/50 focus:border-primary"
+            maxLength={500}
+          />
+          <div className="text-xs text-text-tertiary text-right">
+            {prompt.length} / 500
+          </div>
+        </div>
+
         {/* Quest Type Selection */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">
-            Quest Type
+            Quest Type{" "}
+            <span className="text-text-tertiary font-normal text-xs">
+              (Optional)
+            </span>
           </label>
           <select
             value={questType}
             onChange={(e) => setQuestType(e.target.value)}
             className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
           >
+            <option value="">Any / Let AI decide</option>
             {QUEST_TYPES.map((type) => (
               <option key={type} value={type}>
                 {type}
@@ -150,9 +174,22 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
         {/* Difficulty Selection */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">
-            Difficulty
+            Difficulty{" "}
+            <span className="text-text-tertiary font-normal text-xs">
+              (Optional)
+            </span>
           </label>
           <div className="grid grid-cols-5 gap-2">
+            <button
+              onClick={() => setDifficulty("")}
+              className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${
+                difficulty === ""
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
+              }`}
+            >
+              Any
+            </button>
             {DIFFICULTIES.map((diff) => (
               <button
                 key={diff}
@@ -252,7 +289,7 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
         <div className="space-y-3">
           <Button
             onClick={handleGenerate}
-            disabled={!questType || !difficulty || isGenerating}
+            disabled={(!prompt && !theme) || isGenerating}
             className="w-full"
             size="lg"
           >

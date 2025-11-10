@@ -56,7 +56,7 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
 }) => {
   const { navigateToPlaytester } = useNavigation();
   const [apiClient] = useState(() => new ContentAPIClient());
-  const [archetype, setArchetype] = useState("Merchant");
+  const [archetype, setArchetype] = useState("");
   const [prompt, setPrompt] = useState("");
   const [context, setContext] = useState("");
   const [worldConfigId, setWorldConfigId] = useState<string | null>(null);
@@ -74,16 +74,16 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
   }, [initialPrompt, prompt]);
 
   const handleGenerate = async () => {
-    if (!archetype || !prompt) {
-      notify.warning("Please select an archetype and enter a prompt");
+    if (!prompt) {
+      notify.warning("Please enter a prompt to generate an NPC");
       return;
     }
 
     try {
       setIsGenerating(true);
       const result = await apiClient.generateNPC({
-        archetype,
         prompt,
+        archetype: archetype || undefined,
         context: context || undefined,
         quality,
         worldConfigId: worldConfigId || undefined,
@@ -122,13 +122,17 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
         {/* Archetype Selection */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">
-            Archetype
+            Archetype{" "}
+            <span className="text-text-tertiary font-normal text-xs">
+              (Optional)
+            </span>
           </label>
           <select
             value={archetype}
             onChange={(e) => setArchetype(e.target.value)}
             className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
           >
+            <option value="">Any / Let AI decide</option>
             {ARCHETYPES.map((arch) => (
               <option key={arch} value={arch}>
                 {arch}
@@ -140,7 +144,8 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
         {/* Prompt */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">
-            Description / Requirements
+            Description / Requirements{" "}
+            <span className="text-red-400 ml-1">*</span>
           </label>
           <Textarea
             value={prompt}
@@ -220,7 +225,7 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
         <div className="space-y-3">
           <Button
             onClick={handleGenerate}
-            disabled={!archetype || !prompt || isGenerating}
+            disabled={!prompt || isGenerating}
             className="w-full"
             size="lg"
           >

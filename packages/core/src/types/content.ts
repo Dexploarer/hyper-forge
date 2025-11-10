@@ -44,8 +44,8 @@ export interface NPCBehavior {
 // NPCData is now a class exported from content-models.ts
 
 export interface GenerateNPCParams {
-  archetype: string;
-  prompt: string;
+  prompt: string; // Only required field
+  archetype?: string; // Optional constraint/hint
   context?: string;
   quality?: QualityLevel;
   worldConfigId?: string;
@@ -73,8 +73,9 @@ export interface QuestRequirements {
 // QuestData is now a class exported from content-models.ts
 
 export interface GenerateQuestParams {
-  questType: string;
-  difficulty: string;
+  prompt?: string; // User's intent/description
+  questType?: string; // Optional constraint
+  difficulty?: string; // Optional constraint
   theme?: string;
   context?: string;
   quality?: QualityLevel;
@@ -102,8 +103,9 @@ export interface DialogueMetadata {
 // DialogueData is now a class exported from content-models.ts
 
 export interface GenerateDialogueParams {
-  npcName: string;
-  npcPersonality: string;
+  prompt?: string; // User's intent/description
+  npcName?: string; // Optional constraint
+  npcPersonality?: string; // Optional constraint
   context?: string;
   existingNodes?: DialogueNode[];
   quality?: QualityLevel;
@@ -114,8 +116,9 @@ export interface GenerateDialogueParams {
 // LoreData is now a class exported from content-models.ts
 
 export interface GenerateLoreParams {
-  category: string;
-  topic: string;
+  prompt?: string; // User's intent/description
+  category?: string; // Optional constraint
+  topic?: string; // Optional constraint
   context?: string;
   quality?: QualityLevel;
   worldConfigId?: string;
