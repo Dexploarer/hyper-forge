@@ -29,6 +29,7 @@ interface MaterialVariantsCardProps {
   onSaveCustomMaterials: () => void
   onEditPreset: (preset: MaterialPreset) => void
   onDeletePreset: (presetId: string) => void
+  noCard?: boolean
 }
 
 export const MaterialVariantsCard: React.FC<MaterialVariantsCardProps> = ({

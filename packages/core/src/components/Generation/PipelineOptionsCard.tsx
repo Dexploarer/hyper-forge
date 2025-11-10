@@ -25,6 +25,7 @@ interface PipelineOptionsCardProps {
   onEnableSpritesChange: (checked: boolean) => void
   onEnableRiggingChange: (checked: boolean) => void
   onQualityChange?: (quality: 'standard' | 'high' | 'ultra') => void
+  noCard?: boolean // If true, render without Card wrapper
 }
 
 export const PipelineOptionsCard: React.FC<PipelineOptionsCardProps> = ({
@@ -38,7 +39,8 @@ export const PipelineOptionsCard: React.FC<PipelineOptionsCardProps> = ({
   onEnableRetexturingChange,
   onEnableSpritesChange,
   onEnableRiggingChange,
-  onQualityChange
+  onQualityChange,
+  noCard = false
 }) => {
   const options: PipelineOption[] = [
     {
@@ -77,20 +79,22 @@ export const PipelineOptionsCard: React.FC<PipelineOptionsCardProps> = ({
     ] : [])
   ]
 
-  return (
-    <Card className="overflow-hidden bg-gradient-to-br from-bg-primary via-bg-primary to-primary/5 border-border-primary shadow-lg">
-      <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-primary/10 rounded-xl">
-            <Settings2 className="w-5 h-5 text-primary" />
+  const content = (
+    <>
+      {!noCard && (
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-primary/10 rounded-xl">
+              <Settings2 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-semibold">Pipeline Options</CardTitle>
+              <CardDescription className="text-xs mt-0.5">Configure generation features</CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-lg font-semibold">Pipeline Options</CardTitle>
-            <CardDescription className="text-xs mt-0.5">Configure generation features</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-6 space-y-3">
+        </CardHeader>
+      )}
+      <CardContent className={noCard ? "p-0 space-y-3" : "p-6 space-y-3"}>
         {/* Quality Selector */}
         <div className="p-4 rounded-xl border border-border-primary bg-bg-secondary/50">
           <div className="flex items-center justify-between">
@@ -155,6 +159,16 @@ export const PipelineOptionsCard: React.FC<PipelineOptionsCardProps> = ({
           )
         })}
       </CardContent>
+    </>
+  )
+
+  if (noCard) {
+    return <div className="space-y-3">{content}</div>
+  }
+
+  return (
+    <Card className="overflow-hidden bg-gradient-to-br from-bg-primary via-bg-primary to-primary/5 border-border-primary shadow-lg">
+      {content}
     </Card>
   )
 }

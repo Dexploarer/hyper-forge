@@ -1,5 +1,5 @@
-import { Activity, Edit3, Layers, Palette } from "lucide-react";
-import React, { useRef, useCallback, useState } from "react";
+import { Activity, Edit3, Layers, Palette, RefreshCw } from "lucide-react";
+import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
 
 import { API_ENDPOINTS } from "../constants";
 import { useAssetsStore } from "../store";
@@ -10,6 +10,7 @@ import AssetFilters from "@/components/Assets/AssetFilters";
 import AssetList from "@/components/Assets/AssetList";
 import { AssetStatisticsCard } from "@/components/Assets/AssetStatisticsCard";
 import { BulkActionsBar } from "@/components/Assets/BulkActionsBar";
+import { Tray } from "@/components/common";
 import { EmptyAssetState } from "@/components/Assets/EmptyAssetState";
 import { GenerationHistoryTimeline } from "@/components/Assets/GenerationHistoryTimeline";
 import { LoadingState } from "@/components/Assets/LoadingState";
@@ -25,9 +26,43 @@ import { AnimationPlayer } from "@/components/shared/AnimationPlayer";
 import ThreeViewer, { ThreeViewerRef } from "@/components/shared/ThreeViewer";
 import { useAssetActions } from "@/hooks";
 import { useAssets } from "@/hooks";
+import { useCommandRegistration } from "@/hooks/useCommandRegistration";
 
 export const AssetsPage: React.FC = () => {
   const { assets, loading, reloadAssets, forceReload } = useAssets();
+  const { selectedAssetIds, clearSelection } = useAssetsStore();
+  const [showBulkActionsTray, setShowBulkActionsTray] = useState(false);
+
+  // Auto-open tray when assets are selected
+  useEffect(() => {
+    if (selectedAssetIds.size > 0) {
+      setShowBulkActionsTray(true);
+    }
+  }, [selectedAssetIds.size]);
+
+  // Register asset-specific commands
+  useCommandRegistration(React.useMemo(() => [
+    {
+      id: 'assets-reload',
+      label: 'Reload Assets',
+      description: 'Refresh the asset library',
+      icon: RefreshCw,
+      category: 'Assets',
+      keywords: ['reload', 'refresh', 'assets'],
+      action: () => reloadAssets()
+    },
+    {
+      id: 'assets-toggle-selection',
+      label: 'Toggle Selection Mode',
+      description: 'Enter/exit bulk selection mode',
+      icon: Edit3,
+      category: 'Assets',
+      keywords: ['select', 'selection', 'bulk'],
+      action: () => {
+        useAssetsStore.getState().toggleSelectionMode();
+      }
+    }
+  ], [reloadAssets]));
 
   // Local state for modals
   const [showPresetEditor, setShowPresetEditor] = useState(false);
@@ -356,8 +391,29 @@ export const AssetsPage: React.FC = () => {
         />
       )}
 
-      {/* Bulk Actions Bar */}
-      <BulkActionsBar onActionComplete={reloadAssets} />
+      {/* Bulk Actions Tray */}
+      {selectedAssetIds.size > 0 && (
+        <Tray
+          open={showBulkActionsTray || selectedAssetIds.size > 0}
+          onClose={() => {
+            setShowBulkActionsTray(false);
+            clearSelection();
+          }}
+          title={`${selectedAssetIds.size} Asset${selectedAssetIds.size > 1 ? 's' : ''} Selected`}
+          defaultHeight="md"
+          resizable={true}
+        >
+          <div className="p-6 space-y-4">
+            <BulkActionsBar 
+              onActionComplete={() => {
+                reloadAssets();
+                setShowBulkActionsTray(false);
+              }} 
+              variant="tray"
+            />
+          </div>
+        </Tray>
+      )}
   </div>
 );
 };

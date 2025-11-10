@@ -6,6 +6,7 @@ import { NAVIGATION_VIEWS } from "./constants";
 import { AppProvider } from "./contexts/AppContext";
 import { NavigationProvider } from "./contexts/NavigationContext";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { CommandPaletteProvider } from "./contexts/CommandPaletteContext";
 import { useNavigation } from "./hooks/useNavigation";
 import { LandingPage } from "./pages/LandingPage";
 import { UnifiedEquipmentPage } from "./pages/UnifiedEquipmentPage";
@@ -75,9 +76,11 @@ function App() {
       <AppProvider>
         <AuthProvider>
           <NavigationProvider>
-            <ErrorBoundary>
-              <AppContent />
-            </ErrorBoundary>
+            <CommandPaletteProvider>
+              <ErrorBoundary>
+                <AppContent />
+              </ErrorBoundary>
+            </CommandPaletteProvider>
           </NavigationProvider>
         </AuthProvider>
       </AppProvider>

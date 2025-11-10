@@ -58,4 +58,14 @@ export {
   SkeletonList, 
   SkeletonTable 
 } from './SkeletonLoader'
-export { ThemeSwitcher, useTheme } from './ThemeSwitcher' 
+export { ThemeSwitcher, useTheme } from './ThemeSwitcher'
+export { Drawer } from './Drawer'
+export type { DrawerProps } from './Drawer'
+export { Tray } from './Tray'
+export type { TrayProps } from './Tray'
+export { CollapsibleSection } from './CollapsibleSection'
+export type { CollapsibleSectionProps } from './CollapsibleSection'
+export { QuickActionMenu } from './QuickActionMenu'
+export type { QuickActionMenuProps, QuickAction } from './QuickActionMenu'
+export { CommandPalette } from './CommandPalette'
+export type { CommandPaletteProps, CommandPaletteItem } from './CommandPalette' 

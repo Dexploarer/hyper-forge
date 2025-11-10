@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 
 import { cn, focusManager } from '../../styles'
+import { GlassEffect } from '../shared/GlassEffect'
 
 export interface ModalProps {
   open: boolean
@@ -64,19 +65,28 @@ const Modal: React.FC<ModalProps> = ({
         }
       }}
     >
-      <div
-        ref={modalRef}
+      <GlassEffect
+        preset="modal"
         className={cn(
           'modal-content w-full animate-modal-appear micro-modal-content',
           sizes[size],
           className
         )}
-        role="dialog"
-        aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
+        intensity={0.3}
+        blur={12}
+        saturation={1.2}
+        frost={0.08}
       >
-        {children}
-      </div>
+        <div
+          ref={modalRef}
+          className="rounded-xl overflow-hidden"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {children}
+        </div>
+      </GlassEffect>
     </div>
   )
 }

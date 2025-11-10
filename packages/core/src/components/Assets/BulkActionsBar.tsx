@@ -8,6 +8,7 @@ import { useApp } from '@/contexts/AppContext'
 
 interface BulkActionsBarProps {
   onActionComplete?: () => void
+  variant?: 'floating' | 'tray'
 }
 
 type AssetStatus = 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived'
@@ -18,7 +19,7 @@ interface StatusOption {
   icon: LucideIcon
 }
 
-export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete }) => {
+export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete, variant = 'floating' }) => {
   const { selectedAssetIds, clearSelection } = useAssetsStore()
   const { showNotification } = useApp()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -118,8 +119,12 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
     { value: 'archived', label: 'Archived', icon: Circle },
   ] as const
 
+  const containerClasses = variant === 'tray' 
+    ? 'w-full'
+    : 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-scale-in'
+
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-scale-in">
+    <div className={containerClasses}>
       <div className="bg-gradient-to-br from-bg-secondary to-bg-tertiary border border-border-primary rounded-xl shadow-2xl backdrop-blur-md">
         <div className="flex items-center gap-2 px-4 py-3">
           {/* Selection count */}

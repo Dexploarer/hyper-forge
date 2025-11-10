@@ -8,6 +8,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* React Flow Workflow Components */
+@import '../components/Content/Workflow/workflow.css';
+
 /* CSS Variables from Design Tokens */
 @layer base {
   :root {
@@ -1019,6 +1022,32 @@
   .animate-shimmer {
     animation: shimmer-rtl 2s ease-in-out infinite;
   }
+
+  /* Shimmer button effect - subtle shimmer on hover */
+  .micro-shimmer-button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .micro-shimmer-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    transition: left 0.5s ease;
+  }
+
+  .micro-shimmer-button:hover::before {
+    left: 100%;
+  }
   
   /* Slide down animation for notifications */
   @keyframes slide-down {
@@ -1169,8 +1198,55 @@ body {
 
 /* ===== Additional App Styles ===== */
 
-/* React Flow Workflow Components */
-@import '../components/Content/Workflow/workflow.css';
+/* Glass Displacement Effect */
+.glass-effect {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode glass */
+:root .glass-effect {
+  background: hsl(0 0% 100% / 0.05);
+  box-shadow:
+    0 0 2px 1px color-mix(in oklch, currentColor, #0000 85%) inset,
+    0 0 10px 4px color-mix(in oklch, currentColor, #0000 90%) inset,
+    0px 4px 16px rgba(17, 17, 26, 0.05),
+    0px 8px 24px rgba(17, 17, 26, 0.05),
+    0px 16px 56px rgba(17, 17, 26, 0.05),
+    0px 4px 16px rgba(17, 17, 26, 0.05) inset,
+    0px 8px 24px rgba(17, 17, 26, 0.05) inset,
+    0px 16px 56px rgba(17, 17, 26, 0.05) inset;
+}
+
+/* Light mode glass */
+.light-theme .glass-effect {
+  background: hsl(0 0% 0% / 0.03);
+  box-shadow:
+    0 0 2px 1px color-mix(in oklch, currentColor, #0000 92%) inset,
+    0 0 10px 4px color-mix(in oklch, currentColor, #0000 95%) inset,
+    0px 4px 16px rgba(0, 0, 0, 0.03),
+    0px 8px 24px rgba(0, 0, 0, 0.04),
+    0px 16px 56px rgba(0, 0, 0, 0.05);
+}
+
+.glass-filter {
+  pointer-events: none;
+}
+
+.glass-modal-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Enhanced glass effects */
+.glass-panel {
+  @apply glass-effect;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.light-theme .glass-panel {
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
 
 /* Ensure the app takes full viewport */
 #root {

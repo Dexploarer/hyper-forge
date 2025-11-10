@@ -8,6 +8,7 @@ import {
   Layers,
   Loader2,
   User,
+  Settings,
 } from "lucide-react";
 import React, { useState, useEffect, useMemo } from "react";
 
@@ -39,7 +40,9 @@ import {
   NoAssetSelected,
   ReferenceImageCard,
 } from "@/components/Generation";
-import { Button, Card, CardContent } from "@/components/common";
+import { Button, Card, CardContent, Drawer, CollapsibleSection } from "@/components/common";
+import { useCommandRegistration } from "@/hooks/useCommandRegistration";
+import { Sparkles as SparklesIcon, Play, Save } from "lucide-react";
 import {
   useGameStylePrompts,
   useAssetTypePrompts,
@@ -65,6 +68,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
   shouldGenerateWorld = false,
 }) => {
   const [apiClient] = useState(() => new GenerationAPIClient());
+  const [showAdvancedDrawer, setShowAdvancedDrawer] = useState(false);
 
   // Get all state and actions from the store
   const {
@@ -670,6 +674,34 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
     }
   };
 
+  // Register generation-specific commands
+  useCommandRegistration(useMemo(() => [
+    {
+      id: 'gen-start-generation',
+      label: 'Start Generation',
+      description: 'Begin generating the current asset',
+      icon: SparklesIcon,
+      category: 'Generation',
+      keywords: ['generate', 'start', 'create'],
+      action: () => {
+        if (assetName && description && !isGenerating) {
+          handleStartGeneration();
+        }
+      },
+      shortcut: '⌘G'
+    },
+    {
+      id: 'gen-open-advanced',
+      label: 'Open Advanced Settings',
+      description: 'Open advanced prompts and settings drawer',
+      icon: Settings,
+      category: 'Generation',
+      keywords: ['advanced', 'settings', 'prompts'],
+      action: () => setShowAdvancedDrawer(true),
+      shortcut: '⌘,'
+    }
+  ], [assetName, description, isGenerating]));
+
   React.useEffect(() => {
     // Enable smooth scrolling on the body with hidden scrollbar
     const ensureScrollable = () => {
@@ -780,124 +812,129 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                     onSaveCustomGameStyle={saveCustomGameStyle}
                   />
 
-                  {/* Advanced Prompts Card */}
-                  <AdvancedPromptsCard
-                    showAdvancedPrompts={showAdvancedPrompts}
-                    showAssetTypeEditor={showAssetTypeEditor}
-                    generationType={generationType}
-                    gameStyle={gameStyle}
-                    customStyle={customStyle}
-                    customGamePrompt={customGamePrompt}
-                    customAssetTypePrompt={customAssetTypePrompt}
-                    assetTypePrompts={currentTypePrompts}
-                    customAssetTypes={customAssetTypes}
-                    currentStylePrompt={currentStylePrompt}
-                    gameStylePrompts={gameStylePrompts}
-                    loadedPrompts={{
-                      avatar:
-                        loadedAssetTypePrompts?.avatar?.default?.character
-                          ?.placeholder,
-                      item: loadedAssetTypePrompts?.item?.default?.weapon
-                        ?.placeholder,
-                    }}
-                    onToggleAdvancedPrompts={() =>
-                      setShowAdvancedPrompts(!showAdvancedPrompts)
-                    }
-                    onToggleAssetTypeEditor={() =>
-                      setShowAssetTypeEditor(!showAssetTypeEditor)
-                    }
-                    onCustomGamePromptChange={setCustomGamePrompt}
-                    onCustomAssetTypePromptChange={setCustomAssetTypePrompt}
-                    onAssetTypePromptsChange={(updatedPrompts) => {
-                      // Merge the updated prompts with the existing store prompts
-                      setAssetTypePrompts({
-                        ...assetTypePrompts,
-                        ...updatedPrompts,
-                      });
-                    }}
-                    onCustomAssetTypesChange={setCustomAssetTypes}
-                    onAddCustomAssetType={addCustomAssetType}
-                    onSaveCustomAssetTypes={handleSaveCustomAssetTypes}
-                    onSaveCustomGameStyle={saveCustomGameStyle}
-                    onDeleteCustomGameStyle={deleteCustomGameStyle}
-                    onDeleteCustomAssetType={deleteCustomAssetType}
-                  />
+                  {/* Advanced Settings Button */}
+                  <Card className="overflow-hidden bg-gradient-to-br from-bg-primary via-bg-primary to-primary/5 border-border-primary shadow-lg">
+                    <CardContent className="p-4">
+                      <Button
+                        onClick={() => setShowAdvancedDrawer(true)}
+                        variant="secondary"
+                        className="w-full"
+                        size="lg"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Advanced Settings & Prompts
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
 
                 {/* Sidebar */}
                 <div className="space-y-4">
-                  {/* Pipeline Options */}
-                  <PipelineOptionsCard
-                    generationType={generationType}
-                    useGPT4Enhancement={useGPT4Enhancement}
-                    enableRetexturing={enableRetexturing}
-                    enableSprites={enableSprites}
-                    enableRigging={enableRigging}
-                    quality={quality}
-                    onUseGPT4EnhancementChange={setUseGPT4Enhancement}
-                    onEnableRetexturingChange={setEnableRetexturing}
-                    onEnableSpritesChange={setEnableSprites}
-                    onEnableRiggingChange={setEnableRigging}
-                    onQualityChange={setQuality}
-                  />
+                  {/* Pipeline Options - Collapsible */}
+                  <CollapsibleSection
+                    title="Pipeline Options"
+                    defaultOpen={true}
+                    icon={Settings}
+                    badge={[
+                      useGPT4Enhancement,
+                      enableRetexturing,
+                      enableSprites,
+                      enableRigging,
+                    ].filter(Boolean).length}
+                  >
+                    <PipelineOptionsCard
+                      generationType={generationType}
+                      useGPT4Enhancement={useGPT4Enhancement}
+                      enableRetexturing={enableRetexturing}
+                      enableSprites={enableSprites}
+                      enableRigging={enableRigging}
+                      quality={quality}
+                      onUseGPT4EnhancementChange={setUseGPT4Enhancement}
+                      onEnableRetexturingChange={setEnableRetexturing}
+                      onEnableSpritesChange={setEnableSprites}
+                      onEnableRiggingChange={setEnableRigging}
+                      onQualityChange={setQuality}
+                      noCard={true}
+                    />
+                  </CollapsibleSection>
 
-                  {/* Material Variants */}
+                  {/* Material Variants - Collapsible */}
                   {enableRetexturing && generationType === "item" && (
-                    <MaterialVariantsCard
-                      gameStyle={gameStyle}
-                      isLoadingMaterials={isLoadingMaterials}
-                      materialPresets={materialPresets}
-                      selectedMaterials={selectedMaterials}
-                      customMaterials={customMaterials}
-                      materialPromptOverrides={materialPromptOverrides}
-                      editMaterialPrompts={editMaterialPrompts}
-                      onToggleMaterialSelection={toggleMaterialSelection}
-                      onEditMaterialPromptsToggle={() =>
-                        setEditMaterialPrompts(!editMaterialPrompts)
-                      }
-                      onMaterialPromptOverride={(materialId, prompt) => {
-                        setMaterialPromptOverrides({
-                          ...materialPromptOverrides,
-                          [materialId]: prompt,
-                        });
-                      }}
-                      onAddCustomMaterial={addCustomMaterial}
-                      onUpdateCustomMaterial={(index, material) => {
-                        const updated = [...customMaterials];
-                        updated[index] = material;
-                        setCustomMaterials(updated);
-                      }}
-                      onRemoveCustomMaterial={(index) => {
-                        setCustomMaterials(
-                          customMaterials.filter((_, i) => i !== index),
-                        );
-                      }}
-                      onSaveCustomMaterials={handleSaveCustomMaterials}
-                      onEditPreset={setEditingPreset}
-                      onDeletePreset={setShowDeleteConfirm}
-                    />
+                    <CollapsibleSection
+                      title="Material Variants"
+                      defaultOpen={true}
+                      icon={Layers}
+                      badge={selectedMaterials.length}
+                    >
+                      <MaterialVariantsCard
+                        gameStyle={gameStyle}
+                        isLoadingMaterials={isLoadingMaterials}
+                        materialPresets={materialPresets}
+                        selectedMaterials={selectedMaterials}
+                        customMaterials={customMaterials}
+                        materialPromptOverrides={materialPromptOverrides}
+                        editMaterialPrompts={editMaterialPrompts}
+                        onToggleMaterialSelection={toggleMaterialSelection}
+                        onEditMaterialPromptsToggle={() =>
+                          setEditMaterialPrompts(!editMaterialPrompts)
+                        }
+                        onMaterialPromptOverride={(materialId, prompt) => {
+                          setMaterialPromptOverrides({
+                            ...materialPromptOverrides,
+                            [materialId]: prompt,
+                          });
+                        }}
+                        onAddCustomMaterial={addCustomMaterial}
+                        onUpdateCustomMaterial={(index, material) => {
+                          const updated = [...customMaterials];
+                          updated[index] = material;
+                          setCustomMaterials(updated);
+                        }}
+                        onRemoveCustomMaterial={(index) => {
+                          setCustomMaterials(
+                            customMaterials.filter((_, i) => i !== index),
+                          );
+                        }}
+                        onSaveCustomMaterials={handleSaveCustomMaterials}
+                        onEditPreset={setEditingPreset}
+                        onDeletePreset={setShowDeleteConfirm}
+                      />
+                    </CollapsibleSection>
                   )}
 
-                  {/* Avatar Rigging Options */}
+                  {/* Avatar Rigging Options - Collapsible */}
                   {generationType === "avatar" && enableRigging && (
-                    <AvatarRiggingOptionsCard
-                      characterHeight={characterHeight}
-                      onCharacterHeightChange={setCharacterHeight}
-                    />
+                    <CollapsibleSection
+                      title="Rigging Options"
+                      defaultOpen={true}
+                      icon={User}
+                    >
+                      <AvatarRiggingOptionsCard
+                        characterHeight={characterHeight}
+                        onCharacterHeightChange={setCharacterHeight}
+                      />
+                    </CollapsibleSection>
                   )}
 
-                  {/* Reference Image Selection */}
-                  <ReferenceImageCard
-                    generationType={generationType}
-                    mode={referenceImageMode}
-                    source={referenceImageSource}
-                    url={referenceImageUrl}
-                    dataUrl={referenceImageDataUrl}
-                    onModeChange={setReferenceImageMode}
-                    onSourceChange={setReferenceImageSource}
-                    onUrlChange={setReferenceImageUrl}
-                    onDataUrlChange={setReferenceImageDataUrl}
-                  />
+                  {/* Reference Image Selection - Collapsible */}
+                  <CollapsibleSection
+                    title="Reference Image"
+                    defaultOpen={false}
+                    icon={Camera}
+                    badge={referenceImageMode !== "none" ? 1 : undefined}
+                  >
+                    <ReferenceImageCard
+                      generationType={generationType}
+                      mode={referenceImageMode}
+                      source={referenceImageSource}
+                      url={referenceImageUrl}
+                      dataUrl={referenceImageDataUrl}
+                      onModeChange={setReferenceImageMode}
+                      onSourceChange={setReferenceImageSource}
+                      onUrlChange={setReferenceImageUrl}
+                      onDataUrlChange={setReferenceImageDataUrl}
+                    />
+                  </CollapsibleSection>
 
                   {/* Start Generation Button */}
                   <Card className="overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border-primary/20">
@@ -1034,6 +1071,56 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
           onConfirm={handleDeletePreset}
         />
       )}
+
+      {/* Advanced Settings Drawer */}
+      <Drawer
+        open={showAdvancedDrawer}
+        onClose={() => setShowAdvancedDrawer(false)}
+        side="right"
+        size="lg"
+        title="Advanced Settings & Prompts"
+      >
+        <div className="p-6 space-y-6">
+          <AdvancedPromptsCard
+            showAdvancedPrompts={true}
+            showAssetTypeEditor={showAssetTypeEditor}
+            generationType={generationType}
+            gameStyle={gameStyle}
+            customStyle={customStyle}
+            customGamePrompt={customGamePrompt}
+            customAssetTypePrompt={customAssetTypePrompt}
+            assetTypePrompts={currentTypePrompts}
+            customAssetTypes={customAssetTypes}
+            currentStylePrompt={currentStylePrompt}
+            gameStylePrompts={gameStylePrompts}
+            loadedPrompts={{
+              avatar:
+                loadedAssetTypePrompts?.avatar?.default?.character
+                  ?.placeholder,
+              item: loadedAssetTypePrompts?.item?.default?.weapon
+                ?.placeholder,
+            }}
+            onToggleAdvancedPrompts={() => {}}
+            onToggleAssetTypeEditor={() =>
+              setShowAssetTypeEditor(!showAssetTypeEditor)
+            }
+            onCustomGamePromptChange={setCustomGamePrompt}
+            onCustomAssetTypePromptChange={setCustomAssetTypePrompt}
+            onAssetTypePromptsChange={(updatedPrompts) => {
+              setAssetTypePrompts({
+                ...assetTypePrompts,
+                ...updatedPrompts,
+              });
+            }}
+            onCustomAssetTypesChange={setCustomAssetTypes}
+            onAddCustomAssetType={addCustomAssetType}
+            onSaveCustomAssetTypes={handleSaveCustomAssetTypes}
+            onSaveCustomGameStyle={saveCustomGameStyle}
+            onDeleteCustomGameStyle={deleteCustomGameStyle}
+            onDeleteCustomAssetType={deleteCustomAssetType}
+          />
+        </div>
+      </Drawer>
     </>
   );
 };

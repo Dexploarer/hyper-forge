@@ -1,9 +1,12 @@
 import { useState } from 'react'
+import { Command, Search } from 'lucide-react'
 import { NavigationView } from '@/types'
 import { NAVIGATION_VIEWS } from '@/constants'
 import { useAuth } from '@/contexts/AuthContext'
+import { useCommandPalette } from '@/contexts/CommandPaletteContext'
 import { UserProfileMenu, UserProfileModal } from '@/components/User'
 import { ThemeSwitcher } from '@/components/common'
+import { cn } from '@/styles'
 
 interface TopBarProps {
   currentView: NavigationView
@@ -26,6 +29,7 @@ const VIEW_TITLES: Record<NavigationView, string> = {
 
 export function TopBar({ currentView }: TopBarProps) {
   const { user, logout } = useAuth()
+  const { openPalette } = useCommandPalette()
   const [showProfileModal, setShowProfileModal] = useState(false)
 
   // Get session ID from localStorage (same as AuthContext)
@@ -58,6 +62,27 @@ export function TopBar({ currentView }: TopBarProps) {
 
         {/* Right side - User info & actions */}
         <div className="flex items-center gap-3">
+          {/* Command Palette Trigger */}
+          <button
+            onClick={openPalette}
+            className={cn(
+              'flex items-center gap-2 px-3 py-1.5 rounded-lg',
+              'bg-bg-tertiary/50 border border-border-primary',
+              'hover:bg-bg-hover hover:border-primary/30',
+              'text-text-secondary hover:text-text-primary',
+              'transition-all duration-200',
+              'text-sm font-medium'
+            )}
+            title="Open command palette (⌘K)"
+          >
+            <Search className="w-4 h-4" />
+            <span className="hidden sm:inline">Search</span>
+            <kbd className="hidden md:inline-flex items-center gap-1 px-1.5 py-0.5 bg-bg-secondary rounded border border-border-primary text-xs">
+              <Command className="w-3 h-3" />
+              <span>K</span>
+            </kbd>
+          </button>
+
           {/* Theme Switcher */}
           <ThemeSwitcher size="md" />
           

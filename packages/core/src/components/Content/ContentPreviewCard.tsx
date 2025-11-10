@@ -1,11 +1,12 @@
-import { Download, FileJson, FileText, Copy, Check, Sparkles, Loader2, User, Volume2, Play, Pause, Save, Scroll, Book, TestTube2 } from 'lucide-react'
-import React, { useState, useRef } from 'react'
+import { Download, FileJson, FileText, Copy, Check, Sparkles, Loader2, User, Volume2, Play, Pause, Save, Scroll, Book, TestTube2, ChevronDown, Image as ImageIcon } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardContent, Button } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
 import { AudioAPIClient } from '@/services/api/AudioAPIClient'
 import { notify } from '@/utils/notify'
 import { useNavigation } from '@/hooks/useNavigation'
+import { cn } from '@/styles'
 import type { GeneratedContent, NPCData, QuestData, DialogueNode, LoreData, DialogueData } from '@/types/content'
 import { ViewModeToggle, type ViewMode } from './Workflow/ViewModeToggle'
 import { DialogueWorkflowView } from './Workflow/DialogueWorkflowView'
@@ -37,6 +38,8 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
   const [showLoreModal, setShowLoreModal] = useState(false)
   const [generatedQuestId, setGeneratedQuestId] = useState<string | null>(null)
   const [generatedLoreId, setGeneratedLoreId] = useState<string | null>(null)
+  const [showGenerateDropdown, setShowGenerateDropdown] = useState(false)
+  const generateDropdownRef = useRef<HTMLDivElement>(null)
 
   const handleGeneratePortrait = async () => {
     if (content.type !== 'npc') return
@@ -219,6 +222,38 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
     setShowLoreModal(false)
   }
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!showGenerateDropdown) return
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (generateDropdownRef.current && !generateDropdownRef.current.contains(event.target as Node)) {
+        setShowGenerateDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showGenerateDropdown])
+
+  const handleGenerateOption = (option: 'portrait' | 'voice' | 'quest' | 'lore') => {
+    setShowGenerateDropdown(false)
+    switch (option) {
+      case 'portrait':
+        handleGeneratePortrait()
+        break
+      case 'voice':
+        handleGenerateVoice()
+        break
+      case 'quest':
+        setShowQuestModal(true)
+        break
+      case 'lore':
+        setShowLoreModal(true)
+        break
+    }
+  }
+
   const handleCopyJSON = () => {
     const jsonData = JSON.stringify(content.data, null, 2)
     navigator.clipboard.writeText(jsonData)
@@ -344,201 +379,245 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
             <p className="text-sm text-text-secondary capitalize">{npc.archetype}</p>
           </div>
 
-          {/* 2x2 Grid: Portrait, Voice, Quest, Lore */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Profile Picture Section */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-32 h-32 rounded-lg overflow-hidden bg-bg-tertiary/50 border-2 border-border-primary/50 flex items-center justify-center">
-                {portraitUrl ? (
-                  <img
-                    src={portraitUrl}
-                    alt={`${npc.name} portrait`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-12 h-12 text-text-tertiary/40" />
+          {/* AI Generation Section with Dropdown */}
+          <div className="flex flex-col gap-4">
+            {/* Compact Icon Row */}
+            <div className="flex items-center gap-4 justify-center">
+              {/* Portrait Icon */}
+              <div className="flex flex-col items-center gap-1.5">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+                  portraitUrl 
+                    ? "bg-blue-500/20 border border-blue-500/30" 
+                    : "bg-bg-tertiary/50 border border-border-primary/50"
+                )}>
+                  {portraitUrl ? (
+                    <img
+                      src={portraitUrl}
+                      alt={`${npc.name} portrait`}
+                      className="w-8 h-8 rounded object-cover"
+                    />
+                  ) : (
+                    <ImageIcon className="w-4 h-4 text-text-tertiary/60" />
+                  )}
+                </div>
+                {savedPortraitId && (
+                  <Check className="w-3 h-3 text-green-500" />
                 )}
               </div>
-              <div className="w-full space-y-2">
-                <Button
-                  onClick={handleGeneratePortrait}
-                  disabled={isGeneratingPortrait}
-                  size="sm"
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                >
-                  {isGeneratingPortrait ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                      Generate Portrait
-                    </>
-                  )}
-                </Button>
+
+              {/* Voice Icon */}
+              <div className="flex flex-col items-center gap-1.5">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+                  voiceAudioUrl 
+                    ? "bg-green-500/20 border border-green-500/30" 
+                    : "bg-bg-tertiary/50 border border-border-primary/50"
+                )}>
+                  <Volume2 className={cn(
+                    "w-4 h-4",
+                    voiceAudioUrl ? "text-green-500" : "text-text-tertiary/60"
+                  )} />
+                </div>
+                {savedVoiceId && (
+                  <Check className="w-3 h-3 text-green-500" />
+                )}
+              </div>
+
+              {/* Quest Icon */}
+              <div className="flex flex-col items-center gap-1.5">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+                  generatedQuestId 
+                    ? "bg-amber-500/20 border border-amber-500/30" 
+                    : "bg-bg-tertiary/50 border border-border-primary/50"
+                )}>
+                  <Scroll className={cn(
+                    "w-4 h-4",
+                    generatedQuestId ? "text-amber-500" : "text-text-tertiary/60"
+                  )} />
+                </div>
+                {generatedQuestId && (
+                  <Check className="w-3 h-3 text-green-500" />
+                )}
+              </div>
+
+              {/* Lore Icon */}
+              <div className="flex flex-col items-center gap-1.5">
+                <div className={cn(
+                  "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
+                  generatedLoreId 
+                    ? "bg-purple-500/20 border border-purple-500/30" 
+                    : "bg-bg-tertiary/50 border border-border-primary/50"
+                )}>
+                  <Book className={cn(
+                    "w-4 h-4",
+                    generatedLoreId ? "text-purple-500" : "text-text-tertiary/60"
+                  )} />
+                </div>
+                {generatedLoreId && (
+                  <Check className="w-3 h-3 text-green-500" />
+                )}
+              </div>
+            </div>
+
+            {/* AI Generate Button with Dropdown */}
+            <div className="relative flex items-center gap-2 justify-center" ref={generateDropdownRef}>
+              <Button
+                onClick={() => {
+                  // Default action: generate portrait if not generated, otherwise open dropdown
+                  if (!portraitUrl && !isGeneratingPortrait) {
+                    handleGeneratePortrait()
+                  } else {
+                    setShowGenerateDropdown(!showGenerateDropdown)
+                  }
+                }}
+                disabled={isGeneratingPortrait || isGeneratingVoice}
+                className="relative overflow-hidden bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg shadow-primary/20 micro-shimmer-button"
+                size="sm"
+              >
+                {isGeneratingPortrait || isGeneratingVoice ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Generate
+                  </>
+                )}
+              </Button>
+
+              {/* Dropdown Button */}
+              <button
+                onClick={() => setShowGenerateDropdown(!showGenerateDropdown)}
+                disabled={isGeneratingPortrait || isGeneratingVoice}
+                className={cn(
+                  "p-2 rounded-lg border border-border-primary bg-bg-secondary hover:bg-bg-tertiary transition-all",
+                  "disabled:opacity-50 disabled:cursor-not-allowed",
+                  showGenerateDropdown && "bg-bg-tertiary ring-2 ring-primary/30"
+                )}
+                aria-label="More generation options"
+              >
+                <ChevronDown className={cn(
+                  "w-4 h-4 text-text-secondary transition-transform",
+                  showGenerateDropdown && "rotate-180"
+                )} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {showGenerateDropdown && (
+                <div className="absolute top-full mt-2 right-0 bg-bg-secondary border border-border-primary rounded-lg shadow-xl overflow-hidden z-50 min-w-[180px] animate-fade-in">
+                  <button
+                    onClick={() => handleGenerateOption('portrait')}
+                    disabled={isGeneratingPortrait}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors disabled:opacity-50"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    <span>Generate Portrait</span>
+                    {portraitUrl && <Check className="w-3 h-3 ml-auto text-green-500" />}
+                  </button>
+                  <button
+                    onClick={() => handleGenerateOption('voice')}
+                    disabled={isGeneratingVoice}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors disabled:opacity-50"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                    <span>Generate Voice</span>
+                    {voiceAudioUrl && <Check className="w-3 h-3 ml-auto text-green-500" />}
+                  </button>
+                  <button
+                    onClick={() => handleGenerateOption('quest')}
+                    disabled={!content.id}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors disabled:opacity-50"
+                  >
+                    <Scroll className="w-4 h-4" />
+                    <span>Generate Quest</span>
+                    {generatedQuestId && <Check className="w-3 h-3 ml-auto text-green-500" />}
+                  </button>
+                  <button
+                    onClick={() => handleGenerateOption('lore')}
+                    disabled={!content.id}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-bg-hover hover:text-text-primary transition-colors disabled:opacity-50"
+                  >
+                    <Book className="w-4 h-4" />
+                    <span>Generate Lore</span>
+                    {generatedLoreId && <Check className="w-3 h-3 ml-auto text-green-500" />}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons Row (Save/Play) */}
+            {(portraitUrl || voiceAudioUrl) && (
+              <div className="flex items-center gap-2 justify-center">
                 {portraitUrl && !savedPortraitId && (
                   <Button
                     onClick={handleSavePortrait}
                     disabled={isSavingPortrait}
                     size="sm"
                     variant="secondary"
-                    className="w-full"
+                    className="text-xs"
                   >
                     {isSavingPortrait ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                         Saving...
                       </>
                     ) : (
                       <>
-                        <Save className="w-3.5 h-3.5 mr-1.5" />
+                        <Save className="w-3 h-3 mr-1" />
                         Save Portrait
                       </>
                     )}
                   </Button>
                 )}
-                {savedPortraitId && (
-                  <div className="text-xs text-green-500 text-center">
-                    <Check className="w-3.5 h-3.5 inline mr-1" />
-                    Saved
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Voice Generation Section */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-32 h-32 rounded-lg overflow-hidden bg-bg-tertiary/50 border-2 border-border-primary/50 flex items-center justify-center">
-                <Volume2 className={`w-12 h-12 ${voiceAudioUrl ? 'text-green-500' : 'text-text-tertiary/40'}`} />
-              </div>
-              <div className="w-full space-y-2">
-                <Button
-                  onClick={handleGenerateVoice}
-                  disabled={isGeneratingVoice}
-                  size="sm"
-                  className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-                >
-                  {isGeneratingVoice ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                      Generate Voice
-                    </>
-                  )}
-                </Button>
                 {voiceAudioUrl && (
                   <>
-                    <Button
-                      onClick={handlePlayVoice}
-                      size="sm"
-                      variant="secondary"
-                      className="w-full"
-                    >
-                      {isPlayingVoice ? (
-                        <>
-                          <Pause className="w-3.5 h-3.5 mr-1.5" />
-                          Pause
-                        </>
-                      ) : (
-                        <>
-                          <Play className="w-3.5 h-3.5 mr-1.5" />
-                          Play Sample
-                        </>
-                      )}
-                    </Button>
                     {!savedVoiceId && (
                       <Button
                         onClick={handleSaveVoice}
                         disabled={isSavingVoice}
                         size="sm"
                         variant="secondary"
-                        className="w-full"
+                        className="text-xs"
                       >
                         {isSavingVoice ? (
                           <>
-                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                             Saving...
                           </>
                         ) : (
                           <>
-                            <Save className="w-3.5 h-3.5 mr-1.5" />
+                            <Save className="w-3 h-3 mr-1" />
                             Save Voice
                           </>
                         )}
                       </Button>
                     )}
-                    {savedVoiceId && (
-                      <div className="text-xs text-green-500 text-center">
-                        <Check className="w-3.5 h-3.5 inline mr-1" />
-                        Saved
-                      </div>
-                    )}
+                    <Button
+                      onClick={handlePlayVoice}
+                      size="sm"
+                      variant="secondary"
+                      className="text-xs"
+                    >
+                      {isPlayingVoice ? (
+                        <>
+                          <Pause className="w-3 h-3 mr-1" />
+                          Pause
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-3 h-3 mr-1" />
+                          Play
+                        </>
+                      )}
+                    </Button>
                   </>
                 )}
               </div>
-            </div>
-
-            {/* Quest Generation Section */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-32 h-32 rounded-lg overflow-hidden bg-bg-tertiary/50 border-2 border-border-primary/50 flex items-center justify-center">
-                {generatedQuestId ? (
-                  <Check className="w-12 h-12 text-amber-500" />
-                ) : (
-                  <Scroll className="w-12 h-12 text-text-tertiary/40" />
-                )}
-              </div>
-              <div className="w-full space-y-2">
-                <Button
-                  onClick={() => setShowQuestModal(true)}
-                  disabled={!content.id}
-                  size="sm"
-                  className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-                >
-                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                  Generate Quest
-                </Button>
-                {generatedQuestId && (
-                  <div className="text-xs text-green-500 text-center">
-                    <Check className="w-3.5 h-3.5 inline mr-1" />
-                    Quest Linked
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Lore Generation Section */}
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-32 h-32 rounded-lg overflow-hidden bg-bg-tertiary/50 border-2 border-border-primary/50 flex items-center justify-center">
-                {generatedLoreId ? (
-                  <Check className="w-12 h-12 text-purple-500" />
-                ) : (
-                  <Book className="w-12 h-12 text-text-tertiary/40" />
-                )}
-              </div>
-              <div className="w-full space-y-2">
-                <Button
-                  onClick={() => setShowLoreModal(true)}
-                  disabled={!content.id}
-                  size="sm"
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                >
-                  <Sparkles className="w-3.5 h-3.5 mr-1.5" />
-                  Generate Lore
-                </Button>
-                {generatedLoreId && (
-                  <div className="text-xs text-green-500 text-center">
-                    <Check className="w-3.5 h-3.5 inline mr-1" />
-                    Lore Linked
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
 
           <div>

@@ -1,12 +1,15 @@
-import { Sparkles, Box, User, Scroll, MessageSquare, Book, Music, Send } from 'lucide-react'
+import { Sparkles, Box, User, Scroll, MessageSquare, Book, Music, Globe, Users } from 'lucide-react'
 import React, { useState } from 'react'
 
-import { Button } from '@/components/common'
+import { Modal } from '@/components/common'
 import { cn } from '@/styles'
 import { ContentGenerationPage } from './ContentGenerationPage'
 import { GenerationPage } from './GenerationPage'
 import { AudioGenerationPage } from './AudioGenerationPage'
 import type { ContentType } from '@/types/content'
+
+// Category types
+type GenerationCategory = 'world' | 'character' | 'lore' | null
 
 // Tool types that can be selected
 type GenerationTool = '3d' | 'npc' | 'quest' | 'dialogue' | 'lore' | 'audio' | 'world' | null
@@ -17,9 +20,19 @@ interface GenerationToolOption {
   label: string
   description: string
   gradient: string
-  keywords: string[] // Keywords for intelligent routing
+  keywords: string[]
 }
 
+interface CategoryOption {
+  id: GenerationCategory
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
+  label: string
+  description: string
+  gradient: string
+  tools: GenerationToolOption[]
+}
+
+// Individual tools
 const GENERATION_TOOLS: GenerationToolOption[] = [
   {
     id: '3d',
@@ -30,20 +43,28 @@ const GENERATION_TOOLS: GenerationToolOption[] = [
     keywords: ['3d', 'model', 'asset', 'item', 'weapon', 'armor', 'avatar', 'character model', 'mesh', 'image', 'sprite', '2d', 'texture']
   },
   {
+    id: 'audio',
+    icon: Music,
+    label: 'Audio',
+    description: 'Generate music and sound effects',
+    gradient: 'from-indigo-500 to-violet-500',
+    keywords: ['audio', 'music', 'sound', 'sfx', 'soundtrack', 'ambience', 'effect', 'voice', 'song', 'track']
+  },
+  {
+    id: 'world',
+    icon: Globe,
+    label: 'World Generation',
+    description: 'Generate complete worlds with interconnected content',
+    gradient: 'from-emerald-500 to-teal-500',
+    keywords: ['world', 'environment', 'complete', 'full', 'everything']
+  },
+  {
     id: 'npc',
     icon: User,
     label: 'NPC',
     description: 'Create NPCs with personality and dialogue',
     gradient: 'from-purple-500 to-pink-500',
     keywords: ['npc', 'character', 'personality', 'merchant', 'vendor', 'guard', 'villager']
-  },
-  {
-    id: 'quest',
-    icon: Scroll,
-    label: 'Quest',
-    description: 'Design quests with objectives and rewards',
-    gradient: 'from-amber-500 to-orange-500',
-    keywords: ['quest', 'mission', 'task', 'objective', 'reward', 'bounty']
   },
   {
     id: 'dialogue',
@@ -54,20 +75,48 @@ const GENERATION_TOOLS: GenerationToolOption[] = [
     keywords: ['dialogue', 'conversation', 'talk', 'chat', 'speech', 'branching']
   },
   {
+    id: 'quest',
+    icon: Scroll,
+    label: 'Quest',
+    description: 'Design quests with objectives and rewards',
+    gradient: 'from-amber-500 to-orange-500',
+    keywords: ['quest', 'mission', 'task', 'objective', 'reward', 'bounty']
+  },
+  {
     id: 'lore',
     icon: Book,
     label: 'Lore',
     description: 'Build world lore and story content',
     gradient: 'from-red-500 to-rose-500',
     keywords: ['lore', 'story', 'history', 'legend', 'mythology', 'backstory', 'world building']
+  }
+]
+
+// Categories with their associated tools
+const GENERATION_CATEGORIES: CategoryOption[] = [
+  {
+    id: 'world',
+    icon: Globe,
+    label: 'World & Environment',
+    description: 'Generate worlds, environments, and ambient content',
+    gradient: 'from-emerald-500 to-teal-500',
+    tools: GENERATION_TOOLS.filter(tool => ['3d', 'audio', 'world'].includes(tool.id || ''))
   },
   {
-    id: 'audio',
-    icon: Music,
-    label: 'Audio',
-    description: 'Generate music and sound effects',
-    gradient: 'from-indigo-500 to-violet-500',
-    keywords: ['audio', 'music', 'sound', 'sfx', 'soundtrack', 'ambience', 'effect', 'voice', 'song', 'track']
+    id: 'character',
+    icon: Users,
+    label: 'Character',
+    description: 'Create characters, NPCs, and dialogue systems',
+    gradient: 'from-purple-500 to-pink-500',
+    tools: GENERATION_TOOLS.filter(tool => ['npc', 'dialogue', '3d'].includes(tool.id || ''))
+  },
+  {
+    id: 'lore',
+    icon: Book,
+    label: 'Lore',
+    description: 'Build quests, lore, and narrative content',
+    gradient: 'from-amber-500 to-orange-500',
+    tools: GENERATION_TOOLS.filter(tool => ['lore', 'quest'].includes(tool.id || ''))
   }
 ]
 
@@ -80,95 +129,41 @@ export const ChatGenerationPage: React.FC<ChatGenerationPageProps> = ({
   onNavigateToAssets,
   onNavigateToAsset
 }) => {
-  const [prompt, setPrompt] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<GenerationCategory>(null)
   const [selectedTool, setSelectedTool] = useState<GenerationTool>(null)
   const [userPrompt, setUserPrompt] = useState('')
   const [shouldGenerateWorld, setShouldGenerateWorld] = useState(false)
 
-  // Analyze prompt to determine which tool to use
-  const analyzePrompt = (text: string): GenerationTool => {
-    const lowerText = text.toLowerCase()
-
-    // Check for multiple items requested (world generation)
-    // Look for multiple keywords from different categories
-    const detectedTools: GenerationTool[] = []
-    
-    for (const tool of GENERATION_TOOLS) {
-      if (tool.id && tool.keywords.some(keyword => lowerText.includes(keyword))) {
-        detectedTools.push(tool.id)
-      }
-    }
-
-    // If multiple different tool types detected, route to world generation
-    if (detectedTools.length > 1) {
-      // Check if they're actually different categories (not just multiple keywords from same category)
-      const uniqueTools = [...new Set(detectedTools)]
-      if (uniqueTools.length > 1) {
-        return 'world'
-      }
-    }
-
-    // Check for explicit world generation keywords
-    const worldKeywords = ['world', 'entire', 'complete', 'full', 'everything', 'all', 'multiple', 'several', 'and', 'with']
-    const hasWorldKeywords = worldKeywords.some(keyword => lowerText.includes(keyword))
-    
-    // If prompt mentions multiple things explicitly (using "and", "with", etc.) and has multiple tool keywords
-    if (hasWorldKeywords && detectedTools.length > 0) {
-      // Check for conjunction words that indicate multiple items
-      const conjunctionPatterns = [
-        /\b(and|with|plus|including|also|as well as)\b/i,
-        /,\s*(and|or)\s*/i,
-        /\b(create|generate|make|build)\s+(a|an|the)?\s+\w+\s+(and|with|plus)\s+/i
-      ]
-      
-      const hasConjunction = conjunctionPatterns.some(pattern => pattern.test(text))
-      
-      if (hasConjunction && detectedTools.length >= 1) {
-        return 'world'
-      }
-    }
-
-    // Return the first detected tool if only one category
-    if (detectedTools.length > 0) {
-      return detectedTools[0]
-    }
-
-    // Default to 3D if unclear
-    return '3d'
+  // Handle category selection - opens modal
+  const handleCategorySelect = (categoryId: GenerationCategory) => {
+    setSelectedCategory(categoryId)
   }
 
-  // Handle tool selection (button click)
+  // Handle tool selection from modal
   const handleToolSelect = (toolId: GenerationTool) => {
+    setSelectedCategory(null) // Close modal
     setSelectedTool(toolId)
-    setUserPrompt('') // Clear prompt when manually selecting tool
-  }
-
-  // Handle prompt submission
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!prompt.trim()) return
-
-    // Analyze prompt to determine tool
-    const detectedTool = analyzePrompt(prompt)
+    setUserPrompt('')
     
-    // If world generation detected, set flag and route to 3D generation page
-    if (detectedTool === 'world') {
+    // If world generation tool selected, set flag
+    if (toolId === 'world') {
       setShouldGenerateWorld(true)
       setSelectedTool('3d') // Route to GenerationPage which handles world generation
-    } else {
-      setShouldGenerateWorld(false)
-      setSelectedTool(detectedTool)
     }
-    
-    setUserPrompt(prompt)
   }
 
-  // Handle going back to tool selector
+  // Handle going back to category selector
   const handleBack = () => {
     setSelectedTool(null)
-    setPrompt('')
+    setSelectedCategory(null)
     setUserPrompt('')
     setShouldGenerateWorld(false)
+  }
+
+  // Get tools for selected category
+  const getCategoryTools = (categoryId: GenerationCategory): GenerationToolOption[] => {
+    const category = GENERATION_CATEGORIES.find(cat => cat.id === categoryId)
+    return category?.tools || []
   }
 
   // Render the appropriate generation component based on selected tool
@@ -192,101 +187,170 @@ export const ChatGenerationPage: React.FC<ChatGenerationPageProps> = ({
   }
 
   return (
-    <div className="h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-tertiary">
-      {/* Background decoration */}
-      <div
-        className="absolute top-0 left-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%)',
-          width: '100%',
-          height: '100%',
-        }}
-      />
+    <>
+      <div className="h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-bg-primary via-bg-secondary to-bg-tertiary">
+        {/* Background decoration */}
+        <div
+          className="absolute top-0 left-0 pointer-events-none opacity-20"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3), transparent 50%)',
+            width: '100%',
+            height: '100%',
+          }}
+        />
 
-      {/* Main content */}
-      <div className="relative z-10 w-full max-w-4xl">
-        {/* Greeting */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Sparkles className="w-10 h-10 text-purple-600 dark:text-primary animate-pulse" />
-            <h1 className="text-5xl font-bold text-text-primary">
-              What would you like to create?
-            </h1>
+        {/* Main content */}
+        <div className="relative z-10 w-full max-w-4xl">
+          {/* Greeting */}
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Sparkles className="w-10 h-10 text-purple-600 dark:text-primary animate-pulse" />
+              <h1 className="text-5xl font-bold text-text-primary">
+                What would you like to generate?
+              </h1>
+            </div>
+            <p className="text-lg text-text-secondary">
+              Select a category to explore available generation tools
+            </p>
           </div>
-          <p className="text-lg text-text-secondary">
-            Choose a tool below or describe what you want to generate
-          </p>
-        </div>
 
-        {/* Prompt Input */}
-        <form onSubmit={handleSubmit} className="mb-8">
-          <div className="relative">
-            <input
-              type="text"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe what you want to create..."
-              className="w-full px-6 py-4 pr-14 rounded-2xl bg-bg-secondary/80 border-2 border-border-primary focus:border-primary text-text-primary placeholder:text-text-tertiary outline-none transition-all text-lg backdrop-blur-sm"
-            />
-            <button
-              type="submit"
-              disabled={!prompt.trim()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-xl bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              <Send className="w-5 h-5 text-white" />
-            </button>
+          {/* Category Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {GENERATION_CATEGORIES.map((category) => {
+              if (!category.id) return null
+              const Icon = category.icon
+
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategorySelect(category.id)}
+                  className={cn(
+                    'group relative p-8 rounded-2xl border-2 transition-all duration-300',
+                    'bg-bg-secondary/50 backdrop-blur-sm',
+                    'border-border-primary hover:border-primary/50',
+                    'hover:scale-105 hover:shadow-xl',
+                    'flex flex-col items-center text-center'
+                  )}
+                >
+                  {/* Icon with gradient */}
+                  <div className={cn(
+                    'w-16 h-16 mb-4 rounded-xl flex items-center justify-center',
+                    'bg-gradient-to-br shadow-md group-hover:shadow-lg transition-shadow',
+                    category.gradient
+                  )}>
+                    <Icon className="w-8 h-8 text-white" />
+                  </div>
+
+                  {/* Label */}
+                  <h3 className="text-xl font-semibold text-text-primary mb-2 group-hover:text-primary transition-colors">
+                    {category.label}
+                  </h3>
+
+                  {/* Description */}
+                  <p className="text-sm text-text-secondary leading-relaxed">
+                    {category.description}
+                  </p>
+
+                  {/* Tool count badge */}
+                  <div className="mt-4 px-3 py-1 rounded-full bg-primary/10 border border-primary/30">
+                    <span className="text-xs text-primary font-medium">
+                      {category.tools.length} {category.tools.length === 1 ? 'tool' : 'tools'}
+                    </span>
+                  </div>
+                </button>
+              )
+            })}
           </div>
-        </form>
 
-        {/* Tool Buttons */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {GENERATION_TOOLS.map((tool) => {
-            if (!tool.id) return null
-            const Icon = tool.icon
-
-            return (
-              <button
-                key={tool.id}
-                onClick={() => handleToolSelect(tool.id)}
-                className={cn(
-                  'group relative p-6 rounded-2xl border-2 transition-all duration-300',
-                  'bg-bg-secondary/50 backdrop-blur-sm',
-                  'border-border-primary hover:border-primary/50',
-                  'hover:scale-105 hover:shadow-xl',
-                  selectedTool === tool.id && 'border-primary shadow-lg scale-105'
-                )}
-              >
-                {/* Icon with gradient */}
-                <div className={cn(
-                  'w-14 h-14 mx-auto mb-3 rounded-xl flex items-center justify-center',
-                  'bg-gradient-to-br shadow-md group-hover:shadow-lg transition-shadow',
-                  tool.gradient
-                )}>
-                  <Icon className="w-7 h-7 text-purple-600 dark:text-white" />
-                </div>
-
-                {/* Label */}
-                <h3 className="text-base font-semibold text-text-primary mb-1 group-hover:text-primary transition-colors">
-                  {tool.label}
-                </h3>
-
-                {/* Description */}
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  {tool.description}
-                </p>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Info footer */}
-        <div className="mt-12 text-center">
-          <p className="text-sm text-text-tertiary">
-            Powered by AI • Simply describe what you need or select a tool above
-          </p>
+          {/* Info footer */}
+          <div className="mt-12 text-center">
+            <p className="text-sm text-text-tertiary">
+              Powered by AI • Select a category to get started
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Category Tools Modal */}
+      {selectedCategory && (
+        <Modal
+          open={!!selectedCategory}
+          onClose={() => setSelectedCategory(null)}
+          size="lg"
+        >
+          <div className="p-6">
+            {/* Modal Header */}
+            <div className="mb-6">
+              {(() => {
+                const category = GENERATION_CATEGORIES.find(cat => cat.id === selectedCategory)
+                if (!category) return null
+                const Icon = category.icon
+                return (
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={cn(
+                      'w-12 h-12 rounded-xl flex items-center justify-center',
+                      'bg-gradient-to-br',
+                      category.gradient
+                    )}>
+                      <Icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-text-primary">
+                        {category.label}
+                      </h2>
+                      <p className="text-sm text-text-secondary">
+                        {category.description}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })()}
+            </div>
+
+            {/* Tools Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {getCategoryTools(selectedCategory).map((tool) => {
+                if (!tool.id) return null
+                const Icon = tool.icon
+
+                return (
+                  <button
+                    key={tool.id}
+                    onClick={() => handleToolSelect(tool.id)}
+                    className={cn(
+                      'group relative p-6 rounded-xl border-2 transition-all duration-300',
+                      'bg-bg-secondary/50 backdrop-blur-sm',
+                      'border-border-primary hover:border-primary/50',
+                      'hover:scale-105 hover:shadow-lg',
+                      'text-left'
+                    )}
+                  >
+                    {/* Icon with gradient */}
+                    <div className={cn(
+                      'w-12 h-12 mb-3 rounded-lg flex items-center justify-center',
+                      'bg-gradient-to-br shadow-md group-hover:shadow-lg transition-shadow',
+                      tool.gradient
+                    )}>
+                      <Icon className="w-6 h-6 text-white" />
+                    </div>
+
+                    {/* Label */}
+                    <h3 className="text-lg font-semibold text-text-primary mb-1 group-hover:text-primary transition-colors">
+                      {tool.label}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                      {tool.description}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </Modal>
+      )}
+    </>
   )
 }
 
