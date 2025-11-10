@@ -44,6 +44,7 @@ import { contentGenerationRoutes } from "./routes/content-generation";
 import { usersRoutes } from "./routes/users";
 import { vectorSearchRoutes } from "./routes/vector-search";
 import { createSeedDataRoutes } from "./routes/seed-data";
+import { worldConfigRoutes } from "./routes/world-config";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -155,6 +156,10 @@ const app = new Elysia()
             name: "Relationships",
             description: "Entity relationship management and graph queries",
           },
+          {
+            name: "World Configuration",
+            description: "Master parameters for AI content generation",
+          },
         ],
         components: {
           securitySchemes: {
@@ -236,6 +241,7 @@ const app = new Elysia()
   .use(contentGenerationRoutes)
   .use(vectorSearchRoutes)
   .use(createSeedDataRoutes())
+  .use(worldConfigRoutes)
 
   // TEMPORARY: Debug endpoint to check paths
   .get("/api/admin/debug-paths", async () => {
