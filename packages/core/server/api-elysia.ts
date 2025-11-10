@@ -329,11 +329,10 @@ const app = new Elysia()
   // Serve built frontend assets (CSS, JS, images) - Bun-native
   .get("/assets/*", ({ params }) => {
     const filePath = path.join(ROOT_DIR, "dist", "assets", params["*"]);
-    const file = Bun.file(filePath);
-    // Return 404 if file doesn't exist (prevents Elysia HEAD request errors)
-    return file.size === 0 && !fs.existsSync(filePath)
-      ? new Response("Not Found", { status: 404 })
-      : file;
+    if (!fs.existsSync(filePath)) {
+      return new Response("Not Found", { status: 404 });
+    }
+    return Bun.file(filePath);
   })
 
   // SPA fallback - serve index.html for all non-API routes
