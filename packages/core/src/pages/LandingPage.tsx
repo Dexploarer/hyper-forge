@@ -9,7 +9,6 @@ import {
   Book, 
   Music,
   Sparkles,
-  FileText,
   Twitter,
   MessageCircle,
   Github

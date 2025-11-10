@@ -10,15 +10,15 @@ import { TypedEventEmitter } from '../../utils/TypedEventEmitter'
 import { apiFetch } from '@/utils/api'
 
 // Define pipeline types matching backend
-export interface PipelineStage {
+export interface APIPipelineStage {
   status: 'pending' | 'processing' | 'completed' | 'failed'
   progress: number
 }
 
 export interface PipelineStages {
-  generation: PipelineStage
-  retexturing: PipelineStage
-  sprites: PipelineStage
+  generation: APIPipelineStage
+  retexturing: APIPipelineStage
+  sprites: APIPipelineStage
 }
 
 export interface PipelineResults {
@@ -39,7 +39,7 @@ export interface PipelineResults {
   }
 }
 
-export interface PipelineResult {
+export interface APIPipelineResult {
   id: string
   status: 'initializing' | 'processing' | 'completed' | 'failed'
   progress: number
@@ -62,8 +62,8 @@ export interface GenerationAPIEvents {
   'pipeline:started': { pipelineId: string }
   'progress': { pipelineId: string; progress: number }
   'statusChange': { pipelineId: string; status: string }
-  'update': PipelineResult
-  'pipeline:completed': PipelineResult
+  'update': APIPipelineResult
+  'pipeline:completed': APIPipelineResult
   'pipeline:failed': { pipelineId: string; error?: string }
   'error': { pipelineId: string; error: Error | string | { message: string; code?: string } }
 }
@@ -75,7 +75,7 @@ export class GenerationAPIClient extends TypedEventEmitter<GenerationAPIEvents> 
   private apiUrl: string
   private pollInterval: number = 2000 // Poll every 2 seconds
   private pipelineConfigs: Map<string, GenerationConfig> = new Map()
-  private activePipelines: Map<string, PipelineResult> = new Map()
+  private activePipelines: Map<string, APIPipelineResult> = new Map()
   
   constructor(apiUrl?: string) {
     super()
@@ -108,7 +108,7 @@ export class GenerationAPIClient extends TypedEventEmitter<GenerationAPIEvents> 
     this.pipelineConfigs.set(result.pipelineId, config)
     
     // Create and store initial pipeline result
-    const pipelineResult: PipelineResult = {
+    const pipelineResult: APIPipelineResult = {
       id: result.pipelineId,
       status: 'initializing',
       progress: 0,
@@ -135,7 +135,7 @@ export class GenerationAPIClient extends TypedEventEmitter<GenerationAPIEvents> 
   /**
    * Fetch pipeline status from API
    */
-  async fetchPipelineStatus(pipelineId: string): Promise<PipelineResult> {
+  async fetchPipelineStatus(pipelineId: string): Promise<APIPipelineResult> {
     const response = await apiFetch(`${this.apiUrl}/generation/pipeline/${pipelineId}`, { timeoutMs: 15000 })
     
     if (!response.ok) {
@@ -226,14 +226,14 @@ export class GenerationAPIClient extends TypedEventEmitter<GenerationAPIEvents> 
   /**
    * Get all active pipelines
    */
-  getActivePipelines(): PipelineResult[] {
+  getActivePipelines(): APIPipelineResult[] {
     return Array.from(this.activePipelines.values())
   }
   
   /**
    * Get cached pipeline status (synchronous)
    */
-  getPipelineStatus(pipelineId: string): PipelineResult | undefined {
+  getPipelineStatus(pipelineId: string): APIPipelineResult | undefined {
     return this.activePipelines.get(pipelineId)
   }
   

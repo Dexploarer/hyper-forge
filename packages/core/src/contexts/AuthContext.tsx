@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { usePrivy, useLogin } from '@privy-io/react-auth'
 import { ProfileCompletionModal } from '../components/auth/ProfileCompletionModal'
 import type { User } from '@/services/api/UsersAPIClient'

@@ -4,7 +4,6 @@
  */
 
 import { AssetService, Asset, MaterialPreset } from './AssetService'
-import { useRequestCache } from '@/hooks/useRequestCache'
 
 /**
  * Wrapper class that adds caching to AssetService

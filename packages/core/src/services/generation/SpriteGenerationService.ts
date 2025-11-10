@@ -7,6 +7,8 @@ import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
+import type { SpriteResult } from '@/types/generation'
+
 export interface SpriteGenerationOptions {
   modelPath: string
   outputSize?: number
@@ -15,12 +17,8 @@ export interface SpriteGenerationOptions {
   padding?: number
 }
 
-export interface SpriteResult {
-  angle: string
-  imageUrl: string
-  width: number
-  height: number
-}
+// Re-export SpriteResult from types for convenience
+export type { SpriteResult }
 
 export class SpriteGenerationService {
   private renderer: THREE.WebGLRenderer

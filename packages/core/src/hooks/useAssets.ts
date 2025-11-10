@@ -9,24 +9,20 @@ import { useApp } from '../contexts/AppContext'
 
 import { AssetService, Asset, MaterialPreset, RetextureRequest, RetextureResponse } from '@/services/api/AssetService'
 import { CachedAssetService } from '@/services/api/CachedAssetService'
-import { SkeletonList } from '@/components/common'
 
 export const useAssets = () => {
   const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const { showNotification } = useApp()
 
   const fetchAssets = useCallback(async () => {
     try {
       setLoading(true)
-      setError(null)
       // Use cached service to prevent duplicate requests
       const data = await CachedAssetService.listAssets()
       setAssets(data)
     } catch (_err) {
       const errorMessage = _err instanceof Error ? _err.message : 'Failed to load assets'
-      setError(errorMessage)
       showNotification(errorMessage, 'error')
     } finally {
       setLoading(false)

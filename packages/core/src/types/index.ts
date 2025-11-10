@@ -182,6 +182,13 @@ export * from "./three";
 export * from "./common";
 export * from "./generation";
 export * from "./hand-rigging";
+export * from "./content";
+export * from "./content-models";
+export * from "./audio";
+export * from "./playtester";
+export * from "./fitting";
+export * from "./service-types";
+export * from "./NormalizationConventions";
 
 // Explicitly re-export GLTFAnimation, GLTFNode, and GLTFSkin as types for isolatedModules compatibility
 export type { GLTFAnimation, GLTFNode, GLTFSkin } from "./gltf";

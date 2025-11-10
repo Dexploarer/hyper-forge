@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
 import { CommandPalette, CommandPaletteItem } from '@/components/common'
 import { useNavigation } from '@/hooks/useNavigation'
 import { NAVIGATION_VIEWS } from '@/constants'
@@ -10,8 +10,7 @@ import {
   Shield,
   Hand,
   Play,
-  Settings,
-  Users
+  Settings
 } from 'lucide-react'
 
 interface CommandPaletteContextValue {
@@ -27,7 +26,7 @@ interface CommandPaletteContextValue {
 
 const CommandPaletteContext = createContext<CommandPaletteContextValue | null>(null)
 
-export const CommandPaletteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const CommandPaletteProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [commands, setCommands] = useState<CommandPaletteItem[]>([])
   const { navigateTo } = useNavigation()

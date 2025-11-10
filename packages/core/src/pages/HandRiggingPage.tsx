@@ -41,7 +41,6 @@ export function HandRiggingPage() {
     modelInfo,
     riggingResult,
     debugImages,
-    showDebugImages,
     useSimpleMode,
     showExportModal,
     setModelUrl,
