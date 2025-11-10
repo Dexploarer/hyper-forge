@@ -1,15 +1,15 @@
-import React, { useEffect, useRef } from 'react'
-import { X, ChevronUp, ChevronDown } from 'lucide-react'
-import { cn } from '@/styles'
+import React, { useEffect, useRef } from "react";
+import { X, ChevronUp, ChevronDown } from "lucide-react";
+import { cn } from "@/styles";
 
 export interface TrayProps {
-  open: boolean
-  onClose: () => void
-  children: React.ReactNode
-  title?: string
-  className?: string
-  defaultHeight?: 'sm' | 'md' | 'lg'
-  resizable?: boolean
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  title?: string;
+  className?: string;
+  defaultHeight?: "sm" | "md" | "lg";
+  resizable?: boolean;
 }
 
 const Tray: React.FC<TrayProps> = ({
@@ -18,72 +18,72 @@ const Tray: React.FC<TrayProps> = ({
   children,
   title,
   className,
-  defaultHeight = 'md',
-  resizable = true
+  defaultHeight = "md",
+  resizable = true,
 }) => {
-  const trayRef = useRef<HTMLDivElement>(null)
-  const [height, setHeight] = React.useState<'sm' | 'md' | 'lg'>(defaultHeight)
-  const [isDragging, setIsDragging] = React.useState(false)
-  const dragStartY = useRef<number>(0)
-  const dragStartHeight = useRef<number>(0)
+  const trayRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = React.useState<"sm" | "md" | "lg">(defaultHeight);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const dragStartY = useRef<number>(0);
+  const dragStartHeight = useRef<number>(0);
 
   const heights = {
-    sm: 'h-64',
-    md: 'h-96',
-    lg: 'h-[32rem]'
-  }
+    sm: "h-64",
+    md: "h-96",
+    lg: "h-[32rem]",
+  };
 
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging || !trayRef.current) return
+      if (!isDragging || !trayRef.current) return;
 
-      const deltaY = dragStartY.current - e.clientY // Inverted because we drag up
-      const newHeight = dragStartHeight.current + deltaY
-      const viewportHeight = window.innerHeight
+      const deltaY = dragStartY.current - e.clientY; // Inverted because we drag up
+      const newHeight = dragStartHeight.current + deltaY;
+      const viewportHeight = window.innerHeight;
 
       // Convert to height category
       if (newHeight < viewportHeight * 0.25) {
-        setHeight('sm')
+        setHeight("sm");
       } else if (newHeight < viewportHeight * 0.5) {
-        setHeight('md')
+        setHeight("md");
       } else {
-        setHeight('lg')
+        setHeight("lg");
       }
-    }
+    };
 
     const handleMouseUp = () => {
-      setIsDragging(false)
-    }
+      setIsDragging(false);
+    };
 
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
       return () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
-      }
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
     }
-  }, [isDragging, open])
+  }, [isDragging, open]);
 
   const handleDragStart = (e: React.MouseEvent) => {
-    if (!resizable) return
-    setIsDragging(true)
-    dragStartY.current = e.clientY
-    const currentHeight = trayRef.current?.offsetHeight || 0
-    dragStartHeight.current = currentHeight
-  }
+    if (!resizable) return;
+    setIsDragging(true);
+    dragStartY.current = e.clientY;
+    const currentHeight = trayRef.current?.offsetHeight || 0;
+    dragStartHeight.current = currentHeight;
+  };
 
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <>
       {/* Backdrop */}
       <div
         className={cn(
-          'fixed inset-0 z-[90] bg-black/30 backdrop-blur-sm transition-opacity duration-300',
-          open ? 'opacity-100' : 'opacity-0'
+          "fixed inset-0 z-[90] bg-black/60 transition-opacity duration-300",
+          open ? "opacity-100" : "opacity-0",
         )}
         onClick={onClose}
       />
@@ -92,16 +92,16 @@ const Tray: React.FC<TrayProps> = ({
       <div
         ref={trayRef}
         className={cn(
-          'fixed bottom-0 left-0 right-0 z-[91]',
-          'bg-bg-secondary border-t border-border-primary shadow-2xl',
-          'transition-transform duration-300 ease-out',
-          open ? 'translate-y-0' : 'translate-y-full',
+          "fixed bottom-0 left-0 right-0 z-[91]",
+          "bg-bg-secondary border-t border-border-primary shadow-2xl",
+          "transition-transform duration-300 ease-out",
+          open ? "translate-y-0" : "translate-y-full",
           heights[height],
-          className
+          className,
         )}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={title ? 'tray-title' : undefined}
+        aria-labelledby={title ? "tray-title" : undefined}
       >
         {/* Resize Handle */}
         {resizable && (
@@ -116,7 +116,10 @@ const Tray: React.FC<TrayProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border-primary">
           {title && (
-            <h2 id="tray-title" className="text-lg font-semibold text-text-primary">
+            <h2
+              id="tray-title"
+              className="text-lg font-semibold text-text-primary"
+            >
               {title}
             </h2>
           )}
@@ -124,13 +127,14 @@ const Tray: React.FC<TrayProps> = ({
             {resizable && (
               <button
                 onClick={() => {
-                  const nextHeight = height === 'sm' ? 'md' : height === 'md' ? 'lg' : 'sm'
-                  setHeight(nextHeight)
+                  const nextHeight =
+                    height === "sm" ? "md" : height === "md" ? "lg" : "sm";
+                  setHeight(nextHeight);
                 }}
                 className="p-1.5 rounded-lg hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors"
                 aria-label="Toggle tray size"
               >
-                {height === 'lg' ? (
+                {height === "lg" ? (
                   <ChevronDown className="w-5 h-5" />
                 ) : (
                   <ChevronUp className="w-5 h-5" />
@@ -148,13 +152,10 @@ const Tray: React.FC<TrayProps> = ({
         </div>
 
         {/* Content */}
-        <div className="h-[calc(100%-4rem)] overflow-y-auto">
-          {children}
-        </div>
+        <div className="h-[calc(100%-4rem)] overflow-y-auto">{children}</div>
       </div>
     </>
-  )
-}
+  );
+};
 
-export { Tray }
-
+export { Tray };

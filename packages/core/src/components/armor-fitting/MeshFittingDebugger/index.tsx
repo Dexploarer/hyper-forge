@@ -417,10 +417,10 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
     }
 
     return (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm pt-16">
+        <div className="fixed inset-0 z-40 flex items-center justify-center solid-overlay  pt-16">
             <div className="relative w-[90vw] h-[85vh] max-w-[1600px] bg-bg-primary rounded-2xl shadow-2xl flex overflow-hidden">
                 {/* Header */}
-                <div className="absolute top-0 left-0 right-0 h-16 bg-bg-secondary/80 backdrop-blur-sm border-b border-border-primary flex items-center justify-between px-6 z-20">
+                <div className="absolute top-0 left-0 right-0 h-16 bg-bg-secondary/80  border-b border-border-primary flex items-center justify-between px-6 z-20">
                     <h2 className="text-xl font-semibold text-text-primary">Mesh Fitting Debugger</h2>
                     
                     {/* View Mode Selection - Centered */}
@@ -471,7 +471,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
                 {/* Main Content Area */}
                 <div className="flex-1 flex mt-16">
                     {/* Left Panel - Asset Selection & Controls */}
-                    <div className="w-80 bg-bg-secondary/50 backdrop-blur-sm border-r border-white/10 p-6 overflow-y-auto custom-scrollbar">
+                    <div className="w-80 bg-bg-secondary/50  border-r border-white/10 p-6 overflow-y-auto custom-scrollbar">
                         <div className="space-y-6">
                             {/* Model Selection - Only show for avatar/armor and helmet modes */}
                             {(viewMode === 'avatarArmor' || viewMode === 'helmetFitting') && (
@@ -1067,7 +1067,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
 
                         {/* Wireframe Indicator */}
                         {showWireframe && (
-                            <div className="absolute top-4 left-4 bg-bg-primary/80 backdrop-blur-sm rounded-lg px-3 py-1.5 border border-white/10 flex items-center gap-2">
+                            <div className="absolute top-4 left-4 bg-bg-primary/80  rounded-lg px-3 py-1.5 border border-white/10 flex items-center gap-2">
                                 <Grid3x3 className="w-4 h-4 text-primary" />
                                 <span className="text-xs text-text-secondary">Wireframe</span>
                             </div>
@@ -1347,7 +1347,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
                                 disabled={isProcessing}
                                 className={cn(
                                     "px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2.5",
-                                    "bg-bg-primary/80 backdrop-blur-sm border border-white/10 text-text-primary",
+                                    "bg-bg-primary/80  border border-white/10 text-text-primary",
                                     "hover:bg-bg-secondary hover:border-white/20 hover:scale-105",
                                     "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 )}

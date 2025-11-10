@@ -1,33 +1,43 @@
-import { Star, X, CheckCircle, Circle } from 'lucide-react'
-import React, { useState, useRef, useEffect } from 'react'
-import type { LucideIcon } from 'lucide-react'
+import { Star, X, CheckCircle, Circle } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import type { LucideIcon } from "lucide-react";
 
-import { AssetService } from '@/services/api/AssetService'
-import { useAssetsStore } from '@/store'
-import { useApp } from '@/contexts/AppContext'
+import { AssetService } from "@/services/api/AssetService";
+import { useAssetsStore } from "@/store";
+import { useApp } from "@/contexts/AppContext";
 
 interface BulkActionsBarProps {
-  onActionComplete?: () => void
-  variant?: 'floating' | 'tray'
+  onActionComplete?: () => void;
+  variant?: "floating" | "tray";
 }
 
-type AssetStatus = 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived'
+type AssetStatus =
+  | "draft"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "approved"
+  | "published"
+  | "archived";
 
 interface StatusOption {
-  value: AssetStatus
-  label: string
-  icon: LucideIcon
+  value: AssetStatus;
+  label: string;
+  icon: LucideIcon;
 }
 
-export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete, variant = 'floating' }) => {
-  const { selectedAssetIds, clearSelection } = useAssetsStore()
-  const { showNotification } = useApp()
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [showStatusMenu, setShowStatusMenu] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
-  const statusMenuRef = useRef<HTMLDivElement>(null)
+export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
+  onActionComplete,
+  variant = "floating",
+}) => {
+  const { selectedAssetIds, clearSelection } = useAssetsStore();
+  const { showNotification } = useApp();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
 
-  const selectedCount = selectedAssetIds.size
+  const selectedCount = selectedAssetIds.size;
 
   // Close status menu when clicking outside
   useEffect(() => {
@@ -38,94 +48,97 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
         menuRef.current &&
         !menuRef.current.contains(event.target as Node)
       ) {
-        setShowStatusMenu(false)
+        setShowStatusMenu(false);
       }
-    }
+    };
 
     if (showStatusMenu) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [showStatusMenu])
+  }, [showStatusMenu]);
 
   // Keyboard navigation for status menu
   useEffect(() => {
-    if (!showStatusMenu) return
+    if (!showStatusMenu) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setShowStatusMenu(false)
-        menuRef.current?.querySelector('button')?.focus()
+      if (event.key === "Escape") {
+        setShowStatusMenu(false);
+        menuRef.current?.querySelector("button")?.focus();
       }
-    }
+    };
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [showStatusMenu])
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showStatusMenu]);
 
   if (selectedCount === 0) {
-    return null
+    return null;
   }
 
   const handleBulkFavorite = async (isFavorite: boolean): Promise<void> => {
-    setIsProcessing(true)
+    setIsProcessing(true);
     try {
-      await AssetService.bulkUpdateAssets(Array.from(selectedAssetIds), { isFavorite })
+      await AssetService.bulkUpdateAssets(Array.from(selectedAssetIds), {
+        isFavorite,
+      });
       showNotification(
-        isFavorite 
-          ? `Added ${selectedCount} asset${selectedCount > 1 ? 's' : ''} to favorites`
-          : `Removed ${selectedCount} asset${selectedCount > 1 ? 's' : ''} from favorites`,
-        'success'
-      )
-      onActionComplete?.()
-      clearSelection()
+        isFavorite
+          ? `Added ${selectedCount} asset${selectedCount > 1 ? "s" : ""} to favorites`
+          : `Removed ${selectedCount} asset${selectedCount > 1 ? "s" : ""} from favorites`,
+        "success",
+      );
+      onActionComplete?.();
+      clearSelection();
     } catch (error) {
-      console.error('Failed to update favorites:', error)
+      console.error("Failed to update favorites:", error);
       showNotification(
-        'Failed to update favorites. Please try again.',
-        'error'
-      )
+        "Failed to update favorites. Please try again.",
+        "error",
+      );
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const handleBulkStatusChange = async (status: AssetStatus): Promise<void> => {
-    setIsProcessing(true)
-    setShowStatusMenu(false)
+    setIsProcessing(true);
+    setShowStatusMenu(false);
     try {
-      await AssetService.bulkUpdateAssets(Array.from(selectedAssetIds), { status })
+      await AssetService.bulkUpdateAssets(Array.from(selectedAssetIds), {
+        status,
+      });
       showNotification(
-        `Updated ${selectedCount} asset${selectedCount > 1 ? 's' : ''} status to ${status}`,
-        'success'
-      )
-      onActionComplete?.()
-      clearSelection()
+        `Updated ${selectedCount} asset${selectedCount > 1 ? "s" : ""} status to ${status}`,
+        "success",
+      );
+      onActionComplete?.();
+      clearSelection();
     } catch (error) {
-      console.error('Failed to update status:', error)
-      showNotification(
-        'Failed to update status. Please try again.',
-        'error'
-      )
+      console.error("Failed to update status:", error);
+      showNotification("Failed to update status. Please try again.", "error");
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
 
   const statusOptions: StatusOption[] = [
-    { value: 'draft', label: 'Draft', icon: Circle },
-    { value: 'approved', label: 'Approved', icon: CheckCircle },
-    { value: 'completed', label: 'Completed', icon: CheckCircle },
-    { value: 'archived', label: 'Archived', icon: Circle },
-  ] as const
+    { value: "draft", label: "Draft", icon: Circle },
+    { value: "approved", label: "Approved", icon: CheckCircle },
+    { value: "completed", label: "Completed", icon: CheckCircle },
+    { value: "archived", label: "Archived", icon: Circle },
+  ] as const;
 
-  const containerClasses = variant === 'tray' 
-    ? 'w-full'
-    : 'fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-scale-in'
+  const containerClasses =
+    variant === "tray"
+      ? "w-full"
+      : "fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-scale-in";
 
   return (
     <div className={containerClasses}>
-      <div className="bg-gradient-to-br from-bg-secondary to-bg-tertiary border border-border-primary rounded-xl shadow-2xl backdrop-blur-md">
+      <div className="solid-panel border border-border-primary rounded-xl shadow-2xl">
         <div className="flex items-center gap-2 px-4 py-3">
           {/* Selection count */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-primary bg-opacity-10 rounded-lg border border-primary border-opacity-30">
@@ -190,12 +203,12 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
                   {/* Status menu */}
                   <div
                     ref={statusMenuRef}
-                    className="absolute bottom-full left-0 mb-2 bg-bg-secondary/95 backdrop-blur-md border border-border-primary rounded-lg shadow-xl overflow-hidden z-[60] min-w-[140px] [&_*]:drop-shadow-sm"
+                    className="absolute bottom-full left-0 mb-2 solid-panel border border-border-primary rounded-lg shadow-xl overflow-hidden z-[60] min-w-[140px] [&_*]:drop-shadow-sm"
                     role="menu"
                     aria-label="Status options"
                   >
                     {statusOptions.map((option, index) => {
-                      const Icon = option.icon
+                      const Icon = option.icon;
                       return (
                         <button
                           key={option.value}
@@ -208,7 +221,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
                           <Icon size={12} />
                           <span>{option.label}</span>
                         </button>
-                      )
+                      );
                     })}
                   </div>
                 </>
@@ -234,11 +247,11 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({ onActionComplete
 
         {/* Processing indicator */}
         {isProcessing && (
-          <div className="absolute inset-0 bg-bg-primary bg-opacity-50 backdrop-blur-sm rounded-xl flex items-center justify-center">
+          <div className="absolute inset-0 solid-surface rounded-xl flex items-center justify-center">
             <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent" />
           </div>
         )}
       </div>
     </div>
-  )
-}
+  );
+};

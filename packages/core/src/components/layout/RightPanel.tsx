@@ -1,19 +1,19 @@
-import React, { useState } from 'react'
-import { ChevronRight, ChevronLeft, Info } from 'lucide-react'
-import { NavigationView } from '@/types'
-import { cn } from '@/styles'
+import React, { useState } from "react";
+import { ChevronRight, ChevronLeft, Info } from "lucide-react";
+import { NavigationView } from "@/types";
+import { cn } from "@/styles";
 
 interface RightPanelProps {
-  currentView: NavigationView
-  children?: React.ReactNode
+  currentView: NavigationView;
+  children?: React.ReactNode;
 }
 
 export function RightPanel({ currentView, children }: RightPanelProps) {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   if (isCollapsed) {
     return (
-      <div className="w-12 bg-bg-secondary/95 backdrop-blur-sm border-l border-white/10 flex items-start justify-center pt-4">
+      <div className="w-12 solid-surface border-l border-white/10 flex items-start justify-center pt-4">
         <button
           onClick={() => setIsCollapsed(false)}
           className="p-2 hover:bg-white/5 rounded-lg transition-colors text-text-tertiary hover:text-text-primary"
@@ -22,11 +22,11 @@ export function RightPanel({ currentView, children }: RightPanelProps) {
           <ChevronLeft className="w-5 h-5" />
         </button>
       </div>
-    )
+    );
   }
 
   return (
-    <aside className="w-80 bg-bg-secondary/95 backdrop-blur-sm border-l border-white/10 flex flex-col">
+    <aside className="w-80 solid-surface border-l border-white/10 flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -55,5 +55,5 @@ export function RightPanel({ currentView, children }: RightPanelProps) {
         )}
       </div>
     </aside>
-  )
+  );
 }

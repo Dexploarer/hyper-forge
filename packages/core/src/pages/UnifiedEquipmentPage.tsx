@@ -211,7 +211,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-3 z-10 max-w-[90%]">
                       <button
                         onClick={() => resetScene(viewerRef)}
-                        className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2.5 bg-bg-primary/80 backdrop-blur-sm border border-white/10 text-text-primary hover:bg-bg-secondary hover:border-white/20 hover:scale-105"
+                        className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2.5 bg-bg-primary/80  border border-white/10 text-text-primary hover:bg-bg-secondary hover:border-white/20 hover:scale-105"
                       >
                         <RotateCcw className="w-4 h-4" />
                         <span>Reset</span>

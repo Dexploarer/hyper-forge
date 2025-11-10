@@ -1,129 +1,141 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Search, Command, ArrowRight, X } from 'lucide-react'
-import { cn, focusManager } from '@/styles'
+import React, { useState, useEffect, useRef } from "react";
+import { Search, Command, ArrowRight, X } from "lucide-react";
+import { cn, focusManager } from "@/styles";
 
 export interface CommandPaletteItem {
-  id: string
-  label: string
-  description?: string
-  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  keywords?: string[]
-  category?: string
-  action: () => void
-  shortcut?: string
+  id: string;
+  label: string;
+  description?: string;
+  icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  keywords?: string[];
+  category?: string;
+  action: () => void;
+  shortcut?: string;
 }
 
 export interface CommandPaletteProps {
-  items: CommandPaletteItem[]
-  open: boolean
-  onClose: () => void
-  placeholder?: string
+  items: CommandPaletteItem[];
+  open: boolean;
+  onClose: () => void;
+  placeholder?: string;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   items,
   open,
   onClose,
-  placeholder = 'Type a command or search...'
+  placeholder = "Type a command or search...",
 }) => {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedIndex, setSelectedIndex] = useState(0)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Filter items based on search query
   const filteredItems = React.useMemo(() => {
-    if (!searchQuery.trim()) return items
+    if (!searchQuery.trim()) return items;
 
-    const query = searchQuery.toLowerCase()
-    return items.filter(item => {
-      const matchesLabel = item.label.toLowerCase().includes(query)
-      const matchesDescription = item.description?.toLowerCase().includes(query)
-      const matchesKeywords = item.keywords?.some(kw => kw.toLowerCase().includes(query))
-      const matchesCategory = item.category?.toLowerCase().includes(query)
+    const query = searchQuery.toLowerCase();
+    return items.filter((item) => {
+      const matchesLabel = item.label.toLowerCase().includes(query);
+      const matchesDescription = item.description
+        ?.toLowerCase()
+        .includes(query);
+      const matchesKeywords = item.keywords?.some((kw) =>
+        kw.toLowerCase().includes(query),
+      );
+      const matchesCategory = item.category?.toLowerCase().includes(query);
 
-      return matchesLabel || matchesDescription || matchesKeywords || matchesCategory
-    })
-  }, [items, searchQuery])
+      return (
+        matchesLabel || matchesDescription || matchesKeywords || matchesCategory
+      );
+    });
+  }, [items, searchQuery]);
 
   // Group items by category
   const groupedItems = React.useMemo(() => {
-    const groups: Record<string, CommandPaletteItem[]> = {}
-    filteredItems.forEach(item => {
-      const category = item.category || 'Other'
+    const groups: Record<string, CommandPaletteItem[]> = {};
+    filteredItems.forEach((item) => {
+      const category = item.category || "Other";
       if (!groups[category]) {
-        groups[category] = []
+        groups[category] = [];
       }
-      groups[category].push(item)
-    })
-    return groups
-  }, [filteredItems])
+      groups[category].push(item);
+    });
+    return groups;
+  }, [filteredItems]);
 
   // Focus input when opened
   useEffect(() => {
     if (open) {
       setTimeout(() => {
-        inputRef.current?.focus()
-        const cleanup = listRef.current ? focusManager.trapFocus(listRef.current) : undefined
-        return cleanup
-      }, 0)
+        inputRef.current?.focus();
+        const cleanup = listRef.current
+          ? focusManager.trapFocus(listRef.current)
+          : undefined;
+        return cleanup;
+      }, 0);
     } else {
-      setSearchQuery('')
-      setSelectedIndex(0)
+      setSearchQuery("");
+      setSelectedIndex(0);
     }
-  }, [open])
+  }, [open]);
 
   // Handle keyboard navigation
   useEffect(() => {
-    if (!open) return
+    if (!open) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        setSelectedIndex(prev => Math.min(prev + 1, filteredItems.length - 1))
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        setSelectedIndex(prev => Math.max(prev - 1, 0))
-      } else if (e.key === 'Enter' && filteredItems[selectedIndex]) {
-        e.preventDefault()
-        filteredItems[selectedIndex].action()
-        onClose()
-      } else if (e.key === 'Escape') {
-        e.preventDefault()
-        onClose()
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          Math.min(prev + 1, filteredItems.length - 1),
+        );
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((prev) => Math.max(prev - 1, 0));
+      } else if (e.key === "Enter" && filteredItems[selectedIndex]) {
+        e.preventDefault();
+        filteredItems[selectedIndex].action();
+        onClose();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
       }
-    }
+    };
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, selectedIndex, filteredItems, onClose])
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, selectedIndex, filteredItems, onClose]);
 
   // Scroll selected item into view
   useEffect(() => {
     if (listRef.current && filteredItems.length > 0) {
-      const selectedElement = listRef.current.querySelector(`[data-index="${selectedIndex}"]`)
-      selectedElement?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      const selectedElement = listRef.current.querySelector(
+        `[data-index="${selectedIndex}"]`,
+      );
+      selectedElement?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
-  }, [selectedIndex, filteredItems.length])
+  }, [selectedIndex, filteredItems.length]);
 
-  if (!open) return null
+  if (!open) return null;
 
   return (
     <div
       className="fixed inset-0 z-[200] flex items-start justify-center pt-[20vh]"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose()
+          onClose();
         }
       }}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/75" />
 
       {/* Palette */}
       <div
         ref={listRef}
-        className="relative z-[201] w-full max-w-2xl mx-4 bg-bg-secondary/95 backdrop-blur-md border border-border-primary rounded-xl shadow-2xl overflow-hidden [&_*]:drop-shadow-sm"
+        className="relative z-[201] w-full max-w-2xl mx-4 solid-overlay rounded-xl shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"
@@ -136,8 +148,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => {
-              setSearchQuery(e.target.value)
-              setSelectedIndex(0)
+              setSearchQuery(e.target.value);
+              setSelectedIndex(0);
             }}
             placeholder={placeholder}
             className="flex-1 bg-transparent text-text-primary placeholder-text-tertiary outline-none text-lg"
@@ -174,33 +186,39 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     </div>
                   )}
                   {categoryItems.map((item, index) => {
-                    const globalIndex = filteredItems.indexOf(item)
-                    const Icon = item.icon
-                    const isSelected = globalIndex === selectedIndex
+                    const globalIndex = filteredItems.indexOf(item);
+                    const Icon = item.icon;
+                    const isSelected = globalIndex === selectedIndex;
 
                     return (
                       <button
                         key={item.id}
                         data-index={globalIndex}
                         onClick={() => {
-                          item.action()
-                          onClose()
+                          item.action();
+                          onClose();
                         }}
                         className={cn(
-                          'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left',
+                          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left",
                           isSelected
-                            ? 'bg-primary/20 border border-primary/30 text-primary'
-                            : 'hover:bg-bg-hover text-text-secondary hover:text-text-primary'
+                            ? "bg-primary/20 border border-primary/30 text-primary"
+                            : "hover:bg-bg-hover text-text-secondary hover:text-text-primary",
                         )}
                       >
                         {Icon && (
-                          <Icon className={cn(
-                            'w-5 h-5 flex-shrink-0',
-                            isSelected ? 'text-primary' : 'text-text-tertiary'
-                          )} />
+                          <Icon
+                            className={cn(
+                              "w-5 h-5 flex-shrink-0",
+                              isSelected
+                                ? "text-primary"
+                                : "text-text-tertiary",
+                            )}
+                          />
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{item.label}</div>
+                          <div className="font-medium truncate">
+                            {item.label}
+                          </div>
                           {item.description && (
                             <div className="text-xs text-text-tertiary truncate">
                               {item.description}
@@ -216,7 +234,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                           <ArrowRight className="w-4 h-4 text-primary" />
                         )}
                       </button>
-                    )
+                    );
                   })}
                 </div>
               ))}
@@ -225,6 +243,5 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
       </div>
     </div>
-  )
-}
-
+  );
+};

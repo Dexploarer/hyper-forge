@@ -226,7 +226,7 @@ export const ChatGenerationPage: React.FC<ChatGenerationPageProps> = ({
                   onClick={() => handleCategorySelect(category.id)}
                   className={cn(
                     'group relative p-8 rounded-2xl border-2 transition-all duration-300',
-                    'bg-bg-secondary/50 backdrop-blur-sm',
+                    'bg-bg-secondary/50 ',
                     'border-border-primary hover:border-primary/50',
                     'hover:scale-105 hover:shadow-xl',
                     'flex flex-col items-center text-center'
@@ -319,7 +319,7 @@ export const ChatGenerationPage: React.FC<ChatGenerationPageProps> = ({
                     onClick={() => handleToolSelect(tool.id)}
                     className={cn(
                       'group relative p-6 rounded-xl border-2 transition-all duration-300',
-                      'bg-bg-secondary/50 backdrop-blur-sm',
+                      'bg-bg-secondary/50 ',
                       'border-border-primary hover:border-primary/50',
                       'hover:scale-105 hover:shadow-lg',
                       'text-left'

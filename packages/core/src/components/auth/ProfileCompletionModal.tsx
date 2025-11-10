@@ -52,7 +52,7 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 ">
       <div className="w-full max-w-md mx-4 bg-gradient-to-br from-bg-primary to-bg-secondary border border-border-primary rounded-2xl shadow-2xl">
         {/* Header */}
         <div className="p-6 border-b border-border-primary">

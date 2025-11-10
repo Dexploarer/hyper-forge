@@ -13,19 +13,19 @@ import {
   Edit3,
   Activity,
   Grid3x3,
-  GitBranch
-} from 'lucide-react'
-import React from 'react'
+  GitBranch,
+} from "lucide-react";
+import React from "react";
 
-import { useAssetsStore } from '../../store'
+import { useAssetsStore } from "../../store";
 
 interface ViewerControlsProps {
-  onViewerReset: () => void
-  onDownload: () => void
-  onShowVariantTree?: () => void
-  assetType?: string
-  canRetexture?: boolean
-  hasRigging?: boolean
+  onViewerReset: () => void;
+  onDownload: () => void;
+  onShowVariantTree?: () => void;
+  assetType?: string;
+  canRetexture?: boolean;
+  hasRigging?: boolean;
 }
 
 const ViewerControls: React.FC<ViewerControlsProps> = ({
@@ -34,7 +34,7 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
   onShowVariantTree,
   assetType,
   canRetexture = true,
-  hasRigging = false
+  hasRigging = false,
 }) => {
   // Get state and actions from store
   const {
@@ -51,8 +51,8 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
     setShowRetextureModal,
     setShowRegenerateModal,
     setShowEditModal,
-    setShowSpriteModal
-  } = useAssetsStore()
+    setShowSpriteModal,
+  } = useAssetsStore();
 
   return (
     <>
@@ -61,17 +61,17 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
         {canRetexture && (
           <button
             onClick={() => setShowRetextureModal(true)}
-            className="px-4 py-2 bg-primary bg-opacity-90 hover:bg-opacity-100 text-white rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2"
+            className="px-4 py-2 bg-primary hover:bg-[var(--color-primary-dark)] text-white rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2"
             title="Create texture variants"
           >
             <Palette size={16} />
             <span className="text-sm font-medium">Retexture</span>
           </button>
         )}
-        
+
         <button
           onClick={() => setShowRegenerateModal(true)}
-          className="px-4 py-2 bg-bg-secondary bg-opacity-90 hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
+          className="px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
           title="Regenerate model"
         >
           <RefreshCw size={16} />
@@ -80,7 +80,7 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
 
         <button
           onClick={() => setShowSpriteModal(true)}
-          className="px-4 py-2 bg-bg-secondary bg-opacity-90 hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
+          className="px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
           title="Generate sprite sheet"
         >
           <Grid3x3 size={16} />
@@ -90,7 +90,7 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
         {onShowVariantTree && (
           <button
             onClick={onShowVariantTree}
-            className="px-4 py-2 bg-bg-secondary bg-opacity-90 hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg backdrop-blur-sm transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
+            className="px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
             title="View variant relationship tree"
           >
             <GitBranch size={16} />
@@ -98,45 +98,48 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
           </button>
         )}
       </div>
-      
+
       {/* Top-right controls - View Options */}
       <div className="absolute top-4 right-4 flex gap-2 animate-fade-in">
         {/* Animation Toggle - Only for character assets with rigging */}
-        {assetType === 'character' && hasRigging && (
+        {assetType === "character" && hasRigging && (
           <button
             onClick={toggleAnimationView}
-            className={`group p-3 bg-bg-secondary bg-opacity-90 backdrop-blur-sm rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg ${
-              showAnimationView ? 'ring-2 ring-primary' : ''
+            className={`group p-3 bg-bg-secondary rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg ${
+              showAnimationView ? "ring-2 ring-primary" : ""
             }`}
             title={showAnimationView ? "View 3D Model" : "View Animations"}
           >
-            <Activity 
-              size={20} 
+            <Activity
+              size={20}
               className={`transition-colors ${
-                showAnimationView 
-                  ? 'text-primary' 
-                  : 'text-text-secondary group-hover:text-primary'
-              }`} 
+                showAnimationView
+                  ? "text-primary"
+                  : "text-text-secondary group-hover:text-primary"
+              }`}
             />
           </button>
         )}
-        
+
         {/* Edit Button */}
         <button
           onClick={() => setShowEditModal(true)}
-          className="group p-3 bg-bg-secondary bg-opacity-90 backdrop-blur-sm rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg"
+          className="group p-3 bg-bg-secondary rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg"
           title="Edit Asset"
         >
-          <Edit3 size={20} className="text-text-secondary group-hover:text-primary transition-colors" />
+          <Edit3
+            size={20}
+            className="text-text-secondary group-hover:text-primary transition-colors"
+          />
         </button>
 
-        <div className="flex bg-bg-secondary bg-opacity-90 backdrop-blur-sm rounded-lg shadow-lg p-1 border border-border-primary">
+        <div className="flex bg-bg-secondary rounded-lg shadow-lg p-1 border border-border-primary">
           <button
             onClick={toggleWireframe}
             className={`p-2 rounded transition-all duration-200 ${
-              isWireframe 
-                ? 'bg-primary bg-opacity-20 text-primary' 
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+              isWireframe
+                ? "bg-primary bg-opacity-20 text-primary"
+                : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
             }`}
             title="Toggle Wireframe (W)"
             aria-label="Toggle wireframe mode"
@@ -144,13 +147,13 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
           >
             {isWireframe ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
-          
+
           <button
             onClick={toggleGroundPlane}
             className={`p-2 rounded transition-all duration-200 ${
-              showGroundPlane 
-                ? 'bg-primary bg-opacity-20 text-primary' 
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+              showGroundPlane
+                ? "bg-primary bg-opacity-20 text-primary"
+                : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
             }`}
             title="Toggle Ground Plane (G)"
             aria-label="Toggle ground plane"
@@ -158,13 +161,13 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
           >
             <Grid size={18} />
           </button>
-          
+
           <button
             onClick={toggleBackground}
             className={`p-2 rounded transition-all duration-200 ${
-              isLightBackground 
-                ? 'bg-warning bg-opacity-20 text-warning' 
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+              isLightBackground
+                ? "bg-warning bg-opacity-20 text-warning"
+                : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
             }`}
             title="Toggle Background (B)"
             aria-label="Toggle background color"
@@ -173,8 +176,8 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
             {isLightBackground ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         </div>
-        
-        <div className="flex bg-bg-secondary bg-opacity-90 backdrop-blur-sm rounded-lg shadow-lg p-1 border border-border-primary">
+
+        <div className="flex bg-bg-secondary rounded-lg shadow-lg p-1 border border-border-primary">
           <button
             onClick={onViewerReset}
             className="p-2 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all duration-200"
@@ -183,7 +186,7 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
           >
             <RotateCw size={18} />
           </button>
-          
+
           <button
             onClick={onDownload}
             className="p-2 rounded text-text-secondary hover:text-text-primary hover:bg-bg-hover transition-all duration-200"
@@ -192,13 +195,13 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
           >
             <Camera size={18} />
           </button>
-          
+
           <button
             onClick={toggleDetailsPanel}
             className={`p-2 rounded transition-all duration-200 ${
-              showDetailsPanel 
-                ? 'bg-primary bg-opacity-20 text-primary' 
-                : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
+              showDetailsPanel
+                ? "bg-primary bg-opacity-20 text-primary"
+                : "text-text-secondary hover:text-text-primary hover:bg-bg-hover"
             }`}
             title="Toggle Details (D)"
             aria-label="Toggle details panel"
@@ -209,7 +212,7 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
         </div>
       </div>
     </>
-  )
-}
+  );
+};
 
-export default ViewerControls
+export default ViewerControls;

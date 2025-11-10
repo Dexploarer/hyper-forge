@@ -1,30 +1,33 @@
-import { Package, User, Home, Trees, Mountain, Sparkles } from 'lucide-react'
-import React, { useState } from 'react'
+import { Package, User, Home, Trees, Mountain, Sparkles } from "lucide-react";
+import React, { useState } from "react";
 
-type GenerationType = 'item' | 'avatar' | 'building' | 'environment' | 'prop'
+type GenerationType = "item" | "avatar" | "building" | "environment" | "prop";
 
 interface GenerationTypeSelectorProps {
-  onSelectType: (type: GenerationType) => void
-  onGenerateWorld?: () => void
+  onSelectType: (type: GenerationType) => void;
+  onGenerateWorld?: () => void;
 }
 
-export const GenerationTypeSelector: React.FC<GenerationTypeSelectorProps> = ({ onSelectType, onGenerateWorld }) => {
-  const [isGeneratingWorld, setIsGeneratingWorld] = useState(false)
+export const GenerationTypeSelector: React.FC<GenerationTypeSelectorProps> = ({
+  onSelectType,
+  onGenerateWorld,
+}) => {
+  const [isGeneratingWorld, setIsGeneratingWorld] = useState(false);
 
   const handleGenerateWorld = async () => {
     if (onGenerateWorld) {
-      setIsGeneratingWorld(true)
+      setIsGeneratingWorld(true);
       try {
-        await onGenerateWorld()
+        await onGenerateWorld();
       } finally {
-        setIsGeneratingWorld(false)
+        setIsGeneratingWorld(false);
       }
     }
-  }
+  };
 
   return (
     <div className="h-screen flex items-center justify-center bg-gradient-to-br from-bg-primary to-bg-secondary overflow-hidden p-4">
-      <div className="bg-bg-primary bg-opacity-50 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-border-primary max-w-5xl w-full animate-scale-in">
+      <div className="solid-panel rounded-2xl p-8 shadow-2xl border border-border-primary max-w-5xl w-full animate-scale-in">
         <h1 className="text-3xl font-bold text-text-primary text-center mb-2">
           What would you like to create?
         </h1>
@@ -35,13 +38,15 @@ export const GenerationTypeSelector: React.FC<GenerationTypeSelectorProps> = ({ 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           {/* Items Card */}
           <button
-            onClick={() => onSelectType('item')}
+            onClick={() => onSelectType("item")}
             className="group relative bg-bg-secondary hover:bg-bg-tertiary border border-border-primary hover:border-primary rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl"
           >
             <div className="flex flex-col items-center space-y-3">
-              <div 
+              <div
                 className="w-16 h-16 rounded-full flex items-center justify-center icon-bg-hover"
-                style={{ backgroundColor: `rgba(99, 102, 241, var(--icon-bg-opacity, 0.1))` }}
+                style={{
+                  backgroundColor: `rgba(99, 102, 241, var(--icon-bg-opacity, 0.1))`,
+                }}
               >
                 <Package size={32} className="text-primary" />
               </div>
@@ -55,17 +60,21 @@ export const GenerationTypeSelector: React.FC<GenerationTypeSelectorProps> = ({ 
 
           {/* Avatars Card */}
           <button
-            onClick={() => onSelectType('avatar')}
+            onClick={() => onSelectType("avatar")}
             className="group relative bg-bg-secondary hover:bg-bg-tertiary border border-border-primary hover:border-secondary rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl"
           >
             <div className="flex flex-col items-center space-y-3">
-              <div 
+              <div
                 className="w-16 h-16 rounded-full flex items-center justify-center transition-all group-hover:opacity-100"
-                style={{ backgroundColor: `rgba(139, 92, 246, var(--icon-bg-opacity, 0.1))` }}
+                style={{
+                  backgroundColor: `rgba(139, 92, 246, var(--icon-bg-opacity, 0.1))`,
+                }}
               >
                 <User size={32} className="text-secondary" />
               </div>
-              <h2 className="text-lg font-semibold text-text-primary">Avatars</h2>
+              <h2 className="text-lg font-semibold text-text-primary">
+                Avatars
+              </h2>
               <p className="text-xs text-text-secondary text-center">
                 Characters with auto-rigging support
               </p>
@@ -75,17 +84,24 @@ export const GenerationTypeSelector: React.FC<GenerationTypeSelectorProps> = ({ 
 
           {/* Buildings Card */}
           <button
-            onClick={() => onSelectType('building')}
+            onClick={() => onSelectType("building")}
             className="group relative bg-bg-secondary hover:bg-bg-tertiary border border-border-primary hover:border-amber-500 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl"
           >
             <div className="flex flex-col items-center space-y-3">
-              <div 
+              <div
                 className="w-16 h-16 rounded-full flex items-center justify-center transition-all group-hover:opacity-100"
-                style={{ backgroundColor: `rgba(245, 158, 11, var(--icon-bg-opacity, 0.1))` }}
+                style={{
+                  backgroundColor: `rgba(245, 158, 11, var(--icon-bg-opacity, 0.1))`,
+                }}
               >
-                <Home size={32} className="text-amber-600 dark:text-amber-500" />
+                <Home
+                  size={32}
+                  className="text-amber-600 dark:text-amber-500"
+                />
               </div>
-              <h2 className="text-lg font-semibold text-text-primary">Buildings</h2>
+              <h2 className="text-lg font-semibold text-text-primary">
+                Buildings
+              </h2>
               <p className="text-xs text-text-secondary text-center">
                 Structures, houses, and architecture
               </p>
@@ -95,17 +111,24 @@ export const GenerationTypeSelector: React.FC<GenerationTypeSelectorProps> = ({ 
 
           {/* Environment Card */}
           <button
-            onClick={() => onSelectType('environment')}
+            onClick={() => onSelectType("environment")}
             className="group relative bg-bg-secondary hover:bg-bg-tertiary border border-border-primary hover:border-green-500 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl"
           >
             <div className="flex flex-col items-center space-y-3">
-              <div 
+              <div
                 className="w-16 h-16 rounded-full flex items-center justify-center transition-all group-hover:opacity-100"
-                style={{ backgroundColor: `rgba(34, 197, 94, var(--icon-bg-opacity, 0.1))` }}
+                style={{
+                  backgroundColor: `rgba(34, 197, 94, var(--icon-bg-opacity, 0.1))`,
+                }}
               >
-                <Trees size={32} className="text-green-600 dark:text-green-500" />
+                <Trees
+                  size={32}
+                  className="text-green-600 dark:text-green-500"
+                />
               </div>
-              <h2 className="text-lg font-semibold text-text-primary">Environment</h2>
+              <h2 className="text-lg font-semibold text-text-primary">
+                Environment
+              </h2>
               <p className="text-xs text-text-secondary text-center">
                 Trees, rocks, plants, and nature
               </p>
@@ -115,15 +138,20 @@ export const GenerationTypeSelector: React.FC<GenerationTypeSelectorProps> = ({ 
 
           {/* Props Card */}
           <button
-            onClick={() => onSelectType('prop')}
+            onClick={() => onSelectType("prop")}
             className="group relative bg-bg-secondary hover:bg-bg-tertiary border border-border-primary hover:border-purple-500 rounded-xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl"
           >
             <div className="flex flex-col items-center space-y-3">
-              <div 
+              <div
                 className="w-16 h-16 rounded-full flex items-center justify-center transition-all group-hover:opacity-100"
-                style={{ backgroundColor: `rgba(168, 85, 247, var(--icon-bg-opacity, 0.1))` }}
+                style={{
+                  backgroundColor: `rgba(168, 85, 247, var(--icon-bg-opacity, 0.1))`,
+                }}
               >
-                <Mountain size={32} className="text-purple-600 dark:text-purple-500" />
+                <Mountain
+                  size={32}
+                  className="text-purple-600 dark:text-purple-500"
+                />
               </div>
               <h2 className="text-lg font-semibold text-text-primary">Props</h2>
               <p className="text-xs text-text-secondary text-center">
@@ -143,12 +171,19 @@ export const GenerationTypeSelector: React.FC<GenerationTypeSelectorProps> = ({ 
           >
             <div className="flex items-center justify-center space-x-4">
               <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                <Sparkles size={24} className={`text-white ${isGeneratingWorld ? 'animate-spin' : 'animate-pulse'}`} />
+                <Sparkles
+                  size={24}
+                  className={`text-white ${isGeneratingWorld ? "animate-spin" : "animate-pulse"}`}
+                />
               </div>
               <div className="text-left">
-                <h2 className="text-xl font-bold text-white">Generate Entire World</h2>
+                <h2 className="text-xl font-bold text-white">
+                  Generate Entire World
+                </h2>
                 <p className="text-sm text-white text-opacity-90">
-                  {isGeneratingWorld ? 'Generating world with AI seed...' : 'AI-powered world generation with interconnected assets'}
+                  {isGeneratingWorld
+                    ? "Generating world with AI seed..."
+                    : "AI-powered world generation with interconnected assets"}
                 </p>
               </div>
             </div>
@@ -156,9 +191,10 @@ export const GenerationTypeSelector: React.FC<GenerationTypeSelectorProps> = ({ 
         </div>
 
         <p className="text-xs text-text-tertiary text-center mt-6">
-          Tip: World generation creates a complete game world with themed assets automatically
+          Tip: World generation creates a complete game world with themed assets
+          automatically
         </p>
       </div>
     </div>
-  )
-} 
+  );
+};

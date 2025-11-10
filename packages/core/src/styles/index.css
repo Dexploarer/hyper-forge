@@ -545,42 +545,19 @@
     transition: transform 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     will-change: transform;
   }
-  
+
   .micro-bounce:active {
     transform: scale(0.95);
   }
-  
+
   .micro-lift {
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
     will-change: transform, box-shadow;
   }
-  
+
   .micro-lift:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-  
-  .micro-ripple {
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .micro-ripple::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
-  
-  .micro-ripple:active::after {
-    width: 300px;
-    height: 300px;
   }
   
   /* Icon Micro-interactions */
@@ -629,11 +606,6 @@
   }
   
   /* Modal Micro-interactions */
-  .micro-modal-backdrop {
-    backdrop-filter: blur(4px);
-    transition: backdrop-filter 0.3s ease-out;
-  }
-  
   .micro-modal-content {
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     will-change: transform, opacity;
@@ -932,27 +904,24 @@
     @apply p-4;
   }
   
-  /* Modal Overlay - theme aware */
+  /* Modal Overlay - theme aware (solid design) */
   .modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center p-4
-           backdrop-blur-sm;
-    background-color: rgba(0, 0, 0, 0.5);
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    background-color: rgba(0, 0, 0, 0.75);
     animation: modalBackdropFadeIn 0.3s ease-out;
-    will-change: opacity, backdrop-filter;
+    will-change: opacity;
   }
-  
+
   .light-theme .modal-overlay {
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.6);
   }
-  
+
   @keyframes modalBackdropFadeIn {
     from {
       opacity: 0;
-      backdrop-filter: blur(0px);
     }
     to {
       opacity: 1;
-      backdrop-filter: blur(4px);
     }
   }
   
@@ -1006,16 +975,33 @@
     animation: scaleIn var(--duration-base) var(--easing-out);
   }
   
-  /* Glass effect - theme aware */
-  .glass {
-    @apply backdrop-blur-md;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Modern solid design - theme aware */
+  .solid-surface {
+    @apply bg-[var(--bg-card)] border border-[var(--border-primary)];
+    box-shadow: var(--shadow-md);
   }
-  
-  .light-theme .glass {
-    background-color: rgba(0, 0, 0, 0.03);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+
+  .solid-surface-elevated {
+    @apply bg-[var(--bg-elevated)] border border-[var(--border-primary)];
+    box-shadow: var(--shadow-lg);
+  }
+
+  .solid-overlay {
+    @apply bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded-lg;
+    box-shadow: var(--shadow-xl);
+  }
+
+  .solid-panel {
+    @apply bg-[var(--bg-card)] border border-[var(--border-primary)] rounded-lg p-4;
+    box-shadow: var(--shadow-md);
+  }
+
+  .solid-nav {
+    @apply bg-[var(--bg-secondary)] border-r border-[var(--border-primary)];
+  }
+
+  .solid-nav-bottom {
+    @apply bg-[var(--bg-secondary)] border-t border-[var(--border-primary)];
   }
   
   /* Interactive states */
@@ -1289,140 +1275,6 @@ body {
 }
 
 /* ===== Additional App Styles ===== */
-
-/* Glass Displacement Effect */
-.glass-effect {
-  position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Dark mode glass */
-:root .glass-effect {
-  background: hsl(0 0% 100% / 0.05);
-  box-shadow:
-    0 0 2px 1px color-mix(in oklch, currentColor, #0000 85%) inset,
-    0 0 10px 4px color-mix(in oklch, currentColor, #0000 90%) inset,
-    0px 4px 16px rgba(17, 17, 26, 0.05),
-    0px 8px 24px rgba(17, 17, 26, 0.05),
-    0px 16px 56px rgba(17, 17, 26, 0.05),
-    0px 4px 16px rgba(17, 17, 26, 0.05) inset,
-    0px 8px 24px rgba(17, 17, 26, 0.05) inset,
-    0px 16px 56px rgba(17, 17, 26, 0.05) inset;
-}
-
-/* Light mode glass */
-.light-theme .glass-effect {
-  background: hsl(0 0% 0% / 0.03);
-  box-shadow:
-    0 0 2px 1px color-mix(in oklch, currentColor, #0000 92%) inset,
-    0 0 10px 4px color-mix(in oklch, currentColor, #0000 95%) inset,
-    0px 4px 16px rgba(0, 0, 0, 0.03),
-    0px 8px 24px rgba(0, 0, 0, 0.04),
-    0px 16px 56px rgba(0, 0, 0, 0.05);
-}
-
-.glass-filter {
-  pointer-events: none;
-}
-
-.glass-modal-content {
-  position: relative;
-  z-index: 1;
-}
-
-/* Enhanced text readability on glass surfaces */
-.glass-modal-content,
-.glass-effect,
-.glass {
-  /* Ensure text has proper contrast and readability */
-  color: var(--text-primary);
-}
-
-/* General rule for text in backdrop-blur containers - Dark theme (default) */
-[class*="backdrop-blur"] *,
-.backdrop-blur-sm *,
-.backdrop-blur-md *,
-.backdrop-blur-lg *,
-.backdrop-blur-xl * {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-/* Light theme overrides for backdrop-blur containers */
-.light-theme [class*="backdrop-blur"] *,
-.light-theme .backdrop-blur-sm *,
-.light-theme .backdrop-blur-md *,
-.light-theme .backdrop-blur-lg *,
-.light-theme .backdrop-blur-xl * {
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
-}
-
-/* Text shadows for better legibility on glass backgrounds - Dark theme (default) */
-.glass-modal-content h1,
-.glass-modal-content h2,
-.glass-modal-content h3,
-.glass-modal-content h4,
-.glass-modal-content h5,
-.glass-modal-content h6 {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5),
-               0 0 8px rgba(0, 0, 0, 0.3);
-  font-weight: 600;
-}
-
-.glass-modal-content p,
-.glass-modal-content span,
-.glass-modal-content div:not([class*="drop-shadow"]):not([class*="shadow"]),
-.glass-modal-content li,
-.glass-modal-content label,
-.glass-modal-content input,
-.glass-modal-content textarea,
-.glass-modal-content select {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4),
-               0 0 4px rgba(0, 0, 0, 0.2);
-}
-
-.glass-modal-content button,
-.glass-modal-content a {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-/* Light theme adjustments - Higher specificity to override dark theme */
-.light-theme .glass-modal-content h1,
-.light-theme .glass-modal-content h2,
-.light-theme .glass-modal-content h3,
-.light-theme .glass-modal-content h4,
-.light-theme .glass-modal-content h5,
-.light-theme .glass-modal-content h6 {
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8),
-               0 0 8px rgba(255, 255, 255, 0.5);
-  font-weight: 600;
-}
-
-.light-theme .glass-modal-content p,
-.light-theme .glass-modal-content span,
-.light-theme .glass-modal-content div:not([class*="drop-shadow"]):not([class*="shadow"]),
-.light-theme .glass-modal-content li,
-.light-theme .glass-modal-content label,
-.light-theme .glass-modal-content input,
-.light-theme .glass-modal-content textarea,
-.light-theme .glass-modal-content select {
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7),
-               0 0 4px rgba(255, 255, 255, 0.4);
-}
-
-.light-theme .glass-modal-content button,
-.light-theme .glass-modal-content a {
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
-}
-
-/* Enhanced glass effects */
-.glass-panel {
-  @apply glass-effect;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.light-theme .glass-panel {
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
 
 /* Ensure the app takes full viewport */
 #root {

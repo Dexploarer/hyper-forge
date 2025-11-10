@@ -103,7 +103,7 @@ export const AdvancedPromptsCard: React.FC<AdvancedPromptsCardProps> = ({
       {showAdvancedPrompts && (
         <CardContent className="p-0">
           {/* Sleek Tab Navigation */}
-          <div className="flex bg-bg-secondary/20 backdrop-blur-sm">
+          <div className="flex bg-bg-secondary/20 ">
             <TabButton
               active={activeTab === 'quick'}
               onClick={() => setActiveTab('quick')}
@@ -294,7 +294,7 @@ const InfoCard: React.FC<{
   variant?: 'primary' | 'secondary'
 }> = ({ icon, title, content, variant = 'primary' }) => (
   <div className={cn(
-    "p-4 rounded-xl border backdrop-blur-sm",
+    "p-4 rounded-xl border ",
     variant === 'primary' 
       ? "bg-primary/5 border-primary/20" 
       : "bg-secondary/5 border-secondary/20"

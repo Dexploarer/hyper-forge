@@ -22,7 +22,7 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({
         onClick={onUndo}
         disabled={!canUndo}
         className={cn(
-          "p-2 rounded-lg backdrop-blur-sm transition-all",
+          "p-2 rounded-lg  transition-all",
           canUndo
             ? "bg-bg-tertiary/50 text-text-secondary hover:text-text-primary"
             : "bg-bg-tertiary/20 text-text-muted cursor-not-allowed"
@@ -35,7 +35,7 @@ export const UndoRedoControls: React.FC<UndoRedoControlsProps> = ({
         onClick={onRedo}
         disabled={!canRedo}
         className={cn(
-          "p-2 rounded-lg backdrop-blur-sm transition-all",
+          "p-2 rounded-lg  transition-all",
           canRedo
             ? "bg-bg-tertiary/50 text-text-secondary hover:text-text-primary"
             : "bg-bg-tertiary/20 text-text-muted cursor-not-allowed"

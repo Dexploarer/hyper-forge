@@ -184,7 +184,7 @@ const MaterialPresetItem: React.FC<{
         
         {/* Enhanced Tooltip on Hover */}
         <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none z-[70]">
-          <div className="bg-bg-primary/95 backdrop-blur-sm border border-border-primary rounded-lg shadow-xl p-3 min-w-[200px] max-w-[300px]">
+          <div className="solid-panel  border border-border-primary rounded-lg shadow-xl p-3 min-w-[200px] max-w-[300px]">
             <p className="text-sm font-medium text-text-primary">{preset.displayName}</p>
             <p className="text-xs text-text-secondary mt-1 break-words">{preset.description || preset.stylePrompt}</p>
             {/* Tooltip Arrow */}

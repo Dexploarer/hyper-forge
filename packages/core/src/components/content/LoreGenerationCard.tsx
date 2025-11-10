@@ -10,9 +10,11 @@ import {
   Button,
   Input,
   Textarea,
+  SelectOrCustom,
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
 import { notify } from "@/utils/notify";
 import type { LoreData, QualityLevel } from "@/types/content";
 
@@ -50,6 +52,9 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
   const [worldConfigId, setWorldConfigId] = useState<string | null>(null);
   const [quality, setQuality] = useState<QualityLevel>("balanced");
   const [isGenerating, setIsGenerating] = useState(false);
+
+  // Fetch world config options
+  const worldConfigOptions = useWorldConfigOptions(worldConfigId);
 
   // Populate prompt from initialPrompt
   useEffect(() => {
@@ -123,26 +128,19 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
         </div>
 
         {/* Category Selection */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">
-            Category{" "}
-            <span className="text-text-tertiary font-normal text-xs">
-              (Optional)
-            </span>
-          </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
-          >
-            <option value="">Any / Let AI decide</option>
-            {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectOrCustom
+          value={category}
+          onChange={setCategory}
+          options={[
+            ...CATEGORIES,
+            ...(worldConfigOptions.loreCategories || []),
+          ].filter((v, i, a) => a.indexOf(v) === i)} // Remove duplicates
+          label="Category"
+          required={false}
+          disabled={isGenerating}
+          customPlaceholder="Enter custom category..."
+          allowEmpty={true}
+        />
 
         {/* Topic */}
         <div className="space-y-2">

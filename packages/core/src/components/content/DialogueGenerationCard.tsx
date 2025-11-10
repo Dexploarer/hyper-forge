@@ -20,6 +20,7 @@ import {
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
 import { notify } from "@/utils/notify";
 import { useNavigation } from "@/hooks/useNavigation";
 import type { DialogueNode, QualityLevel } from "@/types/content";
@@ -45,6 +46,9 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
   const [lastGeneratedDialogue, setLastGeneratedDialogue] = useState<
     DialogueNode[] | null
   >(null);
+
+  // Fetch world config options
+  const worldConfigOptions = useWorldConfigOptions(worldConfigId);
 
   // Populate prompt from initialPrompt
   useEffect(() => {
@@ -143,6 +147,32 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
               (Optional)
             </span>
           </label>
+
+          {/* Helper: Personality Traits from World Config */}
+          {worldConfigOptions.personalityTraits.length > 0 && (
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  // Append selected trait to personality field
+                  const newPersonality = personality
+                    ? `${personality}, ${e.target.value}`
+                    : e.target.value;
+                  setPersonality(newPersonality);
+                  e.target.value = ""; // Reset dropdown
+                }
+              }}
+              disabled={isGenerating}
+              className="w-full px-4 py-2 bg-bg-tertiary/50 border border-border-primary/30 rounded-lg text-sm text-text-secondary focus:border-primary focus:outline-none [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
+            >
+              <option value="">💡 Quick add from world config...</option>
+              {worldConfigOptions.personalityTraits.map((trait) => (
+                <option key={trait} value={trait}>
+                  {trait}
+                </option>
+              ))}
+            </select>
+          )}
+
           <Textarea
             value={personality}
             onChange={(e) => setPersonality(e.target.value)}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from "react";
 import {
   Sparkles,
   Package,
@@ -10,118 +10,123 @@ import {
   Library,
   TestTube2,
   Users,
-  User
-} from 'lucide-react'
-import { NavigationView } from '@/types'
-import { NAVIGATION_VIEWS } from '@/constants'
-import { useAuth } from '@/contexts/AuthContext'
-import { ProfileSettingsModal } from '@/components/auth/ProfileSettingsModal'
-import { cn } from '@/styles'
+  User,
+} from "lucide-react";
+import { NavigationView } from "@/types";
+import { NAVIGATION_VIEWS } from "@/constants";
+import { useAuth } from "@/contexts/AuthContext";
+import { ProfileSettingsModal } from "@/components/auth/ProfileSettingsModal";
+import { cn } from "@/styles";
 
 interface MobileMenuDrawerProps {
-  isOpen: boolean
-  currentView: NavigationView
-  onClose: () => void
-  onViewChange: (view: NavigationView) => void
+  isOpen: boolean;
+  currentView: NavigationView;
+  onClose: () => void;
+  onViewChange: (view: NavigationView) => void;
 }
 
 interface NavItem {
-  view: NavigationView
-  icon: React.ElementType
-  label: string
-  description: string
+  view: NavigationView;
+  icon: React.ElementType;
+  label: string;
+  description: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
   {
     view: NAVIGATION_VIEWS.GENERATION,
     icon: Sparkles,
-    label: 'Generate',
-    description: 'AI-powered content generation'
+    label: "Generate",
+    description: "AI-powered content generation",
   },
   {
     view: NAVIGATION_VIEWS.ASSETS,
     icon: Package,
-    label: 'Assets',
-    description: 'Browse & manage assets'
+    label: "Assets",
+    description: "Browse & manage assets",
   },
   {
     view: NAVIGATION_VIEWS.CONTENT_LIBRARY,
     icon: Library,
-    label: 'Library',
-    description: 'Saved content browser'
+    label: "Library",
+    description: "Saved content browser",
   },
   {
     view: NAVIGATION_VIEWS.PLAYTESTER,
     icon: TestTube2,
-    label: 'Playtester',
-    description: 'AI swarm testing'
+    label: "Playtester",
+    description: "AI swarm testing",
   },
   {
     view: NAVIGATION_VIEWS.EQUIPMENT,
     icon: Shield,
-    label: 'Equipment Fitting',
-    description: 'Weapons, armor & helmets'
+    label: "Equipment Fitting",
+    description: "Weapons, armor & helmets",
   },
   {
     view: NAVIGATION_VIEWS.HAND_RIGGING,
     icon: Hand,
-    label: 'Hand Rigging',
-    description: 'Auto-grip detection'
+    label: "Hand Rigging",
+    description: "Auto-grip detection",
   },
   {
     view: NAVIGATION_VIEWS.RETARGET_ANIMATE,
     icon: Play,
-    label: 'Animation',
-    description: 'Retarget & animate'
+    label: "Animation",
+    description: "Retarget & animate",
   },
   {
     view: NAVIGATION_VIEWS.ADMIN_DASHBOARD,
     icon: Users,
-    label: 'Admin Dashboard',
-    description: 'Manage users & admins'
-  }
-]
+    label: "Admin Dashboard",
+    description: "Manage users & admins",
+  },
+];
 
-export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }: MobileMenuDrawerProps) {
-  const { user, logout, completeProfile } = useAuth()
-  const [showProfileSettings, setShowProfileSettings] = useState(false)
+export function MobileMenuDrawer({
+  isOpen,
+  currentView,
+  onClose,
+  onViewChange,
+}: MobileMenuDrawerProps) {
+  const { user, logout, completeProfile } = useAuth();
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
 
   // Prevent body scroll when menu is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = ''
+      document.body.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = ''
-    }
-  }, [isOpen])
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to logout?')) {
-      logout()
-      onClose()
+    if (confirm("Are you sure you want to logout?")) {
+      logout();
+      onClose();
     }
-  }
+  };
 
   const handleNavClick = (view: NavigationView) => {
-    onViewChange(view)
-    onClose()
-  }
+    onViewChange(view);
+    onClose();
+  };
 
   const handleProfileClick = () => {
-    setShowProfileSettings(true)
-  }
+    setShowProfileSettings(true);
+  };
 
   return (
     <>
       {/* Backdrop */}
       <div
         className={cn(
-          'fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 z-[60]',
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          "fixed inset-0 bg-black/75 transition-opacity duration-300 z-[60]",
+          isOpen ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         onClick={onClose}
         aria-hidden="true"
@@ -130,8 +135,8 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
       {/* Drawer */}
       <aside
         className={cn(
-          'fixed top-0 left-0 bottom-0 w-[280px] max-w-[85vw] bg-bg-secondary/98 backdrop-blur-sm border-r border-border-primary transform transition-transform duration-300 ease-out z-[70] flex flex-col',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          "fixed top-0 left-0 bottom-0 w-[280px] max-w-[85vw] solid-nav transform transition-transform duration-300 ease-out z-[70] flex flex-col",
+          isOpen ? "translate-x-0" : "-translate-x-full",
         )}
         aria-label="Main navigation"
         aria-hidden={!isOpen}
@@ -143,7 +148,9 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-text-primary">Asset Forge</h2>
+              <h2 className="text-base font-bold text-text-primary">
+                Asset Forge
+              </h2>
               <p className="text-xs text-text-secondary">Alpha</p>
             </div>
           </div>
@@ -160,32 +167,34 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
         <nav className="flex-1 overflow-y-auto py-3 px-3">
           <div className="space-y-1">
             {NAV_ITEMS.map((item) => {
-              const Icon = item.icon as React.FC<{ className?: string }>
-              const isActive = currentView === item.view
+              const Icon = item.icon as React.FC<{ className?: string }>;
+              const isActive = currentView === item.view;
 
               return (
                 <button
                   key={item.view}
                   onClick={() => handleNavClick(item.view)}
                   className={cn(
-                    'w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 active:scale-98',
+                    "w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 active:scale-98",
                     isActive
-                      ? 'bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 text-primary shadow-lg shadow-primary/10'
-                      : 'hover:bg-bg-hover text-text-secondary border border-transparent'
+                      ? "bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 text-primary shadow-lg shadow-primary/10"
+                      : "hover:bg-bg-hover text-text-secondary border border-transparent",
                   )}
-                  aria-current={isActive ? 'page' : undefined}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   <Icon
                     className={cn(
-                      'w-5 h-5 flex-shrink-0',
-                      isActive && 'text-primary'
+                      "w-5 h-5 flex-shrink-0",
+                      isActive && "text-primary",
                     )}
                   />
                   <div className="flex-1 text-left">
-                    <div className={cn(
-                      'font-medium text-sm',
-                      isActive ? 'text-primary' : 'text-text-primary'
-                    )}>
+                    <div
+                      className={cn(
+                        "font-medium text-sm",
+                        isActive ? "text-primary" : "text-text-primary",
+                      )}
+                    >
                       {item.label}
                     </div>
                     <div className="text-xs text-text-tertiary">
@@ -193,7 +202,7 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
                     </div>
                   </div>
                 </button>
-              )
+              );
             })}
           </div>
         </nav>
@@ -208,11 +217,9 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
             <User className="w-5 h-5 flex-shrink-0" />
             <div className="flex-1 text-left">
               <div className="text-sm font-medium text-text-primary">
-                {user?.displayName || 'Admin'}
+                {user?.displayName || "Admin"}
               </div>
-              <div className="text-xs text-text-tertiary">
-                View profile
-              </div>
+              <div className="text-xs text-text-tertiary">View profile</div>
             </div>
           </button>
 
@@ -237,5 +244,5 @@ export function MobileMenuDrawer({ isOpen, currentView, onClose, onViewChange }:
         />
       )}
     </>
-  )
+  );
 }

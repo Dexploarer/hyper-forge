@@ -20,7 +20,7 @@ export const GripDetectionPanel: React.FC<GripDetectionPanelProps> = ({
   if (!selectedEquipment?.hasModel) return null
   
   return (
-    <div className="bg-bg-primary/40 backdrop-blur-sm rounded-xl border border-white/10 overflow-hidden">
+    <div className="bg-bg-primary/40  rounded-xl border border-white/10 overflow-hidden">
       <div className="p-4 border-b border-white/5">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/20 rounded-lg animate-pulse">

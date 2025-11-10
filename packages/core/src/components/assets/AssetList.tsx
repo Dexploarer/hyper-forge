@@ -1,34 +1,46 @@
 import {
-  Package, Shield, Swords, Diamond, Hammer, Building,
-  User, Trees, Box, Target, HelpCircle, Sparkles,
-  ChevronRight, Layers, Star, CheckSquare, Square, Loader2,
-  LayoutGrid, List
-} from 'lucide-react'
-import React, { useState, useMemo } from 'react'
+  Package,
+  Shield,
+  Swords,
+  Diamond,
+  Hammer,
+  Building,
+  User,
+  Trees,
+  Box,
+  Target,
+  HelpCircle,
+  Sparkles,
+  ChevronRight,
+  Layers,
+  Star,
+  CheckSquare,
+  Square,
+  Loader2,
+  LayoutGrid,
+  List,
+} from "lucide-react";
+import React, { useState, useMemo } from "react";
 
-import { getTierColor } from '../../constants'
-import { useAssetsStore } from '../../store'
-import { Asset } from '../../types'
-import { useInfiniteScroll } from '../../hooks/useInfiniteScroll'
+import { getTierColor } from "../../constants";
+import { useAssetsStore } from "../../store";
+import { Asset } from "../../types";
+import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 
-import { apiFetch } from '@/utils/api'
-import { useApp } from '@/contexts/AppContext'
-
+import { apiFetch } from "@/utils/api";
+import { useApp } from "@/contexts/AppContext";
 
 interface AssetListProps {
-  assets: Asset[]
-  onAssetDelete?: (asset: Asset) => void
+  assets: Asset[];
+  onAssetDelete?: (asset: Asset) => void;
 }
 
 interface AssetGroup {
-  base: Asset
-  variants: Asset[]
+  base: Asset;
+  variants: Asset[];
 }
 
-const AssetList: React.FC<AssetListProps> = ({
-  assets,
-  onAssetDelete
-}) => {
+const AssetList: React.FC<AssetListProps> = ({ assets, onAssetDelete }) => {
   // Get state and actions from store
   const {
     selectedAsset,
@@ -36,294 +48,341 @@ const AssetList: React.FC<AssetListProps> = ({
     selectionMode,
     selectedAssetIds,
     toggleSelectionMode,
-    toggleAssetSelection
-  } = useAssetsStore()
-  const { showNotification } = useApp()
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
-  const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped')
-  const [displayMode, setDisplayMode] = useState<'list' | 'cards'>('cards')
-  const [updatingFavorites, setUpdatingFavorites] = useState<Set<string>>(new Set())
+    toggleAssetSelection,
+  } = useAssetsStore();
+  const { showNotification } = useApp();
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<"grouped" | "flat">("grouped");
+  const [displayMode, setDisplayMode] = useState<"list" | "cards">("cards");
+  const [updatingFavorites, setUpdatingFavorites] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Infinite scroll
   const { displayCount, isLoadingMore, containerRef } = useInfiniteScroll({
     totalItems: assets.length,
     initialCount: 20,
     loadIncrement: 10,
-    threshold: 300
-  })
+    threshold: 300,
+  });
 
   // Slice assets for infinite scroll
-  const visibleAssets = useMemo(() => assets.slice(0, displayCount), [assets, displayCount])
+  const visibleAssets = useMemo(
+    () => assets.slice(0, displayCount),
+    [assets, displayCount],
+  );
 
   const toggleFavorite = async (asset: Asset, e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent asset selection
-    setUpdatingFavorites(prev => new Set(prev).add(asset.id))
+    e.stopPropagation(); // Prevent asset selection
+    setUpdatingFavorites((prev) => new Set(prev).add(asset.id));
 
     // Optimistic update - update UI immediately
-    const previousFavoriteState = asset.metadata.isFavorite
-    asset.metadata.isFavorite = !asset.metadata.isFavorite
+    const previousFavoriteState = asset.metadata.isFavorite;
+    asset.metadata.isFavorite = !asset.metadata.isFavorite;
 
     // Trigger re-render immediately for optimistic update
     if (onAssetDelete) {
       if (selectedAsset?.id === asset.id) {
-        handleAssetSelect(asset)
+        handleAssetSelect(asset);
       }
     }
 
     try {
       await apiFetch(`/api/assets/${asset.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          isFavorite: asset.metadata.isFavorite
+          isFavorite: asset.metadata.isFavorite,
         }),
         retry: {
           maxRetries: 3,
           initialDelay: 1000,
-        }
-      })
+        },
+      });
 
       // Show success notification
       showNotification(
-        asset.metadata.isFavorite 
-          ? 'Added to favorites' 
-          : 'Removed from favorites',
-        'success'
-      )
+        asset.metadata.isFavorite
+          ? "Added to favorites"
+          : "Removed from favorites",
+        "success",
+      );
     } catch (error) {
-      console.error('Failed to toggle favorite:', error)
-      
+      console.error("Failed to toggle favorite:", error);
+
       // Rollback optimistic update on error
-      asset.metadata.isFavorite = previousFavoriteState
-      
+      asset.metadata.isFavorite = previousFavoriteState;
+
       // Trigger re-render to show rollback
       if (onAssetDelete) {
         if (selectedAsset?.id === asset.id) {
-          handleAssetSelect(asset)
+          handleAssetSelect(asset);
         }
       }
-      
-      showNotification(
-        'Failed to update favorite. Please try again.',
-        'error'
-      )
+
+      showNotification("Failed to update favorite. Please try again.", "error");
     } finally {
-      setUpdatingFavorites(prev => {
-        const next = new Set(prev)
-        next.delete(asset.id)
-        return next
-      })
+      setUpdatingFavorites((prev) => {
+        const next = new Set(prev);
+        next.delete(asset.id);
+        return next;
+      });
     }
-  }
+  };
 
   // Group assets by base/variants (using visible assets for infinite scroll)
   const assetGroups = useMemo(() => {
-    const groups: Record<string, AssetGroup> = {}
-    const standaloneAssets: Asset[] = []
+    const groups: Record<string, AssetGroup> = {};
+    const standaloneAssets: Asset[] = [];
 
     // First pass: identify base models
-    visibleAssets.forEach(asset => {
+    visibleAssets.forEach((asset) => {
       if (asset.metadata?.isBaseModel) {
-        groups[asset.id] = { base: asset, variants: [] }
+        groups[asset.id] = { base: asset, variants: [] };
       }
-    })
+    });
 
     // Second pass: assign variants to their base models
-    visibleAssets.forEach(asset => {
+    visibleAssets.forEach((asset) => {
       if (!asset.metadata) {
-        standaloneAssets.push(asset)
-        return
+        standaloneAssets.push(asset);
+        return;
       }
 
       if (asset.metadata.isVariant && asset.metadata.parentBaseModel) {
-        const baseId = asset.metadata.parentBaseModel
+        const baseId = asset.metadata.parentBaseModel;
         if (groups[baseId]) {
-          groups[baseId].variants.push(asset)
+          groups[baseId].variants.push(asset);
         } else {
-          standaloneAssets.push(asset)
+          standaloneAssets.push(asset);
         }
       } else if (!asset.metadata.isBaseModel) {
-        standaloneAssets.push(asset)
+        standaloneAssets.push(asset);
       }
-    })
+    });
 
     // Sort variants by tier
-    Object.values(groups).forEach(group => {
+    Object.values(groups).forEach((group) => {
       group.variants.sort((a, b) => {
-        const tierOrder = ['bronze', 'iron', 'steel', 'mithril', 'adamant', 'rune', 'wood', 'oak', 'willow', 'leather', 'standard']
-        const aIndex = tierOrder.indexOf(a.metadata?.tier || '')
-        const bIndex = tierOrder.indexOf(b.metadata?.tier || '')
-        return aIndex - bIndex
-      })
-    })
+        const tierOrder = [
+          "bronze",
+          "iron",
+          "steel",
+          "mithril",
+          "adamant",
+          "rune",
+          "wood",
+          "oak",
+          "willow",
+          "leather",
+          "standard",
+        ];
+        const aIndex = tierOrder.indexOf(a.metadata?.tier || "");
+        const bIndex = tierOrder.indexOf(b.metadata?.tier || "");
+        return aIndex - bIndex;
+      });
+    });
 
-    return { groups: Object.values(groups), standalone: standaloneAssets }
-  }, [visibleAssets])
+    return { groups: Object.values(groups), standalone: standaloneAssets };
+  }, [visibleAssets]);
 
   // Group assets by type for flat view (using visible assets for infinite scroll)
   const assetsByType = useMemo(() => {
-    const typeGroups: Record<string, Asset[]> = {}
+    const typeGroups: Record<string, Asset[]> = {};
 
-    visibleAssets.forEach(asset => {
-      const type = asset.type || 'other'
+    visibleAssets.forEach((asset) => {
+      const type = asset.type || "other";
       if (!typeGroups[type]) {
-        typeGroups[type] = []
+        typeGroups[type] = [];
       }
-      typeGroups[type].push(asset)
-    })
+      typeGroups[type].push(asset);
+    });
 
     // Sort assets within each type group by name
-    Object.values(typeGroups).forEach(group => {
-      group.sort((a, b) => a.name.localeCompare(b.name))
-    })
+    Object.values(typeGroups).forEach((group) => {
+      group.sort((a, b) => a.name.localeCompare(b.name));
+    });
 
     // Order types by priority
-    const typeOrder = ['character', 'weapon', 'armor', 'shield', 'tool', 'resource', 'building', 'environment', 'prop', 'ammunition', 'other']
-    const orderedTypes: Record<string, Asset[]> = {}
+    const typeOrder = [
+      "character",
+      "weapon",
+      "armor",
+      "shield",
+      "tool",
+      "resource",
+      "building",
+      "environment",
+      "prop",
+      "ammunition",
+      "other",
+    ];
+    const orderedTypes: Record<string, Asset[]> = {};
 
-    typeOrder.forEach(type => {
+    typeOrder.forEach((type) => {
       if (typeGroups[type]) {
-        orderedTypes[type] = typeGroups[type]
+        orderedTypes[type] = typeGroups[type];
       }
-    })
+    });
 
     // Add any remaining types not in the order
-    Object.keys(typeGroups).forEach(type => {
+    Object.keys(typeGroups).forEach((type) => {
       if (!orderedTypes[type]) {
-        orderedTypes[type] = typeGroups[type]
+        orderedTypes[type] = typeGroups[type];
       }
-    })
+    });
 
-    return orderedTypes
-  }, [visibleAssets])
+    return orderedTypes;
+  }, [visibleAssets]);
 
   // Group the grouped view by type as well
   const groupedAssetsByType = useMemo(() => {
-    const typeGroups: Record<string, { groups: typeof assetGroups.groups, standalone: Asset[] }> = {}
+    const typeGroups: Record<
+      string,
+      { groups: typeof assetGroups.groups; standalone: Asset[] }
+    > = {};
 
     // Group base/variant groups by type
-    assetGroups.groups.forEach(group => {
-      const type = group.base.type || 'other'
+    assetGroups.groups.forEach((group) => {
+      const type = group.base.type || "other";
       if (!typeGroups[type]) {
-        typeGroups[type] = { groups: [], standalone: [] }
+        typeGroups[type] = { groups: [], standalone: [] };
       }
-      typeGroups[type].groups.push(group)
-    })
+      typeGroups[type].groups.push(group);
+    });
 
     // Group standalone assets by type
-    assetGroups.standalone.forEach(asset => {
-      const type = asset.type || 'other'
+    assetGroups.standalone.forEach((asset) => {
+      const type = asset.type || "other";
       if (!typeGroups[type]) {
-        typeGroups[type] = { groups: [], standalone: [] }
+        typeGroups[type] = { groups: [], standalone: [] };
       }
-      typeGroups[type].standalone.push(asset)
-    })
+      typeGroups[type].standalone.push(asset);
+    });
 
     // Apply the same type ordering
-    const typeOrder = ['character', 'weapon', 'armor', 'shield', 'tool', 'resource', 'building', 'environment', 'prop', 'ammunition', 'other']
-    const orderedTypes: typeof typeGroups = {}
+    const typeOrder = [
+      "character",
+      "weapon",
+      "armor",
+      "shield",
+      "tool",
+      "resource",
+      "building",
+      "environment",
+      "prop",
+      "ammunition",
+      "other",
+    ];
+    const orderedTypes: typeof typeGroups = {};
 
-    typeOrder.forEach(type => {
+    typeOrder.forEach((type) => {
       if (typeGroups[type]) {
-        orderedTypes[type] = typeGroups[type]
+        orderedTypes[type] = typeGroups[type];
       }
-    })
+    });
 
     // Add any remaining types
-    Object.keys(typeGroups).forEach(type => {
+    Object.keys(typeGroups).forEach((type) => {
       if (!orderedTypes[type]) {
-        orderedTypes[type] = typeGroups[type]
+        orderedTypes[type] = typeGroups[type];
       }
-    })
+    });
 
-    return orderedTypes
-  }, [assetGroups])
+    return orderedTypes;
+  }, [assetGroups]);
 
   const toggleGroup = (baseId: string) => {
-    const newExpanded = new Set(expandedGroups)
+    const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(baseId)) {
-      newExpanded.delete(baseId)
+      newExpanded.delete(baseId);
     } else {
-      newExpanded.add(baseId)
+      newExpanded.add(baseId);
     }
-    setExpandedGroups(newExpanded)
-  }
+    setExpandedGroups(newExpanded);
+  };
 
   const getAssetIcon = (type: string, _subtype?: string) => {
     switch (type) {
-      case 'weapon':
-        return <Swords size={20} />
-      case 'armor':
-        return <Shield size={20} />
-      case 'resource':
-        return <Diamond size={20} />
-      case 'tool':
-        return <Hammer size={20} />
-      case 'building':
-        return <Building size={20} />
-      case 'character':
-        return <User size={20} />
-      case 'environment':
-        return <Trees size={20} />
-      case 'prop':
-        return <Box size={20} />
-      case 'ammunition':
-        return <Target size={20} />
+      case "weapon":
+        return <Swords size={20} />;
+      case "armor":
+        return <Shield size={20} />;
+      case "resource":
+        return <Diamond size={20} />;
+      case "tool":
+        return <Hammer size={20} />;
+      case "building":
+        return <Building size={20} />;
+      case "character":
+        return <User size={20} />;
+      case "environment":
+        return <Trees size={20} />;
+      case "prop":
+        return <Box size={20} />;
+      case "ammunition":
+        return <Target size={20} />;
       default:
-        return <HelpCircle size={20} />
+        return <HelpCircle size={20} />;
     }
-  }
-
-
+  };
 
   // Clean up asset names for display
   const cleanAssetName = (name: string, isBase: boolean = false): string => {
     // For base items, preserve the number but clean up the format
     if (isBase) {
       // Handle cases like "body-leather-base-01" or "legs-metal-base-02"
-      const baseMatch = name.match(/^(.+?)-base-?(\d+)?$/i)
+      const baseMatch = name.match(/^(.+?)-base-?(\d+)?$/i);
       if (baseMatch) {
-        const [, itemName, _number] = baseMatch
-        const cleaned = itemName.replace(/-/g, ' ')
-          .split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ')
-        return _number ? `${cleaned} ${_number}` : cleaned
+        const [, itemName, _number] = baseMatch;
+        const cleaned = itemName
+          .replace(/-/g, " ")
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+        return _number ? `${cleaned} ${_number}` : cleaned;
       }
     }
 
     // For variants, check if it's a numbered variant with redundant material names
-    const variantMatch = name.match(/^(.+?)[-\s](\d+)[-\s](.+)$/)
+    const variantMatch = name.match(/^(.+?)[-\s](\d+)[-\s](.+)$/);
     if (variantMatch && !isBase) {
-      const [, baseName, _number, material] = variantMatch
+      const [, baseName, _number, material] = variantMatch;
       // If the base name and material are similar, just return the material
-      const baseWords = baseName.toLowerCase().split(/[-\s]+/)
-      const materialWords = material.toLowerCase().split(/[-\s]+/)
+      const baseWords = baseName.toLowerCase().split(/[-\s]+/);
+      const materialWords = material.toLowerCase().split(/[-\s]+/);
 
       // Check if material name contains base name parts (redundant)
-      const isRedundant = materialWords.some(word => baseWords.includes(word))
+      const isRedundant = materialWords.some((word) =>
+        baseWords.includes(word),
+      );
 
-      if (isRedundant || baseWords.some(word => word === 'body' || word === 'legs' || word === 'helmet')) {
+      if (
+        isRedundant ||
+        baseWords.some(
+          (word) => word === "body" || word === "legs" || word === "helmet",
+        )
+      ) {
         // Just return the material name, capitalized
         return material
           .split(/[-\s]+/)
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
       }
     }
 
     // Default cleaning
     let cleaned = name
-      .replace(/-base$/i, '')
-      .replace(/-standard$/i, '')
-      .replace(/-/g, ' ')
+      .replace(/-base$/i, "")
+      .replace(/-standard$/i, "")
+      .replace(/-/g, " ");
 
     // Capitalize words
     return cleaned
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ')
-  }
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
 
   if (assets.length === 0) {
     return (
@@ -331,30 +390,38 @@ const AssetList: React.FC<AssetListProps> = ({
         <div className="p-4 border-b border-border-primary bg-bg-primary bg-opacity-30">
           <h2 className="text-base font-semibold text-text-primary flex items-center gap-2">
             <Package size={18} className="text-primary" />
-            Assets <span className="text-text-tertiary font-normal text-sm">(0)</span>
+            Assets{" "}
+            <span className="text-text-tertiary font-normal text-sm">(0)</span>
           </h2>
         </div>
 
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="text-center">
-            <div className="w-20 h-20 bg-bg-primary bg-opacity-40 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
+            <div className="w-20 h-20 solid-surface rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Package size={32} className="text-text-muted opacity-50" />
             </div>
-            <p className="text-text-secondary text-sm font-medium">No assets found</p>
-            <p className="text-text-tertiary text-xs mt-1.5">Try adjusting your search filters</p>
+            <p className="text-text-secondary text-sm font-medium">
+              No assets found
+            </p>
+            <p className="text-text-tertiary text-xs mt-1.5">
+              Try adjusting your search filters
+            </p>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="card overflow-hidden flex flex-col h-full bg-gradient-to-br from-bg-primary to-bg-secondary animate-scale-in">
-      <div className="p-4 border-b border-border-primary bg-bg-primary bg-opacity-30 sticky top-0 z-10 backdrop-blur-sm">
+      <div className="p-4 border-b border-border-primary solid-panel sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-semibold text-text-primary flex items-center gap-2">
             <Package size={18} className="text-primary" />
-            Assets <span className="text-text-tertiary font-normal text-sm">({assets.length})</span>
+            Assets{" "}
+            <span className="text-text-tertiary font-normal text-sm">
+              ({assets.length})
+            </span>
             {selectionMode && selectedAssetIds.size > 0 && (
               <span className="text-xs text-primary font-medium">
                 ({selectedAssetIds.size} selected)
@@ -366,21 +433,23 @@ const AssetList: React.FC<AssetListProps> = ({
             {/* Display mode toggle (Cards/List) */}
             <div className="flex items-center gap-1 bg-bg-tertiary rounded-lg p-1">
               <button
-                onClick={() => setDisplayMode('cards')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${displayMode === 'cards'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-text-tertiary hover:text-text-secondary'
-                  }`}
+                onClick={() => setDisplayMode("cards")}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  displayMode === "cards"
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-text-tertiary hover:text-text-secondary"
+                }`}
                 title="Card view"
               >
                 <LayoutGrid size={14} />
               </button>
               <button
-                onClick={() => setDisplayMode('list')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${displayMode === 'list'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-text-tertiary hover:text-text-secondary'
-                  }`}
+                onClick={() => setDisplayMode("list")}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  displayMode === "list"
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-text-tertiary hover:text-text-secondary"
+                }`}
                 title="List view"
               >
                 <List size={14} />
@@ -392,34 +461,38 @@ const AssetList: React.FC<AssetListProps> = ({
               onClick={toggleSelectionMode}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
                 selectionMode
-                  ? 'bg-primary text-white shadow-sm'
-                  : 'bg-bg-tertiary text-text-tertiary hover:text-text-secondary'
+                  ? "bg-primary text-white shadow-sm"
+                  : "bg-bg-tertiary text-text-tertiary hover:text-text-secondary"
               }`}
-              title={selectionMode ? 'Exit selection mode' : 'Enter selection mode'}
+              title={
+                selectionMode ? "Exit selection mode" : "Enter selection mode"
+              }
             >
               {selectionMode ? <CheckSquare size={14} /> : <Square size={14} />}
               <span>Select</span>
             </button>
 
             {/* View mode toggle (only show in list mode) */}
-            {displayMode === 'list' && (
+            {displayMode === "list" && (
               <div className="flex items-center gap-1 bg-bg-tertiary rounded-lg p-1">
                 <button
-                  onClick={() => setViewMode('grouped')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'grouped'
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-text-tertiary hover:text-text-secondary'
-                    }`}
+                  onClick={() => setViewMode("grouped")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    viewMode === "grouped"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-text-tertiary hover:text-text-secondary"
+                  }`}
                   title="Group by base models"
                 >
                   <Layers size={14} />
                 </button>
                 <button
-                  onClick={() => setViewMode('flat')}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'flat'
-                      ? 'bg-primary text-white shadow-sm'
-                      : 'text-text-tertiary hover:text-text-secondary'
-                    }`}
+                  onClick={() => setViewMode("flat")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    viewMode === "flat"
+                      ? "bg-primary text-white shadow-sm"
+                      : "text-text-tertiary hover:text-text-secondary"
+                  }`}
                   title="Show all items"
                 >
                   <Package size={14} />
@@ -430,8 +503,11 @@ const AssetList: React.FC<AssetListProps> = ({
         </div>
       </div>
 
-      <div ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar scroll-container">
-        {displayMode === 'cards' ? (
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-y-auto custom-scrollbar scroll-container"
+      >
+        {displayMode === "cards" ? (
           /* Card Grid View */
           <div className="p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -440,24 +516,29 @@ const AssetList: React.FC<AssetListProps> = ({
                   key={asset.id}
                   className={`group relative rounded-xl transition-all duration-200 cursor-pointer micro-card-hover border ${
                     selectedAsset?.id === asset.id
-                      ? 'bg-primary bg-opacity-10 border-primary shadow-lg'
-                      : 'bg-bg-secondary border-border-primary hover:border-primary hover:shadow-md'
+                      ? "bg-primary bg-opacity-10 border-primary shadow-lg"
+                      : "bg-bg-secondary border-border-primary hover:border-primary hover:shadow-md"
                   }`}
                   onClick={() => handleAssetSelect(asset)}
                   style={{
-                    animationDelay: `${index * 20}ms`
+                    animationDelay: `${index * 20}ms`,
                   }}
                 >
                   {/* Card Content */}
                   <div className="p-4">
                     {/* Header Row */}
                     <div className="flex items-start justify-between mb-3">
-                      <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
-                        selectedAsset?.id === asset.id
-                          ? 'bg-primary bg-opacity-20 text-primary'
-                          : 'bg-bg-tertiary text-text-tertiary group-hover:bg-primary group-hover:bg-opacity-10 group-hover:text-primary'
-                      }`}>
-                        {React.cloneElement(getAssetIcon(asset.type, asset.metadata?.subtype), { size: 24 })}
+                      <div
+                        className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                          selectedAsset?.id === asset.id
+                            ? "bg-primary bg-opacity-20 text-primary"
+                            : "bg-bg-tertiary text-text-tertiary group-hover:bg-primary group-hover:bg-opacity-10 group-hover:text-primary"
+                        }`}
+                      >
+                        {React.cloneElement(
+                          getAssetIcon(asset.type, asset.metadata?.subtype),
+                          { size: 24 },
+                        )}
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -465,15 +546,18 @@ const AssetList: React.FC<AssetListProps> = ({
                         {selectionMode && (
                           <button
                             onClick={(e) => {
-                              e.stopPropagation()
-                              toggleAssetSelection(asset.id)
+                              e.stopPropagation();
+                              toggleAssetSelection(asset.id);
                             }}
                             className="p-1.5 hover:bg-bg-tertiary rounded-lg transition-all"
                           >
                             {selectedAssetIds.has(asset.id) ? (
                               <CheckSquare size={16} className="text-primary" />
                             ) : (
-                              <Square size={16} className="text-text-tertiary" />
+                              <Square
+                                size={16}
+                                className="text-text-tertiary"
+                              />
                             )}
                           </button>
                         )}
@@ -491,8 +575,8 @@ const AssetList: React.FC<AssetListProps> = ({
                               size={16}
                               className={`${
                                 asset.metadata.isFavorite
-                                  ? 'text-yellow-400 fill-yellow-400'
-                                  : 'text-text-tertiary group-hover:text-yellow-400'
+                                  ? "text-yellow-400 fill-yellow-400"
+                                  : "text-text-tertiary group-hover:text-yellow-400"
                               } transition-colors`}
                             />
                           )}
@@ -515,21 +599,26 @@ const AssetList: React.FC<AssetListProps> = ({
                       <span className="px-2 py-1 bg-bg-tertiary text-text-secondary rounded-md text-xs font-medium capitalize">
                         {asset.type}
                       </span>
-                      {asset.metadata?.tier && asset.metadata.tier !== 'base' && (
-                        <span
-                          className="px-2 py-1 rounded-md text-xs font-medium capitalize flex items-center gap-1"
-                          style={{
-                            backgroundColor: `${getTierColor(asset.metadata.tier)}20`,
-                            color: getTierColor(asset.metadata.tier)
-                          }}
-                        >
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: getTierColor(asset.metadata.tier) }}
-                          />
-                          {asset.metadata.tier}
-                        </span>
-                      )}
+                      {asset.metadata?.tier &&
+                        asset.metadata.tier !== "base" && (
+                          <span
+                            className="px-2 py-1 rounded-md text-xs font-medium capitalize flex items-center gap-1"
+                            style={{
+                              backgroundColor: `${getTierColor(asset.metadata.tier)}20`,
+                              color: getTierColor(asset.metadata.tier),
+                            }}
+                          >
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{
+                                backgroundColor: getTierColor(
+                                  asset.metadata.tier,
+                                ),
+                              }}
+                            />
+                            {asset.metadata.tier}
+                          </span>
+                        )}
                       {asset.metadata?.isPlaceholder && (
                         <span className="px-2 py-1 bg-warning bg-opacity-20 text-warning rounded-md text-xs font-medium">
                           PLACEHOLDER
@@ -543,10 +632,14 @@ const AssetList: React.FC<AssetListProps> = ({
                         {asset.hasModel ? (
                           <div className="flex items-center gap-1.5 text-success">
                             <Sparkles size={14} />
-                            <span className="text-xs font-medium">3D Model</span>
+                            <span className="text-xs font-medium">
+                              3D Model
+                            </span>
                           </div>
                         ) : (
-                          <span className="text-xs text-text-tertiary">No model</span>
+                          <span className="text-xs text-text-tertiary">
+                            No model
+                          </span>
                         )}
                       </div>
 
@@ -570,540 +663,745 @@ const AssetList: React.FC<AssetListProps> = ({
             {isLoadingMore && (
               <div className="flex items-center justify-center p-4 mt-4">
                 <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                <span className="ml-2 text-sm text-text-secondary">Loading more assets...</span>
+                <span className="ml-2 text-sm text-text-secondary">
+                  Loading more assets...
+                </span>
               </div>
             )}
           </div>
         ) : (
           /* List View */
           <div className="p-2 space-y-1">
-          {viewMode === 'grouped' ? (
-            <>
-              {/* Render grouped view with type headers */}
-              {Object.entries(groupedAssetsByType).map(([type, typeData], typeIndex) => {
-                // Better pluralization
-                const typeLabel = (() => {
-                  const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1)
-                  switch (type) {
-                    case 'ammunition': return 'Ammunition'
-                    case 'armor': return 'Armor'
-                    default: return capitalizedType + 's'
-                  }
-                })()
+            {viewMode === "grouped" ? (
+              <>
+                {/* Render grouped view with type headers */}
+                {Object.entries(groupedAssetsByType).map(
+                  ([type, typeData], typeIndex) => {
+                    // Better pluralization
+                    const typeLabel = (() => {
+                      const capitalizedType =
+                        type.charAt(0).toUpperCase() + type.slice(1);
+                      switch (type) {
+                        case "ammunition":
+                          return "Ammunition";
+                        case "armor":
+                          return "Armor";
+                        default:
+                          return capitalizedType + "s";
+                      }
+                    })();
 
-                const totalCount = typeData.groups.length + typeData.standalone.length
-                if (totalCount === 0) return null
+                    const totalCount =
+                      typeData.groups.length + typeData.standalone.length;
+                    if (totalCount === 0) return null;
 
-                return (
-                  <div key={type} className="mb-4">
-                    {/* Type Header */}
-                    <div className="flex items-center gap-2 mb-2 px-2">
-                      <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                        {typeLabel} ({totalCount})
-                      </h3>
-                      <div className="flex-1 h-px bg-border-secondary opacity-30" />
-                    </div>
+                    return (
+                      <div key={type} className="mb-4">
+                        {/* Type Header */}
+                        <div className="flex items-center gap-2 mb-2 px-2">
+                          <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                            {typeLabel} ({totalCount})
+                          </h3>
+                          <div className="flex-1 h-px bg-border-secondary opacity-30" />
+                        </div>
 
-                    {/* Base Items with Variants */}
-                    {typeData.groups.map((group, groupIndex) => (
-                      <div key={group.base.id} className="micro-list-item" style={{ animationDelay: `${(typeIndex * 50) + (groupIndex * 30)}ms` }}>
-                        {/* Base Item */}
-                        <div className={`group relative rounded-lg transition-all duration-200 micro-state-transition ${selectedAsset?.id === group.base.id
-                            ? 'bg-primary bg-opacity-5'
-                            : 'hover:bg-bg-primary hover:bg-opacity-50'
-                          }`}>
-                          <div className="flex items-center p-3">
-                            {/* Checkbox for selection mode */}
-                            {selectionMode && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleAssetSelection(group.base.id)
-                                }}
-                                className="p-1 -ml-1 mr-2 hover:bg-bg-secondary rounded transition-all"
-                              >
-                                {selectedAssetIds.has(group.base.id) ? (
-                                  <CheckSquare size={16} className="text-primary" />
-                                ) : (
-                                  <Square size={16} className="text-text-tertiary" />
-                                )}
-                              </button>
-                            )}
-
-                            {/* Chevron for expand/collapse */}
-                            {!selectionMode && group.variants.length > 0 ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleGroup(group.base.id)
-                                }}
-                                className="p-1.5 -ml-1 mr-2 hover:bg-bg-secondary rounded-md transition-all duration-200 hover:scale-110"
-                              >
-                                <ChevronRight
-                                  size={16}
-                                  className={`text-text-tertiary transition-transform duration-200 ${expandedGroups.has(group.base.id) ? 'rotate-90' : ''
-                                    }`}
-                                />
-                              </button>
-                            ) : !selectionMode ? (
-                              <div className="w-7 h-7 -ml-1 mr-2" />
-                            ) : null}
-
+                        {/* Base Items with Variants */}
+                        {typeData.groups.map((group, groupIndex) => (
+                          <div
+                            key={group.base.id}
+                            className="micro-list-item"
+                            style={{
+                              animationDelay: `${typeIndex * 50 + groupIndex * 30}ms`,
+                            }}
+                          >
+                            {/* Base Item */}
                             <div
-                              className="flex-1 flex items-center gap-3 cursor-pointer py-1"
-                              onClick={() => handleAssetSelect(group.base)}
+                              className={`group relative rounded-lg transition-all duration-200 micro-state-transition ${
+                                selectedAsset?.id === group.base.id
+                                  ? "bg-primary bg-opacity-5"
+                                  : "hover:bg-bg-primary hover:bg-opacity-50"
+                              }`}
                             >
-                              <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105 ${selectedAsset?.id === group.base.id
-                                  ? 'bg-primary bg-opacity-10 text-text-primary shadow-sm ring-2 ring-primary'
-                                  : 'bg-bg-secondary bg-opacity-70 text-text-tertiary group-hover:bg-bg-tertiary group-hover:text-text-secondary'
-                                }`}>
-                                {React.cloneElement(getAssetIcon(group.base.type, group.base.metadata?.subtype), { size: 18 })}
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium text-sm text-text-primary truncate">
-                                    {cleanAssetName(group.base.name, true)}
-                                  </h3>
-                                  {group.variants.length > 0 && (
-                                    <span className="text-xs text-text-secondary">
-                                      ({group.variants.length})
-                                    </span>
-                                  )}
-                                  {group.base.hasModel && (
-                                    <Sparkles size={12} className="text-success flex-shrink-0" />
-                                  )}
+                              <div className="flex items-center p-3">
+                                {/* Checkbox for selection mode */}
+                                {selectionMode && (
                                   <button
-                                    onClick={(e) => toggleFavorite(group.base, e)}
-                                    disabled={updatingFavorites.has(group.base.id)}
-                                    className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
-                                    title={group.base.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                                    aria-label={group.base.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleAssetSelection(group.base.id);
+                                    }}
+                                    className="p-1 -ml-1 mr-2 hover:bg-bg-secondary rounded transition-all"
                                   >
-                                    {updatingFavorites.has(group.base.id) ? (
-                                      <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                    {selectedAssetIds.has(group.base.id) ? (
+                                      <CheckSquare
+                                        size={16}
+                                        className="text-primary"
+                                      />
                                     ) : (
-                                      <Star
-                                        size={12}
-                                        className={`${
-                                          group.base.metadata.isFavorite
-                                            ? 'text-yellow-400 fill-yellow-400'
-                                            : 'text-text-tertiary hover:text-yellow-400'
-                                        } transition-colors`}
+                                      <Square
+                                        size={16}
+                                        className="text-text-tertiary"
                                       />
                                     )}
                                   </button>
-                                </div>
+                                )}
 
-                                <div className="flex items-center gap-2 text-xs mt-0.5">
-                                  <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
-                                    BASE
-                                  </span>
-                                  <span className="text-text-secondary capitalize">{group.base.type}</span>
-                                </div>
-                              </div>
-                            </div>
+                                {/* Chevron for expand/collapse */}
+                                {!selectionMode && group.variants.length > 0 ? (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleGroup(group.base.id);
+                                    }}
+                                    className="p-1.5 -ml-1 mr-2 hover:bg-bg-secondary rounded-md transition-all duration-200 hover:scale-110"
+                                  >
+                                    <ChevronRight
+                                      size={16}
+                                      className={`text-text-tertiary transition-transform duration-200 ${
+                                        expandedGroups.has(group.base.id)
+                                          ? "rotate-90"
+                                          : ""
+                                      }`}
+                                    />
+                                  </button>
+                                ) : !selectionMode ? (
+                                  <div className="w-7 h-7 -ml-1 mr-2" />
+                                ) : null}
 
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              {selectedAsset?.id === group.base.id && (
-                                <div className="w-1 h-8 bg-primary rounded-full" />
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Variants */}
-                        {expandedGroups.has(group.base.id) && (
-                          <div className="ml-10 mt-0.5 space-y-0.5">
-                            {group.variants.map((variant, variantIndex) => (
-                              <div
-                                key={variant.id}
-                                className={`group relative rounded-md cursor-pointer transition-all duration-200 micro-state-transition ${selectedAsset?.id === variant.id
-                                    ? 'bg-primary bg-opacity-5'
-                                    : 'hover:bg-bg-primary hover:bg-opacity-30'
-                                  }`}
-                                onClick={() => handleAssetSelect(variant)}
-                                style={{
-                                  animationDelay: `${(typeIndex * 50) + (groupIndex * 30) + (variantIndex * 10)}ms`
-                                }}
-                              >
-                                <div className="flex items-center gap-3 p-2 pl-3">
-                                  {/* Checkbox for selection mode */}
-                                  {selectionMode && (
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        toggleAssetSelection(variant.id)
-                                      }}
-                                      className="p-1 -ml-2 mr-1 hover:bg-bg-secondary rounded transition-all flex-shrink-0"
-                                    >
-                                      {selectedAssetIds.has(variant.id) ? (
-                                        <CheckSquare size={14} className="text-primary" />
-                                      ) : (
-                                        <Square size={14} className="text-text-tertiary" />
-                                      )}
-                                    </button>
-                                  )}
-                                  <div className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 group-hover:scale-105 ${selectedAsset?.id === variant.id
-                                      ? 'bg-primary bg-opacity-10 text-text-primary ring-2 ring-primary'
-                                      : 'bg-bg-secondary bg-opacity-50 text-text-tertiary group-hover:bg-bg-tertiary group-hover:text-text-secondary'
-                                    }`}>
-                                    {React.cloneElement(getAssetIcon(variant.type, variant.metadata?.subtype), { size: 16 })}
+                                <div
+                                  className="flex-1 flex items-center gap-3 cursor-pointer py-1"
+                                  onClick={() => handleAssetSelect(group.base)}
+                                >
+                                  <div
+                                    className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 group-hover:scale-105 ${
+                                      selectedAsset?.id === group.base.id
+                                        ? "bg-primary bg-opacity-10 text-text-primary shadow-sm ring-2 ring-primary"
+                                        : "bg-bg-secondary bg-opacity-70 text-text-tertiary group-hover:bg-bg-tertiary group-hover:text-text-secondary"
+                                    }`}
+                                  >
+                                    {React.cloneElement(
+                                      getAssetIcon(
+                                        group.base.type,
+                                        group.base.metadata?.subtype,
+                                      ),
+                                      { size: 18 },
+                                    )}
                                   </div>
 
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1.5">
-                                      <h3 className="font-medium text-xs text-text-primary truncate">
-                                        {cleanAssetName(variant.name)}
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="font-medium text-sm text-text-primary truncate">
+                                        {cleanAssetName(group.base.name, true)}
                                       </h3>
+                                      {group.variants.length > 0 && (
+                                        <span className="text-xs text-text-secondary">
+                                          ({group.variants.length})
+                                        </span>
+                                      )}
+                                      {group.base.hasModel && (
+                                        <Sparkles
+                                          size={12}
+                                          className="text-success flex-shrink-0"
+                                        />
+                                      )}
                                       <button
-                                        onClick={(e) => toggleFavorite(variant, e)}
-                                        disabled={updatingFavorites.has(variant.id)}
+                                        onClick={(e) =>
+                                          toggleFavorite(group.base, e)
+                                        }
+                                        disabled={updatingFavorites.has(
+                                          group.base.id,
+                                        )}
                                         className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
-                                        title={variant.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                                        aria-label={variant.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                        title={
+                                          group.base.metadata.isFavorite
+                                            ? "Remove from favorites"
+                                            : "Add to favorites"
+                                        }
+                                        aria-label={
+                                          group.base.metadata.isFavorite
+                                            ? "Remove from favorites"
+                                            : "Add to favorites"
+                                        }
                                       >
-                                        {updatingFavorites.has(variant.id) ? (
-                                          <div className="w-2.5 h-2.5 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                        {updatingFavorites.has(
+                                          group.base.id,
+                                        ) ? (
+                                          <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
                                         ) : (
                                           <Star
-                                            size={10}
+                                            size={12}
                                             className={`${
-                                              variant.metadata.isFavorite
-                                                ? 'text-yellow-400 fill-yellow-400'
-                                                : 'text-text-tertiary hover:text-yellow-400'
+                                              group.base.metadata.isFavorite
+                                                ? "text-yellow-400 fill-yellow-400"
+                                                : "text-text-tertiary hover:text-yellow-400"
                                             } transition-colors`}
                                           />
                                         )}
                                       </button>
                                     </div>
 
-                                    {variant.metadata?.tier && (
-                                      <div className="flex items-center gap-1.5 mt-0.5">
-                                        <div
-                                          className="w-2 h-2 rounded-full shadow-sm"
-                                          style={{ backgroundColor: getTierColor(variant.metadata.tier) }}
-                                        />
-                                        <span
-                                          className="text-xs font-medium capitalize"
-                                          style={{ color: getTierColor(variant.metadata.tier) }}
-                                        >
-                                          {variant.metadata.tier}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  <div className="flex items-center gap-1 flex-shrink-0">
-                                    {variant.hasModel && (
-                                      <Sparkles size={10} className="text-success" />
-                                    )}
-                                    {selectedAsset?.id === variant.id && (
-                                      <div className="w-0.5 h-6 bg-primary rounded-full" />
-                                    )}
+                                    <div className="flex items-center gap-2 text-xs mt-0.5">
+                                      <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
+                                        BASE
+                                      </span>
+                                      <span className="text-text-secondary capitalize">
+                                        {group.base.type}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
+
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  {selectedAsset?.id === group.base.id && (
+                                    <div className="w-1 h-8 bg-primary rounded-full" />
+                                  )}
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Standalone Items in this type */}
-                    {typeData.standalone.map((asset, index) => (
-                      <div
-                        key={asset.id}
-                        className={`group relative rounded-lg transition-all duration-200 micro-list-item micro-state-transition ${selectedAsset?.id === asset.id
-                            ? 'bg-primary bg-opacity-5'
-                            : 'hover:bg-bg-primary hover:bg-opacity-50'
-                          }`}
-                        style={{
-                          animationDelay: `${(typeIndex * 50) + (typeData.groups.length * 30) + (index * 30)}ms`
-                        }}
-                        onClick={() => handleAssetSelect(asset)}
-                      >
-                        <div className="flex items-center gap-3 p-2 hover:bg-bg-primary hover:bg-opacity-40 rounded-lg transition-colors">
-                          {/* Checkbox for selection mode */}
-                          {selectionMode ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                toggleAssetSelection(asset.id)
-                              }}
-                              className="p-1 -ml-1 mr-1 hover:bg-bg-secondary rounded transition-all flex-shrink-0"
-                            >
-                              {selectedAssetIds.has(asset.id) ? (
-                                <CheckSquare size={16} className="text-primary" />
-                              ) : (
-                                <Square size={16} className="text-text-tertiary" />
-                              )}
-                            </button>
-                          ) : (
-                            <div className="w-6" />
-                          )}
-
-                          <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${selectedAsset?.id === asset.id
-                              ? 'bg-primary bg-opacity-10 text-text-primary shadow-sm ring-2 ring-primary'
-                              : 'bg-bg-secondary bg-opacity-70 text-text-tertiary'
-                            }`}>
-                            {React.cloneElement(getAssetIcon(asset.type, asset.metadata?.subtype), { size: 18 })}
-                          </div>
-
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium text-sm text-text-primary truncate">
-                                {cleanAssetName(asset.name, asset.metadata?.isBaseModel)}
-                              </h3>
-                              {asset.hasModel && (
-                                <Sparkles size={12} className="text-success flex-shrink-0" />
-                              )}
-                              <button
-                                onClick={(e) => toggleFavorite(asset, e)}
-                                disabled={updatingFavorites.has(asset.id)}
-                                className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
-                                title={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                                aria-label={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                              >
-                                {updatingFavorites.has(asset.id) ? (
-                                  <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  <Star
-                                    size={12}
-                                    className={`${
-                                      asset.metadata.isFavorite
-                                        ? 'text-yellow-400 fill-yellow-400'
-                                        : 'text-text-tertiary hover:text-yellow-400'
-                                    } transition-colors`}
-                                  />
-                                )}
-                              </button>
                             </div>
 
-                            <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">
-                              {asset.metadata?.isBaseModel && (
-                                <>
-                                  <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
-                                    BASE
-                                  </span>
-                                  <span className="text-text-muted">•</span>
-                                </>
-                              )}
-                              <span className="text-text-tertiary capitalize">{asset.type}</span>
+                            {/* Variants */}
+                            {expandedGroups.has(group.base.id) && (
+                              <div className="ml-10 mt-0.5 space-y-0.5">
+                                {group.variants.map((variant, variantIndex) => (
+                                  <div
+                                    key={variant.id}
+                                    className={`group relative rounded-md cursor-pointer transition-all duration-200 micro-state-transition ${
+                                      selectedAsset?.id === variant.id
+                                        ? "bg-primary bg-opacity-5"
+                                        : "hover:bg-bg-primary hover:bg-opacity-30"
+                                    }`}
+                                    onClick={() => handleAssetSelect(variant)}
+                                    style={{
+                                      animationDelay: `${typeIndex * 50 + groupIndex * 30 + variantIndex * 10}ms`,
+                                    }}
+                                  >
+                                    <div className="flex items-center gap-3 p-2 pl-3">
+                                      {/* Checkbox for selection mode */}
+                                      {selectionMode && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleAssetSelection(variant.id);
+                                          }}
+                                          className="p-1 -ml-2 mr-1 hover:bg-bg-secondary rounded transition-all flex-shrink-0"
+                                        >
+                                          {selectedAssetIds.has(variant.id) ? (
+                                            <CheckSquare
+                                              size={14}
+                                              className="text-primary"
+                                            />
+                                          ) : (
+                                            <Square
+                                              size={14}
+                                              className="text-text-tertiary"
+                                            />
+                                          )}
+                                        </button>
+                                      )}
+                                      <div
+                                        className={`flex-shrink-0 w-8 h-8 rounded-md flex items-center justify-center transition-all duration-200 group-hover:scale-105 ${
+                                          selectedAsset?.id === variant.id
+                                            ? "bg-primary bg-opacity-10 text-text-primary ring-2 ring-primary"
+                                            : "bg-bg-secondary bg-opacity-50 text-text-tertiary group-hover:bg-bg-tertiary group-hover:text-text-secondary"
+                                        }`}
+                                      >
+                                        {React.cloneElement(
+                                          getAssetIcon(
+                                            variant.type,
+                                            variant.metadata?.subtype,
+                                          ),
+                                          { size: 16 },
+                                        )}
+                                      </div>
 
-                              {asset.metadata?.tier && asset.metadata.tier !== 'base' && (
-                                <>
-                                  <span className="text-text-muted">•</span>
-                                  <div className="flex items-center gap-1">
-                                    <div
-                                      className="w-1.5 h-1.5 rounded-full"
-                                      style={{ backgroundColor: getTierColor(asset.metadata.tier) }}
-                                    />
-                                    <span
-                                      className="font-medium capitalize"
-                                      style={{ color: getTierColor(asset.metadata.tier) }}
-                                    >
-                                      {asset.metadata.tier}
-                                    </span>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                          <h3 className="font-medium text-xs text-text-primary truncate">
+                                            {cleanAssetName(variant.name)}
+                                          </h3>
+                                          <button
+                                            onClick={(e) =>
+                                              toggleFavorite(variant, e)
+                                            }
+                                            disabled={updatingFavorites.has(
+                                              variant.id,
+                                            )}
+                                            className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
+                                            title={
+                                              variant.metadata.isFavorite
+                                                ? "Remove from favorites"
+                                                : "Add to favorites"
+                                            }
+                                            aria-label={
+                                              variant.metadata.isFavorite
+                                                ? "Remove from favorites"
+                                                : "Add to favorites"
+                                            }
+                                          >
+                                            {updatingFavorites.has(
+                                              variant.id,
+                                            ) ? (
+                                              <div className="w-2.5 h-2.5 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                              <Star
+                                                size={10}
+                                                className={`${
+                                                  variant.metadata.isFavorite
+                                                    ? "text-yellow-400 fill-yellow-400"
+                                                    : "text-text-tertiary hover:text-yellow-400"
+                                                } transition-colors`}
+                                              />
+                                            )}
+                                          </button>
+                                        </div>
+
+                                        {variant.metadata?.tier && (
+                                          <div className="flex items-center gap-1.5 mt-0.5">
+                                            <div
+                                              className="w-2 h-2 rounded-full shadow-sm"
+                                              style={{
+                                                backgroundColor: getTierColor(
+                                                  variant.metadata.tier,
+                                                ),
+                                              }}
+                                            />
+                                            <span
+                                              className="text-xs font-medium capitalize"
+                                              style={{
+                                                color: getTierColor(
+                                                  variant.metadata.tier,
+                                                ),
+                                              }}
+                                            >
+                                              {variant.metadata.tier}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <div className="flex items-center gap-1 flex-shrink-0">
+                                        {variant.hasModel && (
+                                          <Sparkles
+                                            size={10}
+                                            className="text-success"
+                                          />
+                                        )}
+                                        {selectedAsset?.id === variant.id && (
+                                          <div className="w-0.5 h-6 bg-primary rounded-full" />
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
-                                </>
-                              )}
-
-                              {asset.metadata?.isPlaceholder && (
-                                <>
-                                  <span className="text-text-muted">•</span>
-                                  <span className="bg-warning bg-opacity-15 text-warning px-1.5 py-0.5 rounded text-xs font-medium">
-                                    PLACEHOLDER
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            {selectedAsset?.id === asset.id && (
-                              <div className="w-1 h-8 bg-primary rounded-full" />
+                                ))}
+                              </div>
                             )}
                           </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )
-              })}
-            </>
-          ) : (
-            /* Flat view - grouped by type */
-            <>
-              {Object.entries(assetsByType).map(([type, typeAssets], typeIndex) => {
-                // Better pluralization
-                const typeLabel = (() => {
-                  const capitalizedType = type.charAt(0).toUpperCase() + type.slice(1)
-                  switch (type) {
-                    case 'ammunition': return 'Ammunition'
-                    case 'armor': return 'Armor'
-                    default: return capitalizedType + 's'
-                  }
-                })()
+                        ))}
 
-                return (
-                  <div key={type} className="mb-4">
-                    {/* Type Header */}
-                    <div className="flex items-center gap-2 mb-2 px-2">
-                      <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
-                        {typeLabel} ({typeAssets.length})
-                      </h3>
-                      <div className="flex-1 h-px bg-border-secondary opacity-30" />
-                    </div>
-
-                    {/* Assets in this type */}
-                    {typeAssets.map((asset, index) => {
-                      const isBase = asset.metadata?.isBaseModel
-                      const variantCount = isBase ? assetGroups.groups.find(g => g.base.id === asset.id)?.variants.length || 0 : 0
-
-                      return (
-                        <div
-                          key={asset.id}
-                          className={`group relative rounded-lg transition-all duration-200 micro-list-item micro-state-transition ${selectedAsset?.id === asset.id
-                              ? 'bg-primary bg-opacity-5'
-                              : 'hover:bg-bg-primary hover:bg-opacity-50'
+                        {/* Standalone Items in this type */}
+                        {typeData.standalone.map((asset, index) => (
+                          <div
+                            key={asset.id}
+                            className={`group relative rounded-lg transition-all duration-200 micro-list-item micro-state-transition ${
+                              selectedAsset?.id === asset.id
+                                ? "bg-primary bg-opacity-5"
+                                : "hover:bg-bg-primary hover:bg-opacity-50"
                             }`}
-                          style={{
-                            animationDelay: `${(typeIndex * 50) + (index * 10)}ms`
-                          }}
-                          onClick={() => handleAssetSelect(asset)}
-                        >
-                          <div className="flex items-center gap-3 p-2 hover:bg-bg-primary hover:bg-opacity-40 rounded-lg transition-colors">
-                            {/* Checkbox for selection mode */}
-                            {selectionMode && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleAssetSelection(asset.id)
-                                }}
-                                className="p-1 -ml-1 mr-1 hover:bg-bg-secondary rounded transition-all flex-shrink-0"
-                              >
-                                {selectedAssetIds.has(asset.id) ? (
-                                  <CheckSquare size={16} className="text-primary" />
-                                ) : (
-                                  <Square size={16} className="text-text-tertiary" />
-                                )}
-                              </button>
-                            )}
-                            <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${selectedAsset?.id === asset.id
-                                ? 'bg-primary bg-opacity-10 text-text-primary shadow-sm ring-2 ring-primary'
-                                : 'bg-bg-secondary bg-opacity-70 text-text-tertiary'
-                              }`}>
-                              {React.cloneElement(getAssetIcon(asset.type, asset.metadata?.subtype), { size: 18 })}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium text-sm text-text-primary truncate">
-                                  {cleanAssetName(asset.name, asset.metadata?.isBaseModel)}
-                                </h3>
-                                {asset.hasModel && (
-                                  <Sparkles size={12} className="text-success flex-shrink-0" />
-                                )}
+                            style={{
+                              animationDelay: `${typeIndex * 50 + typeData.groups.length * 30 + index * 30}ms`,
+                            }}
+                            onClick={() => handleAssetSelect(asset)}
+                          >
+                            <div className="flex items-center gap-3 p-2 hover:bg-bg-primary hover:bg-opacity-40 rounded-lg transition-colors">
+                              {/* Checkbox for selection mode */}
+                              {selectionMode ? (
                                 <button
-                                  onClick={(e) => toggleFavorite(asset, e)}
-                                  disabled={updatingFavorites.has(asset.id)}
-                                  className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
-                                  title={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                                  aria-label={asset.metadata.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleAssetSelection(asset.id);
+                                  }}
+                                  className="p-1 -ml-1 mr-1 hover:bg-bg-secondary rounded transition-all flex-shrink-0"
                                 >
-                                  {updatingFavorites.has(asset.id) ? (
-                                    <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                  {selectedAssetIds.has(asset.id) ? (
+                                    <CheckSquare
+                                      size={16}
+                                      className="text-primary"
+                                    />
                                   ) : (
-                                    <Star
-                                      size={12}
-                                      className={`${
-                                        asset.metadata.isFavorite
-                                          ? 'text-yellow-400 fill-yellow-400'
-                                          : 'text-text-tertiary hover:text-yellow-400'
-                                      } transition-colors`}
+                                    <Square
+                                      size={16}
+                                      className="text-text-tertiary"
                                     />
                                   )}
                                 </button>
-                              </div>
-
-                              <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">
-                                {asset.metadata?.isBaseModel && (
-                                  <>
-                                    <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
-                                      BASE
-                                    </span>
-                                    <span className="text-text-muted">•</span>
-                                  </>
-                                )}
-                                <span className="text-text-tertiary capitalize">{asset.type}</span>
-
-                                {asset.metadata?.isBaseModel && variantCount > 0 && (
-                                  <>
-                                    <span className="text-text-muted">•</span>
-                                    <span className="text-text-secondary flex items-center gap-1">
-                                      <Layers size={10} className="text-text-tertiary" />
-                                      {variantCount} variant{variantCount !== 1 ? 's' : ''}
-                                    </span>
-                                  </>
-                                )}
-
-                                {asset.metadata?.tier && asset.metadata.tier !== 'base' && (
-                                  <>
-                                    <span className="text-text-muted">•</span>
-                                    <div className="flex items-center gap-1">
-                                      <div
-                                        className="w-1.5 h-1.5 rounded-full"
-                                        style={{ backgroundColor: getTierColor(asset.metadata.tier) }}
-                                      />
-                                      <span
-                                        className="font-medium capitalize"
-                                        style={{ color: getTierColor(asset.metadata.tier) }}
-                                      >
-                                        {asset.metadata.tier}
-                                      </span>
-                                    </div>
-                                  </>
-                                )}
-
-                                {asset.metadata?.isPlaceholder && (
-                                  <>
-                                    <span className="text-text-muted">•</span>
-                                    <span className="bg-warning bg-opacity-15 text-warning px-1.5 py-0.5 rounded text-xs font-medium">
-                                      PLACEHOLDER
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1 flex-shrink-0">
-                              {selectedAsset?.id === asset.id && (
-                                <div className="w-1 h-8 bg-primary rounded-full" />
+                              ) : (
+                                <div className="w-6" />
                               )}
+
+                              <div
+                                className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                                  selectedAsset?.id === asset.id
+                                    ? "bg-primary bg-opacity-10 text-text-primary shadow-sm ring-2 ring-primary"
+                                    : "bg-bg-secondary bg-opacity-70 text-text-tertiary"
+                                }`}
+                              >
+                                {React.cloneElement(
+                                  getAssetIcon(
+                                    asset.type,
+                                    asset.metadata?.subtype,
+                                  ),
+                                  { size: 18 },
+                                )}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium text-sm text-text-primary truncate">
+                                    {cleanAssetName(
+                                      asset.name,
+                                      asset.metadata?.isBaseModel,
+                                    )}
+                                  </h3>
+                                  {asset.hasModel && (
+                                    <Sparkles
+                                      size={12}
+                                      className="text-success flex-shrink-0"
+                                    />
+                                  )}
+                                  <button
+                                    onClick={(e) => toggleFavorite(asset, e)}
+                                    disabled={updatingFavorites.has(asset.id)}
+                                    className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
+                                    title={
+                                      asset.metadata.isFavorite
+                                        ? "Remove from favorites"
+                                        : "Add to favorites"
+                                    }
+                                    aria-label={
+                                      asset.metadata.isFavorite
+                                        ? "Remove from favorites"
+                                        : "Add to favorites"
+                                    }
+                                  >
+                                    {updatingFavorites.has(asset.id) ? (
+                                      <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                      <Star
+                                        size={12}
+                                        className={`${
+                                          asset.metadata.isFavorite
+                                            ? "text-yellow-400 fill-yellow-400"
+                                            : "text-text-tertiary hover:text-yellow-400"
+                                        } transition-colors`}
+                                      />
+                                    )}
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">
+                                  {asset.metadata?.isBaseModel && (
+                                    <>
+                                      <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
+                                        BASE
+                                      </span>
+                                      <span className="text-text-muted">•</span>
+                                    </>
+                                  )}
+                                  <span className="text-text-tertiary capitalize">
+                                    {asset.type}
+                                  </span>
+
+                                  {asset.metadata?.tier &&
+                                    asset.metadata.tier !== "base" && (
+                                      <>
+                                        <span className="text-text-muted">
+                                          •
+                                        </span>
+                                        <div className="flex items-center gap-1">
+                                          <div
+                                            className="w-1.5 h-1.5 rounded-full"
+                                            style={{
+                                              backgroundColor: getTierColor(
+                                                asset.metadata.tier,
+                                              ),
+                                            }}
+                                          />
+                                          <span
+                                            className="font-medium capitalize"
+                                            style={{
+                                              color: getTierColor(
+                                                asset.metadata.tier,
+                                              ),
+                                            }}
+                                          >
+                                            {asset.metadata.tier}
+                                          </span>
+                                        </div>
+                                      </>
+                                    )}
+
+                                  {asset.metadata?.isPlaceholder && (
+                                    <>
+                                      <span className="text-text-muted">•</span>
+                                      <span className="bg-warning bg-opacity-15 text-warning px-1.5 py-0.5 rounded text-xs font-medium">
+                                        PLACEHOLDER
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                {selectedAsset?.id === asset.id && (
+                                  <div className="w-1 h-8 bg-primary rounded-full" />
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )
-              })}
-            </>
-          )}
+                        ))}
+                      </div>
+                    );
+                  },
+                )}
+              </>
+            ) : (
+              /* Flat view - grouped by type */
+              <>
+                {Object.entries(assetsByType).map(
+                  ([type, typeAssets], typeIndex) => {
+                    // Better pluralization
+                    const typeLabel = (() => {
+                      const capitalizedType =
+                        type.charAt(0).toUpperCase() + type.slice(1);
+                      switch (type) {
+                        case "ammunition":
+                          return "Ammunition";
+                        case "armor":
+                          return "Armor";
+                        default:
+                          return capitalizedType + "s";
+                      }
+                    })();
 
-          {/* Loading indicator for list view */}
-          {isLoadingMore && (
-            <div className="flex items-center justify-center p-4">
-              <Loader2 className="w-5 h-5 text-primary animate-spin" />
-              <span className="ml-2 text-sm text-text-secondary">Loading more assets...</span>
-            </div>
-          )}
-        </div>
+                    return (
+                      <div key={type} className="mb-4">
+                        {/* Type Header */}
+                        <div className="flex items-center gap-2 mb-2 px-2">
+                          <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider">
+                            {typeLabel} ({typeAssets.length})
+                          </h3>
+                          <div className="flex-1 h-px bg-border-secondary opacity-30" />
+                        </div>
+
+                        {/* Assets in this type */}
+                        {typeAssets.map((asset, index) => {
+                          const isBase = asset.metadata?.isBaseModel;
+                          const variantCount = isBase
+                            ? assetGroups.groups.find(
+                                (g) => g.base.id === asset.id,
+                              )?.variants.length || 0
+                            : 0;
+
+                          return (
+                            <div
+                              key={asset.id}
+                              className={`group relative rounded-lg transition-all duration-200 micro-list-item micro-state-transition ${
+                                selectedAsset?.id === asset.id
+                                  ? "bg-primary bg-opacity-5"
+                                  : "hover:bg-bg-primary hover:bg-opacity-50"
+                              }`}
+                              style={{
+                                animationDelay: `${typeIndex * 50 + index * 10}ms`,
+                              }}
+                              onClick={() => handleAssetSelect(asset)}
+                            >
+                              <div className="flex items-center gap-3 p-2 hover:bg-bg-primary hover:bg-opacity-40 rounded-lg transition-colors">
+                                {/* Checkbox for selection mode */}
+                                {selectionMode && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleAssetSelection(asset.id);
+                                    }}
+                                    className="p-1 -ml-1 mr-1 hover:bg-bg-secondary rounded transition-all flex-shrink-0"
+                                  >
+                                    {selectedAssetIds.has(asset.id) ? (
+                                      <CheckSquare
+                                        size={16}
+                                        className="text-primary"
+                                      />
+                                    ) : (
+                                      <Square
+                                        size={16}
+                                        className="text-text-tertiary"
+                                      />
+                                    )}
+                                  </button>
+                                )}
+                                <div
+                                  className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 ${
+                                    selectedAsset?.id === asset.id
+                                      ? "bg-primary bg-opacity-10 text-text-primary shadow-sm ring-2 ring-primary"
+                                      : "bg-bg-secondary bg-opacity-70 text-text-tertiary"
+                                  }`}
+                                >
+                                  {React.cloneElement(
+                                    getAssetIcon(
+                                      asset.type,
+                                      asset.metadata?.subtype,
+                                    ),
+                                    { size: 18 },
+                                  )}
+                                </div>
+
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-medium text-sm text-text-primary truncate">
+                                      {cleanAssetName(
+                                        asset.name,
+                                        asset.metadata?.isBaseModel,
+                                      )}
+                                    </h3>
+                                    {asset.hasModel && (
+                                      <Sparkles
+                                        size={12}
+                                        className="text-success flex-shrink-0"
+                                      />
+                                    )}
+                                    <button
+                                      onClick={(e) => toggleFavorite(asset, e)}
+                                      disabled={updatingFavorites.has(asset.id)}
+                                      className="p-0.5 hover:scale-110 transition-transform flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
+                                      title={
+                                        asset.metadata.isFavorite
+                                          ? "Remove from favorites"
+                                          : "Add to favorites"
+                                      }
+                                      aria-label={
+                                        asset.metadata.isFavorite
+                                          ? "Remove from favorites"
+                                          : "Add to favorites"
+                                      }
+                                    >
+                                      {updatingFavorites.has(asset.id) ? (
+                                        <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                                      ) : (
+                                        <Star
+                                          size={12}
+                                          className={`${
+                                            asset.metadata.isFavorite
+                                              ? "text-yellow-400 fill-yellow-400"
+                                              : "text-text-tertiary hover:text-yellow-400"
+                                          } transition-colors`}
+                                        />
+                                      )}
+                                    </button>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 text-[0.6875rem] mt-0.5">
+                                    {asset.metadata?.isBaseModel && (
+                                      <>
+                                        <span className="px-1.5 py-0.5 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
+                                          BASE
+                                        </span>
+                                        <span className="text-text-muted">
+                                          •
+                                        </span>
+                                      </>
+                                    )}
+                                    <span className="text-text-tertiary capitalize">
+                                      {asset.type}
+                                    </span>
+
+                                    {asset.metadata?.isBaseModel &&
+                                      variantCount > 0 && (
+                                        <>
+                                          <span className="text-text-muted">
+                                            •
+                                          </span>
+                                          <span className="text-text-secondary flex items-center gap-1">
+                                            <Layers
+                                              size={10}
+                                              className="text-text-tertiary"
+                                            />
+                                            {variantCount} variant
+                                            {variantCount !== 1 ? "s" : ""}
+                                          </span>
+                                        </>
+                                      )}
+
+                                    {asset.metadata?.tier &&
+                                      asset.metadata.tier !== "base" && (
+                                        <>
+                                          <span className="text-text-muted">
+                                            •
+                                          </span>
+                                          <div className="flex items-center gap-1">
+                                            <div
+                                              className="w-1.5 h-1.5 rounded-full"
+                                              style={{
+                                                backgroundColor: getTierColor(
+                                                  asset.metadata.tier,
+                                                ),
+                                              }}
+                                            />
+                                            <span
+                                              className="font-medium capitalize"
+                                              style={{
+                                                color: getTierColor(
+                                                  asset.metadata.tier,
+                                                ),
+                                              }}
+                                            >
+                                              {asset.metadata.tier}
+                                            </span>
+                                          </div>
+                                        </>
+                                      )}
+
+                                    {asset.metadata?.isPlaceholder && (
+                                      <>
+                                        <span className="text-text-muted">
+                                          •
+                                        </span>
+                                        <span className="bg-warning bg-opacity-15 text-warning px-1.5 py-0.5 rounded text-xs font-medium">
+                                          PLACEHOLDER
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  {selectedAsset?.id === asset.id && (
+                                    <div className="w-1 h-8 bg-primary rounded-full" />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  },
+                )}
+              </>
+            )}
+
+            {/* Loading indicator for list view */}
+            {isLoadingMore && (
+              <div className="flex items-center justify-center p-4">
+                <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                <span className="ml-2 text-sm text-text-secondary">
+                  Loading more assets...
+                </span>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AssetList
+export default AssetList;

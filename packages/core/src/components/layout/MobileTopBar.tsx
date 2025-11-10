@@ -1,37 +1,37 @@
-import { useState } from 'react'
-import { Menu, User, Sparkles } from 'lucide-react'
-import { NavigationView } from '@/types'
-import { NAVIGATION_VIEWS } from '@/constants'
-import { useAuth } from '@/contexts/AuthContext'
-import { ProfileSettingsModal } from '@/components/auth/ProfileSettingsModal'
+import { useState } from "react";
+import { Menu, User, Sparkles } from "lucide-react";
+import { NavigationView } from "@/types";
+import { NAVIGATION_VIEWS } from "@/constants";
+import { useAuth } from "@/contexts/AuthContext";
+import { ProfileSettingsModal } from "@/components/auth/ProfileSettingsModal";
 
 interface MobileTopBarProps {
-  currentView: NavigationView
-  onMenuClick: () => void
+  currentView: NavigationView;
+  onMenuClick: () => void;
 }
 
 const VIEW_TITLES: Record<NavigationView, string> = {
-  [NAVIGATION_VIEWS.GENERATION]: 'Generate',
-  [NAVIGATION_VIEWS.ASSETS]: 'Assets',
-  [NAVIGATION_VIEWS.AUDIO]: 'Audio',
-  [NAVIGATION_VIEWS.CONTENT]: 'Content',
-  [NAVIGATION_VIEWS.CONTENT_LIBRARY]: 'Library',
-  [NAVIGATION_VIEWS.PLAYTESTER]: 'Playtester',
-  [NAVIGATION_VIEWS.EQUIPMENT]: 'Equipment',
-  [NAVIGATION_VIEWS.HAND_RIGGING]: 'Hand Rigging',
-  [NAVIGATION_VIEWS.ARMOR_FITTING]: 'Armor Fitting',
-  [NAVIGATION_VIEWS.RETARGET_ANIMATE]: 'Animation',
-  [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: 'Admin',
-  [NAVIGATION_VIEWS.SETTINGS]: 'Settings'
-}
+  [NAVIGATION_VIEWS.GENERATION]: "Generate",
+  [NAVIGATION_VIEWS.ASSETS]: "Assets",
+  [NAVIGATION_VIEWS.AUDIO]: "Audio",
+  [NAVIGATION_VIEWS.CONTENT]: "Content",
+  [NAVIGATION_VIEWS.CONTENT_LIBRARY]: "Library",
+  [NAVIGATION_VIEWS.PLAYTESTER]: "Playtester",
+  [NAVIGATION_VIEWS.EQUIPMENT]: "Equipment",
+  [NAVIGATION_VIEWS.HAND_RIGGING]: "Hand Rigging",
+  [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",
+  [NAVIGATION_VIEWS.RETARGET_ANIMATE]: "Animation",
+  [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin",
+  [NAVIGATION_VIEWS.SETTINGS]: "Settings",
+};
 
 export function MobileTopBar({ currentView, onMenuClick }: MobileTopBarProps) {
-  const { user, logout, completeProfile } = useAuth()
-  const [showProfileSettings, setShowProfileSettings] = useState(false)
+  const { user, logout, completeProfile } = useAuth();
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
 
   return (
     <>
-      <header className="h-14 bg-bg-secondary/95 backdrop-blur-sm border-b border-white/10 flex items-center justify-between px-4 sticky top-0 z-50">
+      <header className="h-14 solid-surface border-b border-white/10 flex items-center justify-between px-4 sticky top-0 z-50">
         {/* Hamburger Menu Button */}
         <button
           onClick={onMenuClick}
@@ -50,7 +50,9 @@ export function MobileTopBar({ currentView, onMenuClick }: MobileTopBarProps) {
             <h1 className="text-sm font-bold text-text-primary leading-none">
               {VIEW_TITLES[currentView]}
             </h1>
-            <p className="text-xs text-text-secondary leading-none mt-0.5">ALPHA</p>
+            <p className="text-xs text-text-secondary leading-none mt-0.5">
+              ALPHA
+            </p>
           </div>
         </div>
 
@@ -74,5 +76,5 @@ export function MobileTopBar({ currentView, onMenuClick }: MobileTopBarProps) {
         />
       )}
     </>
-  )
+  );
 }

@@ -221,7 +221,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
       {/* Scrollable Content */}
       <div ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar">
         {/* Search */}
-        <div className="p-4 sticky top-0 bg-bg-primary bg-opacity-95 z-10 backdrop-blur-sm">
+        <div className="p-4 sticky top-0 solid-panel z-10 ">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" size={18} />
             <Input

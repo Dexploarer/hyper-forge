@@ -225,6 +225,67 @@ const app = new Elysia()
     return Bun.file(filePath);
   })
 
+  // Image proxy to avoid CORS issues with external images
+  .get("/api/proxy/image", async ({ query }) => {
+    const { url } = query as { url?: string };
+
+    if (!url || typeof url !== "string") {
+      return new Response("URL parameter required", { status: 400 });
+    }
+
+    try {
+      // Validate URL format
+      const parsedUrl = new URL(url);
+
+      // Only allow HTTP/HTTPS protocols
+      if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+        return new Response("Only HTTP/HTTPS URLs are allowed", {
+          status: 400,
+        });
+      }
+
+      // Fetch external image
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Asset-Forge-Image-Proxy/1.0",
+        },
+      });
+
+      if (!response.ok) {
+        return new Response(
+          `Failed to fetch image: ${response.status} ${response.statusText}`,
+          { status: response.status },
+        );
+      }
+
+      // Get content type, default to jpeg if not specified
+      const contentType = response.headers.get("Content-Type") || "image/jpeg";
+
+      // Only allow image content types
+      if (!contentType.startsWith("image/")) {
+        return new Response("URL does not point to an image", { status: 400 });
+      }
+
+      // Stream the image
+      const blob = await response.blob();
+
+      return new Response(blob, {
+        headers: {
+          "Content-Type": contentType,
+          "Cache-Control": "public, max-age=31536000, immutable", // Cache for 1 year
+          "Access-Control-Allow-Origin": "*",
+          "X-Proxied-From": parsedUrl.hostname,
+        },
+      });
+    } catch (error) {
+      console.error("Image proxy error:", error);
+      return new Response(
+        `Invalid URL or fetch failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        { status: 400 },
+      );
+    }
+  })
+
   // Routes
   .use(healthRoutes)
   .use(promptRoutes)
@@ -362,35 +423,115 @@ const app = new Elysia()
   // Start server
   .listen(API_PORT);
 
-console.log(`🚀 Elysia Server running on http://localhost:${API_PORT}`);
-console.log(`🎨 Frontend: http://localhost:${API_PORT}/`);
-console.log(`📊 API Health: http://localhost:${API_PORT}/api/health`);
-console.log(`📚 API Docs: http://localhost:${API_PORT}/swagger`);
-console.log(`🖼️  Assets: http://localhost:${API_PORT}/gdd-assets/`);
-console.log(`✨ Performance: 22x faster than Express!`);
+// Startup banner
+console.log("\n" + "=".repeat(60));
+console.log("🚀 ASSET-FORGE API SERVER - ELYSIA + BUN");
+console.log("=".repeat(60));
 
-if (!process.env.MESHY_API_KEY) {
-  console.warn("⚠️  MESHY_API_KEY not found - retexturing will fail");
+// Server info
+console.log("\n📍 SERVER ENDPOINTS:");
+console.log(`   🌐 Server:      http://localhost:${API_PORT}`);
+console.log(`   🎨 Frontend:    http://localhost:${API_PORT}/`);
+console.log(`   📊 Health:      http://localhost:${API_PORT}/api/health`);
+console.log(`   📚 API Docs:    http://localhost:${API_PORT}/swagger`);
+console.log(`   🖼️  Assets:      http://localhost:${API_PORT}/gdd-assets/`);
+console.log(`   🔄 Proxy:       http://localhost:${API_PORT}/api/proxy/image`);
+console.log(`   ✨ Performance: 22x faster than Express (2.4M req/s)`);
+
+// Configuration status
+console.log("\n🔧 CONFIGURATION STATUS:");
+
+const configs = [
+  {
+    name: "Database (PostgreSQL)",
+    icon: "🗄️",
+    key: "DATABASE_URL",
+    enabled: !!process.env.DATABASE_URL,
+  },
+  {
+    name: "Authentication (Privy)",
+    icon: "🔐",
+    key: "PRIVY_APP_ID",
+    enabled: !!(process.env.PRIVY_APP_ID && process.env.PRIVY_APP_SECRET),
+  },
+  {
+    name: "AI Gateway / OpenAI",
+    icon: "🤖",
+    key: "AI_GATEWAY_API_KEY",
+    enabled: !!(process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY),
+  },
+  {
+    name: "3D Generation (Meshy)",
+    icon: "🎨",
+    key: "MESHY_API_KEY",
+    enabled: !!process.env.MESHY_API_KEY,
+  },
+  {
+    name: "Voice/Audio (ElevenLabs)",
+    icon: "🎤",
+    key: "ELEVENLABS_API_KEY",
+    enabled: !!process.env.ELEVENLABS_API_KEY,
+  },
+  {
+    name: "Vector Search (Qdrant)",
+    icon: "🔍",
+    key: "QDRANT_URL",
+    enabled: !!process.env.QDRANT_URL,
+  },
+  {
+    name: "Image Hosting (Imgur)",
+    icon: "📸",
+    key: "IMGUR_CLIENT_ID",
+    enabled: !!process.env.IMGUR_CLIENT_ID,
+    optional: true,
+  },
+];
+
+const configured = configs.filter((c) => c.enabled);
+const missing = configs.filter((c) => !c.enabled && !c.optional);
+
+configured.forEach((config) => {
+  console.log(`   ✅ ${config.icon} ${config.name}`);
+});
+
+if (missing.length > 0) {
+  console.log("\n⚠️  MISSING CONFIGURATION:");
+  missing.forEach((config) => {
+    console.log(`   ❌ ${config.icon} ${config.name}`);
+    console.log(`      → Set ${config.key} in environment variables`);
+  });
 }
-if (!process.env.AI_GATEWAY_API_KEY && !process.env.OPENAI_API_KEY) {
-  console.warn(
-    "⚠️  AI_GATEWAY_API_KEY or OPENAI_API_KEY required - image generation and prompt enhancement will fail",
-  );
-}
-if (!process.env.ELEVENLABS_API_KEY) {
-  console.warn(
-    "⚠️  ELEVENLABS_API_KEY not found - voice, music, and sound effects generation will fail",
-  );
-}
-if (!process.env.QDRANT_URL) {
-  console.warn(
-    "⚠️  QDRANT_URL not configured - semantic search and vector operations will not be available",
-  );
-}
-if (!process.env.PRIVY_APP_ID || !process.env.PRIVY_APP_SECRET) {
-  console.warn(
-    "⚠️  PRIVY_APP_ID and PRIVY_APP_SECRET not configured - authentication will not work",
-  );
-}
+
+// Feature availability
+console.log("\n🎯 AVAILABLE FEATURES:");
+const features = [
+  { name: "Asset Management", enabled: true },
+  { name: "3D Generation Pipeline", enabled: !!process.env.MESHY_API_KEY },
+  {
+    name: "Content Generation (NPC/Quest/Lore)",
+    enabled: !!(process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY),
+  },
+  { name: "Voice Generation", enabled: !!process.env.ELEVENLABS_API_KEY },
+  { name: "Music Generation", enabled: !!process.env.ELEVENLABS_API_KEY },
+  { name: "Sound Effects", enabled: !!process.env.ELEVENLABS_API_KEY },
+  { name: "Vector Search", enabled: !!process.env.QDRANT_URL },
+  {
+    name: "User Authentication",
+    enabled: !!(process.env.PRIVY_APP_ID && process.env.PRIVY_APP_SECRET),
+  },
+  { name: "Image Proxy (CORS)", enabled: true },
+  { name: "World Configuration", enabled: true },
+];
+
+features.forEach((feature) => {
+  const status = feature.enabled ? "✅" : "❌";
+  console.log(`   ${status} ${feature.name}`);
+});
+
+console.log("\n" + "=".repeat(60));
+console.log(
+  `✨ Server ready! Environment: ${process.env.NODE_ENV || "development"}`,
+);
+console.log("=".repeat(60) + "\n");
 
 export type App = typeof app;

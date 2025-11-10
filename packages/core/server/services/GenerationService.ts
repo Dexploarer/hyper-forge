@@ -8,6 +8,7 @@ import type { UserContextType } from "../models";
 import { AICreationService } from "./AICreationService";
 import { ImageHostingService } from "./ImageHostingService";
 import { assetDatabaseService } from "./AssetDatabaseService";
+import { generationJobService } from "./GenerationJobService";
 import {
   getGenerationPrompts,
   getGPT4EnhancementPrompts,
@@ -28,7 +29,10 @@ interface FetchResponse {
   arrayBuffer: () => Promise<ArrayBuffer>;
 }
 
-type FetchFunction = (url: string | URL, init?: Record<string, unknown>) => Promise<FetchResponse>;
+type FetchFunction = (
+  url: string | URL,
+  init?: Record<string, unknown>,
+) => Promise<FetchResponse>;
 type MaterialPresetType = Static<typeof MaterialPreset>;
 
 interface ReferenceImage {
@@ -206,7 +210,6 @@ interface OpenAIResponse {
 // ==================== Service Class ====================
 
 export class GenerationService extends EventEmitter {
-  private activePipelines: Map<string, Pipeline>;
   public aiService: AICreationService;
   private imageHostingService: ImageHostingService;
   private fetchFn: FetchFunction;
@@ -214,7 +217,6 @@ export class GenerationService extends EventEmitter {
   constructor(config?: { fetchFn?: FetchFunction }) {
     super();
 
-    this.activePipelines = new Map();
     this.fetchFn = (config?.fetchFn || fetch) as FetchFunction;
 
     // Check for required API keys
@@ -254,6 +256,7 @@ export class GenerationService extends EventEmitter {
   async startPipeline(config: PipelineConfig): Promise<StartPipelineResponse> {
     const pipelineId = `pipeline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+    // Create initial pipeline state
     const pipeline: Pipeline = {
       id: pipelineId,
       config,
@@ -280,13 +283,16 @@ export class GenerationService extends EventEmitter {
       createdAt: new Date().toISOString(),
     };
 
-    this.activePipelines.set(pipelineId, pipeline);
+    // Save to database
+    await generationJobService.createJob(pipelineId, config);
 
     // Start processing asynchronously
-    this.processPipeline(pipelineId).catch((error) => {
+    this.processPipeline(pipelineId).catch(async (error) => {
       console.error(`Pipeline ${pipelineId} failed:`, error);
-      pipeline.status = "failed";
-      pipeline.error = error.message;
+      await generationJobService.updateJob(pipelineId, {
+        status: "failed",
+        error: error.message,
+      });
     });
 
     return {
@@ -311,7 +317,11 @@ export class GenerationService extends EventEmitter {
     for (const [stageName, stageData] of Object.entries(pipeline.stages)) {
       stagesWithNames[stageName] = {
         name: stageName,
-        status: stageData.status as "pending" | "processing" | "completed" | "failed",
+        status: stageData.status as
+          | "pending"
+          | "processing"
+          | "completed"
+          | "failed",
         progress: stageData.progress,
         error: stageData.error,
       };
@@ -449,11 +459,9 @@ export class GenerationService extends EventEmitter {
             }
           }
 
-          const imageResult = await this.aiService.getImageService().generateImage(
-            imagePrompt,
-            pipeline.config.type,
-            effectiveStyle,
-          );
+          const imageResult = await this.aiService
+            .getImageService()
+            .generateImage(imagePrompt, pipeline.config.type, effectiveStyle);
 
           imageUrl = imageResult.imageUrl;
 
@@ -557,16 +565,15 @@ export class GenerationService extends EventEmitter {
           process.env.MESHY_MODEL_DEFAULT;
         const aiModel = aiModelEnv || "meshy-5";
 
-        meshyTaskId = await this.aiService.getMeshyService().startImageTo3D(
-          imageUrlForMeshy,
-          {
+        meshyTaskId = await this.aiService
+          .getMeshyService()
+          .startImageTo3D(imageUrlForMeshy, {
             enable_pbr: enablePbr,
             ai_model: aiModel,
             topology: "quad",
             targetPolycount: targetPolycount,
             texture_resolution: textureResolution,
-          },
-        );
+          });
 
         // Poll for completion
         let meshyResult: MeshyResult | null = null;
@@ -594,8 +601,9 @@ export class GenerationService extends EventEmitter {
             throw new Error("Meshy task ID is null");
           }
 
-          const status =
-            await this.aiService.getMeshyService().getTaskStatus(meshyTaskId);
+          const status = await this.aiService
+            .getMeshyService()
+            .getTaskStatus(meshyTaskId);
           pipeline.stages.image3D.progress =
             status.progress || (attempts / maxAttempts) * 100;
 
@@ -819,8 +827,9 @@ export class GenerationService extends EventEmitter {
             );
 
             // Use Meshy retexture API
-            const retextureTaskId =
-              await this.aiService.getMeshyService().startRetextureTask(
+            const retextureTaskId = await this.aiService
+              .getMeshyService()
+              .startRetextureTask(
                 { inputTaskId: meshyTaskId! },
                 { textStylePrompt: preset.stylePrompt },
                 {
@@ -838,10 +847,9 @@ export class GenerationService extends EventEmitter {
             while (retextureAttempts < maxRetextureAttempts) {
               await new Promise((resolve) => setTimeout(resolve, 5000));
 
-              const status =
-                await this.aiService.getMeshyService().getRetextureTaskStatus(
-                  retextureTaskId,
-                );
+              const status = await this.aiService
+                .getMeshyService()
+                .getRetextureTaskStatus(retextureTaskId);
 
               if (status.status === "SUCCEEDED") {
                 retextureResult = status as RetextureResult;
@@ -996,8 +1004,9 @@ export class GenerationService extends EventEmitter {
           console.log("🦴 Starting auto-rigging for avatar...");
 
           // Start rigging task
-          const riggingTaskId =
-            await this.aiService.getMeshyService().startRiggingTask(
+          const riggingTaskId = await this.aiService
+            .getMeshyService()
+            .startRiggingTask(
               { inputTaskId: meshyTaskId },
               {
                 heightMeters:
@@ -1015,10 +1024,9 @@ export class GenerationService extends EventEmitter {
           while (riggingAttempts < maxRiggingAttempts) {
             await new Promise((resolve) => setTimeout(resolve, 5000));
 
-            const status =
-              await this.aiService.getMeshyService().getRiggingTaskStatus(
-                riggingTaskId,
-              );
+            const status = await this.aiService
+              .getMeshyService()
+              .getRiggingTaskStatus(riggingTaskId);
             pipeline.stages.rigging!.progress =
               status.progress || (riggingAttempts / maxRiggingAttempts) * 100;
 
