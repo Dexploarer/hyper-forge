@@ -148,7 +148,8 @@ const app = new Elysia()
           },
           {
             name: "Seed Data",
-            description: "Generate interconnected game worlds with NPCs, quests, lore, and music",
+            description:
+              "Generate interconnected game worlds with NPCs, quests, lore, and music",
           },
           {
             name: "Relationships",
@@ -270,7 +271,8 @@ const app = new Elysia()
   // TEMPORARY: Download assets from URL for populating Railway volume
   // TODO: Remove this after assets are uploaded
   .post("/api/admin/download-assets", async ({ body, headers }) => {
-    const adminToken = process.env.ADMIN_UPLOAD_TOKEN || "temp-upload-secret-change-me";
+    const adminToken =
+      process.env.ADMIN_UPLOAD_TOKEN || "temp-upload-secret-change-me";
 
     if (headers.authorization !== `Bearer ${adminToken}`) {
       return new Response("Unauthorized", { status: 401 });
@@ -298,9 +300,12 @@ const app = new Elysia()
       console.log(`📦 Saved tar file to ${tarPath}`);
 
       // Extract tar file
-      const proc = Bun.spawn(["tar", "-xzf", tarPath, "-C", path.join(ROOT_DIR)], {
-        cwd: ROOT_DIR,
-      });
+      const proc = Bun.spawn(
+        ["tar", "-xzf", tarPath, "-C", path.join(ROOT_DIR)],
+        {
+          cwd: ROOT_DIR,
+        },
+      );
       await proc.exited;
       console.log(`✅ Extracted assets to ${assetsDir}`);
 
@@ -310,25 +315,44 @@ const app = new Elysia()
       return {
         success: true,
         message: "Assets downloaded and extracted successfully",
-        path: assetsDir
+        path: assetsDir,
       };
     } catch (error) {
       console.error("Download error:", error);
       return {
         error: "Download failed",
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
       };
     }
   })
 
   // Serve built frontend assets (CSS, JS, images) - Bun-native
-  .get("/assets/*", ({ params }) =>
-    Bun.file(path.join(ROOT_DIR, "dist", "assets", params["*"]))
-  )
+  .get("/assets/*", ({ params }) => {
+    const filePath = path.join(ROOT_DIR, "dist", "assets", params["*"]);
+    const file = Bun.file(filePath);
+    // Return 404 if file doesn't exist (prevents Elysia HEAD request errors)
+    return file.size === 0 && !fs.existsSync(filePath)
+      ? new Response("Not Found", { status: 404 })
+      : file;
+  })
 
   // SPA fallback - serve index.html for all non-API routes
   // This must be LAST to allow API routes and static assets to match first
-  .get("/*", () => Bun.file(path.join(ROOT_DIR, "dist", "index.html")))
+  .get("/*", () => {
+    const indexPath = path.join(ROOT_DIR, "dist", "index.html");
+    if (!fs.existsSync(indexPath)) {
+      console.error(`❌ Frontend not found at: ${indexPath}`);
+      console.error(`   Current working directory: ${process.cwd()}`);
+      console.error(`   ROOT_DIR: ${ROOT_DIR}`);
+      return new Response(
+        "Frontend build not found. Please run 'bun run build'.",
+        {
+          status: 500,
+        },
+      );
+    }
+    return Bun.file(indexPath);
+  })
 
   // Start server
   .listen(API_PORT);
