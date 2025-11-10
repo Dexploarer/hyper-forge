@@ -59,6 +59,7 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
   const [archetype, setArchetype] = useState("Merchant");
   const [prompt, setPrompt] = useState("");
   const [context, setContext] = useState("");
+  const [worldConfigId, setWorldConfigId] = useState<string | null>(null);
   const [quality, setQuality] = useState<QualityLevel>("quality");
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastGeneratedNPC, setLastGeneratedNPC] = useState<
@@ -85,6 +86,7 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
         prompt,
         context: context || undefined,
         quality,
+        worldConfigId: worldConfigId || undefined,
       });
 
       setLastGeneratedNPC(result.npc);
@@ -165,6 +167,13 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
             maxLength={200}
           />
         </div>
+
+        {/* World Configuration */}
+        <WorldConfigSelector
+          value={worldConfigId}
+          onChange={setWorldConfigId}
+          disabled={isGenerating}
+        />
 
         {/* Quality Selection */}
         <div className="space-y-2">
