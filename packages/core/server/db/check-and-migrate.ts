@@ -19,7 +19,7 @@ async function main() {
       );
     `);
 
-    const tableExists = result.rows[0]?.exists;
+    const tableExists = result[0]?.exists;
 
     if (tableExists) {
       console.log(
@@ -68,7 +68,7 @@ async function main() {
       );
     `);
 
-    const nowExists = verifyResult.rows[0]?.exists;
+    const nowExists = verifyResult[0]?.exists;
 
     if (nowExists) {
       console.log("[Database Check] ✓ Verification passed: Table exists");
