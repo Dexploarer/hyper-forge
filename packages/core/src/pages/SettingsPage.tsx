@@ -10,10 +10,12 @@ import {
   Copy,
   CheckCircle,
   Loader2,
+  Menu,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
 import { promptsClient, type PromptData } from '@/services/api/PromptsAPIClient'
+import { Drawer, CollapsibleSection } from '@/components/common'
 import { cn } from '@/styles'
 
 type PromptCategory =
@@ -84,6 +86,7 @@ export const SettingsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copiedCategory, setCopiedCategory] = useState<PromptCategory | null>(null)
+  const [showCategoryDrawer, setShowCategoryDrawer] = useState(false)
 
   // Load all prompts on mount
   useEffect(() => {
@@ -123,76 +126,86 @@ export const SettingsPage: React.FC = () => {
     : 0
 
   return (
-    <div className="h-full overflow-y-auto p-4">
-      <div className="max-w-7xl mx-auto space-y-4">
-        {/* Header */}
-        <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-primary/10 to-accent/10 border border-border-primary rounded-xl">
-          <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
-            <SettingsIcon className="w-6 h-6 text-primary" />
+    <>
+      <div className="h-full overflow-y-auto p-4">
+        <div className="max-w-7xl mx-auto space-y-4">
+          {/* Header */}
+          <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-primary/10 to-accent/10 border border-border-primary rounded-xl">
+            <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center">
+              <SettingsIcon className="w-6 h-6 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-text-primary">Settings & Configuration</h1>
+              <p className="text-sm text-text-secondary">
+                View and manage system prompts and configurations
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCategoryDrawer(true)}
+                className="lg:hidden p-3 bg-primary/20 hover:bg-primary/30 rounded-lg transition-colors"
+                title="Categories"
+              >
+                <Menu className="w-5 h-5 text-primary" />
+              </button>
+              <button
+                onClick={loadAllPrompts}
+                disabled={isLoading}
+                className="p-3 bg-primary/20 hover:bg-primary/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Refresh prompts"
+              >
+                <RefreshCw
+                  className={cn('w-5 h-5 text-primary', isLoading && 'animate-spin')}
+                />
+              </button>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary">Settings & Configuration</h1>
-            <p className="text-sm text-text-secondary">
-              View and manage system prompts and configurations
-            </p>
-          </div>
-          <button
-            onClick={loadAllPrompts}
-            disabled={isLoading}
-            className="ml-auto p-3 bg-primary/20 hover:bg-primary/30 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Refresh prompts"
-          >
-            <RefreshCw
-              className={cn('w-5 h-5 text-primary', isLoading && 'animate-spin')}
-            />
-          </button>
-        </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <p className="text-sm text-red-400">{error}</p>
-          </div>
-        )}
+          {/* Error Message */}
+          {error && (
+            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg">
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          {/* Category Sidebar */}
-          <div className="lg:col-span-1 space-y-1.5">
-            <h2 className="text-sm font-semibold text-text-tertiary uppercase tracking-wide px-3 mb-3">
-              Prompt Categories
-            </h2>
-            {CATEGORIES.map((category) => {
-              const data = prompts[category.id]
-              const count = data ? promptsClient.countPrompts(data) : 0
+          {/* Main Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {/* Category Sidebar - Hidden on mobile, shown in drawer */}
+            <div className="hidden lg:block lg:col-span-1 space-y-1.5">
+              <h2 className="text-sm font-semibold text-text-tertiary uppercase tracking-wide px-3 mb-3">
+                Prompt Categories
+              </h2>
+              {CATEGORIES.map((category) => {
+                const data = prompts[category.id]
+                const count = data ? promptsClient.countPrompts(data) : 0
 
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
-                    activeCategory === category.id
-                      ? 'bg-primary/20 border-2 border-primary/50 text-primary'
-                      : 'bg-bg-secondary border border-border-primary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary',
-                  )}
-                >
-                  <div
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveCategory(category.id)}
                     className={cn(
-                      'flex-shrink-0',
-                      activeCategory === category.id ? 'text-primary' : 'text-text-tertiary',
+                      'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
+                      activeCategory === category.id
+                        ? 'bg-primary/20 border-2 border-primary/50 text-primary'
+                        : 'bg-bg-secondary border border-border-primary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary',
                     )}
                   >
-                    {category.icon}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="text-sm font-semibold">{category.name}</div>
-                    <div className="text-xs opacity-70">{count} prompts</div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
+                    <div
+                      className={cn(
+                        'flex-shrink-0',
+                        activeCategory === category.id ? 'text-primary' : 'text-text-tertiary',
+                      )}
+                    >
+                      {category.icon}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="text-sm font-semibold">{category.name}</div>
+                      <div className="text-xs opacity-70">{count} prompts</div>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
 
           {/* Prompt Viewer */}
           <div className="lg:col-span-3">
@@ -261,15 +274,24 @@ export const SettingsPage: React.FC = () => {
                   </div>
                 ) : activeCategoryData ? (
                   <div className="space-y-4">
-                    <pre className="bg-bg-tertiary border border-border-primary rounded-lg p-4 overflow-x-auto text-xs text-text-primary font-mono max-h-[600px] overflow-y-auto">
-                      {promptsClient.formatJSON(activeCategoryData)}
-                    </pre>
+                    <CollapsibleSection
+                      title="JSON Data"
+                      defaultOpen={true}
+                      icon={FileText}
+                      badge={Object.keys(activeCategoryData).length}
+                    >
+                      <pre className="bg-bg-tertiary border border-border-primary rounded-lg p-4 overflow-x-auto text-xs text-text-primary font-mono max-h-[600px] overflow-y-auto">
+                        {promptsClient.formatJSON(activeCategoryData)}
+                      </pre>
+                    </CollapsibleSection>
 
                     {/* Extracted Prompt Texts */}
-                    <div className="space-y-3">
-                      <h3 className="text-sm font-semibold text-text-primary">
-                        Extracted Prompts
-                      </h3>
+                    <CollapsibleSection
+                      title="Extracted Prompts"
+                      defaultOpen={false}
+                      icon={Sparkles}
+                      badge={promptCount}
+                    >
                       <div className="space-y-2">
                         {promptsClient.extractPromptText(activeCategoryData).map((prompt, idx) => (
                           <div
@@ -280,7 +302,7 @@ export const SettingsPage: React.FC = () => {
                           </div>
                         ))}
                       </div>
-                    </div>
+                    </CollapsibleSection>
                   </div>
                 ) : (
                   <div className="text-center py-12 text-text-tertiary">
@@ -293,7 +315,52 @@ export const SettingsPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Category Drawer for Mobile */}
+      <Drawer
+        open={showCategoryDrawer}
+        onClose={() => setShowCategoryDrawer(false)}
+        side="left"
+        size="md"
+        title="Prompt Categories"
+      >
+        <div className="p-6 space-y-1.5">
+          {CATEGORIES.map((category) => {
+            const data = prompts[category.id]
+            const count = data ? promptsClient.countPrompts(data) : 0
+
+            return (
+              <button
+                key={category.id}
+                onClick={() => {
+                  setActiveCategory(category.id)
+                  setShowCategoryDrawer(false)
+                }}
+                className={cn(
+                  'w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
+                  activeCategory === category.id
+                    ? 'bg-primary/20 border-2 border-primary/50 text-primary'
+                    : 'bg-bg-secondary border border-border-primary text-text-secondary hover:bg-bg-tertiary hover:text-text-primary',
+                )}
+              >
+                <div
+                  className={cn(
+                    'flex-shrink-0',
+                    activeCategory === category.id ? 'text-primary' : 'text-text-tertiary',
+                  )}
+                >
+                  {category.icon}
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="text-sm font-semibold">{category.name}</div>
+                  <div className="text-xs opacity-70">{count} prompts</div>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </Drawer>
+    </>
   )
 }
 

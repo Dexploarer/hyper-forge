@@ -1,4 +1,5 @@
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useState } from 'react'
+import { Settings, Menu, HelpCircle, Image as ImageIcon } from 'lucide-react'
 
 import { useHandRiggingStore } from '../store'
 import type { ProcessingStage } from '../store'
@@ -14,6 +15,7 @@ import {
   HelpSection,
   ExportModal
 } from '@/components/HandRigging'
+import { Drawer, CollapsibleSection, Tray } from '@/components/common'
 import { ThreeViewerRef } from '@/components/shared/ThreeViewer'
 import { HandRiggingService, HandRiggingResult } from '@/services/hand-rigging/HandRiggingService'
 import { SimpleHandRiggingService, SimpleHandRiggingResult } from '@/services/hand-rigging/SimpleHandRiggingService'
@@ -24,6 +26,9 @@ export function HandRiggingPage() {
   const viewerRef = useRef<ThreeViewerRef>(null)
   const handRiggingService = useRef<HandRiggingService | null>(null)
   const simpleHandRiggingService = useRef<SimpleHandRiggingService | null>(null)
+  const [showControlsDrawer, setShowControlsDrawer] = useState(false)
+  const [showDebugTray, setShowDebugTray] = useState(false)
+  const [showHelpTray, setShowHelpTray] = useState(false)
 
   // Get state and actions from store
   const {
@@ -246,25 +251,41 @@ export function HandRiggingPage() {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left Sidebar - Configuration */}
-          <div className="lg:col-span-4 space-y-4">
-
-            {/* Upload Card with Controls */}
-            <HandAvatarSelector />
-
-            {selectedAvatar && (
-              <HandRiggingControls onStartProcessing={handleStartProcessing} />
-            )}
-
-            {/* Processing Pipeline */}
-            <HandProcessingSteps />
+    <>
+      <div className="h-full overflow-y-auto p-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Top Bar with Controls */}
+          <div className="mb-4 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-text-primary">Hand Rigging</h1>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowControlsDrawer(true)}
+                className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Controls</span>
+              </button>
+              {Object.keys(debugImages).length > 0 && (
+                <button
+                  onClick={() => setShowDebugTray(true)}
+                  className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  <span>Debug Images</span>
+                </button>
+              )}
+              <button
+                onClick={() => setShowHelpTray(true)}
+                className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"
+              >
+                <HelpCircle className="w-4 h-4" />
+                <span>Help</span>
+              </button>
+            </div>
           </div>
 
-          {/* Center - 3D Viewer */}
-          <div className="lg:col-span-8 space-y-4">
+          {/* Main Content - 3D Viewer */}
+          <div className="space-y-4">
             <ModelViewer
               modelUrl={modelUrl}
               selectedAvatar={selectedAvatar}
@@ -279,20 +300,83 @@ export function HandRiggingPage() {
               onModelLoad={handleModelLoad}
             />
 
-            {/* Model Stats */}
-            <ModelStats modelInfo={modelInfo} />
+            {/* Collapsible Sections for Stats and Results */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <CollapsibleSection
+                title="Model Statistics"
+                defaultOpen={false}
+                icon={Settings}
+                badge={modelInfo ? 1 : undefined}
+              >
+                <ModelStats modelInfo={modelInfo} />
+              </CollapsibleSection>
 
-            {/* Results Card */}
-            <RiggingResults riggingResult={riggingResult} />
+              <CollapsibleSection
+                title="Rigging Results"
+                defaultOpen={false}
+                icon={Settings}
+                badge={riggingResult ? 1 : undefined}
+              >
+                <RiggingResults riggingResult={riggingResult} />
+              </CollapsibleSection>
+            </div>
           </div>
         </div>
-
-        {/* Debug Images */}
-        <DebugImages debugImages={debugImages} showDebugImages={showDebugImages} />
-
-        {/* Help Section */}
-        <HelpSection useSimpleMode={useSimpleMode} />
       </div>
+
+      {/* Controls Drawer */}
+      <Drawer
+        open={showControlsDrawer}
+        onClose={() => setShowControlsDrawer(false)}
+        side="left"
+        size="lg"
+        title="Hand Rigging Controls"
+      >
+        <div className="p-6 space-y-4">
+          {/* Upload Card */}
+          <HandAvatarSelector />
+
+          {/* Controls */}
+          {selectedAvatar && (
+            <HandRiggingControls onStartProcessing={handleStartProcessing} />
+          )}
+
+          {/* Processing Pipeline */}
+          <CollapsibleSection
+            title="Processing Pipeline"
+            defaultOpen={true}
+            icon={Settings}
+          >
+            <HandProcessingSteps />
+          </CollapsibleSection>
+        </div>
+      </Drawer>
+
+      {/* Debug Images Tray */}
+      <Tray
+        open={showDebugTray}
+        onClose={() => setShowDebugTray(false)}
+        title="Debug Images"
+        defaultHeight="lg"
+        resizable={true}
+      >
+        <div className="p-6">
+          <DebugImages debugImages={debugImages} showDebugImages={true} />
+        </div>
+      </Tray>
+
+      {/* Help Tray */}
+      <Tray
+        open={showHelpTray}
+        onClose={() => setShowHelpTray(false)}
+        title="Help & Documentation"
+        defaultHeight="md"
+        resizable={true}
+      >
+        <div className="p-6">
+          <HelpSection useSimpleMode={useSimpleMode} />
+        </div>
+      </Tray>
 
       {/* Export Modal */}
       <ExportModal
@@ -302,6 +386,6 @@ export function HandRiggingPage() {
         onClose={() => setShowExportModal(false)}
         onExport={handleExport}
       />
-    </div>
+    </>
   )
 } 

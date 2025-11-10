@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, List } from 'lucide-react'
 
 import {
   AudioTypeSelector,
@@ -11,7 +11,7 @@ import {
   AudioPreviewCard
 } from '@/components/Audio'
 import { VoiceServiceStatus } from '@/components/Voice'
-import { Button } from '@/components/common'
+import { Button, Drawer } from '@/components/common'
 import type { AudioType, AudioView, GeneratedAudio } from '@/types/audio'
 
 interface AudioGenerationPageProps {
@@ -28,6 +28,7 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initia
   // Generated audios
   const [generatedAudios, setGeneratedAudios] = useState<GeneratedAudio[]>([])
   const [selectedAudio, setSelectedAudio] = useState<GeneratedAudio | null>(null)
+  const [showAudioDrawer, setShowAudioDrawer] = useState(false)
 
   // Auto-detect audio type from prompt and set it
   useEffect(() => {
@@ -105,58 +106,48 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initia
         {/* Config View */}
         {activeView === 'config' && (
           <div className="animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Main Generation Card */}
-              <div className="lg:col-span-2">
-                {/* Back Button */}
+            <div className="flex items-center justify-between mb-6">
+              {/* Back Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="text-text-secondary hover:text-text-primary"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back to audio types
+              </Button>
+
+              {/* Audio List Button */}
+              {generatedAudios.length > 0 && (
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
-                  onClick={handleBack}
-                  className="mb-4 text-text-secondary hover:text-text-primary"
+                  onClick={() => setShowAudioDrawer(true)}
+                  className="flex items-center gap-2"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Back to audio types
+                  <List className="w-4 h-4" />
+                  <span>Recent Audio ({generatedAudios.length})</span>
                 </Button>
+              )}
+            </div>
 
-                {audioType === 'voice' && (
-                  <VoiceGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
-                )}
-                {audioType === 'sfx' && (
-                  <SFXGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
-                )}
-                {audioType === 'music' && (
-                  <MusicGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
-                )}
-              </div>
+            {/* Main Generation Card */}
+            <div className="max-w-4xl space-y-4">
+              {/* Voice Service Status - Only show for voice generation */}
+              {audioType === 'voice' && (
+                <VoiceServiceStatus autoRefresh={true} refreshInterval={60000} />
+              )}
 
-              {/* Sidebar */}
-              <div className="space-y-3">
-                {/* Voice Service Status - Only show for voice generation */}
-                {audioType === 'voice' && (
-                  <VoiceServiceStatus autoRefresh={true} refreshInterval={60000} />
-                )}
-
-                {/* Recent Audios */}
-                <GeneratedAudioList
-                  audios={generatedAudios.slice(0, 5)}
-                  selectedAudio={selectedAudio}
-                  onAudioSelect={(audio) => {
-                    setSelectedAudio(audio)
-                    setActiveView('results')
-                  }}
-                />
-
-                {generatedAudios.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setActiveView('results')}
-                    className="w-full"
-                  >
-                    View All ({generatedAudios.length})
-                  </Button>
-                )}
-              </div>
+              {audioType === 'voice' && (
+                <VoiceGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
+              )}
+              {audioType === 'sfx' && (
+                <SFXGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
+              )}
+              {audioType === 'music' && (
+                <MusicGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
+              )}
             </div>
           </div>
         )}
@@ -171,28 +162,67 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initia
         {/* Results View */}
         {activeView === 'results' && (
           <div className="animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              {/* Audio List */}
-              <GeneratedAudioList
-                audios={generatedAudios}
-                selectedAudio={selectedAudio}
-                onAudioSelect={setSelectedAudio}
-              />
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-text-primary">Generated Audio</h2>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowAudioDrawer(true)}
+                className="flex items-center gap-2"
+              >
+                <List className="w-4 h-4" />
+                <span>View List ({generatedAudios.length})</span>
+              </Button>
+            </div>
 
-              {/* Audio Preview */}
-              <div className="lg:col-span-3">
-                {selectedAudio ? (
-                  <AudioPreviewCard audio={selectedAudio} />
-                ) : (
-                  <div className="text-center py-12 text-text-secondary">
-                    <p>Select an audio file to preview</p>
-                  </div>
-                )}
-              </div>
+            {/* Audio Preview */}
+            <div className="max-w-4xl">
+              {selectedAudio ? (
+                <AudioPreviewCard audio={selectedAudio} />
+              ) : (
+                <div className="text-center py-12 text-text-secondary">
+                  <p>Select an audio file to preview</p>
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Audio List Drawer */}
+      <Drawer
+        open={showAudioDrawer}
+        onClose={() => setShowAudioDrawer(false)}
+        side="right"
+        size="md"
+        title={`Generated Audio (${generatedAudios.length})`}
+      >
+        <div className="p-6">
+          <GeneratedAudioList
+            audios={activeView === 'results' ? generatedAudios : generatedAudios.slice(0, 5)}
+            selectedAudio={selectedAudio}
+            onAudioSelect={(audio) => {
+              setSelectedAudio(audio)
+              setActiveView('results')
+              setShowAudioDrawer(false)
+            }}
+          />
+          {activeView === 'config' && generatedAudios.length > 0 && (
+            <div className="mt-4">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setActiveView('results')
+                  setShowAudioDrawer(false)
+                }}
+                className="w-full"
+              >
+                View All ({generatedAudios.length})
+              </Button>
+            </div>
+          )}
+        </div>
+      </Drawer>
     </div>
   )
 }

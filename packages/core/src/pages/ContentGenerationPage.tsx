@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, List } from 'lucide-react'
 
 import {
   ContentTypeSelector,
@@ -11,7 +11,7 @@ import {
   GeneratedContentList,
   ContentPreviewCard
 } from '@/components/Content'
-import { Button } from '@/components/common'
+import { Button, Drawer } from '@/components/common'
 import type { ContentType, ContentView, GeneratedContent, NPCData, QuestData, DialogueNode, LoreData } from '@/types/content'
 
 interface ContentGenerationPageProps {
@@ -29,6 +29,7 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ in
   // Generated content
   const [generatedContents, setGeneratedContents] = useState<GeneratedContent[]>([])
   const [selectedContent, setSelectedContent] = useState<GeneratedContent | null>(null)
+  const [showContentDrawer, setShowContentDrawer] = useState(false)
 
   // Handle content generation completion
   const handleContentGenerated = (data: any, rawResponse: string, type: ContentType) => {
@@ -101,55 +102,46 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ in
         {/* Config View */}
         {activeView === 'config' && (
           <div className="animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Main Generation Card */}
-              <div className="lg:col-span-2">
-                {/* Back Button */}
+            <div className="flex items-center justify-between mb-4">
+              {/* Back Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="text-text-secondary hover:text-text-primary"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Back to content types
+              </Button>
+
+              {/* Content List Button */}
+              {generatedContents.length > 0 && (
                 <Button
-                  variant="ghost"
+                  variant="secondary"
                   size="sm"
-                  onClick={handleBack}
-                  className="mb-4 text-text-secondary hover:text-text-primary"
+                  onClick={() => setShowContentDrawer(true)}
+                  className="flex items-center gap-2"
                 >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Back to content types
+                  <List className="w-4 h-4" />
+                  <span>Recent Content ({generatedContents.length})</span>
                 </Button>
+              )}
+            </div>
 
-                {contentType === 'npc' && (
-                  <NPCGenerationCard onGenerated={(npc, raw) => handleContentGenerated(npc, raw, 'npc')} initialPrompt={initialPrompt} />
-                )}
-                {contentType === 'quest' && (
-                  <QuestGenerationCard onGenerated={(quest, raw) => handleContentGenerated(quest, raw, 'quest')} initialPrompt={initialPrompt} />
-                )}
-                {contentType === 'dialogue' && (
-                  <DialogueGenerationCard onGenerated={(nodes, raw) => handleContentGenerated(nodes, raw, 'dialogue')} initialPrompt={initialPrompt} />
-                )}
-                {contentType === 'lore' && (
-                  <LoreGenerationCard onGenerated={(lore, raw) => handleContentGenerated(lore, raw, 'lore')} initialPrompt={initialPrompt} />
-                )}
-              </div>
-
-              {/* Sidebar - Recent Content */}
-              <div className="space-y-4">
-                <GeneratedContentList
-                  contents={generatedContents.slice(0, 5)}
-                  selectedContent={selectedContent}
-                  onContentSelect={(content) => {
-                    setSelectedContent(content)
-                    setActiveView('results')
-                  }}
-                />
-
-                {generatedContents.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setActiveView('results')}
-                    className="w-full"
-                  >
-                    View All ({generatedContents.length})
-                  </Button>
-                )}
-              </div>
+            {/* Main Generation Card */}
+            <div className="max-w-4xl">
+              {contentType === 'npc' && (
+                <NPCGenerationCard onGenerated={(npc, raw) => handleContentGenerated(npc, raw, 'npc')} initialPrompt={initialPrompt} />
+              )}
+              {contentType === 'quest' && (
+                <QuestGenerationCard onGenerated={(quest, raw) => handleContentGenerated(quest, raw, 'quest')} initialPrompt={initialPrompt} />
+              )}
+              {contentType === 'dialogue' && (
+                <DialogueGenerationCard onGenerated={(nodes, raw) => handleContentGenerated(nodes, raw, 'dialogue')} initialPrompt={initialPrompt} />
+              )}
+              {contentType === 'lore' && (
+                <LoreGenerationCard onGenerated={(lore, raw) => handleContentGenerated(lore, raw, 'lore')} initialPrompt={initialPrompt} />
+              )}
             </div>
           </div>
         )}
@@ -164,28 +156,67 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ in
         {/* Results View */}
         {activeView === 'results' && (
           <div className="animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-              {/* Content List */}
-              <GeneratedContentList
-                contents={generatedContents}
-                selectedContent={selectedContent}
-                onContentSelect={setSelectedContent}
-              />
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-text-primary">Generated Content</h2>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowContentDrawer(true)}
+                className="flex items-center gap-2"
+              >
+                <List className="w-4 h-4" />
+                <span>View List ({generatedContents.length})</span>
+              </Button>
+            </div>
 
-              {/* Content Preview */}
-              <div className="lg:col-span-3">
-                {selectedContent ? (
-                  <ContentPreviewCard content={selectedContent} />
-                ) : (
-                  <div className="text-center py-12 text-text-secondary">
-                    <p>Select content to preview</p>
-                  </div>
-                )}
-              </div>
+            {/* Content Preview */}
+            <div className="max-w-4xl">
+              {selectedContent ? (
+                <ContentPreviewCard content={selectedContent} />
+              ) : (
+                <div className="text-center py-12 text-text-secondary">
+                  <p>Select content to preview</p>
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* Content List Drawer */}
+      <Drawer
+        open={showContentDrawer}
+        onClose={() => setShowContentDrawer(false)}
+        side="right"
+        size="md"
+        title={`Generated Content (${generatedContents.length})`}
+      >
+        <div className="p-6">
+          <GeneratedContentList
+            contents={activeView === 'results' ? generatedContents : generatedContents.slice(0, 5)}
+            selectedContent={selectedContent}
+            onContentSelect={(content) => {
+              setSelectedContent(content)
+              setActiveView('results')
+              setShowContentDrawer(false)
+            }}
+          />
+          {activeView === 'config' && generatedContents.length > 0 && (
+            <div className="mt-4">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setActiveView('results')
+                  setShowContentDrawer(false)
+                }}
+                className="w-full"
+              >
+                View All ({generatedContents.length})
+              </Button>
+            </div>
+          )}
+        </div>
+      </Drawer>
     </div>
   )
 }
