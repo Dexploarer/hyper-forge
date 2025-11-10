@@ -48,6 +48,7 @@ export interface GenerateNPCParams {
   prompt: string;
   context?: string;
   quality?: QualityLevel;
+  worldConfigId?: string;
 }
 
 // Quest Generation
@@ -77,6 +78,7 @@ export interface GenerateQuestParams {
   theme?: string;
   context?: string;
   quality?: QualityLevel;
+  worldConfigId?: string;
 }
 
 // Dialogue Generation
@@ -105,6 +107,7 @@ export interface GenerateDialogueParams {
   context?: string;
   existingNodes?: DialogueNode[];
   quality?: QualityLevel;
+  worldConfigId?: string;
 }
 
 // Lore Generation
@@ -115,6 +118,7 @@ export interface GenerateLoreParams {
   topic: string;
   context?: string;
   quality?: QualityLevel;
+  worldConfigId?: string;
 }
 
 // Generated Content Result
