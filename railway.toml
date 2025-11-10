@@ -4,10 +4,11 @@
 
 [build]
 builder = "RAILPACK"
-buildCommand = "cd packages/core && bun run build"
+workdir = "packages/core"
+# Let Railpack auto-detect and build the Bun + Vite app
 
 [deploy]
-startCommand = "cd packages/core && bun run start:api"
+startCommand = "bun run start:api"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"

@@ -1,60 +1,87 @@
-import { Book, Loader2, Zap, Shield, Sparkles } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import { Book, Loader2, Zap, Shield, Sparkles } from "lucide-react";
+import React, { useState, useEffect } from "react";
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
-import { ContentAPIClient } from '@/services/api/ContentAPIClient'
-import { notify } from '@/utils/notify'
-import type { LoreData, QualityLevel } from '@/types/content'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Button,
+  Input,
+  Textarea,
+} from "../common";
+import { WorldConfigSelector } from "../world-config";
+import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { notify } from "@/utils/notify";
+import type { LoreData, QualityLevel } from "@/types/content";
 
 interface LoreGenerationCardProps {
-  onGenerated?: (lore: LoreData & { id: string; metadata: any }, rawResponse: string) => void
-  initialPrompt?: string
+  onGenerated?: (
+    lore: LoreData & { id: string; metadata: any },
+    rawResponse: string,
+  ) => void;
+  initialPrompt?: string;
 }
 
 const CATEGORIES = [
-  'History', 'Religion', 'Culture', 'Geography', 'Magic System',
-  'Mythology', 'Politics', 'Technology', 'Factions', 'Artifacts', 'Events'
-]
+  "History",
+  "Religion",
+  "Culture",
+  "Geography",
+  "Magic System",
+  "Mythology",
+  "Politics",
+  "Technology",
+  "Factions",
+  "Artifacts",
+  "Events",
+];
 
-export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
-  const [apiClient] = useState(() => new ContentAPIClient())
-  const [category, setCategory] = useState('History')
-  const [topic, setTopic] = useState('')
-  const [context, setContext] = useState('')
-  const [quality, setQuality] = useState<QualityLevel>('balanced')
-  const [isGenerating, setIsGenerating] = useState(false)
+export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
+  onGenerated,
+  initialPrompt,
+}) => {
+  const [apiClient] = useState(() => new ContentAPIClient());
+  const [category, setCategory] = useState("History");
+  const [topic, setTopic] = useState("");
+  const [context, setContext] = useState("");
+  const [worldConfigId, setWorldConfigId] = useState<string | null>(null);
+  const [quality, setQuality] = useState<QualityLevel>("balanced");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Populate topic from initialPrompt
   useEffect(() => {
     if (initialPrompt && !topic) {
-      setTopic(initialPrompt)
+      setTopic(initialPrompt);
     }
-  }, [initialPrompt, topic])
+  }, [initialPrompt, topic]);
 
   const handleGenerate = async () => {
     if (!category || !topic) {
-      notify.warning('Please select a category and enter a topic')
-      return
+      notify.warning("Please select a category and enter a topic");
+      return;
     }
 
     try {
-      setIsGenerating(true)
+      setIsGenerating(true);
       const result = await apiClient.generateLore({
         category,
         topic,
         context: context || undefined,
-        quality
-      })
+        quality,
+        worldConfigId: worldConfigId || undefined,
+      });
 
-      onGenerated?.(result.lore, result.rawResponse)
-      notify.success('Lore generated successfully!')
+      onGenerated?.(result.lore, result.rawResponse);
+      notify.success("Lore generated successfully!");
     } catch (error) {
-      console.error('Failed to generate lore:', error)
-      notify.error('Failed to generate lore')
+      console.error("Failed to generate lore:", error);
+      notify.error("Failed to generate lore");
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   return (
     <Card className="bg-gradient-to-br from-bg-primary via-bg-secondary to-orange-500/5 border-border-primary shadow-lg">
@@ -64,8 +91,12 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({ onGenera
             <Book className="w-5 h-5 text-orange-500" />
           </div>
           <div>
-            <CardTitle className="text-lg font-semibold">World Lore Generation</CardTitle>
-            <CardDescription className="text-xs mt-0.5">Create rich world-building lore</CardDescription>
+            <CardTitle className="text-lg font-semibold">
+              World Lore Generation
+            </CardTitle>
+            <CardDescription className="text-xs mt-0.5">
+              Create rich world-building lore
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -73,21 +104,27 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({ onGenera
       <CardContent className="p-6 space-y-5">
         {/* Category Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Category</label>
+          <label className="text-sm font-medium text-text-primary">
+            Category
+          </label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
           >
             {CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
             ))}
           </select>
         </div>
 
         {/* Topic */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Topic / Subject</label>
+          <label className="text-sm font-medium text-text-primary">
+            Topic / Subject
+          </label>
           <Input
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
@@ -99,7 +136,9 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({ onGenera
 
         {/* Optional Context */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Additional Context (Optional)</label>
+          <label className="text-sm font-medium text-text-primary">
+            Additional Context (Optional)
+          </label>
           <Textarea
             value={context}
             onChange={(e) => setContext(e.target.value)}
@@ -107,41 +146,52 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({ onGenera
             className="w-full min-h-[80px] bg-bg-secondary/70 border-border-primary/50 focus:border-primary"
             maxLength={300}
           />
-          <div className="text-xs text-text-tertiary text-right">{context.length} / 300</div>
+          <div className="text-xs text-text-tertiary text-right">
+            {context.length} / 300
+          </div>
         </div>
+
+        {/* World Configuration */}
+        <WorldConfigSelector
+          value={worldConfigId}
+          onChange={setWorldConfigId}
+          disabled={isGenerating}
+        />
 
         {/* Quality Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Quality</label>
+          <label className="text-sm font-medium text-text-primary">
+            Quality
+          </label>
           <div className="grid grid-cols-3 gap-2">
             <button
-              onClick={() => setQuality('speed')}
+              onClick={() => setQuality("speed")}
               className={`p-3 rounded-lg border-2 transition-all ${
-                quality === 'speed'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50'
+                quality === "speed"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
               }`}
             >
               <Zap className="w-4 h-4 mx-auto mb-1" />
               <div className="text-xs font-medium">Speed</div>
             </button>
             <button
-              onClick={() => setQuality('balanced')}
+              onClick={() => setQuality("balanced")}
               className={`p-3 rounded-lg border-2 transition-all ${
-                quality === 'balanced'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50'
+                quality === "balanced"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
               }`}
             >
               <Shield className="w-4 h-4 mx-auto mb-1" />
               <div className="text-xs font-medium">Balanced</div>
             </button>
             <button
-              onClick={() => setQuality('quality')}
+              onClick={() => setQuality("quality")}
               className={`p-3 rounded-lg border-2 transition-all ${
-                quality === 'quality'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50'
+                quality === "quality"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
               }`}
             >
               <Sparkles className="w-4 h-4 mx-auto mb-1" />
@@ -170,5 +220,5 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({ onGenera
         </Button>
       </CardContent>
     </Card>
-  )
-}
+  );
+};

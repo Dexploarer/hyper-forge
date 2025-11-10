@@ -1,68 +1,114 @@
-import { Scroll, Loader2, Zap, Shield, Sparkles, TestTube2 } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import {
+  Scroll,
+  Loader2,
+  Zap,
+  Shield,
+  Sparkles,
+  TestTube2,
+} from "lucide-react";
+import React, { useState, useEffect } from "react";
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
-import { ContentAPIClient } from '@/services/api/ContentAPIClient'
-import { notify } from '@/utils/notify'
-import { useNavigation } from '@/hooks/useNavigation'
-import type { QuestData, QualityLevel } from '@/types/content'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Button,
+  Input,
+  Textarea,
+} from "../common";
+import { WorldConfigSelector } from "../world-config";
+import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { notify } from "@/utils/notify";
+import { useNavigation } from "@/hooks/useNavigation";
+import type { QuestData, QualityLevel } from "@/types/content";
 
 interface QuestGenerationCardProps {
-  onGenerated?: (quest: QuestData & { id: string; difficulty: string; questType: string; metadata: any }, rawResponse: string) => void
-  initialPrompt?: string
+  onGenerated?: (
+    quest: QuestData & {
+      id: string;
+      difficulty: string;
+      questType: string;
+      metadata: any;
+    },
+    rawResponse: string,
+  ) => void;
+  initialPrompt?: string;
 }
 
 const QUEST_TYPES = [
-  'Main Story', 'Side Quest', 'Fetch Quest', 'Kill Quest', 'Escort Quest',
-  'Collection Quest', 'Exploration Quest', 'Puzzle Quest', 'Rescue Mission', 'Investigation'
-]
+  "Main Story",
+  "Side Quest",
+  "Fetch Quest",
+  "Kill Quest",
+  "Escort Quest",
+  "Collection Quest",
+  "Exploration Quest",
+  "Puzzle Quest",
+  "Rescue Mission",
+  "Investigation",
+];
 
-const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Very Hard', 'Epic']
+const DIFFICULTIES = ["Easy", "Medium", "Hard", "Very Hard", "Epic"];
 
-export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
-  const { navigateToPlaytester } = useNavigation()
-  const [apiClient] = useState(() => new ContentAPIClient())
-  const [questType, setQuestType] = useState('Side Quest')
-  const [difficulty, setDifficulty] = useState('Medium')
-  const [theme, setTheme] = useState('')
-  const [context, setContext] = useState('')
-  const [lastGeneratedQuest, setLastGeneratedQuest] = useState<QuestData & { id: string; difficulty: string; questType: string; metadata: any } | null>(null)
+export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
+  onGenerated,
+  initialPrompt,
+}) => {
+  const { navigateToPlaytester } = useNavigation();
+  const [apiClient] = useState(() => new ContentAPIClient());
+  const [questType, setQuestType] = useState("Side Quest");
+  const [difficulty, setDifficulty] = useState("Medium");
+  const [theme, setTheme] = useState("");
+  const [context, setContext] = useState("");
+  const [worldConfigId, setWorldConfigId] = useState<string | null>(null);
+  const [lastGeneratedQuest, setLastGeneratedQuest] = useState<
+    | (QuestData & {
+        id: string;
+        difficulty: string;
+        questType: string;
+        metadata: any;
+      })
+    | null
+  >(null);
 
   // Populate theme from initialPrompt
   useEffect(() => {
     if (initialPrompt && !theme) {
-      setTheme(initialPrompt)
+      setTheme(initialPrompt);
     }
-  }, [initialPrompt, theme])
-  const [quality, setQuality] = useState<QualityLevel>('quality')
-  const [isGenerating, setIsGenerating] = useState(false)
+  }, [initialPrompt, theme]);
+  const [quality, setQuality] = useState<QualityLevel>("quality");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleGenerate = async () => {
     if (!questType || !difficulty) {
-      notify.warning('Please select quest type and difficulty')
-      return
+      notify.warning("Please select quest type and difficulty");
+      return;
     }
 
     try {
-      setIsGenerating(true)
+      setIsGenerating(true);
       const result = await apiClient.generateQuest({
         questType,
         difficulty,
         theme: theme || undefined,
         context: context || undefined,
-        quality
-      })
+        quality,
+        worldConfigId: worldConfigId || undefined,
+      });
 
-      setLastGeneratedQuest(result.quest)
-      onGenerated?.(result.quest, result.rawResponse)
-      notify.success('Quest generated successfully!')
+      setLastGeneratedQuest(result.quest);
+      onGenerated?.(result.quest, result.rawResponse);
+      notify.success("Quest generated successfully!");
     } catch (error) {
-      console.error('Failed to generate quest:', error)
-      notify.error('Failed to generate quest')
+      console.error("Failed to generate quest:", error);
+      notify.error("Failed to generate quest");
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   return (
     <Card className="bg-gradient-to-br from-bg-primary via-bg-secondary to-purple-500/5 border-border-primary shadow-lg">
@@ -72,8 +118,12 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
             <Scroll className="w-5 h-5 text-purple-500" />
           </div>
           <div>
-            <CardTitle className="text-lg font-semibold">Quest Generation</CardTitle>
-            <CardDescription className="text-xs mt-0.5">Create quests with AI</CardDescription>
+            <CardTitle className="text-lg font-semibold">
+              Quest Generation
+            </CardTitle>
+            <CardDescription className="text-xs mt-0.5">
+              Create quests with AI
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -81,21 +131,27 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
       <CardContent className="p-6 space-y-5">
         {/* Quest Type Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Quest Type</label>
+          <label className="text-sm font-medium text-text-primary">
+            Quest Type
+          </label>
           <select
             value={questType}
             onChange={(e) => setQuestType(e.target.value)}
             className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
           >
             {QUEST_TYPES.map((type) => (
-              <option key={type} value={type}>{type}</option>
+              <option key={type} value={type}>
+                {type}
+              </option>
             ))}
           </select>
         </div>
 
         {/* Difficulty Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Difficulty</label>
+          <label className="text-sm font-medium text-text-primary">
+            Difficulty
+          </label>
           <div className="grid grid-cols-5 gap-2">
             {DIFFICULTIES.map((diff) => (
               <button
@@ -103,8 +159,8 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
                 onClick={() => setDifficulty(diff)}
                 className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${
                   difficulty === diff
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50'
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
                 }`}
               >
                 {diff}
@@ -115,7 +171,9 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
 
         {/* Theme */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Theme (Optional)</label>
+          <label className="text-sm font-medium text-text-primary">
+            Theme (Optional)
+          </label>
           <Input
             value={theme}
             onChange={(e) => setTheme(e.target.value)}
@@ -127,7 +185,9 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
 
         {/* Optional Context */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Additional Context (Optional)</label>
+          <label className="text-sm font-medium text-text-primary">
+            Additional Context (Optional)
+          </label>
           <Textarea
             value={context}
             onChange={(e) => setContext(e.target.value)}
@@ -135,41 +195,52 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
             className="w-full min-h-[80px] bg-bg-secondary/70 border-border-primary/50 focus:border-primary"
             maxLength={300}
           />
-          <div className="text-xs text-text-tertiary text-right">{context.length} / 300</div>
+          <div className="text-xs text-text-tertiary text-right">
+            {context.length} / 300
+          </div>
         </div>
+
+        {/* World Configuration */}
+        <WorldConfigSelector
+          value={worldConfigId}
+          onChange={setWorldConfigId}
+          disabled={isGenerating}
+        />
 
         {/* Quality Selection */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">Quality</label>
+          <label className="text-sm font-medium text-text-primary">
+            Quality
+          </label>
           <div className="grid grid-cols-3 gap-2">
             <button
-              onClick={() => setQuality('speed')}
+              onClick={() => setQuality("speed")}
               className={`p-3 rounded-lg border-2 transition-all ${
-                quality === 'speed'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50'
+                quality === "speed"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
               }`}
             >
               <Zap className="w-4 h-4 mx-auto mb-1" />
               <div className="text-xs font-medium">Speed</div>
             </button>
             <button
-              onClick={() => setQuality('balanced')}
+              onClick={() => setQuality("balanced")}
               className={`p-3 rounded-lg border-2 transition-all ${
-                quality === 'balanced'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50'
+                quality === "balanced"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
               }`}
             >
               <Shield className="w-4 h-4 mx-auto mb-1" />
               <div className="text-xs font-medium">Balanced</div>
             </button>
             <button
-              onClick={() => setQuality('quality')}
+              onClick={() => setQuality("quality")}
               className={`p-3 rounded-lg border-2 transition-all ${
-                quality === 'quality'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50'
+                quality === "quality"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border-primary bg-bg-tertiary/30 text-text-secondary hover:border-primary/50"
               }`}
             >
               <Sparkles className="w-4 h-4 mx-auto mb-1" />
@@ -197,13 +268,13 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
               </>
             )}
           </Button>
-          
+
           {lastGeneratedQuest && (
             <Button
               onClick={() => {
-                const { id, metadata, ...questData } = lastGeneratedQuest
-                navigateToPlaytester(questData, 'quest')
-                notify.success('Imported quest to playtester!')
+                const { id, metadata, ...questData } = lastGeneratedQuest;
+                navigateToPlaytester(questData, "quest");
+                notify.success("Imported quest to playtester!");
               }}
               variant="secondary"
               className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
@@ -216,5 +287,5 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
         </div>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
