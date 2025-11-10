@@ -3,6 +3,8 @@
  * Manages job queuing using Bun's native Redis client
  */
 
+import { redis, type RedisClient } from "bun";
+
 export type QueuePriority = "high" | "normal" | "low";
 
 export interface QueueJob {
@@ -13,7 +15,7 @@ export interface QueueJob {
 }
 
 export class RedisQueueService {
-  private redis: ReturnType<typeof Bun.redis>;
+  private redis: RedisClient;
   private readonly queues = {
     high: "generation:high",
     normal: "generation:normal",
@@ -22,8 +24,8 @@ export class RedisQueueService {
   private readonly progressChannel = "generation:progress";
 
   constructor() {
-    // Bun.redis automatically uses REDIS_URL or defaults to localhost:6379
-    this.redis = Bun.redis();
+    // Bun.redis is already a client instance that uses REDIS_URL or defaults to localhost:6379
+    this.redis = redis;
   }
 
   /**
@@ -119,12 +121,15 @@ export class RedisQueueService {
 
   /**
    * Subscribe to job progress updates
+   * Creates a separate Redis client for subscription (required by Bun.redis)
    */
   async subscribeToProgress(
     pipelineId: string,
     callback: (data: unknown) => void,
   ): Promise<void> {
-    await this.redis.subscribe(`job:${pipelineId}:progress`, (message) => {
+    // Use duplicate() to create a separate client for subscriptions
+    const subscriber = this.redis.duplicate();
+    await subscriber.subscribe(`job:${pipelineId}:progress`, (message) => {
       try {
         const data = JSON.parse(message);
         callback(data);
@@ -136,11 +141,14 @@ export class RedisQueueService {
 
   /**
    * Subscribe to all progress updates
+   * Creates a separate Redis client for subscription (required by Bun.redis)
    */
   async subscribeToAllProgress(
     callback: (data: unknown) => void,
   ): Promise<void> {
-    await this.redis.subscribe(this.progressChannel, (message) => {
+    // Use duplicate() to create a separate client for subscriptions
+    const subscriber = this.redis.duplicate();
+    await subscriber.subscribe(this.progressChannel, (message) => {
       try {
         const data = JSON.parse(message);
         callback(data);
