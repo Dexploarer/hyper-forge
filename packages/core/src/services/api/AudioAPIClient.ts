@@ -141,7 +141,15 @@ export class AudioAPIClient {
     })
 
     if (!response.ok) {
-      throw new Error(`Failed to generate SFX: ${response.statusText}`)
+      // Try to parse error response
+      try {
+        const errorData = await response.json()
+        const errorMessage = errorData.message || errorData.error || response.statusText
+        throw new Error(`Failed to generate SFX: ${errorMessage}`)
+      } catch (e) {
+        // If parsing fails, use status text
+        throw new Error(`Failed to generate SFX: ${response.statusText}`)
+      }
     }
 
     return await response.blob()

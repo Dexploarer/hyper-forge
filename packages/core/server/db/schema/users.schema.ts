@@ -131,9 +131,16 @@ export const activityLog = pgTable(
   },
   (table) => ({
     userIdx: index("idx_activity_user").on(table.userId),
-    entityIdx: index("idx_activity_entity").on(table.entityType, table.entityId),
+    entityIdx: index("idx_activity_entity").on(
+      table.entityType,
+      table.entityId,
+    ),
     actionIdx: index("idx_activity_action").on(table.action),
     createdIdx: index("idx_activity_created").on(table.createdAt.desc()),
+    userTimelineIdx: index("idx_activity_user_timeline").on(
+      table.userId,
+      table.createdAt.desc(),
+    ),
   }),
 );
 

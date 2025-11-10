@@ -1,0 +1,13 @@
+{
+  "name": "elizaos-dev",
+  "description": "ElizaOS integration tools for AI agents and NPCs (ADR-0005)",
+  "version": "1.0.0",
+  "author": {
+    "name": "Hyperscape Team"
+  },
+  "components": {
+    "commands": true,
+    "agents": true
+  },
+  "tags": ["elizaos", "ai-agents", "npcs", "plugin-hyperscape"]
+}

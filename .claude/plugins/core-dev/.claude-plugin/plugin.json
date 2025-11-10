@@ -1,0 +1,14 @@
+{
+  "name": "core-dev",
+  "description": "Core development tools - ADRs, builds, testing, TypeScript standards",
+  "version": "1.0.0",
+  "author": {
+    "name": "Hyperscape Team"
+  },
+  "components": {
+    "commands": true,
+    "agents": true,
+    "skills": true
+  },
+  "tags": ["development", "adr", "testing", "typescript", "build"]
+}

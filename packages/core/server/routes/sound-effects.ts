@@ -23,38 +23,51 @@ export const soundEffectsRoutes = new Elysia({
         const apiKey = process.env.ELEVENLABS_API_KEY;
         const sfxService = new ElevenLabsSoundEffectsService(apiKey);
 
-        if (!sfxService.isAvailable()) {
-          throw new Error(
-            "Sound effects generation service not available - ELEVENLABS_API_KEY not configured",
-          );
-        }
-
         return { sfxService };
       })
 
       // POST /api/sfx/generate - Generate sound effect
       .post(
         "/generate",
-        async ({ body, sfxService }) => {
-          console.log(
-            `[SFX] Generating sound effect: "${body.text.substring(0, 50)}..."`,
-          );
+        async ({ body, sfxService, error }) => {
+          // Check if service is available
+          if (!sfxService.isAvailable()) {
+            console.error('[SFX] Service not available - ELEVENLABS_API_KEY not configured');
+            return error(503, {
+              error: "Service Unavailable",
+              message: "Sound effects generation service is not configured. Please contact the administrator to set up the ELEVENLABS_API_KEY environment variable.",
+              code: "SFX_SERVICE_NOT_CONFIGURED"
+            });
+          }
 
-          const audioBuffer = await sfxService.generateSoundEffect(body);
+          try {
+            console.log(
+              `[SFX] Generating sound effect: "${body.text.substring(0, 50)}..."`,
+            );
 
-          console.log(
-            `[SFX] Sound effect generated successfully: ${audioBuffer.length} bytes`,
-          );
+            const audioBuffer = await sfxService.generateSoundEffect(body);
 
-          // Return audio file directly as binary
-          return new Response(new Blob([new Uint8Array(audioBuffer)], { type: "audio/mpeg" }), {
-            headers: {
-              "Content-Type": "audio/mpeg",
-              "Content-Length": audioBuffer.length.toString(),
-              "Cache-Control": "public, max-age=31536000",
-              "Content-Disposition": `attachment; filename="sfx-${Date.now()}.mp3"`,
-            },
-          });
+            console.log(
+              `[SFX] Sound effect generated successfully: ${audioBuffer.length} bytes`,
+            );
+
+            // Return audio file directly as binary
+            return new Response(new Blob([new Uint8Array(audioBuffer)], { type: "audio/mpeg" }), {
+              headers: {
+                "Content-Type": "audio/mpeg",
+                "Content-Length": audioBuffer.length.toString(),
+                "Cache-Control": "public, max-age=31536000",
+                "Content-Disposition": `attachment; filename="sfx-${Date.now()}.mp3"`,
+              },
+            });
+          } catch (err) {
+            console.error('[SFX] Generation failed:', err);
+            return error(500, {
+              error: "Generation Failed",
+              message: err instanceof Error ? err.message : "Failed to generate sound effect",
+              code: "SFX_GENERATION_ERROR"
+            });
+          }
         },
         {
           body: Models.GenerateSfxRequest,
@@ -70,32 +83,51 @@ export const soundEffectsRoutes = new Elysia({
       // POST /api/sfx/batch - Batch generate multiple sound effects
       .post(
         "/batch",
-        async ({ body, sfxService }) => {
-          console.log(
-            `[SFX] Batch generating ${body.effects.length} sound effects`,
-          );
+        async ({ body, sfxService, error }) => {
+          // Check if service is available
+          if (!sfxService.isAvailable()) {
+            console.error('[SFX] Service not available - ELEVENLABS_API_KEY not configured');
+            return error(503, {
+              error: "Service Unavailable",
+              message: "Sound effects generation service is not configured.",
+              code: "SFX_SERVICE_NOT_CONFIGURED"
+            });
+          }
 
-          const results = await sfxService.generateSoundEffectBatch(
-            body.effects,
-          );
+          try {
+            console.log(
+              `[SFX] Batch generating ${body.effects.length} sound effects`,
+            );
 
-          console.log(
-            `[SFX] Batch generation complete: ${results.successful}/${results.total}`,
-          );
+            const results = await sfxService.generateSoundEffectBatch(
+              body.effects,
+            );
 
-          // Convert audio buffers to base64 for JSON response
-          const formattedResults = {
-            ...results,
-            effects: results.effects.map((effect) => ({
-              ...effect,
-              audioBuffer:
-                "audioBuffer" in effect && effect.audioBuffer
-                  ? effect.audioBuffer.toString("base64")
-                  : undefined,
-            })),
-          };
+            console.log(
+              `[SFX] Batch generation complete: ${results.successful}/${results.total}`,
+            );
 
-          return formattedResults;
+            // Convert audio buffers to base64 for JSON response
+            const formattedResults = {
+              ...results,
+              effects: results.effects.map((effect) => ({
+                ...effect,
+                audioBuffer:
+                  "audioBuffer" in effect && effect.audioBuffer
+                    ? effect.audioBuffer.toString("base64")
+                    : undefined,
+              })),
+            };
+
+            return formattedResults;
+          } catch (err) {
+            console.error('[SFX] Batch generation failed:', err);
+            return error(500, {
+              error: "Batch Generation Failed",
+              message: err instanceof Error ? err.message : "Failed to generate sound effects",
+              code: "SFX_BATCH_ERROR"
+            });
+          }
         },
         {
           body: Models.BatchSfxRequest,

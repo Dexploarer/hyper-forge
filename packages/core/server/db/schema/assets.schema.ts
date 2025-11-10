@@ -73,12 +73,17 @@ export const assets = pgTable(
     }),
     isBaseModel: boolean("is_base_model").default(false), // Is this a base model for variants?
     isVariant: boolean("is_variant").default(false), // Is this a variant of another asset?
-    parentBaseModel: uuid("parent_base_model").references((): any => assets.id, {
-      onDelete: "set null",
-    }), // Reference to base model for variants
+    parentBaseModel: uuid("parent_base_model").references(
+      (): any => assets.id,
+      {
+        onDelete: "set null",
+      },
+    ), // Reference to base model for variants
     variants: jsonb("variants").$type<string[]>().default([]), // Array of variant asset IDs
     variantCount: integer("variant_count").default(0), // Number of variants created
-    lastVariantGenerated: timestamp("last_variant_generated", { withTimezone: true }), // Last variant creation time
+    lastVariantGenerated: timestamp("last_variant_generated", {
+      withTimezone: true,
+    }), // Last variant creation time
 
     // Status: 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived'
     status: varchar("status", { length: 50 }).notNull().default("draft"),
@@ -104,9 +109,18 @@ export const assets = pgTable(
   (table) => ({
     ownerIdx: index("idx_assets_owner").on(table.ownerId),
     projectIdx: index("idx_assets_project").on(table.projectId),
+    gameIdx: index("idx_assets_game").on(table.gameId),
     typeIdx: index("idx_assets_type").on(table.type),
     statusIdx: index("idx_assets_status").on(table.status),
     tagsIdx: index("idx_assets_tags").using("gin", table.tags),
+    ownerStatusIdx: index("idx_assets_owner_status").on(
+      table.ownerId,
+      table.status,
+    ),
+    projectTypeIdx: index("idx_assets_project_type").on(
+      table.projectId,
+      table.type,
+    ),
   }),
 );
 

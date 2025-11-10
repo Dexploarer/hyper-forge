@@ -1,0 +1,12 @@
+{
+  "name": "deployment-tools",
+  "description": "Railway deployment with RAILPACK (ADR-0003)",
+  "version": "1.0.0",
+  "author": {
+    "name": "Hyperscape Team"
+  },
+  "components": {
+    "commands": true
+  },
+  "tags": ["railway", "railpack", "deployment", "production"]
+}

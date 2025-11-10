@@ -1,0 +1,29 @@
+{
+  "name": "hyperscape-5",
+  "owner": {
+    "name": "Hyperscape Team"
+  },
+  "description": "Team plugins for Hyperscape-5 monorepo - aligned with ADRs and architecture standards",
+  "plugins": [
+    {
+      "name": "core-dev",
+      "source": "./core-dev",
+      "description": "Core development tools - ADRs, builds, testing, TypeScript standards (ADR-0006, ADR-0007)"
+    },
+    {
+      "name": "asset-forge",
+      "source": "./asset-forge",
+      "description": "Asset-forge package tools - 3D assets, Drizzle/PostgreSQL, Elysia API, Privy auth (ADR-0004, ADR-0008, ADR-0010)"
+    },
+    {
+      "name": "elizaos-dev",
+      "source": "./elizaos-dev",
+      "description": "ElizaOS integration tools for AI agents and NPCs (ADR-0005)"
+    },
+    {
+      "name": "deployment-tools",
+      "source": "./deployment-tools",
+      "description": "Railway deployment with RAILPACK (ADR-0003)"
+    }
+  ]
+}
