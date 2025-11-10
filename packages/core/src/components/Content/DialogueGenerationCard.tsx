@@ -1,9 +1,10 @@
-import { MessageSquare, Loader2, Zap, Shield, Sparkles } from 'lucide-react'
+import { MessageSquare, Loader2, Zap, Shield, Sparkles, TestTube2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
 import { notify } from '@/utils/notify'
+import { useNavigation } from '@/hooks/useNavigation'
 import type { DialogueNode, QualityLevel } from '@/types/content'
 
 interface DialogueGenerationCardProps {
@@ -12,12 +13,14 @@ interface DialogueGenerationCardProps {
 }
 
 export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
+  const { navigateToPlaytester } = useNavigation()
   const [apiClient] = useState(() => new ContentAPIClient())
   const [npcName, setNpcName] = useState('')
   const [personality, setPersonality] = useState('')
   const [context, setContext] = useState('')
   const [quality, setQuality] = useState<QualityLevel>('speed')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [lastGeneratedDialogue, setLastGeneratedDialogue] = useState<DialogueNode[] | null>(null)
 
   // Populate personality or context from initialPrompt
   useEffect(() => {
@@ -42,6 +45,7 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({ 
         quality
       })
 
+      setLastGeneratedDialogue(result.nodes)
       onGenerated?.(result.nodes, result.rawResponse)
       notify.success(`Generated ${result.nodes.length} dialogue nodes!`)
     } catch (error) {
@@ -145,24 +149,41 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({ 
           </div>
         </div>
 
-        <Button
-          onClick={handleGenerate}
-          disabled={!npcName || !personality || isGenerating}
-          className="w-full"
-          size="lg"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Generating Dialogue...
-            </>
-          ) : (
-            <>
-              <MessageSquare className="w-5 h-5 mr-2" />
-              Generate Dialogue
-            </>
+        <div className="space-y-3">
+          <Button
+            onClick={handleGenerate}
+            disabled={!npcName || !personality || isGenerating}
+            className="w-full"
+            size="lg"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Generating Dialogue...
+              </>
+            ) : (
+              <>
+                <MessageSquare className="w-5 h-5 mr-2" />
+                Generate Dialogue
+              </>
+            )}
+          </Button>
+          
+          {lastGeneratedDialogue && (
+            <Button
+              onClick={() => {
+                navigateToPlaytester(lastGeneratedDialogue, 'dialogue')
+                notify.success('Imported dialogue to playtester!')
+              }}
+              variant="secondary"
+              className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+              size="lg"
+            >
+              <TestTube2 className="w-5 h-5 mr-2" />
+              Import to Playtester
+            </Button>
           )}
-        </Button>
+        </div>
       </CardContent>
     </Card>
   )

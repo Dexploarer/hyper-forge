@@ -104,7 +104,6 @@ export const AssetsPage: React.FC = () => {
   }
 
   return (
-    <>
     <div className="page-container">
       {/* Sidebar - SCROLLABLE */}
       <div className="card overflow-hidden w-80 flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary">
@@ -149,9 +148,9 @@ export const AssetsPage: React.FC = () => {
       {/* Center - 3D Viewport - FIXED */}
       <div className="flex-1 flex flex-col">
         <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl">
-            {selectedAsset ? (
-              <>
-                <div className="absolute inset-0">
+          {selectedAsset ? (
+            <>
+              <div className="absolute inset-0">
                   {/* Keep both viewers mounted; fade inactive one to preserve layout and canvas size */}
                   <div
                     className={`absolute inset-0 transition-opacity duration-200 ${showAnimationView && selectedAsset.type === "character" ? "opacity-0 pointer-events-none" : "opacity-100"}`}
@@ -282,17 +281,16 @@ export const AssetsPage: React.FC = () => {
                   onClose={() => setShowDetailsPanel(false)}
                   modelInfo={modelInfo}
                 />
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <EmptyAssetState />
-              </div>
-            )}
-          </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <EmptyAssetState />
+            </div>
+          )}
         </div>
       </div>
-    </div>
 
+      {/* Modals */}
       {showRetextureModal && selectedAsset && (
         <RetextureModal
           asset={selectedAsset}
@@ -360,8 +358,8 @@ export const AssetsPage: React.FC = () => {
 
       {/* Bulk Actions Bar */}
       <BulkActionsBar onActionComplete={reloadAssets} />
-    </>
-  );
+  </div>
+);
 };
 
 export default AssetsPage;

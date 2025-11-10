@@ -9,6 +9,10 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [currentView, setCurrentView] = useState<NavigationView>(NAVIGATION_VIEWS.GENERATION)
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null)
   const [navigationHistory, setNavigationHistory] = useState<NavigationView[]>([])
+  const [importedPlaytestContent, setImportedPlaytestContent] = useState<{
+    content: unknown
+    contentType: 'quest' | 'dialogue' | 'npc' | 'combat' | 'puzzle'
+  } | null>(null)
 
   const navigateTo = useCallback((view: NavigationView) => {
     if (view !== currentView) {
@@ -19,6 +23,11 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (view !== NAVIGATION_VIEWS.ASSETS) {
         setSelectedAssetId(null)
       }
+      
+      // Clear imported content when navigating away from playtester
+      if (view !== NAVIGATION_VIEWS.PLAYTESTER) {
+        setImportedPlaytestContent(null)
+      }
     }
   }, [currentView])
 
@@ -27,12 +36,20 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     navigateTo(NAVIGATION_VIEWS.ASSETS)
   }, [navigateTo])
 
+  const navigateToPlaytester = useCallback((content: unknown, contentType: 'quest' | 'dialogue' | 'npc' | 'combat' | 'puzzle') => {
+    setImportedPlaytestContent({ content, contentType })
+    setNavigationHistory(prev => [...prev, currentView])
+    setCurrentView(NAVIGATION_VIEWS.PLAYTESTER)
+  }, [currentView])
+
   const goBack = useCallback(() => {
     if (navigationHistory.length > 0) {
       const newHistory = [...navigationHistory]
       const previousView = newHistory.pop()!
       setNavigationHistory(newHistory)
       setCurrentView(previousView)
+      // Clear imported content when going back
+      setImportedPlaytestContent(null)
     }
   }, [navigationHistory])
 
@@ -41,15 +58,17 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     currentView,
     selectedAssetId,
     navigationHistory,
+    importedPlaytestContent,
     
     // Actions
     navigateTo,
     navigateToAsset,
+    navigateToPlaytester,
     goBack,
     
     // Helpers
     canGoBack: navigationHistory.length > 0
-  }), [currentView, selectedAssetId, navigationHistory, navigateTo, navigateToAsset, goBack])
+  }), [currentView, selectedAssetId, navigationHistory, importedPlaytestContent, navigateTo, navigateToAsset, navigateToPlaytester, goBack])
 
   return (
     <NavigationContext.Provider value={value}>

@@ -1,9 +1,10 @@
-import { BookOpen, Loader2, Zap, Shield, Sparkles } from 'lucide-react'
+import { BookOpen, Loader2, Zap, Shield, Sparkles, TestTube2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
 import { notify } from '@/utils/notify'
+import { useNavigation } from '@/hooks/useNavigation'
 import type { NPCData, QualityLevel } from '@/types/content'
 
 interface NPCGenerationCardProps {
@@ -18,12 +19,14 @@ const ARCHETYPES = [
 ]
 
 export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
+  const { navigateToPlaytester } = useNavigation()
   const [apiClient] = useState(() => new ContentAPIClient())
   const [archetype, setArchetype] = useState('Merchant')
   const [prompt, setPrompt] = useState('')
   const [context, setContext] = useState('')
   const [quality, setQuality] = useState<QualityLevel>('quality')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [lastGeneratedNPC, setLastGeneratedNPC] = useState<NPCData & { id: string; metadata: any } | null>(null)
 
   // Populate prompt from initialPrompt
   useEffect(() => {
@@ -47,6 +50,7 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({ onGenerate
         quality
       })
 
+      setLastGeneratedNPC(result.npc)
       onGenerated?.(result.npc, result.rawResponse)
       notify.success('NPC generated successfully!')
     } catch (error) {
@@ -151,24 +155,42 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({ onGenerate
           </div>
         </div>
 
-        <Button
-          onClick={handleGenerate}
-          disabled={!archetype || !prompt || isGenerating}
-          className="w-full"
-          size="lg"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Generating NPC...
-            </>
-          ) : (
-            <>
-              <BookOpen className="w-5 h-5 mr-2" />
-              Generate NPC
-            </>
+        <div className="space-y-3">
+          <Button
+            onClick={handleGenerate}
+            disabled={!archetype || !prompt || isGenerating}
+            className="w-full"
+            size="lg"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Generating NPC...
+              </>
+            ) : (
+              <>
+                <BookOpen className="w-5 h-5 mr-2" />
+                Generate NPC
+              </>
+            )}
+          </Button>
+          
+          {lastGeneratedNPC && (
+            <Button
+              onClick={() => {
+                const { id, metadata, ...npcData } = lastGeneratedNPC
+                navigateToPlaytester(npcData, 'npc')
+                notify.success('Imported NPC to playtester!')
+              }}
+              variant="secondary"
+              className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+              size="lg"
+            >
+              <TestTube2 className="w-5 h-5 mr-2" />
+              Import to Playtester
+            </Button>
           )}
-        </Button>
+        </div>
       </CardContent>
     </Card>
   )

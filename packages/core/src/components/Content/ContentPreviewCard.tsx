@@ -1,10 +1,11 @@
-import { Download, FileJson, FileText, Copy, Check, Sparkles, Loader2, User, Volume2, Play, Pause, Save, Scroll, Book } from 'lucide-react'
+import { Download, FileJson, FileText, Copy, Check, Sparkles, Loader2, User, Volume2, Play, Pause, Save, Scroll, Book, TestTube2 } from 'lucide-react'
 import React, { useState, useRef } from 'react'
 
 import { Card, CardHeader, CardTitle, CardContent, Button } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
 import { AudioAPIClient } from '@/services/api/AudioAPIClient'
 import { notify } from '@/utils/notify'
+import { useNavigation } from '@/hooks/useNavigation'
 import type { GeneratedContent, NPCData, QuestData, DialogueNode, LoreData, DialogueData } from '@/types/content'
 import { ViewModeToggle, type ViewMode } from './Workflow/ViewModeToggle'
 import { DialogueWorkflowView } from './Workflow/DialogueWorkflowView'
@@ -17,6 +18,7 @@ interface ContentPreviewCardProps {
 }
 
 export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content }) => {
+  const { navigateToPlaytester } = useNavigation()
   const [apiClient] = useState(() => new ContentAPIClient())
   const [audioClient] = useState(() => new AudioAPIClient())
   const [copied, setCopied] = useState(false)
@@ -286,6 +288,49 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
     notify.success('Downloaded text file!')
+  }
+
+  const handleImportToPlaytester = () => {
+    // Map content types to playtester content types
+    const contentTypeMap: Record<string, 'quest' | 'dialogue' | 'npc' | 'combat' | 'puzzle'> = {
+      'quest': 'quest',
+      'dialogue': 'dialogue',
+      'npc': 'npc',
+      'lore': 'quest' // Lore can be tested as quest-like content
+    }
+
+    const playtestContentType = contentTypeMap[content.type]
+    if (!playtestContentType) {
+      notify.warning('This content type cannot be imported to playtester')
+      return
+    }
+
+    // Extract the actual content data (remove metadata/id fields that aren't needed)
+    let contentToTest: unknown = content.data
+
+    // For quests, ensure we have the full quest structure
+    if (content.type === 'quest') {
+      const quest = content.data as QuestData & { id?: string; difficulty?: string; questType?: string; metadata?: any }
+      // Remove non-quest fields
+      const { id, metadata, ...questData } = quest
+      contentToTest = questData
+    }
+
+    // For NPCs, use the NPC data structure
+    if (content.type === 'npc') {
+      const npc = content.data as NPCData & { id?: string; metadata?: any }
+      const { id, metadata, ...npcData } = npc
+      contentToTest = npcData
+    }
+
+    // For dialogue, use the nodes array
+    if (content.type === 'dialogue') {
+      contentToTest = content.data as DialogueNode[]
+    }
+
+    // Navigate to playtester with the content
+    navigateToPlaytester(contentToTest, playtestContentType)
+    notify.success(`Imported ${content.type} to playtester!`)
   }
 
   const renderContent = () => {
@@ -695,6 +740,17 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({ content 
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-semibold capitalize">{content.type} Preview</CardTitle>
           <div className="flex gap-2">
+            {(content.type === 'quest' || content.type === 'dialogue' || content.type === 'npc') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleImportToPlaytester}
+                className="text-purple-500 hover:text-purple-400 hover:bg-purple-500/10"
+              >
+                <TestTube2 className="w-4 h-4 mr-1" />
+                Test
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"

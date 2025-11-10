@@ -1,9 +1,10 @@
-import { Scroll, Loader2, Zap, Shield, Sparkles } from 'lucide-react'
+import { Scroll, Loader2, Zap, Shield, Sparkles, TestTube2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Textarea } from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
 import { notify } from '@/utils/notify'
+import { useNavigation } from '@/hooks/useNavigation'
 import type { QuestData, QualityLevel } from '@/types/content'
 
 interface QuestGenerationCardProps {
@@ -19,11 +20,13 @@ const QUEST_TYPES = [
 const DIFFICULTIES = ['Easy', 'Medium', 'Hard', 'Very Hard', 'Epic']
 
 export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGenerated, initialPrompt }) => {
+  const { navigateToPlaytester } = useNavigation()
   const [apiClient] = useState(() => new ContentAPIClient())
   const [questType, setQuestType] = useState('Side Quest')
   const [difficulty, setDifficulty] = useState('Medium')
   const [theme, setTheme] = useState('')
   const [context, setContext] = useState('')
+  const [lastGeneratedQuest, setLastGeneratedQuest] = useState<QuestData & { id: string; difficulty: string; questType: string; metadata: any } | null>(null)
 
   // Populate theme from initialPrompt
   useEffect(() => {
@@ -50,6 +53,7 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
         quality
       })
 
+      setLastGeneratedQuest(result.quest)
       onGenerated?.(result.quest, result.rawResponse)
       notify.success('Quest generated successfully!')
     } catch (error) {
@@ -174,24 +178,42 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({ onGene
           </div>
         </div>
 
-        <Button
-          onClick={handleGenerate}
-          disabled={!questType || !difficulty || isGenerating}
-          className="w-full"
-          size="lg"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              Generating Quest...
-            </>
-          ) : (
-            <>
-              <Scroll className="w-5 h-5 mr-2" />
-              Generate Quest
-            </>
+        <div className="space-y-3">
+          <Button
+            onClick={handleGenerate}
+            disabled={!questType || !difficulty || isGenerating}
+            className="w-full"
+            size="lg"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Generating Quest...
+              </>
+            ) : (
+              <>
+                <Scroll className="w-5 h-5 mr-2" />
+                Generate Quest
+              </>
+            )}
+          </Button>
+          
+          {lastGeneratedQuest && (
+            <Button
+              onClick={() => {
+                const { id, metadata, ...questData } = lastGeneratedQuest
+                navigateToPlaytester(questData, 'quest')
+                notify.success('Imported quest to playtester!')
+              }}
+              variant="secondary"
+              className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600"
+              size="lg"
+            >
+              <TestTube2 className="w-5 h-5 mr-2" />
+              Import to Playtester
+            </Button>
           )}
-        </Button>
+        </div>
       </CardContent>
     </Card>
   )

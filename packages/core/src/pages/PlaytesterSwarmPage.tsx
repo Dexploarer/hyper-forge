@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ChevronLeft } from 'lucide-react'
 
 import {
@@ -10,11 +10,29 @@ import {
   GeneratedPlaytestList
 } from '@/components/Playtester'
 import { Button } from '@/components/common'
+import { useNavigation } from '@/hooks/useNavigation'
 import type { PlaytestContentType, PlaytestView, GeneratedPlaytest, PlaytestResult } from '@/types/playtester'
 
 export const PlaytesterSwarmPage: React.FC = () => {
-  // Content type selection
-  const [contentType, setContentType] = useState<PlaytestContentType | null>(null)
+  const { importedPlaytestContent } = useNavigation()
+  
+  // Content type selection - use imported content type if available
+  const [contentType, setContentType] = useState<PlaytestContentType | null>(
+    importedPlaytestContent?.contentType || null
+  )
+  
+  // Pre-filled content from import
+  const [importedContent, setImportedContent] = useState<unknown | null>(
+    importedPlaytestContent?.content || null
+  )
+  
+  // Set content type and imported content when navigation provides it
+  useEffect(() => {
+    if (importedPlaytestContent) {
+      setContentType(importedPlaytestContent.contentType)
+      setImportedContent(importedPlaytestContent.content)
+    }
+  }, [importedPlaytestContent])
 
   // View management
   const [activeView, setActiveView] = useState<PlaytestView>('config')
@@ -92,6 +110,7 @@ export const PlaytesterSwarmPage: React.FC = () => {
                   contentType={contentType}
                   selectedProfiles={selectedProfiles}
                   onTestCompleted={handleTestCompleted}
+                  importedContent={importedContent}
                 />
               </div>
 

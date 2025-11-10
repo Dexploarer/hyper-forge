@@ -1,5 +1,5 @@
 import { TestTube2, Loader2, Zap, Shield, Sparkles, AlertCircle } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Textarea, Checkbox } from '../common'
 import { PlaytesterAPIClient } from '@/services/api/PlaytesterAPIClient'
@@ -11,19 +11,34 @@ interface PlaytestConfigCardProps {
   contentType: PlaytestContentType
   selectedProfiles: string[]
   onTestCompleted?: (result: PlaytestResult) => void
+  importedContent?: unknown | null // Content imported from generation pages
 }
 
 export const PlaytestConfigCard: React.FC<PlaytestConfigCardProps> = ({
   contentType,
   selectedProfiles,
-  onTestCompleted
+  onTestCompleted,
+  importedContent
 }) => {
   const [apiClient] = useState(() => new PlaytesterAPIClient())
-  const [contentJson, setContentJson] = useState('')
+  const [contentJson, setContentJson] = useState(() => {
+    // Pre-fill with imported content if available
+    if (importedContent) {
+      return JSON.stringify(importedContent, null, 2)
+    }
+    return ''
+  })
   const [quality, setQuality] = useState<QualityLevel>('quality')
   const [parallelTesting, setParallelTesting] = useState(true)
   const [temperature, setTemperature] = useState(0.7)
   const [isRunning, setIsRunning] = useState(false)
+  
+  // Update content JSON when imported content changes
+  useEffect(() => {
+    if (importedContent) {
+      setContentJson(JSON.stringify(importedContent, null, 2))
+    }
+  }, [importedContent])
 
   const handleRunPlaytest = async () => {
     if (!contentJson.trim()) {
