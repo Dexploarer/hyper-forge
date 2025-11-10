@@ -35,6 +35,7 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
 }) => {
   const { navigateToPlaytester } = useNavigation();
   const [apiClient] = useState(() => new ContentAPIClient());
+  const [prompt, setPrompt] = useState("");
   const [npcName, setNpcName] = useState("");
   const [personality, setPersonality] = useState("");
   const [context, setContext] = useState("");
@@ -45,25 +46,25 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
     DialogueNode[] | null
   >(null);
 
-  // Populate personality or context from initialPrompt
+  // Populate prompt from initialPrompt
   useEffect(() => {
-    if (initialPrompt && !personality && !context) {
-      // Use personality field for dialogue prompts
-      setPersonality(initialPrompt);
+    if (initialPrompt && !prompt) {
+      setPrompt(initialPrompt);
     }
-  }, [initialPrompt, personality, context]);
+  }, [initialPrompt, prompt]);
 
   const handleGenerate = async () => {
-    if (!npcName || !personality) {
-      notify.warning("Please enter NPC name and personality");
+    if (!prompt) {
+      notify.warning("Please enter a prompt to generate dialogue");
       return;
     }
 
     try {
       setIsGenerating(true);
       const result = await apiClient.generateDialogue({
-        npcName,
-        npcPersonality: personality,
+        prompt,
+        npcName: npcName || undefined,
+        npcPersonality: personality || undefined,
         context: context || undefined,
         quality,
         worldConfigId: worldConfigId || undefined,
@@ -99,10 +100,31 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
       </CardHeader>
 
       <CardContent className="p-6 space-y-5">
+        {/* Prompt */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-text-primary">
+            Description / Requirements{" "}
+            <span className="text-red-400 ml-1">*</span>
+          </label>
+          <Textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="e.g., Create a dialogue tree for a wise elder who offers cryptic advice about the upcoming danger..."
+            className="w-full min-h-[100px] bg-bg-secondary/70 border-border-primary/50 focus:border-primary"
+            maxLength={500}
+          />
+          <div className="text-xs text-text-tertiary text-right">
+            {prompt.length} / 500
+          </div>
+        </div>
+
         {/* NPC Name */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">
-            NPC Name
+            NPC Name{" "}
+            <span className="text-text-tertiary font-normal text-xs">
+              (Optional)
+            </span>
           </label>
           <Input
             value={npcName}
@@ -116,7 +138,10 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
         {/* Personality */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">
-            Personality / Traits
+            Personality / Traits{" "}
+            <span className="text-text-tertiary font-normal text-xs">
+              (Optional)
+            </span>
           </label>
           <Textarea
             value={personality}
@@ -199,7 +224,7 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
         <div className="space-y-3">
           <Button
             onClick={handleGenerate}
-            disabled={!npcName || !personality || isGenerating}
+            disabled={!prompt || isGenerating}
             className="w-full"
             size="lg"
           >

@@ -17,9 +17,11 @@ import {
   Button,
   Input,
   Textarea,
+  SelectOrCustom,
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
 import { notify } from "@/utils/notify";
 import { useNavigation } from "@/hooks/useNavigation";
 import type { NPCData, QualityLevel } from "@/types/content";
@@ -65,6 +67,9 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
   const [lastGeneratedNPC, setLastGeneratedNPC] = useState<
     (NPCData & { id: string; metadata: any }) | null
   >(null);
+
+  // Fetch world config options
+  const worldConfigOptions = useWorldConfigOptions(worldConfigId);
 
   // Populate prompt from initialPrompt
   useEffect(() => {
@@ -120,26 +125,21 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
 
       <CardContent className="p-6 space-y-5">
         {/* Archetype Selection */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">
-            Archetype{" "}
-            <span className="text-text-tertiary font-normal text-xs">
-              (Optional)
-            </span>
-          </label>
-          <select
-            value={archetype}
-            onChange={(e) => setArchetype(e.target.value)}
-            className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
-          >
-            <option value="">Any / Let AI decide</option>
-            {ARCHETYPES.map((arch) => (
-              <option key={arch} value={arch}>
-                {arch}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectOrCustom
+          value={archetype}
+          onChange={setArchetype}
+          options={[
+            ...ARCHETYPES,
+            ...(worldConfigOptions.npcArchetypes || []),
+            ...(worldConfigOptions.characterClasses || []),
+            ...(worldConfigOptions.races || []),
+          ].filter((v, i, a) => a.indexOf(v) === i)} // Remove duplicates
+          label="Archetype"
+          required={false}
+          disabled={isGenerating}
+          customPlaceholder="Enter custom archetype..."
+          allowEmpty={true}
+        />
 
         {/* Prompt */}
         <div className="space-y-2">

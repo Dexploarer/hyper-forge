@@ -43,31 +43,33 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
   initialPrompt,
 }) => {
   const [apiClient] = useState(() => new ContentAPIClient());
-  const [category, setCategory] = useState("History");
+  const [prompt, setPrompt] = useState("");
+  const [category, setCategory] = useState("");
   const [topic, setTopic] = useState("");
   const [context, setContext] = useState("");
   const [worldConfigId, setWorldConfigId] = useState<string | null>(null);
   const [quality, setQuality] = useState<QualityLevel>("balanced");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Populate topic from initialPrompt
+  // Populate prompt from initialPrompt
   useEffect(() => {
-    if (initialPrompt && !topic) {
-      setTopic(initialPrompt);
+    if (initialPrompt && !prompt) {
+      setPrompt(initialPrompt);
     }
-  }, [initialPrompt, topic]);
+  }, [initialPrompt, prompt]);
 
   const handleGenerate = async () => {
-    if (!category || !topic) {
-      notify.warning("Please select a category and enter a topic");
+    if (!prompt && !topic) {
+      notify.warning("Please enter a prompt or topic to generate lore");
       return;
     }
 
     try {
       setIsGenerating(true);
       const result = await apiClient.generateLore({
-        category,
-        topic,
+        prompt: prompt || undefined,
+        category: category || undefined,
+        topic: topic || undefined,
         context: context || undefined,
         quality,
         worldConfigId: worldConfigId || undefined,
@@ -102,16 +104,38 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
       </CardHeader>
 
       <CardContent className="p-6 space-y-5">
+        {/* Prompt */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-text-primary">
+            Description / Requirements{" "}
+            <span className="text-red-400 ml-1">*</span>
+          </label>
+          <Textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="e.g., Create lore about an ancient war between dragons and humans that shaped the current political landscape..."
+            className="w-full min-h-[100px] bg-bg-secondary/70 border-border-primary/50 focus:border-primary"
+            maxLength={500}
+          />
+          <div className="text-xs text-text-tertiary text-right">
+            {prompt.length} / 500
+          </div>
+        </div>
+
         {/* Category Selection */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">
-            Category
+            Category{" "}
+            <span className="text-text-tertiary font-normal text-xs">
+              (Optional)
+            </span>
           </label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
           >
+            <option value="">Any / Let AI decide</option>
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
@@ -123,7 +147,10 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
         {/* Topic */}
         <div className="space-y-2">
           <label className="text-sm font-medium text-text-primary">
-            Topic / Subject
+            Topic / Subject{" "}
+            <span className="text-text-tertiary font-normal text-xs">
+              (Optional)
+            </span>
           </label>
           <Input
             value={topic}
@@ -202,7 +229,7 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
 
         <Button
           onClick={handleGenerate}
-          disabled={!category || !topic || isGenerating}
+          disabled={(!prompt && !topic) || isGenerating}
           className="w-full"
           size="lg"
         >
