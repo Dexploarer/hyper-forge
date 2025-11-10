@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { ChevronLeft, List } from 'lucide-react'
+import React, { useState } from "react";
+import { ChevronLeft, List } from "lucide-react";
 
 import {
   ContentTypeSelector,
@@ -9,52 +9,85 @@ import {
   DialogueGenerationCard,
   LoreGenerationCard,
   GeneratedContentList,
-  ContentPreviewCard
-} from '@/components/Content'
-import { Button, Drawer } from '@/components/common'
-import type { ContentType, ContentView, GeneratedContent, NPCData, QuestData, DialogueNode, LoreData } from '@/types/content'
+  ContentPreviewCard,
+} from "@/components/Content";
+import { Button, Drawer } from "@/components/common";
+import {
+  DialogueData,
+  GeneratedContent,
+  type ContentType,
+  type ContentView,
+  type NPCData,
+  type QuestData,
+  type DialogueNode,
+  type LoreData,
+} from "@/types/content";
 
 interface ContentGenerationPageProps {
-  initialType?: ContentType // Optional initial content type to skip selector
-  initialPrompt?: string // Optional initial prompt to pre-fill forms
+  initialType?: ContentType; // Optional initial content type to skip selector
+  initialPrompt?: string; // Optional initial prompt to pre-fill forms
 }
 
-export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ initialType, initialPrompt }) => {
+export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
+  initialType,
+  initialPrompt,
+}) => {
   // Content type selection
-  const [contentType, setContentType] = useState<ContentType | null>(initialType || null)
+  const [contentType, setContentType] = useState<ContentType | null>(
+    initialType || null,
+  );
 
   // View management
-  const [activeView, setActiveView] = useState<ContentView>('config')
+  const [activeView, setActiveView] = useState<ContentView>("config");
 
   // Generated content
-  const [generatedContents, setGeneratedContents] = useState<GeneratedContent[]>([])
-  const [selectedContent, setSelectedContent] = useState<GeneratedContent | null>(null)
-  const [showContentDrawer, setShowContentDrawer] = useState(false)
+  const [generatedContents, setGeneratedContents] = useState<
+    GeneratedContent[]
+  >([]);
+  const [selectedContent, setSelectedContent] =
+    useState<GeneratedContent | null>(null);
+  const [showContentDrawer, setShowContentDrawer] = useState(false);
 
   // Handle content generation completion
-  const handleContentGenerated = (data: any, rawResponse: string, type: ContentType) => {
-    const id = `${type}-${Date.now()}`
-    let name = ''
-    let contentData: NPCData | QuestData | DialogueNode[] | LoreData
+  const handleContentGenerated = (
+    data: any,
+    rawResponse: string,
+    type: ContentType,
+  ) => {
+    const id = `${type}-${Date.now()}`;
+    let name = "";
+    let contentData: NPCData | QuestData | DialogueData | LoreData;
 
     // Extract name and data based on type
-    if (type === 'npc') {
-      contentData = data as NPCData & { id: string; metadata: any }
-      name = (data as any).name || 'Unnamed NPC'
-    } else if (type === 'quest') {
-      contentData = data as QuestData & { id: string; difficulty: string; questType: string; metadata: any }
-      name = (data as any).title || 'Unnamed Quest'
-    } else if (type === 'dialogue') {
-      contentData = data as DialogueNode[]
-      name = `Dialogue Tree (${(data as DialogueNode[]).length} nodes)`
-    } else if (type === 'lore') {
-      contentData = data as LoreData & { id: string; metadata: any }
-      name = (data as any).title || 'Unnamed Lore'
+    if (type === "npc") {
+      contentData = data as NPCData & { id: string; metadata: any };
+      name = (data as any).name || "Unnamed NPC";
+    } else if (type === "quest") {
+      contentData = data as QuestData & {
+        id: string;
+        difficulty: string;
+        questType: string;
+        metadata: any;
+      };
+      name = (data as any).title || "Unnamed Quest";
+    } else if (type === "dialogue") {
+      // Convert DialogueNode[] to DialogueData class
+      const nodes = data as DialogueNode[];
+      contentData = DialogueData.create({
+        nodes,
+        metadata: {
+          description: `Dialogue tree with ${nodes.length} nodes`,
+        },
+      });
+      name = `Dialogue Tree (${nodes.length} nodes)`;
+    } else if (type === "lore") {
+      contentData = data as LoreData & { id: string; metadata: any };
+      name = (data as any).title || "Unnamed Lore";
     } else {
-      return
+      return;
     }
 
-    const newContent: GeneratedContent = {
+    const newContent = GeneratedContent.create({
       id,
       type,
       name,
@@ -62,21 +95,21 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ in
       metadata: {
         type,
         rawResponse,
-        ...(data.metadata || {})
+        ...(data.metadata || {}),
       },
-      createdAt: new Date().toISOString()
-    }
+      createdAt: new Date(),
+    });
 
-    setGeneratedContents(prev => [newContent, ...prev])
-    setSelectedContent(newContent)
-    setActiveView('results')
-  }
+    setGeneratedContents((prev) => [newContent, ...prev]);
+    setSelectedContent(newContent);
+    setActiveView("results");
+  };
 
   // Reset to type selection
   const handleBack = () => {
-    setContentType(null)
-    setActiveView('config')
-  }
+    setContentType(null);
+    setActiveView("config");
+  };
 
   // Show type selector if no type selected
   if (!contentType) {
@@ -84,7 +117,7 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ in
       <div className="h-full overflow-y-auto">
         <ContentTypeSelector onSelectType={setContentType} />
       </div>
-    )
+    );
   }
 
   return (
@@ -100,7 +133,7 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ in
         </div>
 
         {/* Config View */}
-        {activeView === 'config' && (
+        {activeView === "config" && (
           <div className="animate-fade-in">
             <div className="flex items-center justify-between mb-4">
               {/* Back Button */}
@@ -130,34 +163,58 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ in
 
             {/* Main Generation Card */}
             <div className="max-w-4xl">
-              {contentType === 'npc' && (
-                <NPCGenerationCard onGenerated={(npc, raw) => handleContentGenerated(npc, raw, 'npc')} initialPrompt={initialPrompt} />
+              {contentType === "npc" && (
+                <NPCGenerationCard
+                  onGenerated={(npc, raw) =>
+                    handleContentGenerated(npc, raw, "npc")
+                  }
+                  initialPrompt={initialPrompt}
+                />
               )}
-              {contentType === 'quest' && (
-                <QuestGenerationCard onGenerated={(quest, raw) => handleContentGenerated(quest, raw, 'quest')} initialPrompt={initialPrompt} />
+              {contentType === "quest" && (
+                <QuestGenerationCard
+                  onGenerated={(quest, raw) =>
+                    handleContentGenerated(quest, raw, "quest")
+                  }
+                  initialPrompt={initialPrompt}
+                />
               )}
-              {contentType === 'dialogue' && (
-                <DialogueGenerationCard onGenerated={(nodes, raw) => handleContentGenerated(nodes, raw, 'dialogue')} initialPrompt={initialPrompt} />
+              {contentType === "dialogue" && (
+                <DialogueGenerationCard
+                  onGenerated={(nodes, raw) =>
+                    handleContentGenerated(nodes, raw, "dialogue")
+                  }
+                  initialPrompt={initialPrompt}
+                />
               )}
-              {contentType === 'lore' && (
-                <LoreGenerationCard onGenerated={(lore, raw) => handleContentGenerated(lore, raw, 'lore')} initialPrompt={initialPrompt} />
+              {contentType === "lore" && (
+                <LoreGenerationCard
+                  onGenerated={(lore, raw) =>
+                    handleContentGenerated(lore, raw, "lore")
+                  }
+                  initialPrompt={initialPrompt}
+                />
               )}
             </div>
           </div>
         )}
 
         {/* Progress View */}
-        {activeView === 'progress' && (
+        {activeView === "progress" && (
           <div className="animate-fade-in text-center py-12">
-            <p className="text-text-secondary">Progress tracking coming soon...</p>
+            <p className="text-text-secondary">
+              Progress tracking coming soon...
+            </p>
           </div>
         )}
 
         {/* Results View */}
-        {activeView === 'results' && (
+        {activeView === "results" && (
           <div className="animate-fade-in">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-text-primary">Generated Content</h2>
+              <h2 className="text-xl font-semibold text-text-primary">
+                Generated Content
+              </h2>
               <Button
                 variant="secondary"
                 size="sm"
@@ -193,21 +250,25 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ in
       >
         <div className="p-6">
           <GeneratedContentList
-            contents={activeView === 'results' ? generatedContents : generatedContents.slice(0, 5)}
+            contents={
+              activeView === "results"
+                ? generatedContents
+                : generatedContents.slice(0, 5)
+            }
             selectedContent={selectedContent}
             onContentSelect={(content) => {
-              setSelectedContent(content)
-              setActiveView('results')
-              setShowContentDrawer(false)
+              setSelectedContent(content);
+              setActiveView("results");
+              setShowContentDrawer(false);
             }}
           />
-          {activeView === 'config' && generatedContents.length > 0 && (
+          {activeView === "config" && generatedContents.length > 0 && (
             <div className="mt-4">
               <Button
                 variant="primary"
                 onClick={() => {
-                  setActiveView('results')
-                  setShowContentDrawer(false)
+                  setActiveView("results");
+                  setShowContentDrawer(false);
                 }}
                 className="w-full"
               >
@@ -218,7 +279,7 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({ in
         </div>
       </Drawer>
     </div>
-  )
-}
+  );
+};
 
-export default ContentGenerationPage
+export default ContentGenerationPage;

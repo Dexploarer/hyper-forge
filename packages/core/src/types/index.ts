@@ -4,13 +4,37 @@
 
 import type { AssetMetadata } from "./AssetMetadata";
 import type { Vector3, Quaternion } from "./math";
-import { MaterialPreset, GenerationRequest } from "./models";
+import {
+  MaterialPreset,
+  GenerationRequest,
+  ImageGenerationResult,
+  ModelGenerationResult,
+  RemeshResult,
+  HardpointResult,
+  ArmorPlacementResult,
+  RiggingResult,
+  BuildingAnalysisResult,
+  GenerationStage,
+  GenerationResult,
+} from "./models";
 
 // Mathematical types (now classes)
 export { Vector3, Quaternion, BoundingBox } from "./math";
 
 // Data model classes (prefer these over interfaces where appropriate)
-export { MaterialPreset, GenerationRequest };
+export {
+  MaterialPreset,
+  GenerationRequest,
+  ImageGenerationResult,
+  ModelGenerationResult,
+  RemeshResult,
+  HardpointResult,
+  ArmorPlacementResult,
+  RiggingResult,
+  BuildingAnalysisResult,
+  GenerationStage,
+  GenerationResult,
+} from "./models";
 
 // Generation types
 export type AssetType =
@@ -109,161 +133,11 @@ export interface SimpleGenerationResult {
   error?: string;
 }
 
-// Generation stages
-export interface GenerationStage {
-  stage: "description" | "image" | "model" | "remesh" | "analysis" | "final";
-  status: "pending" | "processing" | "completed" | "failed";
-  output?:
-    | ImageGenerationResult
-    | ModelGenerationResult
-    | RemeshResult
-    | HardpointResult
-    | ArmorPlacementResult
-    | RiggingResult
-    | BuildingAnalysisResult
-    | { modelUrl: string; metadata: AssetMetadata }
-    | string;
-  error?: string;
-  timestamp: Date;
-}
-
-// Image generation result
-export interface ImageGenerationResult {
-  imageUrl: string;
-  prompt: string;
-  metadata: {
-    model: string;
-    resolution: string;
-    quality?: string;
-    timestamp: string;
-  };
-}
-
-// 3D model generation result
-export interface ModelGenerationResult {
-  modelUrl: string;
-  format: "glb" | "fbx" | "obj";
-  polycount: number;
-  textureUrls?: {
-    diffuse?: string;
-    normal?: string;
-    metallic?: string;
-    roughness?: string;
-  };
-  metadata: {
-    meshyTaskId: string;
-    processingTime: number;
-  };
-}
-
-// Remesh result
-export interface RemeshResult {
-  modelUrl: string;
-  originalPolycount: number;
-  remeshedPolycount: number;
-  targetPolycount: number;
-}
-
-// Hardpoint analysis result
-export interface HardpointResult {
-  weaponType: WeaponType;
-  primaryGrip: {
-    position: Vector3;
-    rotation: Quaternion;
-    confidence: number;
-  };
-  secondaryGrip?: {
-    position: Vector3;
-    rotation: Quaternion;
-    confidence: number;
-  };
-  attachmentPoints: Array<{
-    name: string;
-    position: Vector3;
-    rotation: Quaternion;
-  }>;
-}
-
-// Armor placement result
-export interface ArmorPlacementResult {
-  slot: ArmorSlot;
-  attachmentPoint: Vector3;
-  rotation: Quaternion;
-  scale: Vector3;
-  deformationWeights?: number[];
-}
-
-// Rigging result
-export interface RiggingResult {
-  rigType: CreatureType;
-  bones: Array<{
-    name: string;
-    position: Vector3;
-    rotation: Quaternion;
-    parent?: string;
-  }>;
-  animations?: string[];
-}
-
-// Building analysis result
-export interface BuildingAnalysisResult {
-  buildingType: BuildingType;
-  entryPoints: Array<{
-    name: string;
-    position: Vector3;
-    rotation: Quaternion;
-    isMain: boolean;
-  }>;
-  interiorSpace?: {
-    center: Vector3;
-    size: Vector3;
-  };
-  functionalAreas: Array<{
-    name: string;
-    type: "counter" | "vault" | "display" | "seating" | "storage";
-    position: Vector3;
-    size: Vector3;
-  }>;
-  npcPositions?: Array<{
-    role: string;
-    position: Vector3;
-    rotation: Quaternion;
-  }>;
-  metadata?: {
-    floors: number;
-    hasBasement: boolean;
-    hasRoof: boolean;
-  };
-}
-
-// Complete generation result
-export interface GenerationResult {
-  id: string;
-  request: GenerationRequest;
-  stages: GenerationStage[];
-  imageResult?: ImageGenerationResult;
-  modelResult?: ModelGenerationResult;
-  remeshResult?: RemeshResult;
-  analysisResult?:
-    | HardpointResult
-    | ArmorPlacementResult
-    | RiggingResult
-    | BuildingAnalysisResult;
-  finalAsset?: {
-    modelUrl: string;
-    metadata: ReturnType<GenerationRequest["toJSON"]> & {
-      analysisResult?:
-        | HardpointResult
-        | ArmorPlacementResult
-        | RiggingResult
-        | BuildingAnalysisResult;
-      generatedAt: Date;
-      modelPath: string;
-    };
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
+// Note: Generation pipeline types are now classes in models.ts
+// ImageGenerationResult, ModelGenerationResult, RemeshResult,
+// HardpointResult, ArmorPlacementResult, RiggingResult,
+// BuildingAnalysisResult, GenerationStage, and GenerationResult
+// are all exported as classes from models.ts
 
 // Cache entry
 export interface CacheEntry<T> {
