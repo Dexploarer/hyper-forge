@@ -634,11 +634,13 @@ export const DialogueNodeResponse = t.Object({
 });
 
 export const GenerateDialogueRequest = t.Object({
-  npcName: t.String({ minLength: 1 }),
-  npcPersonality: t.String({ minLength: 1 }),
+  npcName: t.Optional(t.String({ minLength: 1 })),
+  npcPersonality: t.Optional(t.String({ minLength: 1 })),
+  prompt: t.Optional(t.String()),
   context: t.Optional(t.String()),
   existingNodes: t.Optional(t.Array(DialogueNodeResponse)),
   quality: t.Optional(ModelQuality),
+  worldConfigId: t.Optional(t.String()),
 });
 
 export const GenerateDialogueResponse = t.Object({
