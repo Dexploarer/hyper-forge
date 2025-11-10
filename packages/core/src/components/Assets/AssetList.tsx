@@ -1,7 +1,8 @@
 import {
   Package, Shield, Swords, Diamond, Hammer, Building,
   User, Trees, Box, Target, HelpCircle, Sparkles,
-  ChevronRight, Layers, Star, CheckSquare, Square, Loader2
+  ChevronRight, Layers, Star, CheckSquare, Square, Loader2,
+  LayoutGrid, List
 } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 
@@ -40,6 +41,7 @@ const AssetList: React.FC<AssetListProps> = ({
   const { showNotification } = useApp()
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = useState<'grouped' | 'flat'>('grouped')
+  const [displayMode, setDisplayMode] = useState<'list' | 'cards'>('cards')
   const [updatingFavorites, setUpdatingFavorites] = useState<Set<string>>(new Set())
 
   // Infinite scroll
@@ -361,6 +363,30 @@ const AssetList: React.FC<AssetListProps> = ({
           </h2>
 
           <div className="flex items-center gap-2">
+            {/* Display mode toggle (Cards/List) */}
+            <div className="flex items-center gap-1 bg-bg-tertiary rounded-lg p-1">
+              <button
+                onClick={() => setDisplayMode('cards')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${displayMode === 'cards'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-text-tertiary hover:text-text-secondary'
+                  }`}
+                title="Card view"
+              >
+                <LayoutGrid size={14} />
+              </button>
+              <button
+                onClick={() => setDisplayMode('list')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${displayMode === 'list'
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-text-tertiary hover:text-text-secondary'
+                  }`}
+                title="List view"
+              >
+                <List size={14} />
+              </button>
+            </div>
+
             {/* Selection mode toggle */}
             <button
               onClick={toggleSelectionMode}
@@ -375,35 +401,182 @@ const AssetList: React.FC<AssetListProps> = ({
               <span>Select</span>
             </button>
 
-            {/* View mode toggle */}
-            <div className="flex items-center gap-1 bg-bg-tertiary rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('grouped')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'grouped'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-text-tertiary hover:text-text-secondary'
-                  }`}
-                title="Group by base models"
-              >
-                <Layers size={14} />
-              </button>
-              <button
-                onClick={() => setViewMode('flat')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'flat'
-                    ? 'bg-primary text-white shadow-sm'
-                    : 'text-text-tertiary hover:text-text-secondary'
-                  }`}
-                title="Show all items"
-              >
-                <Package size={14} />
-              </button>
-            </div>
+            {/* View mode toggle (only show in list mode) */}
+            {displayMode === 'list' && (
+              <div className="flex items-center gap-1 bg-bg-tertiary rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('grouped')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'grouped'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'text-text-tertiary hover:text-text-secondary'
+                    }`}
+                  title="Group by base models"
+                >
+                  <Layers size={14} />
+                </button>
+                <button
+                  onClick={() => setViewMode('flat')}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${viewMode === 'flat'
+                      ? 'bg-primary text-white shadow-sm'
+                      : 'text-text-tertiary hover:text-text-secondary'
+                    }`}
+                  title="Show all items"
+                >
+                  <Package size={14} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       <div ref={containerRef} className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="p-2 space-y-1">
+        {displayMode === 'cards' ? (
+          /* Card Grid View */
+          <div className="p-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {visibleAssets.map((asset, index) => (
+                <div
+                  key={asset.id}
+                  className={`group relative rounded-xl transition-all duration-200 cursor-pointer micro-card-hover border ${
+                    selectedAsset?.id === asset.id
+                      ? 'bg-primary bg-opacity-10 border-primary shadow-lg'
+                      : 'bg-bg-secondary border-border-primary hover:border-primary hover:shadow-md'
+                  }`}
+                  onClick={() => handleAssetSelect(asset)}
+                  style={{
+                    animationDelay: `${index * 20}ms`
+                  }}
+                >
+                  {/* Card Content */}
+                  <div className="p-4">
+                    {/* Header Row */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                        selectedAsset?.id === asset.id
+                          ? 'bg-primary bg-opacity-20 text-primary'
+                          : 'bg-bg-tertiary text-text-tertiary group-hover:bg-primary group-hover:bg-opacity-10 group-hover:text-primary'
+                      }`}>
+                        {React.cloneElement(getAssetIcon(asset.type, asset.metadata?.subtype), { size: 24 })}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* Checkbox for selection mode */}
+                        {selectionMode && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleAssetSelection(asset.id)
+                            }}
+                            className="p-1.5 hover:bg-bg-tertiary rounded-lg transition-all"
+                          >
+                            {selectedAssetIds.has(asset.id) ? (
+                              <CheckSquare size={16} className="text-primary" />
+                            ) : (
+                              <Square size={16} className="text-text-tertiary" />
+                            )}
+                          </button>
+                        )}
+
+                        {/* Favorite button */}
+                        <button
+                          onClick={(e) => toggleFavorite(asset, e)}
+                          disabled={updatingFavorites.has(asset.id)}
+                          className="p-1.5 hover:bg-bg-tertiary rounded-lg transition-all disabled:opacity-50"
+                        >
+                          {updatingFavorites.has(asset.id) ? (
+                            <div className="w-4 h-4 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Star
+                              size={16}
+                              className={`${
+                                asset.metadata.isFavorite
+                                  ? 'text-yellow-400 fill-yellow-400'
+                                  : 'text-text-tertiary group-hover:text-yellow-400'
+                              } transition-colors`}
+                            />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Asset Name */}
+                    <h3 className="font-semibold text-base text-text-primary mb-2 line-clamp-2 min-h-[3rem]">
+                      {cleanAssetName(asset.name, asset.metadata?.isBaseModel)}
+                    </h3>
+
+                    {/* Badges Row */}
+                    <div className="flex items-center flex-wrap gap-2 mb-3">
+                      {asset.metadata?.isBaseModel && (
+                        <span className="px-2 py-1 bg-primary bg-opacity-20 text-primary rounded-md text-xs font-medium">
+                          BASE
+                        </span>
+                      )}
+                      <span className="px-2 py-1 bg-bg-tertiary text-text-secondary rounded-md text-xs font-medium capitalize">
+                        {asset.type}
+                      </span>
+                      {asset.metadata?.tier && asset.metadata.tier !== 'base' && (
+                        <span
+                          className="px-2 py-1 rounded-md text-xs font-medium capitalize flex items-center gap-1"
+                          style={{
+                            backgroundColor: `${getTierColor(asset.metadata.tier)}20`,
+                            color: getTierColor(asset.metadata.tier)
+                          }}
+                        >
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: getTierColor(asset.metadata.tier) }}
+                          />
+                          {asset.metadata.tier}
+                        </span>
+                      )}
+                      {asset.metadata?.isPlaceholder && (
+                        <span className="px-2 py-1 bg-warning bg-opacity-20 text-warning rounded-md text-xs font-medium">
+                          PLACEHOLDER
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Footer Row */}
+                    <div className="flex items-center justify-between pt-3 border-t border-border-primary">
+                      <div className="flex items-center gap-2">
+                        {asset.hasModel ? (
+                          <div className="flex items-center gap-1.5 text-success">
+                            <Sparkles size={14} />
+                            <span className="text-xs font-medium">3D Model</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-text-tertiary">No model</span>
+                        )}
+                      </div>
+
+                      {selectedAsset?.id === asset.id && (
+                        <div className="px-2 py-1 bg-primary bg-opacity-20 text-primary rounded text-xs font-medium">
+                          Selected
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Selection indicator */}
+                  {selectedAsset?.id === asset.id && (
+                    <div className="absolute top-0 right-0 w-2 h-full bg-primary rounded-r-xl" />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Loading indicator */}
+            {isLoadingMore && (
+              <div className="flex items-center justify-center p-4 mt-4">
+                <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                <span className="ml-2 text-sm text-text-secondary">Loading more assets...</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* List View */
+          <div className="p-2 space-y-1">
           {viewMode === 'grouped' ? (
             <>
               {/* Render grouped view with type headers */}
@@ -918,14 +1091,15 @@ const AssetList: React.FC<AssetListProps> = ({
               })}
             </>
           )}
-        </div>
 
-        {/* Loading indicator */}
-        {isLoadingMore && (
-          <div className="flex items-center justify-center p-4">
-            <Loader2 className="w-5 h-5 text-primary animate-spin" />
-            <span className="ml-2 text-sm text-text-secondary">Loading more assets...</span>
-          </div>
+          {/* Loading indicator for list view */}
+          {isLoadingMore && (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+              <span className="ml-2 text-sm text-text-secondary">Loading more assets...</span>
+            </div>
+          )}
+        </div>
         )}
       </div>
     </div>
