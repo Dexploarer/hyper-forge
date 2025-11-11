@@ -62,7 +62,8 @@ export const createAssetRoutes = (
             set.headers["Content-Type"] = "application/octet-stream";
           }
 
-          return modelFile;
+          // Wrap Bun.file() in Response for proper HEAD request handling
+          return new Response(modelFile);
         })
         .head("/:id/model", async ({ params: { id }, set }) => {
           try {
@@ -116,7 +117,8 @@ export const createAssetRoutes = (
             return { error: "File not found" };
           }
 
-          return file;
+          // Wrap Bun.file() in Response for proper HEAD request handling
+          return new Response(file);
         })
         .head("/:id/*", async ({ params, set }) => {
           try {

@@ -237,7 +237,8 @@ const app = new Elysia()
       return new Response("File not found", { status: 404 });
     }
 
-    return file;
+    // Wrap Bun.file() in Response for proper HEAD request handling
+    return new Response(file);
   })
   .head("/gdd-assets/*", async ({ params, set }) => {
     try {
@@ -267,7 +268,8 @@ const app = new Elysia()
       return new Response("File not found", { status: 404 });
     }
 
-    return file;
+    // Wrap Bun.file() in Response for proper HEAD request handling
+    return new Response(file);
   })
   .head("/temp-images/*", async ({ params, set }) => {
     try {
@@ -297,7 +299,8 @@ const app = new Elysia()
       return new Response("File not found", { status: 404 });
     }
 
-    return file;
+    // Wrap Bun.file() in Response for proper HEAD request handling
+    return new Response(file);
   })
   .head("/emotes/*", async ({ params, set }) => {
     try {
@@ -327,7 +330,8 @@ const app = new Elysia()
       return new Response("File not found", { status: 404 });
     }
 
-    return file;
+    // Wrap Bun.file() in Response for proper HEAD request handling
+    return new Response(file);
   })
   .head("/rigs/*", async ({ params, set }) => {
     try {
@@ -357,7 +361,8 @@ const app = new Elysia()
       return new Response("File not found", { status: 404 });
     }
 
-    return file;
+    // Wrap Bun.file() in Response for proper HEAD request handling
+    return new Response(file);
   })
   .head("/images/*", async ({ params, set }) => {
     try {
@@ -387,7 +392,8 @@ const app = new Elysia()
       return new Response("File not found", { status: 404 });
     }
 
-    return file;
+    // Wrap Bun.file() in Response for proper HEAD request handling
+    return new Response(file);
   })
   .head("/prompts/*", async ({ params, set }) => {
     try {
@@ -632,7 +638,8 @@ const app = new Elysia()
       set.status = 404;
       return new Response("Not Found", { status: 404 });
     }
-    return file;
+    // Wrap Bun.file() in Response for proper HEAD request handling
+    return new Response(file);
   })
   .head("/assets/*", async ({ params, set }) => {
     try {
@@ -670,7 +677,8 @@ const app = new Elysia()
           },
         );
       }
-      return file;
+      // Wrap Bun.file() in Response for proper HEAD request handling
+      return new Response(file);
     } catch (error) {
       console.error("[GET /*] Error serving SPA:", error);
       set.status = 500;
