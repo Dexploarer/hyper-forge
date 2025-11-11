@@ -695,7 +695,10 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
     try {
       // Get Privy access token for authentication
       const accessToken = await getAccessToken();
-      const pipelineId = await apiClient.startPipeline(config, accessToken || undefined);
+      const pipelineId = await apiClient.startPipeline(
+        config,
+        accessToken || undefined,
+      );
       setCurrentPipelineId(pipelineId);
     } catch (error) {
       console.error("Failed to start generation:", error);
@@ -795,302 +798,284 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
     }
   };
 
-  // Show generation type selector first
+  // GenerationPage must be used with a wrapper that sets generationType
+  // (CharacterGenerationPage, PropGenerationPage, etc.)
   if (!generationType) {
     return (
-      <div className="h-full flex items-center justify-center overflow-hidden">
-        <GenerationTypeSelector
-          onSelectType={setGenerationType}
-          onGenerateWorld={handleGenerateWorld}
-        />
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-text-secondary">
+            Please navigate to a specific generation page using the sidebar.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      <div className="fixed inset-0 pt-[60px] bg-bg-primary overflow-hidden">
-        <div className="h-full w-full overflow-y-auto custom-scrollbar">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
-            {/* Header with tabs */}
-            <div className="mb-4">
-              {/* Tab Navigation */}
-              <TabNavigation
-                activeView={activeView}
-                generatedAssetsCount={generatedAssets.length}
-                onTabChange={setActiveView}
-              />
-            </div>
-            {/* Configuration Form View */}
-            {activeView === "config" && (
-              <div className="animate-fade-in space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {/* Main Form */}
-                  <div className="lg:col-span-2 space-y-4">
-                    {/* Asset Details Card */}
-                    <AssetDetailsCard
+      <div className="h-full overflow-y-auto custom-scrollbar">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+          {/* Header with tabs */}
+          <div className="mb-4">
+            {/* Tab Navigation */}
+            <TabNavigation
+              activeView={activeView}
+              generatedAssetsCount={generatedAssets.length}
+              onTabChange={setActiveView}
+            />
+          </div>
+          {/* Configuration Form View */}
+          {activeView === "config" && (
+            <div className="animate-fade-in space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Main Form */}
+                <div className="lg:col-span-2 space-y-4">
+                  {/* Asset Details Card */}
+                  <AssetDetailsCard
+                    generationType={generationType}
+                    assetName={assetName}
+                    assetType={assetType}
+                    description={description}
+                    gameStyle={gameStyle}
+                    customStyle={customStyle}
+                    customAssetTypes={allCustomAssetTypes}
+                    customGameStyles={customGameStyles}
+                    onAssetNameChange={setAssetName}
+                    onAssetTypeChange={setAssetType}
+                    onDescriptionChange={setDescription}
+                    onGameStyleChange={setGameStyle}
+                    onCustomStyleChange={setCustomStyle}
+                    onSaveCustomGameStyle={saveCustomGameStyle}
+                  />
+
+                  {/* Advanced Settings Button */}
+                  <Card className="overflow-hidden bg-gradient-to-br from-bg-primary via-bg-primary to-primary/5 border-border-primary shadow-lg">
+                    <CardContent className="p-4">
+                      <Button
+                        onClick={() => setShowAdvancedDrawer(true)}
+                        variant="secondary"
+                        className="w-full"
+                        size="lg"
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Advanced Settings & Prompts
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Sidebar */}
+                <div className="space-y-4">
+                  {/* Pipeline Options - Collapsible */}
+                  <CollapsibleSection
+                    title="Pipeline Options"
+                    defaultOpen={true}
+                    icon={Settings}
+                    badge={
+                      [
+                        useGPT4Enhancement,
+                        enableRetexturing,
+                        enableSprites,
+                        enableRigging,
+                      ].filter(Boolean).length
+                    }
+                  >
+                    <PipelineOptionsCard
                       generationType={generationType}
-                      assetName={assetName}
-                      assetType={assetType}
-                      description={description}
-                      gameStyle={gameStyle}
-                      customStyle={customStyle}
-                      customAssetTypes={allCustomAssetTypes}
-                      customGameStyles={customGameStyles}
-                      onAssetNameChange={setAssetName}
-                      onAssetTypeChange={setAssetType}
-                      onDescriptionChange={setDescription}
-                      onGameStyleChange={setGameStyle}
-                      onCustomStyleChange={setCustomStyle}
-                      onBack={() => {
-                        setGenerationType(undefined);
-                        setActiveView("config");
-                        resetForm();
-                        resetPipeline();
-                      }}
-                      onSaveCustomGameStyle={saveCustomGameStyle}
+                      useGPT4Enhancement={useGPT4Enhancement}
+                      enableRetexturing={enableRetexturing}
+                      enableSprites={enableSprites}
+                      enableRigging={enableRigging}
+                      quality={quality}
+                      onUseGPT4EnhancementChange={setUseGPT4Enhancement}
+                      onEnableRetexturingChange={setEnableRetexturing}
+                      onEnableSpritesChange={setEnableSprites}
+                      onEnableRiggingChange={setEnableRigging}
+                      onQualityChange={setQuality}
+                      noCard={true}
                     />
+                  </CollapsibleSection>
 
-                    {/* Advanced Settings Button */}
-                    <Card className="overflow-hidden bg-gradient-to-br from-bg-primary via-bg-primary to-primary/5 border-border-primary shadow-lg">
-                      <CardContent className="p-4">
-                        <Button
-                          onClick={() => setShowAdvancedDrawer(true)}
-                          variant="secondary"
-                          className="w-full"
-                          size="lg"
-                        >
-                          <Settings className="w-4 h-4 mr-2" />
-                          Advanced Settings & Prompts
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Sidebar */}
-                  <div className="space-y-4">
-                    {/* Pipeline Options - Collapsible */}
+                  {/* Material Variants - Collapsible */}
+                  {enableRetexturing && generationType === "item" && (
                     <CollapsibleSection
-                      title="Pipeline Options"
+                      title="Material Variants"
                       defaultOpen={true}
-                      icon={Settings}
-                      badge={
-                        [
-                          useGPT4Enhancement,
-                          enableRetexturing,
-                          enableSprites,
-                          enableRigging,
-                        ].filter(Boolean).length
-                      }
+                      icon={Layers}
+                      badge={selectedMaterials.length}
                     >
-                      <PipelineOptionsCard
-                        generationType={generationType}
-                        useGPT4Enhancement={useGPT4Enhancement}
-                        enableRetexturing={enableRetexturing}
-                        enableSprites={enableSprites}
-                        enableRigging={enableRigging}
-                        quality={quality}
-                        onUseGPT4EnhancementChange={setUseGPT4Enhancement}
-                        onEnableRetexturingChange={setEnableRetexturing}
-                        onEnableSpritesChange={setEnableSprites}
-                        onEnableRiggingChange={setEnableRigging}
-                        onQualityChange={setQuality}
-                        noCard={true}
+                      <MaterialVariantsCard
+                        gameStyle={gameStyle}
+                        isLoadingMaterials={isLoadingMaterials}
+                        materialPresets={materialPresets}
+                        selectedMaterials={selectedMaterials}
+                        customMaterials={customMaterials}
+                        materialPromptOverrides={materialPromptOverrides}
+                        editMaterialPrompts={editMaterialPrompts}
+                        onToggleMaterialSelection={toggleMaterialSelection}
+                        onEditMaterialPromptsToggle={() =>
+                          setEditMaterialPrompts(!editMaterialPrompts)
+                        }
+                        onMaterialPromptOverride={(materialId, prompt) => {
+                          setMaterialPromptOverrides({
+                            ...materialPromptOverrides,
+                            [materialId]: prompt,
+                          });
+                        }}
+                        onAddCustomMaterial={addCustomMaterial}
+                        onUpdateCustomMaterial={(index, material) => {
+                          const updated = [...customMaterials];
+                          updated[index] = material;
+                          setCustomMaterials(updated);
+                        }}
+                        onRemoveCustomMaterial={(index) => {
+                          setCustomMaterials(
+                            customMaterials.filter((_, i) => i !== index),
+                          );
+                        }}
+                        onSaveCustomMaterials={handleSaveCustomMaterials}
+                        onEditPreset={setEditingPreset}
+                        onDeletePreset={setShowDeleteConfirm}
                       />
                     </CollapsibleSection>
+                  )}
 
-                    {/* Material Variants - Collapsible */}
-                    {enableRetexturing && generationType === "item" && (
-                      <CollapsibleSection
-                        title="Material Variants"
-                        defaultOpen={true}
-                        icon={Layers}
-                        badge={selectedMaterials.length}
-                      >
-                        <MaterialVariantsCard
-                          gameStyle={gameStyle}
-                          isLoadingMaterials={isLoadingMaterials}
-                          materialPresets={materialPresets}
-                          selectedMaterials={selectedMaterials}
-                          customMaterials={customMaterials}
-                          materialPromptOverrides={materialPromptOverrides}
-                          editMaterialPrompts={editMaterialPrompts}
-                          onToggleMaterialSelection={toggleMaterialSelection}
-                          onEditMaterialPromptsToggle={() =>
-                            setEditMaterialPrompts(!editMaterialPrompts)
-                          }
-                          onMaterialPromptOverride={(materialId, prompt) => {
-                            setMaterialPromptOverrides({
-                              ...materialPromptOverrides,
-                              [materialId]: prompt,
-                            });
-                          }}
-                          onAddCustomMaterial={addCustomMaterial}
-                          onUpdateCustomMaterial={(index, material) => {
-                            const updated = [...customMaterials];
-                            updated[index] = material;
-                            setCustomMaterials(updated);
-                          }}
-                          onRemoveCustomMaterial={(index) => {
-                            setCustomMaterials(
-                              customMaterials.filter((_, i) => i !== index),
-                            );
-                          }}
-                          onSaveCustomMaterials={handleSaveCustomMaterials}
-                          onEditPreset={setEditingPreset}
-                          onDeletePreset={setShowDeleteConfirm}
-                        />
-                      </CollapsibleSection>
-                    )}
-
-                    {/* Avatar Rigging Options - Collapsible */}
-                    {generationType === "avatar" && enableRigging && (
-                      <CollapsibleSection
-                        title="Rigging Options"
-                        defaultOpen={true}
-                        icon={User}
-                      >
-                        <AvatarRiggingOptionsCard
-                          characterHeight={characterHeight}
-                          onCharacterHeightChange={setCharacterHeight}
-                        />
-                      </CollapsibleSection>
-                    )}
-
-                    {/* Reference Image Selection - Collapsible */}
+                  {/* Avatar Rigging Options - Collapsible */}
+                  {generationType === "avatar" && enableRigging && (
                     <CollapsibleSection
-                      title="Reference Image"
-                      defaultOpen={false}
-                      icon={Camera}
-                      badge={referenceImageMode === "custom" ? 1 : undefined}
+                      title="Rigging Options"
+                      defaultOpen={true}
+                      icon={User}
                     >
-                      <ReferenceImageCard
-                        generationType={generationType}
-                        mode={referenceImageMode}
-                        source={referenceImageSource}
-                        url={referenceImageUrl}
-                        dataUrl={referenceImageDataUrl}
-                        onModeChange={setReferenceImageMode}
-                        onSourceChange={setReferenceImageSource}
-                        onUrlChange={setReferenceImageUrl}
-                        onDataUrlChange={setReferenceImageDataUrl}
+                      <AvatarRiggingOptionsCard
+                        characterHeight={characterHeight}
+                        onCharacterHeightChange={setCharacterHeight}
                       />
                     </CollapsibleSection>
+                  )}
 
-                    {/* Start Generation Button */}
-                    <Card className="overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border-primary/20">
-                      <CardContent className="p-4">
-                        <Button
-                          onClick={handleStartGeneration}
-                          disabled={!assetName || !description || isGenerating}
-                          className="w-full h-14 text-base font-semibold bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-[1.01]"
-                          size="lg"
-                        >
-                          {isGenerating ? (
-                            <>
-                              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
-                              Start Generation
-                            </>
-                          )}
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  {/* Reference Image Selection - Collapsible */}
+                  <CollapsibleSection
+                    title="Reference Image"
+                    defaultOpen={false}
+                    icon={Camera}
+                    badge={referenceImageMode === "custom" ? 1 : undefined}
+                  >
+                    <ReferenceImageCard
+                      generationType={generationType}
+                      mode={referenceImageMode}
+                      source={referenceImageSource}
+                      url={referenceImageUrl}
+                      dataUrl={referenceImageDataUrl}
+                      onModeChange={setReferenceImageMode}
+                      onSourceChange={setReferenceImageSource}
+                      onUrlChange={setReferenceImageUrl}
+                      onDataUrlChange={setReferenceImageDataUrl}
+                    />
+                  </CollapsibleSection>
+
+                  {/* Start Generation Button */}
+                  <Card className="overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 border-primary/20">
+                    <CardContent className="p-4">
+                      <Button
+                        onClick={handleStartGeneration}
+                        disabled={!assetName || !description || isGenerating}
+                        className="w-full h-14 text-base font-semibold bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transform transition-all duration-200 hover:scale-[1.01]"
+                        size="lg"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
+                            Start Generation
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Progress View */}
-            {activeView === "progress" && (
-              <div className="animate-fade-in space-y-4">
-                <PipelineProgressCard
-                  pipelineStages={pipelineStages}
-                  generationType={generationType}
-                  isGenerating={isGenerating}
-                  onBackToConfig={() => setActiveView("config")}
-                  onBack={() => {
-                    setGenerationType(undefined);
-                    setActiveView("config");
-                    resetForm();
-                    resetPipeline();
-                  }}
-                />
+          {/* Progress View */}
+          {activeView === "progress" && (
+            <div className="animate-fade-in space-y-4">
+              <PipelineProgressCard
+                pipelineStages={pipelineStages}
+                generationType={generationType}
+                isGenerating={isGenerating}
+                onBackToConfig={() => setActiveView("config")}
+              />
 
-                {/* Additional Progress Info */}
-                <GenerationTimeline />
-              </div>
-            )}
+              {/* Additional Progress Info */}
+              <GenerationTimeline />
+            </div>
+          )}
 
-            {/* Results View */}
-            {activeView === "results" && (
-              <div className="animate-fade-in space-y-4">
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                  {/* Asset List */}
-                  <div>
-                    <GeneratedAssetsList
-                      generatedAssets={generatedAssets}
-                      selectedAsset={selectedAsset}
-                      onAssetSelect={setSelectedAsset}
-                      onBack={() => {
-                        setGenerationType(undefined);
-                        setActiveView("config");
-                        resetForm();
-                        resetPipeline();
-                      }}
-                    />
-                  </div>
+          {/* Results View */}
+          {activeView === "results" && (
+            <div className="animate-fade-in space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                {/* Asset List */}
+                <div>
+                  <GeneratedAssetsList
+                    generatedAssets={generatedAssets}
+                    selectedAsset={selectedAsset}
+                    onAssetSelect={setSelectedAsset}
+                  />
+                </div>
 
-                  {/* Asset Details */}
-                  <div className="lg:col-span-3 space-y-4">
-                    {selectedAsset ? (
-                      <>
-                        {/* 3D Preview */}
-                        <AssetPreviewCard
-                          selectedAsset={selectedAsset}
-                          generationType={generationType}
-                        />
+                {/* Asset Details */}
+                <div className="lg:col-span-3 space-y-4">
+                  {selectedAsset ? (
+                    <>
+                      {/* 3D Preview */}
+                      <AssetPreviewCard
+                        selectedAsset={selectedAsset}
+                        generationType={generationType}
+                      />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Material Variants */}
-                          {generationType === "item" &&
-                            selectedAsset.variants && (
-                              <MaterialVariantsDisplay
-                                variants={selectedAsset.variants}
-                              />
-                            )}
-
-                          {/* 2D Sprites */}
-                          {generationType === "item" && (
-                            <SpritesDisplay
-                              selectedAsset={selectedAsset}
-                              isGeneratingSprites={isGeneratingSprites}
-                              onGenerateSprites={handleGenerateSprites}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Material Variants */}
+                        {generationType === "item" &&
+                          selectedAsset.variants && (
+                            <MaterialVariantsDisplay
+                              variants={selectedAsset.variants}
                             />
                           )}
-                        </div>
 
-                        {/* Actions */}
-                        <AssetActionsCard
-                          onGenerateNew={() => {
-                            setActiveView("config");
-                            setAssetName("");
-                            setDescription("");
-                          }}
-                        />
-                      </>
-                    ) : (
-                      <NoAssetSelected />
-                    )}
-                  </div>
+                        {/* 2D Sprites */}
+                        {generationType === "item" && (
+                          <SpritesDisplay
+                            selectedAsset={selectedAsset}
+                            isGeneratingSprites={isGeneratingSprites}
+                            onGenerateSprites={handleGenerateSprites}
+                          />
+                        )}
+                      </div>
+
+                      {/* Actions */}
+                      <AssetActionsCard
+                        onGenerateNew={() => {
+                          setActiveView("config");
+                          setAssetName("");
+                          setDescription("");
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <NoAssetSelected />
+                  )}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
