@@ -130,11 +130,8 @@ function App() {
             createOnLogin: "users-without-wallets",
           },
         },
-        externalWallets: {
-          solana: {
-            connectors: [], // Solana connectors - empty array silences warning
-          },
-        },
+        // Note: Solana external wallet warning is safe to ignore
+        // Only affects external wallets like Phantom, not embedded wallets
       }}
     >
       <AppProvider>
