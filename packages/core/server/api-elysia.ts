@@ -226,30 +226,108 @@ const app = new Elysia()
     const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
     return Bun.file(filePath);
   })
+  .head("/gdd-assets/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
+    if (!fs.existsSync(filePath)) {
+      return new Response(null, { status: 404 });
+    }
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/octet-stream",
+      },
+    });
+  })
   .get("/temp-images/*", ({ params }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
     return Bun.file(filePath);
+  })
+  .head("/temp-images/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
+    if (!fs.existsSync(filePath)) {
+      return new Response(null, { status: 404 });
+    }
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Content-Type": "image/png",
+      },
+    });
   })
   .get("/emotes/*", ({ params }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/emotes", relativePath);
     return Bun.file(filePath);
   })
+  .head("/emotes/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/emotes", relativePath);
+    if (!fs.existsSync(filePath)) {
+      return new Response(null, { status: 404 });
+    }
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Content-Type": "model/gltf-binary",
+      },
+    });
+  })
   .get("/rigs/*", ({ params }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/rigs", relativePath);
     return Bun.file(filePath);
+  })
+  .head("/rigs/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/rigs", relativePath);
+    if (!fs.existsSync(filePath)) {
+      return new Response(null, { status: 404 });
+    }
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Content-Type": "model/gltf-binary",
+      },
+    });
   })
   .get("/images/*", ({ params }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/images", relativePath);
     return Bun.file(filePath);
   })
+  .head("/images/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/images", relativePath);
+    if (!fs.existsSync(filePath)) {
+      return new Response(null, { status: 404 });
+    }
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Content-Type": "image/png",
+      },
+    });
+  })
   .get("/prompts/*", ({ params }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/prompts", relativePath);
     return Bun.file(filePath);
+  })
+  .head("/prompts/*", ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/prompts", relativePath);
+    if (!fs.existsSync(filePath)) {
+      return new Response(null, { status: 404 });
+    }
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
   })
 
   // Image proxy to avoid CORS issues with external images
@@ -448,6 +526,22 @@ const app = new Elysia()
       );
     }
     return Bun.file(indexPath);
+  })
+
+  // HEAD handler for SPA fallback to prevent Elysia HEAD bug
+  // See: https://github.com/elysiajs/elysia/issues - Elysia v1.4.15 HEAD handling issue
+  .head("/*", () => {
+    const indexPath = path.join(ROOT_DIR, "dist", "index.html");
+    if (!fs.existsSync(indexPath)) {
+      return new Response(null, { status: 404 });
+    }
+    // Return successful HEAD response with content-type
+    return new Response(null, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+      },
+    });
   })
 
   // Start server

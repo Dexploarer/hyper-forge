@@ -52,14 +52,14 @@ export const createAssetRoutes = (
           // Set correct content-type for GLB files to prevent JSON parsing
           // This is critical - without the correct content-type, browsers/interceptors
           // may try to parse binary GLB files as JSON, causing parse errors
-          const ext = modelPath.toLowerCase().split('.').pop();
-          if (ext === 'glb') {
-            set.headers['Content-Type'] = 'model/gltf-binary';
-          } else if (ext === 'gltf') {
-            set.headers['Content-Type'] = 'model/gltf+json';
+          const ext = modelPath.toLowerCase().split(".").pop();
+          if (ext === "glb") {
+            set.headers["Content-Type"] = "model/gltf-binary";
+          } else if (ext === "gltf") {
+            set.headers["Content-Type"] = "model/gltf+json";
           } else {
             // Fallback to binary for unknown extensions to prevent JSON parsing
-            set.headers['Content-Type'] = 'application/octet-stream';
+            set.headers["Content-Type"] = "application/octet-stream";
           }
 
           return modelFile;
@@ -74,6 +74,16 @@ export const createAssetRoutes = (
             set.status = 404;
           } else {
             set.status = 200;
+
+            // Set correct content-type header for HEAD requests too
+            const ext = modelPath.toLowerCase().split(".").pop();
+            if (ext === "glb") {
+              set.headers["Content-Type"] = "model/gltf-binary";
+            } else if (ext === "gltf") {
+              set.headers["Content-Type"] = "model/gltf+json";
+            } else {
+              set.headers["Content-Type"] = "application/octet-stream";
+            }
           }
 
           return null;
@@ -366,7 +376,10 @@ export const createAssetRoutes = (
           async ({ body, set }) => {
             const { assetIds, updates } = body;
 
-            console.log(`[Bulk Update] Updating ${assetIds.length} assets with:`, updates);
+            console.log(
+              `[Bulk Update] Updating ${assetIds.length} assets with:`,
+              updates,
+            );
 
             let updated = 0;
             let failed = 0;
@@ -385,17 +398,22 @@ export const createAssetRoutes = (
                 failed++;
                 const err = error as Error;
                 errors.push({ assetId, error: err.message });
-                console.error(`[Bulk Update] Failed to update ${assetId}:`, err.message);
+                console.error(
+                  `[Bulk Update] Failed to update ${assetId}:`,
+                  err.message,
+                );
               }
             }
 
-            console.log(`[Bulk Update] Complete: ${updated} updated, ${failed} failed`);
+            console.log(
+              `[Bulk Update] Complete: ${updated} updated, ${failed} failed`,
+            );
 
             return {
               success: updated > 0,
               updated,
               failed,
-              errors: errors.length > 0 ? errors : undefined
+              errors: errors.length > 0 ? errors : undefined,
             };
           },
           {
