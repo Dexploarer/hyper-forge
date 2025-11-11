@@ -54,7 +54,6 @@ import { generationQueueRoutes } from "./routes/generation-queue";
 
 // Cron and job cleanup
 import { cron } from "@elysiajs/cron";
-import { generationJobService } from "./services/GenerationJobService";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -212,15 +211,12 @@ const app = new Elysia()
   // Cron jobs for background cleanup
   .use(
     cron({
-      name: "cleanup-expired-jobs",
+      name: "cleanup-old-pipelines",
       pattern: "0 * * * *", // Every hour
       async run() {
-        console.log("[Cron] Running job cleanup...");
-        const expiredCount = await generationJobService.cleanupExpiredJobs();
-        const failedCount = await generationJobService.cleanupOldFailedJobs();
-        console.log(
-          `[Cron] Cleaned up ${expiredCount} expired and ${failedCount} old failed jobs`,
-        );
+        console.log("[Cron] Running pipeline cleanup...");
+        await generationService.cleanupOldPipelines();
+        console.log("[Cron] Pipeline cleanup completed");
       },
     }),
   )
@@ -677,7 +673,10 @@ const app = new Elysia()
       console.error("[HEAD /*] Error checking SPA:", error);
       console.error(`   ROOT_DIR: ${ROOT_DIR}`);
       console.error(`   cwd: ${process.cwd()}`);
-      console.error(`   Error details:`, error instanceof Error ? error.message : String(error));
+      console.error(
+        `   Error details:`,
+        error instanceof Error ? error.message : String(error),
+      );
       set.status = 500;
       return null;
     }

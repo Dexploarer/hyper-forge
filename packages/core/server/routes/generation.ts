@@ -42,19 +42,28 @@ export const createGenerationRoutes = (
                 });
 
                 // If we have an authenticated user from Privy token, use it
-                // This is the simplest and most secure approach
-                if (!authUser) {
-                  console.error(`[Generation Route] No authenticated user found. Auth header present: ${!!authHeader}`);
-                  set.status = 401;
-                  return {
-                    error: "Authentication required. Please log in with Privy to create generation jobs.",
-                  };
+                // Otherwise, allow anonymous generation (for testing/demo)
+                let userId: string;
+                if (authUser) {
+                  userId = authUser.id;
+                  console.log(
+                    `[Generation Route] Using authenticated user ID: ${userId}`,
+                  );
+                } else if (body.user?.userId) {
+                  // Allow provided userId for testing (not recommended for production)
+                  userId = body.user.userId;
+                  console.log(
+                    `[Generation Route] Using provided user ID (unauthenticated): ${userId}`,
+                  );
+                } else {
+                  // Anonymous generation - use a test user ID
+                  userId = "anonymous-" + Date.now();
+                  console.log(
+                    `[Generation Route] Using anonymous user ID: ${userId}`,
+                  );
                 }
 
-                const userId = authUser.id;
-                console.log(`[Generation Route] Using authenticated user ID: ${userId}`);
-
-                // Update body with verified userId
+                // Update body with verified or generated userId
                 const configWithUser = {
                   ...body,
                   user: {
@@ -65,84 +74,90 @@ export const createGenerationRoutes = (
 
                 // Cast to GenerationService's PipelineConfig type which has slightly different user field typing
                 const result = await generationService.startPipeline(
-                  configWithUser as Parameters<typeof generationService.startPipeline>[0],
+                  configWithUser as Parameters<
+                    typeof generationService.startPipeline
+                  >[0],
                 );
 
-              if (!result || !result.pipelineId) {
+                if (!result || !result.pipelineId) {
+                  set.status = 500;
+                  return {
+                    error: "Failed to start pipeline - no pipeline ID returned",
+                  };
+                }
+
+                return result;
+              } catch (error) {
+                console.error(
+                  "[Generation Route] Error starting pipeline:",
+                  error,
+                );
+
+                // Extract error message
+                let errorMessage = "Failed to start generation pipeline";
+                if (error instanceof Error) {
+                  errorMessage = error.message;
+                } else if (typeof error === "string") {
+                  errorMessage = error;
+                } else if (
+                  error &&
+                  typeof error === "object" &&
+                  "message" in error
+                ) {
+                  errorMessage = String(error.message);
+                }
+
+                // Log full error details for debugging
+                console.error("[Generation Route] Full error details:", {
+                  message: errorMessage,
+                  error,
+                  stack: error instanceof Error ? error.stack : undefined,
+                });
+
                 set.status = 500;
                 return {
-                  error: "Failed to start pipeline - no pipeline ID returned",
+                  error: errorMessage,
                 };
               }
+            },
+            {
+              body: Models.PipelineConfig,
+              response: {
+                200: Models.PipelineResponse,
+                500: Models.ErrorResponse,
+              },
+              detail: {
+                tags: ["Generation"],
+                summary: "Start generation pipeline",
+                description:
+                  "Initiates a new AI-powered 3D asset generation pipeline. (Auth optional - authenticated users get ownership tracking)",
+              },
+            },
+          )
 
-              return result;
-            } catch (error) {
-              console.error(
-                "[Generation Route] Error starting pipeline:",
-                error,
-              );
-              
-              // Extract error message
-              let errorMessage = "Failed to start generation pipeline";
-              if (error instanceof Error) {
-                errorMessage = error.message;
-              } else if (typeof error === "string") {
-                errorMessage = error;
-              } else if (error && typeof error === "object" && "message" in error) {
-                errorMessage = String(error.message);
-              }
-              
-              // Log full error details for debugging
-              console.error("[Generation Route] Full error details:", {
-                message: errorMessage,
-                error,
-                stack: error instanceof Error ? error.stack : undefined,
-              });
-              
-              set.status = 500;
-              return {
-                error: errorMessage,
-              };
-            }
-          },
-          {
-            body: Models.PipelineConfig,
-            response: {
-              200: Models.PipelineResponse,
-              500: Models.ErrorResponse,
+          // Get pipeline status
+          .get(
+            "/pipeline/:pipelineId",
+            async ({ params: { pipelineId } }) => {
+              const status =
+                await generationService.getPipelineStatus(pipelineId);
+              return status;
             },
-            detail: {
-              tags: ["Generation"],
-              summary: "Start generation pipeline",
-              description:
-                "Initiates a new AI-powered 3D asset generation pipeline. (Auth optional - authenticated users get ownership tracking)",
+            {
+              params: t.Object({
+                pipelineId: t.String({ minLength: 1 }),
+              }),
+              response: {
+                200: Models.PipelineStatus,
+                404: Models.ErrorResponse,
+              },
+              detail: {
+                tags: ["Generation"],
+                summary: "Get pipeline status",
+                description:
+                  "Returns the current status and progress of a generation pipeline. (Auth optional)",
+              },
             },
-          },
-        )
-
-        // Get pipeline status
-        .get(
-          "/pipeline/:pipelineId",
-          async ({ params: { pipelineId } }) => {
-            const status =
-              await generationService.getPipelineStatus(pipelineId);
-            return status;
-          },
-          {
-            params: t.Object({
-              pipelineId: t.String({ minLength: 1 }),
-            }),
-            response: {
-              200: Models.PipelineStatus,
-              404: Models.ErrorResponse,
-            },
-            detail: {
-              tags: ["Generation"],
-              summary: "Get pipeline status",
-              description:
-                "Returns the current status and progress of a generation pipeline. (Auth optional)",
-            },
-          },
-        ),
-  );
+          ),
+    );
 };

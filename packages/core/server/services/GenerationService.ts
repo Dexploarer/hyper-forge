@@ -8,7 +8,6 @@ import type { UserContextType } from "../models";
 import { AICreationService } from "./AICreationService";
 import { ImageHostingService } from "./ImageHostingService";
 import { assetDatabaseService } from "./AssetDatabaseService";
-import { generationJobService } from "./GenerationJobService";
 import {
   getGenerationPrompts,
   getGPT4EnhancementPrompts,
@@ -214,6 +213,7 @@ export class GenerationService extends EventEmitter {
   public aiService: AICreationService;
   private imageHostingService: ImageHostingService;
   private fetchFn: FetchFunction;
+  private pipelines: Map<string, Pipeline> = new Map();
 
   constructor(config?: { fetchFn?: FetchFunction }) {
     super();
@@ -284,19 +284,18 @@ export class GenerationService extends EventEmitter {
       createdAt: new Date().toISOString(),
     };
 
-    // Save to database (cast config to match GenerationJobService's PipelineConfig type)
-    await generationJobService.createJob(
-      pipelineId,
-      config as import("./GenerationJobService").PipelineConfig,
-    );
+    // Store pipeline in memory
+    this.pipelines.set(pipelineId, pipeline);
 
     // Start processing asynchronously
-    this.processPipeline(pipelineId).catch(async (error) => {
-      console.error(`Pipeline ${pipelineId} failed:`, error);
-      await generationJobService.updateJob(pipelineId, {
-        status: "failed",
-        error: error.message,
-      });
+    console.log(`🚀 [Pipeline ${pipelineId}] Starting async processing...`);
+    this.processPipeline(pipelineId).catch((error) => {
+      console.error(`❌ [Pipeline ${pipelineId}] Failed:`, error);
+      const pipeline = this.pipelines.get(pipelineId);
+      if (pipeline) {
+        pipeline.status = "failed";
+        pipeline.error = error.message;
+      }
     });
 
     return {
@@ -310,14 +309,11 @@ export class GenerationService extends EventEmitter {
    * Get pipeline status
    */
   async getPipelineStatus(pipelineId: string): Promise<PipelineStatusResponse> {
-    const job = await generationJobService.getJobByPipelineId(pipelineId);
+    const pipeline = this.pipelines.get(pipelineId);
 
-    if (!job) {
+    if (!pipeline) {
       throw new Error(`Pipeline ${pipelineId} not found`);
     }
-
-    // Convert job to pipeline format
-    const pipeline = generationJobService.jobToPipeline(job);
 
     // Convert stages to Record format with name property for each stage
     const stagesWithNames: Record<string, PipelineStageWithName> = {};
@@ -350,22 +346,21 @@ export class GenerationService extends EventEmitter {
    * Process a pipeline through all stages
    */
   private async processPipeline(pipelineId: string): Promise<void> {
-    const job = await generationJobService.getJobByPipelineId(pipelineId);
-    if (!job) return;
-
-    const pipeline = generationJobService.jobToPipeline(job);
+    console.log(`⚙️ [Pipeline ${pipelineId}] processPipeline() called`);
+    const pipeline = this.pipelines.get(pipelineId);
+    if (!pipeline) {
+      console.error(
+        `❌ [Pipeline ${pipelineId}] Pipeline not found in memory!`,
+      );
+      return;
+    }
 
     // Cast the config to our local PipelineConfig type for proper typing
     const config = pipeline.config as PipelineConfig;
 
     try {
+      console.log(`📝 [Pipeline ${pipelineId}] Setting status to 'processing'`);
       pipeline.status = "processing";
-
-      // Save initial processing status to database
-      await generationJobService.updateJob(pipelineId, {
-        status: "processing",
-        startedAt: new Date(),
-      });
 
       let enhancedPrompt = config.description;
       let imageUrl: string | null = null;
@@ -373,13 +368,10 @@ export class GenerationService extends EventEmitter {
       let baseModelPath: string | null = null;
 
       // Stage 1: GPT-4 Prompt Enhancement (honor toggle; skip if explicitly disabled)
+      console.log(`📋 [Pipeline ${pipelineId}] Stage 1: Prompt Optimization`);
       if (config.metadata?.useGPT4Enhancement !== false) {
         pipeline.stages.promptOptimization.status = "processing";
-
-        // Save stage status to database
-        await generationJobService.updateJob(pipelineId, {
-          stages: pipeline.stages as unknown as Record<string, unknown>,
-        });
+        console.log(`🤖 [Pipeline ${pipelineId}] Running GPT-4 enhancement...`);
 
         try {
           const optimizationResult = await this.enhancePromptWithGPT4(config);
@@ -389,9 +381,12 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.promptOptimization.progress = 100;
           pipeline.stages.promptOptimization.result = optimizationResult;
           pipeline.results.promptOptimization = optimizationResult;
+          console.log(
+            `✅ [Pipeline ${pipelineId}] GPT-4 enhancement completed`,
+          );
         } catch (error) {
           console.warn(
-            "GPT-4 enhancement failed, using original prompt:",
+            `⚠️ [Pipeline ${pipelineId}] GPT-4 enhancement failed, using original prompt:`,
             error,
           );
           pipeline.stages.promptOptimization.status = "completed";
@@ -404,29 +399,24 @@ export class GenerationService extends EventEmitter {
         }
 
         pipeline.progress = 10;
-
-        // Save prompt optimization completion to database
-        await generationJobService.updateJob(pipelineId, {
-          progress: 10,
-          stages: pipeline.stages as unknown as Record<string, unknown>,
-          results: pipeline.results,
-        });
+        console.log(
+          `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
+        );
       } else {
+        console.log(`⏭️ [Pipeline ${pipelineId}] GPT-4 enhancement skipped`);
         pipeline.stages.promptOptimization.status = "skipped";
-
-        // Save skipped status to database
-        await generationJobService.updateJob(pipelineId, {
-          stages: pipeline.stages as unknown as Record<string, unknown>,
-        });
+        pipeline.progress = 10; // CRITICAL FIX: Update progress even when skipped
       }
 
       // Stage 2: Image Source (User-provided or AI-generated)
+      console.log(`📋 [Pipeline ${pipelineId}] Stage 2: Image Generation`);
       const hasUserRef = !!(
         config.referenceImage &&
         (config.referenceImage.url || config.referenceImage.dataUrl)
       );
       if (hasUserRef) {
         // Use user-provided reference image; skip auto image generation
+        console.log(`⏭️ [Pipeline ${pipelineId}] Using user-provided image`);
         imageUrl =
           config.referenceImage!.dataUrl || config.referenceImage!.url!;
         pipeline.stages.imageGeneration.status = "skipped";
@@ -435,7 +425,11 @@ export class GenerationService extends EventEmitter {
         pipeline.results.imageGeneration =
           pipeline.stages.imageGeneration.result;
         pipeline.progress = 20;
+        console.log(
+          `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
+        );
       } else {
+        console.log(`🎨 [Pipeline ${pipelineId}] Generating concept art...`);
         pipeline.stages.imageGeneration.status = "processing";
 
         try {
@@ -501,8 +495,15 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.imageGeneration.result = imageResult;
           pipeline.results.imageGeneration = imageResult;
           pipeline.progress = 25;
+          console.log(`✅ [Pipeline ${pipelineId}] Image generation completed`);
+          console.log(
+            `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
+          );
         } catch (error) {
-          console.error("Image generation failed:", error);
+          console.error(
+            `❌ [Pipeline ${pipelineId}] Image generation failed:`,
+            error,
+          );
           pipeline.stages.imageGeneration.status = "failed";
           pipeline.stages.imageGeneration.error = (error as Error).message;
           throw error;
@@ -510,6 +511,9 @@ export class GenerationService extends EventEmitter {
       }
 
       // Stage 3: Image to 3D with Meshy AI
+      console.log(
+        `📋 [Pipeline ${pipelineId}] Stage 3: Image to 3D Conversion`,
+      );
       pipeline.stages.image3D.status = "processing";
 
       try {
@@ -603,17 +607,28 @@ export class GenerationService extends EventEmitter {
             texture_resolution: textureResolution,
           });
 
-        // Poll for completion
+        // Poll for completion - following Meshy best practices
         let meshyResult: MeshyResult | null = null;
         let attempts = 0;
+
+        // Best practice: 10 second polling interval (not too aggressive)
         const pollIntervalMs = parseInt(
-          process.env.MESHY_POLL_INTERVAL_MS || "5000",
+          process.env.MESHY_POLL_INTERVAL_MS || "10000",
           10,
         );
+
+        // Quality-based timeouts as per documentation:
+        // Standard: 5 minutes, High: 10 minutes, Ultra: 20 minutes
+        const defaultTimeouts: Record<string, number> = {
+          STANDARD: 300000, // 5 minutes
+          HIGH: 600000, // 10 minutes
+          ULTRA: 1200000, // 20 minutes
+        };
+
         const timeoutMs = parseInt(
           process.env[`MESHY_TIMEOUT_${qualityUpper}_MS`] ||
             process.env.MESHY_TIMEOUT_MS ||
-            "300000",
+            String(defaultTimeouts[qualityUpper] || defaultTimeouts.HIGH),
           10,
         );
         const maxAttempts = Math.max(1, Math.ceil(timeoutMs / pollIntervalMs));
@@ -621,32 +636,60 @@ export class GenerationService extends EventEmitter {
         console.log(
           `⏳ Meshy polling configured: quality=${quality}, model=${aiModel}, interval=${pollIntervalMs}ms, timeout=${timeoutMs}ms, maxAttempts=${maxAttempts}`,
         );
+        console.log(
+          `📋 Meshy Task ID: ${meshyTaskId} (stored for retexturing/rigging)`,
+        );
 
         while (attempts < maxAttempts) {
+          attempts++;
           await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
 
           if (!meshyTaskId) {
-            throw new Error("Meshy task ID is null");
+            throw new Error("Meshy task ID is null - cannot poll task status");
           }
 
-          const status = await this.aiService
-            .getMeshyService()
-            .getTaskStatus(meshyTaskId);
-          pipeline.stages.image3D.progress =
-            status.progress || (attempts / maxAttempts) * 100;
+          try {
+            const status = await this.aiService
+              .getMeshyService()
+              .getTaskStatus(meshyTaskId);
 
-          if (status.status === "SUCCEEDED") {
-            meshyResult = status as MeshyResult;
-            break;
-          } else if (status.status === "FAILED") {
-            throw new Error(status.error || "Meshy conversion failed");
+            // Update progress
+            pipeline.stages.image3D.progress =
+              status.progress || (attempts / maxAttempts) * 100;
+
+            // Log status
+            console.log(
+              `📊 Meshy task ${meshyTaskId}: ${status.status} (${Math.round(pipeline.stages.image3D.progress)}%) [attempt ${attempts}/${maxAttempts}]`,
+            );
+
+            if (status.status === "SUCCEEDED") {
+              meshyResult = status as MeshyResult;
+              console.log(
+                `✅ Meshy conversion succeeded! Polycount: ${meshyResult.polycount || "N/A"}`,
+              );
+              break;
+            } else if (status.status === "FAILED") {
+              throw new Error(
+                status.error || "Meshy conversion failed without error message",
+              );
+            }
+            // Continue polling for PENDING or IN_PROGRESS
+          } catch (error) {
+            console.error(
+              `⚠️ Error polling Meshy task (attempt ${attempts}/${maxAttempts}):`,
+              error,
+            );
+            // Continue polling unless it's the last attempt
+            if (attempts >= maxAttempts) {
+              throw error;
+            }
           }
-
-          attempts++;
         }
 
         if (!meshyResult) {
-          throw new Error("Meshy conversion timed out");
+          throw new Error(
+            `Meshy conversion timed out after ${timeoutMs}ms (${maxAttempts} attempts). Try lowering quality or simplifying the image.`,
+          );
         }
 
         // Download and save the model
@@ -1222,27 +1265,9 @@ export class GenerationService extends EventEmitter {
         conceptArtUrl: `/assets/${config.assetId}/concept-art.png`,
         variants: textureResult?.variants || [],
       };
-
-      // Save final completion to database
-      await generationJobService.updateJob(pipelineId, {
-        status: "completed",
-        progress: 100,
-        stages: pipeline.stages as unknown as Record<string, unknown>,
-        results: pipeline.results,
-        finalAsset: pipeline.finalAsset as unknown as Record<string, unknown>,
-        completedAt: new Date(),
-      });
     } catch (error) {
       pipeline.status = "failed";
       pipeline.error = (error as Error).message;
-
-      // Save failure to database
-      await generationJobService.updateJob(pipelineId, {
-        status: "failed",
-        error: (error as Error).message,
-        stages: pipeline.stages as unknown as Record<string, unknown>,
-      });
-
       throw error;
     }
   }
@@ -1566,22 +1591,25 @@ Your task is to enhance the user's description to create better results with ima
   }
 
   /**
-   * Clean up old pipelines (now handled by generationJobService)
+   * Clean up old pipelines from memory
+   * Removes completed pipelines older than 24 hours and failed pipelines older than 1 hour
    */
   async cleanupOldPipelines(): Promise<void> {
-    // Cleanup is now handled by generationJobService.cleanupExpiredJobs()
-    // and generationJobService.cleanupOldFailedJobs() via cron jobs
-    // This method is kept for backwards compatibility
-    await generationJobService.cleanupExpiredJobs();
-    await generationJobService.cleanupOldFailedJobs();
+    const now = Date.now();
+    const completedThreshold = 24 * 60 * 60 * 1000; // 24 hours
+    const failedThreshold = 60 * 60 * 1000; // 1 hour
+
+    for (const [pipelineId, pipeline] of this.pipelines.entries()) {
+      const createdAt = new Date(pipeline.createdAt).getTime();
+      const age = now - createdAt;
+
+      if (pipeline.status === "completed" && age > completedThreshold) {
+        this.pipelines.delete(pipelineId);
+        console.log(`Cleaned up completed pipeline: ${pipelineId}`);
+      } else if (pipeline.status === "failed" && age > failedThreshold) {
+        this.pipelines.delete(pipelineId);
+        console.log(`Cleaned up failed pipeline: ${pipelineId}`);
+      }
+    }
   }
 }
-
-// Cleanup is now handled by cron jobs in api-elysia.ts
-// This interval is kept for backwards compatibility but does nothing
-setInterval(
-  () => {
-    // No-op: cleanup is handled by cron jobs
-  },
-  30 * 60 * 1000,
-); // Every 30 minutes
