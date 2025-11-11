@@ -218,21 +218,23 @@ export const UnifiedEquipmentPage: React.FC = () => {
                 />
 
                 {/* Bottom-Right Utility Controls */}
-                {(selectedAvatar || selectedEquipment) && (
-                  <div className="absolute bottom-4 right-4 flex gap-2 z-10">
-                    <button
-                      onClick={() => setShowAssetDrawer(!showAssetDrawer)}
-                      className={`p-2 rounded-md transition-all duration-200 ${
-                        showAssetDrawer
-                          ? "bg-primary bg-opacity-20 text-primary border border-primary border-opacity-50"
-                          : "bg-bg-secondary bg-opacity-90 text-text-secondary hover:text-text-primary border border-transparent"
-                      } hover:scale-105 active:scale-95`}
-                      title="Toggle Assets Panel"
-                      aria-label="Toggle Assets Panel"
-                    >
-                      <Menu size={16} />
-                    </button>
+                <div className="absolute bottom-4 right-4 flex gap-2 z-10">
+                  {/* Assets button - always visible */}
+                  <button
+                    onClick={() => setShowAssetDrawer(!showAssetDrawer)}
+                    className={`p-2 rounded-md transition-all duration-200 ${
+                      showAssetDrawer
+                        ? "bg-primary bg-opacity-20 text-primary border border-primary border-opacity-50"
+                        : "bg-bg-secondary bg-opacity-90 text-text-secondary hover:text-text-primary border border-transparent"
+                    } hover:scale-105 active:scale-95`}
+                    title="Toggle Assets Panel"
+                    aria-label="Toggle Assets Panel"
+                  >
+                    <Menu size={16} />
+                  </button>
 
+                  {/* Controls button - only show when content is selected */}
+                  {(selectedAvatar || selectedEquipment) && (
                     <button
                       onClick={() => setShowControlsDrawer(!showControlsDrawer)}
                       className={`p-2 rounded-md transition-all duration-200 ${
@@ -245,8 +247,8 @@ export const UnifiedEquipmentPage: React.FC = () => {
                     >
                       <Settings size={16} />
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Reset Button */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-3 z-10 max-w-[90%]">
