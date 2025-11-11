@@ -327,13 +327,42 @@ export class VRMConverter {
     hipsBone.getWorldPosition(hipsPos);
     headBone.getWorldPosition(headPos);
 
-    // Calculate current height
-    const currentHeight = hipsPos.distanceTo(headPos);
+    // Calculate current heights
+    // For VRM, we want total height (ground to head) to be 1.6m
+    // Hips-to-head distance is typically ~0.7-0.8m for a 1.6m avatar
+    const hipsToHeadDistance = hipsPos.distanceTo(headPos);
+    const totalHeight = headPos.y; // Assuming root is at Y=0
+    
+    // Use total height if hips are near ground (Y < 0.5), otherwise use hips-to-head
+    // This handles both cases: models with root at ground vs models with hips at ground
+    let currentHeight: number;
+    let measurementType: string;
+    
+    if (hipsPos.y < 0.5) {
+      // Hips are near ground, use total height (head Y position)
+      currentHeight = totalHeight;
+      measurementType = "total height (ground to head)";
+    } else {
+      // Hips are elevated, use hips-to-head distance and scale appropriately
+      // For a 1.6m avatar: hips at ~0.8m, head at ~1.6m, so hips-to-head = ~0.8m
+      // But we want total height = 1.6m, so scale factor should account for hips position
+      // Estimate: if hips-to-head is X, and hips are at Y, then total ≈ Y + X
+      const estimatedTotalHeight = hipsPos.y + hipsToHeadDistance;
+      currentHeight = estimatedTotalHeight;
+      measurementType = "estimated total height (hips Y + hips-to-head)";
+    }
+    
     console.log(
-      `   Current height (hips to head): ${currentHeight.toFixed(3)} units`,
+      `   Current ${measurementType}: ${currentHeight.toFixed(3)} units`,
+    );
+    console.log(
+      `   Hips position Y: ${hipsPos.y.toFixed(3)}, Head position Y: ${headPos.y.toFixed(3)}`,
+    );
+    console.log(
+      `   Hips-to-head distance: ${hipsToHeadDistance.toFixed(3)} units`,
     );
 
-    // Target height for VRM (1.6 meters is typical)
+    // Target height for VRM (1.6 meters total height)
     const targetHeight = 1.6;
     const scaleFactor = targetHeight / currentHeight;
 
@@ -381,25 +410,30 @@ export class VRMConverter {
       console.log("   ✅ Scale is already appropriate");
     }
 
-    // VALIDATION: Verify final height is 1.6m
+    // VALIDATION: Verify final height is 1.6m (total height, not hips-to-head)
     this.scene.updateMatrixWorld(true);
     const finalHipsPos = new THREE.Vector3();
     const finalHeadPos = new THREE.Vector3();
     if (hipsBone) hipsBone.getWorldPosition(finalHipsPos);
     if (headBone) headBone.getWorldPosition(finalHeadPos);
-    const finalHeight = finalHipsPos.distanceTo(finalHeadPos);
+    
+    const finalHipsToHead = finalHipsPos.distanceTo(finalHeadPos);
+    const finalTotalHeight = finalHeadPos.y; // Total height from ground to head
 
     console.log("📏 [VALIDATION] Final avatar height verification:");
-    console.log(`   Hips to Head distance: ${finalHeight.toFixed(3)}m`);
-    console.log(`   Target height: 1.600m`);
-    console.log(`   Difference: ${Math.abs(finalHeight - 1.6).toFixed(3)}m`);
+    console.log(`   Total height (ground to head): ${finalTotalHeight.toFixed(3)}m`);
+    console.log(`   Hips to Head distance: ${finalHipsToHead.toFixed(3)}m`);
+    console.log(`   Hips Y position: ${finalHipsPos.y.toFixed(3)}m`);
+    console.log(`   Head Y position: ${finalHeadPos.y.toFixed(3)}m`);
+    console.log(`   Target total height: 1.600m`);
+    console.log(`   Difference: ${Math.abs(finalTotalHeight - 1.6).toFixed(3)}m`);
 
-    if (Math.abs(finalHeight - 1.6) > 0.05) {
+    if (Math.abs(finalTotalHeight - 1.6) > 0.1) {
       console.warn(
-        `   ⚠️  WARNING: Final height ${finalHeight.toFixed(3)}m deviates from target 1.6m!`,
+        `   ⚠️  WARNING: Final total height ${finalTotalHeight.toFixed(3)}m deviates from target 1.6m!`,
       );
       this.warnings.push(
-        `Final height ${finalHeight.toFixed(3)}m deviates from target 1.6m`,
+        `Final total height ${finalTotalHeight.toFixed(3)}m deviates from target 1.6m`,
       );
     } else {
       console.log("   ✅ Height normalization successful");

@@ -39,7 +39,9 @@ const Controls = styled.div`
   backdrop-filter: blur(10px);
 `;
 
-const Button = styled.button<{ active?: boolean }>`
+const Button = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== "active",
+})<{ active?: boolean }>`
   padding: 10px 20px;
   background: ${(props) => (props.active ? "#4CAF50" : "#2196F3")};
   color: white;
@@ -145,12 +147,16 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
     }
   };
 
-  // Animation URLs (using Hyperscape CDN)
+  // Animation URLs (served from local dev server)
+  // Use relative URLs in production, localhost in development
+  const baseUrl = import.meta.env.PROD
+    ? ""
+    : `http://localhost:${import.meta.env.VITE_API_PORT || "3004"}`;
   const animations = {
-    idle: "http://localhost:8080/emotes/emote-idle.glb",
-    walk: "http://localhost:8080/emotes/emote-walk.glb",
-    run: "http://localhost:8080/emotes/emote-run.glb",
-    jump: "http://localhost:8080/emotes/emote-jump.glb",
+    idle: `${baseUrl}/emotes/emote-idle.glb`,
+    walk: `${baseUrl}/emotes/emote-walk.glb`,
+    run: `${baseUrl}/emotes/emote-run.glb`,
+    jump: `${baseUrl}/emotes/emote-jump.glb`,
   };
 
   useEffect(() => {
