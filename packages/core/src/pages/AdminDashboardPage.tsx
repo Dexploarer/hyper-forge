@@ -11,6 +11,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { usePrivy } from "@privy-io/react-auth";
 
 import { Badge } from "../components/common";
 import { useAuth } from "../contexts/AuthContext";
@@ -90,6 +91,7 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
 
 export const AdminDashboardPage: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const { getAccessToken } = usePrivy();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,7 +109,12 @@ export const AdminDashboardPage: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/users");
+      const accessToken = await getAccessToken();
+      const response = await fetch("/api/users", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch users");
       }
@@ -125,12 +132,14 @@ export const AdminDashboardPage: React.FC = () => {
 
     try {
       setRoleChangeLoading(true);
+      const accessToken = await getAccessToken();
       const response = await fetch(
         `/api/admin/users/${roleChangeUser.user.id}/role`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({ role: roleChangeUser.newRole }),
         },
