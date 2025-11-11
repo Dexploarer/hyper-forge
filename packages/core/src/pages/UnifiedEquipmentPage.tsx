@@ -32,7 +32,8 @@ import { useAssets } from "@/hooks";
 
 export const UnifiedEquipmentPage: React.FC = () => {
   const { assets, loading } = useAssets();
-  const viewerRef = useRef<ArmorFittingViewerRef>(null);
+  const armorViewerRef = useRef<ArmorFittingViewerRef>(null);
+  const weaponViewerRef = useRef<EquipmentViewerRef>(null);
   const [showControlsDrawer, setShowControlsDrawer] = useState(false);
   const [showAssetDrawer, setShowAssetDrawer] = useState(false);
 
@@ -136,6 +137,9 @@ export const UnifiedEquipmentPage: React.FC = () => {
     currentProgress,
   } = useEquipmentFittingStore();
 
+  // Get the appropriate viewer ref based on mode
+  const viewerRef = isWeaponMode() ? weaponViewerRef : armorViewerRef;
+
   // Keyboard shortcuts for undo/redo
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -178,48 +182,91 @@ export const UnifiedEquipmentPage: React.FC = () => {
           <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl flex items-center justify-center">
             {selectedAvatar || selectedEquipment ? (
               <>
-                <ArmorFittingViewer
-                  ref={viewerRef}
-                  avatarUrl={
-                    selectedAvatar?.hasModel
-                      ? `/api/assets/${selectedAvatar.id}/model`
-                      : undefined
-                  }
-                  armorUrl={
-                    selectedArmor?.hasModel
-                      ? `/api/assets/${selectedArmor.id}/model`
-                      : undefined
-                  }
-                  helmetUrl={
-                    selectedHelmet?.hasModel
-                      ? `/api/assets/${selectedHelmet.id}/model`
-                      : undefined
-                  }
-                  weaponUrl={
-                    selectedWeapon?.hasModel
-                      ? `/api/assets/${selectedWeapon.id}/model`
-                      : undefined
-                  }
-                  showWireframe={showWireframe}
-                  equipmentSlot={
-                    equipmentSlot as
-                      | "Head"
-                      | "Spine2"
-                      | "Pelvis"
-                      | "Hand_R"
-                      | "Hand_L"
-                  }
-                  selectedAvatar={selectedAvatar}
-                  currentAnimation={currentAnimation}
-                  isAnimationPlaying={isAnimationPlaying}
-                  visualizationMode={
-                    visualizationMode === "hull" ? "none" : visualizationMode
-                  }
-                  selectedBone={0}
-                  onModelsLoaded={() => console.log("Models loaded")}
-                  onBodyRegionsDetected={() => {}}
-                  onCollisionsDetected={() => {}}
-                />
+                {isWeaponMode() ? (
+                  <EquipmentViewer
+                    ref={weaponViewerRef}
+                    avatarUrl={
+                      selectedAvatar?.hasModel
+                        ? `/api/assets/${selectedAvatar.id}/model`
+                        : undefined
+                    }
+                    equipmentUrl={
+                      selectedWeapon?.hasModel
+                        ? `/api/assets/${selectedWeapon.id}/model`
+                        : undefined
+                    }
+                    equipmentSlot={equipmentSlot}
+                    showSkeleton={showSkeleton}
+                    weaponType={selectedWeapon?.type || "sword"}
+                    avatarHeight={avatarHeight}
+                    autoScale={autoScaleWeapon}
+                    scaleOverride={weaponScaleOverride}
+                    gripOffset={
+                      handleDetectionResult?.gripPoint
+                        ? {
+                            x: handleDetectionResult.gripPoint.x,
+                            y: handleDetectionResult.gripPoint.y,
+                            z: handleDetectionResult.gripPoint.z,
+                          }
+                        : undefined
+                    }
+                    orientationOffset={manualRotation}
+                    positionOffset={manualPosition}
+                    isAnimating={isAnimationPlaying}
+                    animationType={
+                      currentAnimation === "TPose"
+                        ? "tpose"
+                        : currentAnimation === "Walking"
+                          ? "walking"
+                          : currentAnimation === "Running"
+                            ? "running"
+                            : "tpose"
+                    }
+                  />
+                ) : (
+                  <ArmorFittingViewer
+                    ref={armorViewerRef}
+                    avatarUrl={
+                      selectedAvatar?.hasModel
+                        ? `/api/assets/${selectedAvatar.id}/model`
+                        : undefined
+                    }
+                    armorUrl={
+                      selectedArmor?.hasModel
+                        ? `/api/assets/${selectedArmor.id}/model`
+                        : undefined
+                    }
+                    helmetUrl={
+                      selectedHelmet?.hasModel
+                        ? `/api/assets/${selectedHelmet.id}/model`
+                        : undefined
+                    }
+                    weaponUrl={
+                      selectedWeapon?.hasModel
+                        ? `/api/assets/${selectedWeapon.id}/model`
+                        : undefined
+                    }
+                    showWireframe={showWireframe}
+                    equipmentSlot={
+                      equipmentSlot as
+                        | "Head"
+                        | "Spine2"
+                        | "Pelvis"
+                        | "Hand_R"
+                        | "Hand_L"
+                    }
+                    selectedAvatar={selectedAvatar}
+                    currentAnimation={currentAnimation}
+                    isAnimationPlaying={isAnimationPlaying}
+                    visualizationMode={
+                      visualizationMode === "hull" ? "none" : visualizationMode
+                    }
+                    selectedBone={0}
+                    onModelsLoaded={() => console.log("Models loaded")}
+                    onBodyRegionsDetected={() => {}}
+                    onCollisionsDetected={() => {}}
+                  />
+                )}
 
                 {/* Reset Button */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-3 z-10 max-w-[90%]">

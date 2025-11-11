@@ -8,7 +8,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { projectService } from "../services/ProjectService";
 
-export const projectsRoutes = new Elysia({ prefix: "/projects" })
+export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
   // Create new project
   .post(
     "/",

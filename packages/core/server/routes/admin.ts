@@ -9,7 +9,7 @@ import { db, activityLog } from "../db";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { userService } from "../services/UserService";
 
-export const adminRoutes = new Elysia({ prefix: "/admin" })
+export const adminRoutes = new Elysia({ prefix: "/api/admin" })
   // Update user role (admin only)
   .put(
     "/users/:id/role",

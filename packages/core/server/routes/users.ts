@@ -8,7 +8,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { userService } from "../services/UserService";
 
-export const usersRoutes = new Elysia({ prefix: "/users" })
+export const usersRoutes = new Elysia({ prefix: "/api/users" })
   // Get current user profile (requires authentication)
   .get(
     "/me",
