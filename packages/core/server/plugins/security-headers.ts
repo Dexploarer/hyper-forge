@@ -17,8 +17,9 @@ export const securityHeaders = new Elysia({
   // COOP: Allow popups for OAuth flows (required by Privy)
   set.headers["cross-origin-opener-policy"] = "same-origin-allow-popups";
 
-  // COEP: Modern credentialless mode for embedded content
-  set.headers["cross-origin-embedder-policy"] = "credentialless";
+  // COEP: Removed to allow Privy embedded wallets to load cross-origin resources
+  // Privy's embedded wallet iframe needs to load resources without CORP headers
+  // COEP is only needed for SharedArrayBuffer/high-resolution timers, not for auth
 
   // Additional security headers
   set.headers["x-content-type-options"] = "nosniff";

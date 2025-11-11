@@ -130,6 +130,11 @@ function App() {
             createOnLogin: "users-without-wallets",
           },
         },
+        externalWallets: {
+          solana: {
+            connectors: [], // Solana connectors - empty array silences warning
+          },
+        },
       }}
     >
       <AppProvider>
