@@ -36,12 +36,15 @@ export async function apiFetch(input: string, init: RequestOptions = {}): Promis
 
     try {
       // Get auth token and add to headers
+      // Only set Authorization from global token if not already explicitly provided
       const token = getAuthToken()
       const headers: Record<string, string> = {
         ...(rest.headers as Record<string, string> || {}),
       }
       
-      if (token) {
+      // Only set Authorization header from global token if it's not already set
+      // This allows explicit Authorization headers (e.g., from accessToken parameter) to take precedence
+      if (token && !headers['Authorization']) {
         headers['Authorization'] = `Bearer ${token}`
       }
 

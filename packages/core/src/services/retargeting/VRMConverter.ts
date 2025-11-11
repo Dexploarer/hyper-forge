@@ -1,3 +1,4 @@
+
 /**
  * VRMConverter - Convert Meshy GLB to VRM 1.0 Format
  *
