@@ -86,6 +86,25 @@ export class GenerationJobService {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24); // Jobs expire after 24 hours
 
+    // Initialize stages with proper structure matching GenerationService expectations
+    const initialStages: Pipeline["stages"] = {
+      textInput: {
+        status: "completed",
+        progress: 100,
+        result: { description: config.description },
+      },
+      promptOptimization: { status: "pending", progress: 0 },
+      imageGeneration: { status: "pending", progress: 0 },
+      image3D: { status: "pending", progress: 0 },
+      textureGeneration: { status: "pending", progress: 0 },
+      ...(config.generationType === "avatar" && config.enableRigging
+        ? { rigging: { status: "pending", progress: 0 } }
+        : {}),
+      ...(config.enableSprites
+        ? { spriteGeneration: { status: "pending", progress: 0 } }
+        : {}),
+    };
+
     const newJob: NewGenerationJob = {
       pipelineId,
       assetId: config.assetId,
@@ -94,7 +113,7 @@ export class GenerationJobService {
       config: config as unknown as Record<string, unknown>,
       status: "initializing",
       progress: 0,
-      stages: {},
+      stages: initialStages as unknown as Record<string, unknown>,
       results: {},
       expiresAt,
     };
@@ -107,7 +126,7 @@ export class GenerationJobService {
       const errorMessage = error?.message || String(error);
       const errorCode = error?.code || error?.errno || error?.sqlState;
       const errorDetail = error?.detail || error?.message;
-      
+
       console.error("[GenerationJobService] Failed to create job:", {
         pipelineId,
         assetId: config.assetId,
@@ -123,7 +142,7 @@ export class GenerationJobService {
       // Check for foreign key violation (user_id constraint)
       // PostgreSQL error code 23503 = foreign key violation
       // Also check error message for common patterns
-      const isForeignKeyViolation = 
+      const isForeignKeyViolation =
         errorCode === "23503" ||
         errorMessage?.includes("foreign key") ||
         errorMessage?.includes("violates foreign key") ||
@@ -139,14 +158,22 @@ export class GenerationJobService {
       }
 
       // Check for unique constraint violation (pipeline_id)
-      if (errorCode === "23505" || errorMessage?.includes("unique constraint") || errorMessage?.includes("duplicate key")) {
+      if (
+        errorCode === "23505" ||
+        errorMessage?.includes("unique constraint") ||
+        errorMessage?.includes("duplicate key")
+      ) {
         throw new Error(
           `Pipeline ID already exists: ${pipelineId}. Please try again.`,
         );
       }
 
       // Check for NOT NULL constraint violation
-      if (errorCode === "23502" || errorMessage?.includes("null value") || errorMessage?.includes("not null")) {
+      if (
+        errorCode === "23502" ||
+        errorMessage?.includes("null value") ||
+        errorMessage?.includes("not null")
+      ) {
         throw new Error(
           `Missing required field: ${error?.column || "unknown"}. Please check your request.`,
         );

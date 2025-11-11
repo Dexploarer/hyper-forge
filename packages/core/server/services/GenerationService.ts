@@ -360,6 +360,13 @@ export class GenerationService extends EventEmitter {
 
     try {
       pipeline.status = "processing";
+
+      // Save initial processing status to database
+      await generationJobService.updateJob(pipelineId, {
+        status: "processing",
+        startedAt: new Date(),
+      });
+
       let enhancedPrompt = config.description;
       let imageUrl: string | null = null;
       let meshyTaskId: string | null = null;
@@ -368,6 +375,11 @@ export class GenerationService extends EventEmitter {
       // Stage 1: GPT-4 Prompt Enhancement (honor toggle; skip if explicitly disabled)
       if (config.metadata?.useGPT4Enhancement !== false) {
         pipeline.stages.promptOptimization.status = "processing";
+
+        // Save stage status to database
+        await generationJobService.updateJob(pipelineId, {
+          stages: pipeline.stages as unknown as Record<string, unknown>,
+        });
 
         try {
           const optimizationResult = await this.enhancePromptWithGPT4(config);
@@ -392,8 +404,20 @@ export class GenerationService extends EventEmitter {
         }
 
         pipeline.progress = 10;
+
+        // Save prompt optimization completion to database
+        await generationJobService.updateJob(pipelineId, {
+          progress: 10,
+          stages: pipeline.stages as unknown as Record<string, unknown>,
+          results: pipeline.results,
+        });
       } else {
         pipeline.stages.promptOptimization.status = "skipped";
+
+        // Save skipped status to database
+        await generationJobService.updateJob(pipelineId, {
+          stages: pipeline.stages as unknown as Record<string, unknown>,
+        });
       }
 
       // Stage 2: Image Source (User-provided or AI-generated)
@@ -1198,9 +1222,27 @@ export class GenerationService extends EventEmitter {
         conceptArtUrl: `/assets/${config.assetId}/concept-art.png`,
         variants: textureResult?.variants || [],
       };
+
+      // Save final completion to database
+      await generationJobService.updateJob(pipelineId, {
+        status: "completed",
+        progress: 100,
+        stages: pipeline.stages as unknown as Record<string, unknown>,
+        results: pipeline.results,
+        finalAsset: pipeline.finalAsset as unknown as Record<string, unknown>,
+        completedAt: new Date(),
+      });
     } catch (error) {
       pipeline.status = "failed";
       pipeline.error = (error as Error).message;
+
+      // Save failure to database
+      await generationJobService.updateJob(pipelineId, {
+        status: "failed",
+        error: (error as Error).message,
+        stages: pipeline.stages as unknown as Record<string, unknown>,
+      });
+
       throw error;
     }
   }
