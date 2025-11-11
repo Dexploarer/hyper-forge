@@ -49,6 +49,19 @@ export const createAssetRoutes = (
             return { error: `Model not found for asset ${id}` };
           }
 
+          // Set correct content-type for GLB files to prevent JSON parsing
+          // This is critical - without the correct content-type, browsers/interceptors
+          // may try to parse binary GLB files as JSON, causing parse errors
+          const ext = modelPath.toLowerCase().split('.').pop();
+          if (ext === 'glb') {
+            set.headers['Content-Type'] = 'model/gltf-binary';
+          } else if (ext === 'gltf') {
+            set.headers['Content-Type'] = 'model/gltf+json';
+          } else {
+            // Fallback to binary for unknown extensions to prevent JSON parsing
+            set.headers['Content-Type'] = 'application/octet-stream';
+          }
+
           return modelFile;
         })
 

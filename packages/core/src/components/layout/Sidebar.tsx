@@ -32,7 +32,7 @@ interface NavItem {
   description: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const BASE_NAV_ITEMS: NavItem[] = [
   {
     view: NAVIGATION_VIEWS.GENERATION,
     icon: Sparkles,
@@ -55,7 +55,7 @@ const NAV_ITEMS: NavItem[] = [
     view: NAVIGATION_VIEWS.PLAYTESTER,
     icon: TestTube2,
     label: "Playtester",
-    description: "AI swarm testing",
+    description: "Test content with AI feedback",
   },
   {
     view: NAVIGATION_VIEWS.EQUIPMENT,
@@ -67,13 +67,13 @@ const NAV_ITEMS: NavItem[] = [
     view: NAVIGATION_VIEWS.HAND_RIGGING,
     icon: Hand,
     label: "Hand Rigging",
-    description: "Auto-grip detection",
+    description: "Setup weapon grips automatically",
   },
   {
     view: NAVIGATION_VIEWS.RETARGET_ANIMATE,
     icon: Play,
-    label: "Animation",
-    description: "Retarget & animate",
+    label: "Animation Tools",
+    description: "Retarget animations to custom rigs",
   },
   {
     view: NAVIGATION_VIEWS.SETTINGS,
@@ -81,6 +81,9 @@ const NAV_ITEMS: NavItem[] = [
     label: "Settings",
     description: "View prompts & config",
   },
+];
+
+const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     view: NAVIGATION_VIEWS.ADMIN_DASHBOARD,
     icon: Users,
@@ -91,8 +94,14 @@ const NAV_ITEMS: NavItem[] = [
 
 export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { recentlyViewed } = useAssetsStore();
+
+  // Determine nav items based on role
+  const isAdmin = user?.role === "admin";
+  const NAV_ITEMS = isAdmin
+    ? [...BASE_NAV_ITEMS, ...ADMIN_NAV_ITEMS]
+    : BASE_NAV_ITEMS;
 
   const handleLogout = () => {
     if (confirm("Are you sure you want to logout?")) {

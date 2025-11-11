@@ -23,6 +23,7 @@ const VIEW_TITLES: Record<NavigationView, string> = {
   [NAVIGATION_VIEWS.HAND_RIGGING]: "Hand Rigging",
   [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",
   [NAVIGATION_VIEWS.RETARGET_ANIMATE]: "Animation Retargeting",
+  [NAVIGATION_VIEWS.WORLD_CONFIG]: "World Configuration",
   [NAVIGATION_VIEWS.SETTINGS]: "Settings & Configuration",
   [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin Dashboard",
 };

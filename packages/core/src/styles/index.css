@@ -926,7 +926,7 @@
   }
   
   .modal-content {
-    @apply bg-[var(--bg-secondary)] rounded-xl shadow-xl max-h-[90vh] overflow-hidden;
+    @apply bg-[var(--bg-secondary)] rounded-xl shadow-xl max-h-[90vh] flex flex-col;
     animation: modalContentAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     will-change: transform, opacity;
   }

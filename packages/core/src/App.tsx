@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
-import { PageSkeleton } from "./components/common";
+import { PageSkeleton, KeyboardShortcutsModal } from "./components/common";
 import NotificationBar from "./components/shared/NotificationBar";
 import { MainLayout } from "./components/layout";
 import { NAVIGATION_VIEWS } from "./constants";
@@ -13,6 +13,7 @@ import {
   CommandPaletteProvider,
 } from "./contexts";
 import { useNavigation } from "./hooks/useNavigation";
+import { useGlobalShortcuts } from "./hooks/useGlobalShortcuts";
 import { LandingPage } from "./pages/LandingPage";
 
 // Lazy load routes for code splitting
@@ -54,6 +55,10 @@ const SettingsPage = lazy(() =>
 function AppContent() {
   const { isAuthenticated } = useAuth();
   const { currentView, navigateTo, navigateToAsset } = useNavigation();
+
+  // Initialize global keyboard shortcuts
+  const { shortcutsModalOpen, setShortcutsModalOpen, shortcuts } =
+    useGlobalShortcuts();
 
   // Show landing page if not authenticated
   if (!isAuthenticated) {
@@ -97,6 +102,13 @@ function AppContent() {
           )}
         </Suspense>
       </MainLayout>
+
+      {/* Global Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        shortcuts={shortcuts}
+        open={shortcutsModalOpen}
+        onClose={() => setShortcutsModalOpen(false)}
+      />
     </>
   );
 }

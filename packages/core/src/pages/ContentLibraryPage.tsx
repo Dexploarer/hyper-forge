@@ -3,64 +3,90 @@
  * Browse and manage saved content (NPCs, quests, dialogues, lore)
  */
 
-import React, { useState } from 'react'
-import { Trash2, FileText, Users, Scroll, BookOpen, Calendar, Search, Filter } from 'lucide-react'
-import { useContent, ContentItem, ContentType } from '@/hooks/useContent'
+import React, { useState } from "react";
+import {
+  Trash2,
+  FileText,
+  Users,
+  Scroll,
+  BookOpen,
+  Calendar,
+  Search,
+  Filter,
+  Edit,
+} from "lucide-react";
+import { useContent, ContentItem, ContentType } from "@/hooks/useContent";
+import { EditNPCModal } from "@/components/content/EditNPCModal";
+import { EditQuestModal } from "@/components/content/EditQuestModal";
+import { EditDialogueModal } from "@/components/content/EditDialogueModal";
+import { EditLoreModal } from "@/components/content/EditLoreModal";
 
 const CONTENT_TYPE_ICONS = {
   npc: Users,
   quest: Scroll,
   dialogue: FileText,
   lore: BookOpen,
-} as const
+} as const;
 
 const CONTENT_TYPE_LABELS = {
-  npc: 'NPC',
-  quest: 'Quest',
-  dialogue: 'Dialogue',
-  lore: 'Lore',
-} as const
+  npc: "NPC",
+  quest: "Quest",
+  dialogue: "Dialogue",
+  lore: "Lore",
+} as const;
 
 export const ContentLibraryPage: React.FC = () => {
-  const { allContent, loading, deleteNPC, deleteQuest, deleteDialogue, deleteLore } = useContent()
-  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null)
-  const [filterType, setFilterType] = useState<ContentType | 'all'>('all')
-  const [searchQuery, setSearchQuery] = useState('')
+  const {
+    allContent,
+    loading,
+    deleteNPC,
+    deleteQuest,
+    deleteDialogue,
+    deleteLore,
+  } = useContent();
+  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(
+    null,
+  );
+  const [filterType, setFilterType] = useState<ContentType | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
 
   // Filter content based on type and search
-  const filteredContent = allContent.filter(item => {
-    const matchesType = filterType === 'all' || item.type === filterType
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesType && matchesSearch
-  })
+  const filteredContent = allContent.filter((item) => {
+    const matchesType = filterType === "all" || item.type === filterType;
+    const matchesSearch = item.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    return matchesType && matchesSearch;
+  });
 
   // Sort by creation date (newest first)
-  const sortedContent = [...filteredContent].sort((a, b) =>
-    b.createdAt.getTime() - a.createdAt.getTime()
-  )
+  const sortedContent = [...filteredContent].sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+  );
 
   const handleDelete = async (item: ContentItem) => {
-    if (!confirm(`Are you sure you want to delete this ${item.type}?`)) return
+    if (!confirm(`Are you sure you want to delete this ${item.type}?`)) return;
 
     switch (item.type) {
-      case 'npc':
-        await deleteNPC(item.id)
-        break
-      case 'quest':
-        await deleteQuest(item.id)
-        break
-      case 'dialogue':
-        await deleteDialogue(item.id)
-        break
-      case 'lore':
-        await deleteLore(item.id)
-        break
+      case "npc":
+        await deleteNPC(item.id);
+        break;
+      case "quest":
+        await deleteQuest(item.id);
+        break;
+      case "dialogue":
+        await deleteDialogue(item.id);
+        break;
+      case "lore":
+        await deleteLore(item.id);
+        break;
     }
 
     if (selectedContent?.id === item.id) {
-      setSelectedContent(null)
+      setSelectedContent(null);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -70,7 +96,7 @@ export const ContentLibraryPage: React.FC = () => {
           <p className="text-text-secondary">Loading content library...</p>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -96,14 +122,26 @@ export const ContentLibraryPage: React.FC = () => {
                 <Filter className="w-5 h-5 text-text-tertiary" />
                 <select
                   value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as ContentType | 'all')}
+                  onChange={(e) =>
+                    setFilterType(e.target.value as ContentType | "all")
+                  }
                   className="flex-1 bg-bg-tertiary border border-border-primary rounded-lg px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="all">All Types ({allContent.length})</option>
-                  <option value="npc">NPCs ({allContent.filter(i => i.type === 'npc').length})</option>
-                  <option value="quest">Quests ({allContent.filter(i => i.type === 'quest').length})</option>
-                  <option value="dialogue">Dialogues ({allContent.filter(i => i.type === 'dialogue').length})</option>
-                  <option value="lore">Lore ({allContent.filter(i => i.type === 'lore').length})</option>
+                  <option value="npc">
+                    NPCs ({allContent.filter((i) => i.type === "npc").length})
+                  </option>
+                  <option value="quest">
+                    Quests (
+                    {allContent.filter((i) => i.type === "quest").length})
+                  </option>
+                  <option value="dialogue">
+                    Dialogues (
+                    {allContent.filter((i) => i.type === "dialogue").length})
+                  </option>
+                  <option value="lore">
+                    Lore ({allContent.filter((i) => i.type === "lore").length})
+                  </option>
                 </select>
               </div>
 
@@ -119,32 +157,40 @@ export const ContentLibraryPage: React.FC = () => {
                   <BookOpen className="w-12 h-12 text-text-tertiary mx-auto mb-3 opacity-50" />
                   <p className="text-text-secondary mb-1">No content found</p>
                   <p className="text-sm text-text-tertiary">
-                    {searchQuery || filterType !== 'all'
-                      ? 'Try adjusting your filters'
-                      : 'Generate some content to get started'}
+                    {searchQuery || filterType !== "all"
+                      ? "Try adjusting your filters"
+                      : "Generate some content to get started"}
                   </p>
                 </div>
               ) : (
                 <div className="divide-y divide-border-primary max-h-[calc(100vh-16rem)] overflow-y-auto">
                   {sortedContent.map((item) => {
-                    const Icon = CONTENT_TYPE_ICONS[item.type]
-                    const isSelected = selectedContent?.id === item.id
+                    const Icon = CONTENT_TYPE_ICONS[item.type];
+                    const isSelected = selectedContent?.id === item.id;
 
                     return (
                       <div
                         key={item.id}
                         onClick={() => setSelectedContent(item)}
                         className={`p-4 cursor-pointer transition-colors hover:bg-bg-tertiary ${
-                          isSelected ? 'bg-bg-tertiary border-l-4 border-primary' : ''
+                          isSelected
+                            ? "bg-bg-tertiary border-l-4 border-primary"
+                            : ""
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-lg ${
-                            isSelected ? 'bg-primary/20' : 'bg-bg-tertiary'
-                          }`}>
-                            <Icon className={`w-5 h-5 ${
-                              isSelected ? 'text-primary' : 'text-text-secondary'
-                            }`} />
+                          <div
+                            className={`p-2 rounded-lg ${
+                              isSelected ? "bg-primary/20" : "bg-bg-tertiary"
+                            }`}
+                          >
+                            <Icon
+                              className={`w-5 h-5 ${
+                                isSelected
+                                  ? "text-primary"
+                                  : "text-text-secondary"
+                              }`}
+                            />
                           </div>
 
                           <div className="flex-1 min-w-0">
@@ -163,19 +209,31 @@ export const ContentLibraryPage: React.FC = () => {
                             </div>
                           </div>
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDelete(item)
-                            }}
-                            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-4 h-4 text-text-tertiary group-hover:text-red-400" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingItem(item);
+                              }}
+                              className="p-2 hover:bg-primary/10 rounded-lg transition-colors group"
+                              title="Edit"
+                            >
+                              <Edit className="w-4 h-4 text-text-tertiary group-hover:text-primary" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(item);
+                              }}
+                              className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
+                              title="Delete"
+                            >
+                              <Trash2 className="w-4 h-4 text-text-tertiary group-hover:text-red-400" />
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
               )}
@@ -189,20 +247,35 @@ export const ContentLibraryPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      {React.createElement(CONTENT_TYPE_ICONS[selectedContent.type], {
-                        className: "w-8 h-8 text-primary"
-                      })}
+                      {React.createElement(
+                        CONTENT_TYPE_ICONS[selectedContent.type],
+                        {
+                          className: "w-8 h-8 text-primary",
+                        },
+                      )}
                       <div>
-                        <h2 className="text-2xl font-bold text-text-primary">{selectedContent.name}</h2>
+                        <h2 className="text-2xl font-bold text-text-primary">
+                          {selectedContent.name}
+                        </h2>
                         <p className="text-sm text-text-tertiary">
-                          {CONTENT_TYPE_LABELS[selectedContent.type]} • Created {selectedContent.createdAt.toLocaleDateString()}
+                          {CONTENT_TYPE_LABELS[selectedContent.type]} • Created{" "}
+                          {selectedContent.createdAt.toLocaleDateString()}
                         </p>
                       </div>
                     </div>
+                    <button
+                      onClick={() => setEditingItem(selectedContent)}
+                      className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors flex items-center gap-2"
+                    >
+                      <Edit className="w-4 h-4" />
+                      Edit
+                    </button>
                   </div>
 
                   <div className="border-t border-border-primary pt-4">
-                    <h3 className="text-lg font-semibold text-text-primary mb-3">Data</h3>
+                    <h3 className="text-lg font-semibold text-text-primary mb-3">
+                      Data
+                    </h3>
                     <pre className="bg-bg-tertiary rounded-lg p-4 text-sm text-text-secondary overflow-x-auto max-h-96 overflow-y-auto">
                       {JSON.stringify(selectedContent.data, null, 2)}
                     </pre>
@@ -212,7 +285,9 @@ export const ContentLibraryPage: React.FC = () => {
                 <div className="h-full flex items-center justify-center text-center">
                   <div>
                     <FileText className="w-16 h-16 text-text-tertiary mx-auto mb-4 opacity-50" />
-                    <p className="text-text-secondary mb-1">No content selected</p>
+                    <p className="text-text-secondary mb-1">
+                      No content selected
+                    </p>
                     <p className="text-sm text-text-tertiary">
                       Select an item from the list to view details
                     </p>
@@ -223,8 +298,38 @@ export const ContentLibraryPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-export default ContentLibraryPage
+      {/* Edit Modals */}
+      {editingItem?.type === "npc" && (
+        <EditNPCModal
+          open={true}
+          onClose={() => setEditingItem(null)}
+          npc={editingItem.data}
+        />
+      )}
+      {editingItem?.type === "quest" && (
+        <EditQuestModal
+          open={true}
+          onClose={() => setEditingItem(null)}
+          quest={editingItem.data}
+        />
+      )}
+      {editingItem?.type === "dialogue" && (
+        <EditDialogueModal
+          open={true}
+          onClose={() => setEditingItem(null)}
+          dialogue={editingItem.data}
+        />
+      )}
+      {editingItem?.type === "lore" && (
+        <EditLoreModal
+          open={true}
+          onClose={() => setEditingItem(null)}
+          lore={editingItem.data}
+        />
+      )}
+    </div>
+  );
+};
+
+export default ContentLibraryPage;

@@ -127,16 +127,19 @@ export class RedisQueueService {
     pipelineId: string,
     callback: (data: unknown) => void,
   ): Promise<void> {
-    // Use duplicate() to create a separate client for subscriptions
-    const subscriber = this.redis.duplicate();
-    await subscriber.subscribe(`job:${pipelineId}:progress`, (message) => {
-      try {
-        const data = JSON.parse(message);
-        callback(data);
-      } catch (error) {
-        console.error("[Queue] Failed to parse progress message:", error);
-      }
-    });
+    // Use duplicate() to create a separate client for subscriptions (it returns a Promise)
+    const subscriber = await this.redis.duplicate();
+    await subscriber.subscribe(
+      `job:${pipelineId}:progress`,
+      (message: string) => {
+        try {
+          const data = JSON.parse(message);
+          callback(data);
+        } catch (error) {
+          console.error("[Queue] Failed to parse progress message:", error);
+        }
+      },
+    );
   }
 
   /**
@@ -146,9 +149,9 @@ export class RedisQueueService {
   async subscribeToAllProgress(
     callback: (data: unknown) => void,
   ): Promise<void> {
-    // Use duplicate() to create a separate client for subscriptions
-    const subscriber = this.redis.duplicate();
-    await subscriber.subscribe(this.progressChannel, (message) => {
+    // Use duplicate() to create a separate client for subscriptions (it returns a Promise)
+    const subscriber = await this.redis.duplicate();
+    await subscriber.subscribe(this.progressChannel, (message: string) => {
       try {
         const data = JSON.parse(message);
         callback(data);

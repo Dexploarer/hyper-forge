@@ -8,7 +8,7 @@ export type WorldConfigTab = "list" | "create" | "templates" | "import";
 interface Tab {
   id: WorldConfigTab;
   label: string;
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string }>;
   description: string;
 }
 

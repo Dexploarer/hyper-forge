@@ -42,6 +42,7 @@ import { musicRoutes } from "./routes/music";
 import { soundEffectsRoutes } from "./routes/sound-effects";
 import { contentGenerationRoutes } from "./routes/content-generation";
 import { usersRoutes } from "./routes/users";
+import { adminRoutes } from "./routes/admin";
 import { vectorSearchRoutes } from "./routes/vector-search";
 import { createSeedDataRoutes } from "./routes/seed-data";
 import { worldConfigRoutes } from "./routes/world-config";
@@ -113,6 +114,10 @@ const app = new Elysia()
           {
             name: "Users",
             description: "User profile and settings management",
+          },
+          {
+            name: "Admin",
+            description: "Admin-only endpoints for user and system management",
           },
           {
             name: "Material Presets",
@@ -312,6 +317,7 @@ const app = new Elysia()
   .use(promptRoutes)
   .use(aiVisionRoutes)
   .use(usersRoutes)
+  .use(adminRoutes)
   .use(createAssetRoutes(ROOT_DIR, assetService))
   .use(createMaterialRoutes(ROOT_DIR))
   .use(createRetextureRoutes(ROOT_DIR, retextureService))
@@ -556,4 +562,7 @@ console.log(
 );
 console.log("=".repeat(60) + "\n");
 
+// Export with explicit type to avoid croner module reference issues
+// @ts-ignore - Elysia + cron plugin creates non-portable type reference
 export type App = typeof app;
+export { app };

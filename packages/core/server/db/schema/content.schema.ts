@@ -11,7 +11,10 @@ import {
   timestamp,
   jsonb,
   index,
+  integer,
+  boolean,
 } from "drizzle-orm/pg-core";
+import { projects } from "./users.schema";
 
 /**
  * NPCs table
@@ -29,6 +32,36 @@ export const npcs = pgTable(
     // User tracking (optional - works without auth)
     createdBy: varchar("created_by", { length: 255 }),
     walletAddress: varchar("wallet_address", { length: 255 }),
+
+    // Soft deletes (enables undo)
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: varchar("deleted_by", { length: 255 }),
+
+    // Usage analytics
+    viewCount: integer("view_count").notNull().default(0),
+    favoriteCount: integer("favorite_count").notNull().default(0),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+
+    // Visibility & discovery
+    isPublic: boolean("is_public").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
+
+    // Project organization
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+
+    // Versioning
+    version: integer("version").notNull().default(1),
+    parentId: uuid("parent_id"), // Self-reference for version history
+    isTemplate: boolean("is_template").notNull().default(false),
+
+    // AI cost tracking
+    aiMetrics: jsonb("ai_metrics").default({}),
+
+    // Quality & curation
+    qualityScore: integer("quality_score"),
+    isVerified: boolean("is_verified").notNull().default(false),
 
     // Complete NPC data as JSON
     data: jsonb("data").notNull(),
@@ -52,6 +85,10 @@ export const npcs = pgTable(
     archetypeIdx: index("idx_npcs_archetype").on(table.archetype),
     createdByIdx: index("idx_npcs_created_by").on(table.createdBy),
     tagsIdx: index("idx_npcs_tags").using("gin", table.tags),
+    deletedAtIdx: index("idx_npcs_deleted_at").on(table.deletedAt),
+    projectIdIdx: index("idx_npcs_project_id").on(table.projectId),
+    isPublicIdx: index("idx_npcs_is_public").on(table.isPublic),
+    viewCountIdx: index("idx_npcs_view_count").on(table.viewCount),
   }),
 );
 
@@ -72,6 +109,36 @@ export const quests = pgTable(
     // User tracking
     createdBy: varchar("created_by", { length: 255 }),
     walletAddress: varchar("wallet_address", { length: 255 }),
+
+    // Soft deletes (enables undo)
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: varchar("deleted_by", { length: 255 }),
+
+    // Usage analytics
+    viewCount: integer("view_count").notNull().default(0),
+    favoriteCount: integer("favorite_count").notNull().default(0),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+
+    // Visibility & discovery
+    isPublic: boolean("is_public").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
+
+    // Project organization
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+
+    // Versioning
+    version: integer("version").notNull().default(1),
+    parentId: uuid("parent_id"), // Self-reference for version history
+    isTemplate: boolean("is_template").notNull().default(false),
+
+    // AI cost tracking
+    aiMetrics: jsonb("ai_metrics").default({}),
+
+    // Quality & curation
+    qualityScore: integer("quality_score"),
+    isVerified: boolean("is_verified").notNull().default(false),
 
     // Complete quest data as JSON
     data: jsonb("data").notNull(),
@@ -96,6 +163,10 @@ export const quests = pgTable(
     difficultyIdx: index("idx_quests_difficulty").on(table.difficulty),
     createdByIdx: index("idx_quests_created_by").on(table.createdBy),
     tagsIdx: index("idx_quests_tags").using("gin", table.tags),
+    deletedAtIdx: index("idx_quests_deleted_at").on(table.deletedAt),
+    projectIdIdx: index("idx_quests_project_id").on(table.projectId),
+    isPublicIdx: index("idx_quests_is_public").on(table.isPublic),
+    viewCountIdx: index("idx_quests_view_count").on(table.viewCount),
   }),
 );
 
@@ -116,6 +187,36 @@ export const dialogues = pgTable(
     createdBy: varchar("created_by", { length: 255 }),
     walletAddress: varchar("wallet_address", { length: 255 }),
 
+    // Soft deletes (enables undo)
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: varchar("deleted_by", { length: 255 }),
+
+    // Usage analytics
+    viewCount: integer("view_count").notNull().default(0),
+    favoriteCount: integer("favorite_count").notNull().default(0),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+
+    // Visibility & discovery
+    isPublic: boolean("is_public").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
+
+    // Project organization
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+
+    // Versioning
+    version: integer("version").notNull().default(1),
+    parentId: uuid("parent_id"), // Self-reference for version history
+    isTemplate: boolean("is_template").notNull().default(false),
+
+    // AI cost tracking
+    aiMetrics: jsonb("ai_metrics").default({}),
+
+    // Quality & curation
+    qualityScore: integer("quality_score"),
+    isVerified: boolean("is_verified").notNull().default(false),
+
     // Dialogue nodes as JSON array
     nodes: jsonb("nodes").notNull(),
 
@@ -133,6 +234,10 @@ export const dialogues = pgTable(
   (table) => ({
     npcNameIdx: index("idx_dialogues_npc_name").on(table.npcName),
     createdByIdx: index("idx_dialogues_created_by").on(table.createdBy),
+    deletedAtIdx: index("idx_dialogues_deleted_at").on(table.deletedAt),
+    projectIdIdx: index("idx_dialogues_project_id").on(table.projectId),
+    isPublicIdx: index("idx_dialogues_is_public").on(table.isPublic),
+    viewCountIdx: index("idx_dialogues_view_count").on(table.viewCount),
   }),
 );
 
@@ -153,6 +258,36 @@ export const lores = pgTable(
     // User tracking
     createdBy: varchar("created_by", { length: 255 }),
     walletAddress: varchar("wallet_address", { length: 255 }),
+
+    // Soft deletes (enables undo)
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: varchar("deleted_by", { length: 255 }),
+
+    // Usage analytics
+    viewCount: integer("view_count").notNull().default(0),
+    favoriteCount: integer("favorite_count").notNull().default(0),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+
+    // Visibility & discovery
+    isPublic: boolean("is_public").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
+
+    // Project organization
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+
+    // Versioning
+    version: integer("version").notNull().default(1),
+    parentId: uuid("parent_id"), // Self-reference for version history
+    isTemplate: boolean("is_template").notNull().default(false),
+
+    // AI cost tracking
+    aiMetrics: jsonb("ai_metrics").default({}),
+
+    // Quality & curation
+    qualityScore: integer("quality_score"),
+    isVerified: boolean("is_verified").notNull().default(false),
 
     // Complete lore data as JSON
     data: jsonb("data").notNull(),
@@ -176,6 +311,10 @@ export const lores = pgTable(
     categoryIdx: index("idx_lores_category").on(table.category),
     createdByIdx: index("idx_lores_created_by").on(table.createdBy),
     tagsIdx: index("idx_lores_tags").using("gin", table.tags),
+    deletedAtIdx: index("idx_lores_deleted_at").on(table.deletedAt),
+    projectIdIdx: index("idx_lores_project_id").on(table.projectId),
+    isPublicIdx: index("idx_lores_is_public").on(table.isPublic),
+    viewCountIdx: index("idx_lores_view_count").on(table.viewCount),
   }),
 );
 
@@ -197,6 +336,36 @@ export const worlds = pgTable(
     createdBy: varchar("created_by", { length: 255 }),
     walletAddress: varchar("wallet_address", { length: 255 }),
 
+    // Soft deletes (enables undo)
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: varchar("deleted_by", { length: 255 }),
+
+    // Usage analytics
+    viewCount: integer("view_count").notNull().default(0),
+    favoriteCount: integer("favorite_count").notNull().default(0),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+
+    // Visibility & discovery
+    isPublic: boolean("is_public").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
+
+    // Project organization
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+
+    // Versioning
+    version: integer("version").notNull().default(1),
+    parentId: uuid("parent_id"), // Self-reference for version history
+    isTemplate: boolean("is_template").notNull().default(false),
+
+    // AI cost tracking
+    aiMetrics: jsonb("ai_metrics").default({}),
+
+    // Quality & curation
+    qualityScore: integer("quality_score"),
+    isVerified: boolean("is_verified").notNull().default(false),
+
     // World data (geography, culture, history, magic system, etc.)
     data: jsonb("data").notNull(),
 
@@ -215,6 +384,10 @@ export const worlds = pgTable(
     nameIdx: index("idx_worlds_name").on(table.name),
     genreIdx: index("idx_worlds_genre").on(table.genre),
     createdByIdx: index("idx_worlds_created_by").on(table.createdBy),
+    deletedAtIdx: index("idx_worlds_deleted_at").on(table.deletedAt),
+    projectIdIdx: index("idx_worlds_project_id").on(table.projectId),
+    isPublicIdx: index("idx_worlds_is_public").on(table.isPublic),
+    viewCountIdx: index("idx_worlds_view_count").on(table.viewCount),
   }),
 );
 
@@ -230,10 +403,43 @@ export const locations = pgTable(
     // Basic Info
     name: varchar("name", { length: 255 }).notNull(),
     type: varchar("type", { length: 100 }).notNull(), // city, dungeon, wilderness, etc.
-    worldId: uuid("world_id").references(() => worlds.id, { onDelete: "cascade" }),
+    worldId: uuid("world_id").references(() => worlds.id, {
+      onDelete: "cascade",
+    }),
 
     // User tracking
     createdBy: varchar("created_by", { length: 255 }),
+    walletAddress: varchar("wallet_address", { length: 255 }),
+
+    // Soft deletes (enables undo)
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: varchar("deleted_by", { length: 255 }),
+
+    // Usage analytics
+    viewCount: integer("view_count").notNull().default(0),
+    favoriteCount: integer("favorite_count").notNull().default(0),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+
+    // Visibility & discovery
+    isPublic: boolean("is_public").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
+
+    // Project organization
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+
+    // Versioning
+    version: integer("version").notNull().default(1),
+    parentId: uuid("parent_id"), // Self-reference for version history
+    isTemplate: boolean("is_template").notNull().default(false),
+
+    // AI cost tracking
+    aiMetrics: jsonb("ai_metrics").default({}),
+
+    // Quality & curation
+    qualityScore: integer("quality_score"),
+    isVerified: boolean("is_verified").notNull().default(false),
 
     // Location data (description, climate, inhabitants, resources, etc.)
     data: jsonb("data").notNull(),
@@ -253,6 +459,10 @@ export const locations = pgTable(
     nameIdx: index("idx_locations_name").on(table.name),
     typeIdx: index("idx_locations_type").on(table.type),
     worldIdIdx: index("idx_locations_world_id").on(table.worldId),
+    deletedAtIdx: index("idx_locations_deleted_at").on(table.deletedAt),
+    projectIdIdx: index("idx_locations_project_id").on(table.projectId),
+    isPublicIdx: index("idx_locations_is_public").on(table.isPublic),
+    viewCountIdx: index("idx_locations_view_count").on(table.viewCount),
   }),
 );
 
@@ -287,8 +497,14 @@ export const entityRelationships = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    sourceIdx: index("idx_relationships_source").on(table.sourceType, table.sourceId),
-    targetIdx: index("idx_relationships_target").on(table.targetType, table.targetId),
+    sourceIdx: index("idx_relationships_source").on(
+      table.sourceType,
+      table.sourceId,
+    ),
+    targetIdx: index("idx_relationships_target").on(
+      table.targetType,
+      table.targetId,
+    ),
     typeIdx: index("idx_relationships_type").on(table.relationshipType),
   }),
 );
@@ -309,6 +525,37 @@ export const musicTracks = pgTable(
 
     // User tracking
     createdBy: varchar("created_by", { length: 255 }),
+    walletAddress: varchar("wallet_address", { length: 255 }),
+
+    // Soft deletes (enables undo)
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: varchar("deleted_by", { length: 255 }),
+
+    // Usage analytics
+    viewCount: integer("view_count").notNull().default(0),
+    favoriteCount: integer("favorite_count").notNull().default(0),
+    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+
+    // Visibility & discovery
+    isPublic: boolean("is_public").notNull().default(false),
+    isFeatured: boolean("is_featured").notNull().default(false),
+
+    // Project organization
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+
+    // Versioning
+    version: integer("version").notNull().default(1),
+    parentId: uuid("parent_id"), // Self-reference for version history
+    isTemplate: boolean("is_template").notNull().default(false),
+
+    // AI cost tracking
+    aiMetrics: jsonb("ai_metrics").default({}),
+
+    // Quality & curation
+    qualityScore: integer("quality_score"),
+    isVerified: boolean("is_verified").notNull().default(false),
 
     // File storage (URL or path)
     fileUrl: text("file_url"),
@@ -327,6 +574,10 @@ export const musicTracks = pgTable(
   (table) => ({
     titleIdx: index("idx_music_title").on(table.title),
     moodIdx: index("idx_music_mood").on(table.mood),
+    deletedAtIdx: index("idx_music_deleted_at").on(table.deletedAt),
+    projectIdIdx: index("idx_music_project_id").on(table.projectId),
+    isPublicIdx: index("idx_music_is_public").on(table.isPublic),
+    viewCountIdx: index("idx_music_view_count").on(table.viewCount),
   }),
 );
 

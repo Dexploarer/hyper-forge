@@ -1,5 +1,11 @@
 import { Activity, Edit3, Layers, Palette, RefreshCw } from "lucide-react";
-import React, { useRef, useCallback, useState, useEffect, useMemo } from "react";
+import React, {
+  useRef,
+  useCallback,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
 
 import { API_ENDPOINTS } from "../constants";
 import { useAssetsStore } from "../store";
@@ -41,28 +47,33 @@ export const AssetsPage: React.FC = () => {
   }, [selectedAssetIds.size]);
 
   // Register asset-specific commands
-  useCommandRegistration(React.useMemo(() => [
-    {
-      id: 'assets-reload',
-      label: 'Reload Assets',
-      description: 'Refresh the asset library',
-      icon: RefreshCw,
-      category: 'Assets',
-      keywords: ['reload', 'refresh', 'assets'],
-      action: () => reloadAssets()
-    },
-    {
-      id: 'assets-toggle-selection',
-      label: 'Toggle Selection Mode',
-      description: 'Enter/exit bulk selection mode',
-      icon: Edit3,
-      category: 'Assets',
-      keywords: ['select', 'selection', 'bulk'],
-      action: () => {
-        useAssetsStore.getState().toggleSelectionMode();
-      }
-    }
-  ], [reloadAssets]));
+  useCommandRegistration(
+    React.useMemo(
+      () => [
+        {
+          id: "assets-reload",
+          label: "Reload Assets",
+          description: "Refresh the asset library",
+          icon: RefreshCw,
+          category: "Assets",
+          keywords: ["reload", "refresh", "assets"],
+          action: () => reloadAssets(),
+        },
+        {
+          id: "assets-toggle-selection",
+          label: "Toggle Selection Mode",
+          description: "Enter/exit bulk selection mode",
+          icon: Edit3,
+          category: "Assets",
+          keywords: ["select", "selection", "bulk"],
+          action: () => {
+            useAssetsStore.getState().toggleSelectionMode();
+          },
+        },
+      ],
+      [reloadAssets],
+    ),
+  );
 
   // Local state for modals
   const [showPresetEditor, setShowPresetEditor] = useState(false);
@@ -144,8 +155,12 @@ export const AssetsPage: React.FC = () => {
       <div className="card overflow-hidden w-80 flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary">
         {/* Header Section */}
         <div className="p-4 border-b border-border-primary bg-bg-primary bg-opacity-30">
-          <h2 className="text-lg font-semibold text-text-primary">Asset Library</h2>
-          <p className="text-sm text-text-tertiary mt-1">Browse and manage your 3D assets</p>
+          <h2 className="text-lg font-semibold text-text-primary">
+            Asset Library
+          </h2>
+          <p className="text-sm text-text-tertiary mt-1">
+            Browse and manage your 3D assets
+          </p>
         </div>
 
         {/* Scrollable Content */}
@@ -186,136 +201,134 @@ export const AssetsPage: React.FC = () => {
           {selectedAsset ? (
             <>
               <div className="absolute inset-0">
-                  {/* Keep both viewers mounted; fade inactive one to preserve layout and canvas size */}
-                  <div
-                    className={`absolute inset-0 transition-opacity duration-200 ${showAnimationView && selectedAsset.type === "character" ? "opacity-0 pointer-events-none" : "opacity-100"}`}
-                  >
-                    <ThreeViewer
-                      ref={viewerRef}
-                      modelUrl={
-                        selectedAsset.hasModel
-                          ? `${API_ENDPOINTS.ASSET_MODEL(selectedAsset.id)}`
-                          : undefined
-                      }
-                      isWireframe={isWireframe}
-                      showGroundPlane={showGroundPlane}
-                      isLightBackground={isLightBackground}
-                      lightMode={true}
-                      onModelLoad={handleModelLoad}
-                      assetInfo={{
-                        name: selectedAsset.name,
-                        type: selectedAsset.type,
-                        tier: selectedAsset.metadata.tier,
-                        format: selectedAsset.metadata.format || "GLB",
-                        requiresAnimationStrip:
-                          selectedAsset.metadata.requiresAnimationStrip,
-                      }}
-                    />
-                  </div>
-                  <div
-                    className={`absolute inset-0 transition-opacity duration-200 ${showAnimationView && selectedAsset.type === "character" ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-                  >
-                    <AnimationPlayer
-                      modelUrl={
-                        selectedAsset.hasModel
-                          ? `${API_ENDPOINTS.ASSET_MODEL(selectedAsset.id)}`
-                          : ""
-                      }
-                      animations={
-                        selectedAsset.metadata?.animations || { basic: {} }
-                      }
-                      riggedModelPath={
-                        selectedAsset.metadata?.riggedModelPath
-                          ? `${API_ENDPOINTS.ASSET_FILE(selectedAsset.id, selectedAsset.metadata.riggedModelPath)}`
-                          : undefined
-                      }
-                      characterHeight={selectedAsset.metadata?.characterHeight}
-                      className="w-full h-full"
-                    />
-                  </div>
+                {/* Keep both viewers mounted; fade inactive one to preserve layout and canvas size */}
+                <div
+                  className={`absolute inset-0 transition-opacity duration-200 ${showAnimationView && selectedAsset.type === "character" ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+                >
+                  <ThreeViewer
+                    ref={viewerRef}
+                    modelUrl={
+                      selectedAsset.hasModel
+                        ? `${API_ENDPOINTS.ASSET_MODEL(selectedAsset.id)}`
+                        : undefined
+                    }
+                    isWireframe={isWireframe}
+                    showGroundPlane={showGroundPlane}
+                    isLightBackground={isLightBackground}
+                    lightMode={true}
+                    onModelLoad={handleModelLoad}
+                    assetInfo={{
+                      name: selectedAsset.name,
+                      type: selectedAsset.type,
+                      tier: selectedAsset.metadata.tier,
+                      format: selectedAsset.metadata.format || "GLB",
+                      requiresAnimationStrip:
+                        selectedAsset.metadata.requiresAnimationStrip,
+                    }}
+                  />
                 </div>
-                {isTransitioning && <TransitionOverlay />}
+                <div
+                  className={`absolute inset-0 transition-opacity duration-200 ${showAnimationView && selectedAsset.type === "character" ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+                >
+                  <AnimationPlayer
+                    modelUrl={
+                      selectedAsset.hasModel
+                        ? `${API_ENDPOINTS.ASSET_MODEL(selectedAsset.id)}`
+                        : ""
+                    }
+                    animations={
+                      selectedAsset.metadata?.animations || { basic: {} }
+                    }
+                    riggedModelPath={
+                      selectedAsset.metadata?.riggedModelPath
+                        ? `${API_ENDPOINTS.ASSET_FILE(selectedAsset.id, selectedAsset.metadata.riggedModelPath)}`
+                        : undefined
+                    }
+                    characterHeight={selectedAsset.metadata?.characterHeight}
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
+              {isTransitioning && <TransitionOverlay />}
 
-                {showAnimationView ? (
-                  // Controls for animation view - positioned top-right to match asset browser layout
-                  <div className="absolute top-4 right-4 flex gap-2 animate-fade-in z-10">
-                    {/* Animation Toggle - furthest left */}
-                    {selectedAsset.type === "character" && (
-                      <button
-                        onClick={toggleAnimationView}
-                        className={`group p-3 bg-bg-secondary bg-opacity-90  rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg ${
-                          showAnimationView ? "ring-2 ring-primary" : ""
-                        }`}
-                        title={
-                          showAnimationView
-                            ? "View 3D Model"
-                            : "View Animations"
-                        }
-                      >
-                        <Activity
-                          size={20}
-                          className={`transition-colors ${
-                            showAnimationView
-                              ? "text-primary"
-                              : "text-text-secondary group-hover:text-primary"
-                          }`}
-                        />
-                      </button>
-                    )}
-
-                    {/* Edit Button - middle */}
+              {showAnimationView ? (
+                // Controls for animation view - positioned top-right to match asset browser layout
+                <div className="absolute top-4 right-4 flex gap-2 animate-fade-in z-10">
+                  {/* Animation Toggle - furthest left */}
+                  {selectedAsset.type === "character" && (
                     <button
-                      onClick={() => setShowEditModal(true)}
-                      className="group p-3 bg-bg-secondary bg-opacity-90  rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg"
-                      title="Edit Asset"
-                    >
-                      <Edit3
-                        size={20}
-                        className="text-text-secondary group-hover:text-primary transition-colors"
-                      />
-                    </button>
-
-                    {/* Details Button - furthest right with Layers icon */}
-                    <button
-                      onClick={toggleDetailsPanel}
-                      className={`p-3 bg-bg-secondary bg-opacity-90  rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg ${
-                        showDetailsPanel ? "ring-2 ring-primary" : ""
+                      onClick={toggleAnimationView}
+                      className={`group p-3 bg-bg-secondary bg-opacity-90  rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg ${
+                        showAnimationView ? "ring-2 ring-primary" : ""
                       }`}
-                      title="Toggle Details (D)"
+                      title={
+                        showAnimationView ? "View 3D Model" : "View Animations"
+                      }
                     >
-                      <Layers
+                      <Activity
                         size={20}
                         className={`transition-colors ${
-                          showDetailsPanel
+                          showAnimationView
                             ? "text-primary"
-                            : "text-text-secondary"
+                            : "text-text-secondary group-hover:text-primary"
                         }`}
                       />
                     </button>
-                  </div>
-                ) : (
-                  <ViewerControls
-                    onViewerReset={handleViewerReset}
-                    onDownload={handleDownload}
-                    onShowVariantTree={() => setShowVariantTree(true)}
-                    assetType={selectedAsset.type}
-                    canRetexture={
-                      selectedAsset.type !== "character" &&
-                      selectedAsset.type !== "environment"
-                    }
-                    hasRigging={
-                      selectedAsset.type === "character" ||
-                      !!selectedAsset.metadata?.animations
-                    }
-                  />
-                )}
+                  )}
 
-                <AssetDetailsPanel
-                  asset={selectedAsset}
-                  isOpen={showDetailsPanel}
-                  onClose={() => setShowDetailsPanel(false)}
-                  modelInfo={modelInfo}
+                  {/* Edit Button - middle */}
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="group p-3 bg-bg-secondary bg-opacity-90  rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg"
+                    title="Edit Asset"
+                  >
+                    <Edit3
+                      size={20}
+                      className="text-text-secondary group-hover:text-primary transition-colors"
+                    />
+                  </button>
+
+                  {/* Details Button - furthest right with Layers icon */}
+                  <button
+                    onClick={toggleDetailsPanel}
+                    className={`p-3 bg-bg-secondary bg-opacity-90  rounded-xl transition-all duration-200 hover:bg-bg-tertiary hover:scale-105 shadow-lg ${
+                      showDetailsPanel ? "ring-2 ring-primary" : ""
+                    }`}
+                    title="Toggle Details (D)"
+                  >
+                    <Layers
+                      size={20}
+                      className={`transition-colors ${
+                        showDetailsPanel
+                          ? "text-primary"
+                          : "text-text-secondary"
+                      }`}
+                    />
+                  </button>
+                </div>
+              ) : (
+                <ViewerControls
+                  onViewerReset={handleViewerReset}
+                  onDownload={handleDownload}
+                  onShowVariantTree={() => setShowVariantTree(true)}
+                  assetType={selectedAsset.type}
+                  canRetexture={
+                    selectedAsset.type !== "character" &&
+                    selectedAsset.type !== "environment"
+                  }
+                  hasRigging={
+                    selectedAsset.type === "character" ||
+                    !!selectedAsset.metadata?.animations
+                  }
                 />
+              )}
+
+              <AssetDetailsPanel
+                asset={selectedAsset}
+                isOpen={showDetailsPanel}
+                onClose={() => setShowDetailsPanel(false)}
+                modelInfo={modelInfo}
+              />
             </>
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -399,23 +412,24 @@ export const AssetsPage: React.FC = () => {
             setShowBulkActionsTray(false);
             clearSelection();
           }}
-          title={`${selectedAssetIds.size} Asset${selectedAssetIds.size > 1 ? 's' : ''} Selected`}
+          title={`${selectedAssetIds.size} Asset${selectedAssetIds.size > 1 ? "s" : ""} Selected`}
           defaultHeight="md"
           resizable={true}
         >
           <div className="p-6 space-y-4">
-            <BulkActionsBar 
+            <BulkActionsBar
+              assets={assets}
               onActionComplete={() => {
                 reloadAssets();
                 setShowBulkActionsTray(false);
-              }} 
+              }}
               variant="tray"
             />
           </div>
         </Tray>
       )}
-  </div>
-);
+    </div>
+  );
 };
 
 export default AssetsPage;

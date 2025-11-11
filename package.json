@@ -46,6 +46,7 @@
     "db:studio": "cd packages/core && bun run db:studio"
   },
   "dependencies": {
+    "jszip": "^3.10.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

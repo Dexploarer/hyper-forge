@@ -4,7 +4,7 @@
  * Automatically indexes to Qdrant vector database for semantic search
  */
 
-import { db } from '../db/db'
+import { db } from "../db/db";
 import {
   npcs,
   quests,
@@ -17,11 +17,11 @@ import {
   type Dialogue,
   type NewDialogue,
   type Lore,
-  type NewLore
-} from '../db/schema'
-import { eq, desc } from 'drizzle-orm'
-import { embeddingService } from './EmbeddingService'
-import { qdrantService, type CollectionName } from './QdrantService'
+  type NewLore,
+} from "../db/schema";
+import { eq, desc } from "drizzle-orm";
+import { embeddingService } from "./EmbeddingService";
+import { qdrantService, type CollectionName } from "./QdrantService";
 
 export class ContentDatabaseService {
   // ====================
@@ -33,23 +33,29 @@ export class ContentDatabaseService {
    */
   async createNPC(data: NewNPC): Promise<NPC> {
     try {
-      const [npc] = await db.insert(npcs).values({
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }).returning()
+      const [npc] = await db
+        .insert(npcs)
+        .values({
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
 
-      console.log(`[ContentDatabaseService] Created NPC: ${npc.name}`)
+      console.log(`[ContentDatabaseService] Created NPC: ${npc.name}`);
 
       // Index to Qdrant (async, don't block)
-      this.indexNPC(npc).catch(error => {
-        console.warn(`[ContentDatabaseService] Failed to index NPC embedding:`, error)
-      })
+      this.indexNPC(npc).catch((error) => {
+        console.warn(
+          `[ContentDatabaseService] Failed to index NPC embedding:`,
+          error,
+        );
+      });
 
-      return npc
+      return npc;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to create NPC:`, error)
-      throw error
+      console.error(`[ContentDatabaseService] Failed to create NPC:`, error);
+      throw error;
     }
   }
 
@@ -58,15 +64,16 @@ export class ContentDatabaseService {
    */
   async getNPC(id: string): Promise<NPC | null> {
     try {
-      const result = await db.select()
+      const result = await db
+        .select()
         .from(npcs)
         .where(eq(npcs.id, id))
-        .limit(1)
+        .limit(1);
 
-      return result[0] || null
+      return result[0] || null;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to get NPC:`, error)
-      return null
+      console.error(`[ContentDatabaseService] Failed to get NPC:`, error);
+      return null;
     }
   }
 
@@ -75,16 +82,48 @@ export class ContentDatabaseService {
    */
   async listNPCs(limit = 50, offset = 0): Promise<NPC[]> {
     try {
-      const result = await db.select()
+      const result = await db
+        .select()
         .from(npcs)
         .orderBy(desc(npcs.createdAt))
         .limit(limit)
-        .offset(offset)
+        .offset(offset);
 
-      return result
+      return result;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to list NPCs:`, error)
-      return []
+      console.error(`[ContentDatabaseService] Failed to list NPCs:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Update NPC by ID
+   */
+  async updateNPC(id: string, data: Partial<NewNPC>): Promise<NPC> {
+    try {
+      const [npc] = await db
+        .update(npcs)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(npcs.id, id))
+        .returning();
+
+      console.log(`[ContentDatabaseService] Updated NPC: ${npc.name}`);
+
+      // Re-index to Qdrant (async, don't block)
+      this.indexNPC(npc).catch((error) => {
+        console.warn(
+          `[ContentDatabaseService] Failed to re-index NPC embedding:`,
+          error,
+        );
+      });
+
+      return npc;
+    } catch (error) {
+      console.error(`[ContentDatabaseService] Failed to update NPC:`, error);
+      throw error;
     }
   }
 
@@ -93,18 +132,21 @@ export class ContentDatabaseService {
    */
   async deleteNPC(id: string): Promise<void> {
     try {
-      await db.delete(npcs).where(eq(npcs.id, id))
-      console.log(`[ContentDatabaseService] Deleted NPC: ${id}`)
+      await db.delete(npcs).where(eq(npcs.id, id));
+      console.log(`[ContentDatabaseService] Deleted NPC: ${id}`);
 
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
-        qdrantService.delete('npcs', id).catch(error => {
-          console.warn(`[ContentDatabaseService] Failed to delete NPC embedding:`, error)
-        })
+        qdrantService.delete("npcs", id).catch((error) => {
+          console.warn(
+            `[ContentDatabaseService] Failed to delete NPC embedding:`,
+            error,
+          );
+        });
       }
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to delete NPC:`, error)
-      throw error
+      console.error(`[ContentDatabaseService] Failed to delete NPC:`, error);
+      throw error;
     }
   }
 
@@ -117,23 +159,29 @@ export class ContentDatabaseService {
    */
   async createQuest(data: NewQuest): Promise<Quest> {
     try {
-      const [quest] = await db.insert(quests).values({
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }).returning()
+      const [quest] = await db
+        .insert(quests)
+        .values({
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
 
-      console.log(`[ContentDatabaseService] Created Quest: ${quest.title}`)
+      console.log(`[ContentDatabaseService] Created Quest: ${quest.title}`);
 
       // Index to Qdrant (async, don't block)
-      this.indexQuest(quest).catch(error => {
-        console.warn(`[ContentDatabaseService] Failed to index Quest embedding:`, error)
-      })
+      this.indexQuest(quest).catch((error) => {
+        console.warn(
+          `[ContentDatabaseService] Failed to index Quest embedding:`,
+          error,
+        );
+      });
 
-      return quest
+      return quest;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to create Quest:`, error)
-      throw error
+      console.error(`[ContentDatabaseService] Failed to create Quest:`, error);
+      throw error;
     }
   }
 
@@ -142,15 +190,16 @@ export class ContentDatabaseService {
    */
   async getQuest(id: string): Promise<Quest | null> {
     try {
-      const result = await db.select()
+      const result = await db
+        .select()
         .from(quests)
         .where(eq(quests.id, id))
-        .limit(1)
+        .limit(1);
 
-      return result[0] || null
+      return result[0] || null;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to get Quest:`, error)
-      return null
+      console.error(`[ContentDatabaseService] Failed to get Quest:`, error);
+      return null;
     }
   }
 
@@ -159,16 +208,48 @@ export class ContentDatabaseService {
    */
   async listQuests(limit = 50, offset = 0): Promise<Quest[]> {
     try {
-      const result = await db.select()
+      const result = await db
+        .select()
         .from(quests)
         .orderBy(desc(quests.createdAt))
         .limit(limit)
-        .offset(offset)
+        .offset(offset);
 
-      return result
+      return result;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to list Quests:`, error)
-      return []
+      console.error(`[ContentDatabaseService] Failed to list Quests:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Update Quest by ID
+   */
+  async updateQuest(id: string, data: Partial<NewQuest>): Promise<Quest> {
+    try {
+      const [quest] = await db
+        .update(quests)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(quests.id, id))
+        .returning();
+
+      console.log(`[ContentDatabaseService] Updated Quest: ${quest.title}`);
+
+      // Re-index to Qdrant (async, don't block)
+      this.indexQuest(quest).catch((error) => {
+        console.warn(
+          `[ContentDatabaseService] Failed to re-index Quest embedding:`,
+          error,
+        );
+      });
+
+      return quest;
+    } catch (error) {
+      console.error(`[ContentDatabaseService] Failed to update Quest:`, error);
+      throw error;
     }
   }
 
@@ -177,18 +258,21 @@ export class ContentDatabaseService {
    */
   async deleteQuest(id: string): Promise<void> {
     try {
-      await db.delete(quests).where(eq(quests.id, id))
-      console.log(`[ContentDatabaseService] Deleted Quest: ${id}`)
+      await db.delete(quests).where(eq(quests.id, id));
+      console.log(`[ContentDatabaseService] Deleted Quest: ${id}`);
 
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
-        qdrantService.delete('quests', id).catch(error => {
-          console.warn(`[ContentDatabaseService] Failed to delete Quest embedding:`, error)
-        })
+        qdrantService.delete("quests", id).catch((error) => {
+          console.warn(
+            `[ContentDatabaseService] Failed to delete Quest embedding:`,
+            error,
+          );
+        });
       }
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to delete Quest:`, error)
-      throw error
+      console.error(`[ContentDatabaseService] Failed to delete Quest:`, error);
+      throw error;
     }
   }
 
@@ -201,23 +285,34 @@ export class ContentDatabaseService {
    */
   async createDialogue(data: NewDialogue): Promise<Dialogue> {
     try {
-      const [dialogue] = await db.insert(dialogues).values({
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }).returning()
+      const [dialogue] = await db
+        .insert(dialogues)
+        .values({
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
 
-      console.log(`[ContentDatabaseService] Created Dialogue for: ${dialogue.npcName}`)
+      console.log(
+        `[ContentDatabaseService] Created Dialogue for: ${dialogue.npcName}`,
+      );
 
       // Index to Qdrant (async, don't block)
-      this.indexDialogue(dialogue).catch(error => {
-        console.warn(`[ContentDatabaseService] Failed to index Dialogue embedding:`, error)
-      })
+      this.indexDialogue(dialogue).catch((error) => {
+        console.warn(
+          `[ContentDatabaseService] Failed to index Dialogue embedding:`,
+          error,
+        );
+      });
 
-      return dialogue
+      return dialogue;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to create Dialogue:`, error)
-      throw error
+      console.error(
+        `[ContentDatabaseService] Failed to create Dialogue:`,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -226,15 +321,16 @@ export class ContentDatabaseService {
    */
   async getDialogue(id: string): Promise<Dialogue | null> {
     try {
-      const result = await db.select()
+      const result = await db
+        .select()
         .from(dialogues)
         .where(eq(dialogues.id, id))
-        .limit(1)
+        .limit(1);
 
-      return result[0] || null
+      return result[0] || null;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to get Dialogue:`, error)
-      return null
+      console.error(`[ContentDatabaseService] Failed to get Dialogue:`, error);
+      return null;
     }
   }
 
@@ -243,16 +339,59 @@ export class ContentDatabaseService {
    */
   async listDialogues(limit = 50, offset = 0): Promise<Dialogue[]> {
     try {
-      const result = await db.select()
+      const result = await db
+        .select()
         .from(dialogues)
         .orderBy(desc(dialogues.createdAt))
         .limit(limit)
-        .offset(offset)
+        .offset(offset);
 
-      return result
+      return result;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to list Dialogues:`, error)
-      return []
+      console.error(
+        `[ContentDatabaseService] Failed to list Dialogues:`,
+        error,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Update Dialogue by ID
+   */
+  async updateDialogue(
+    id: string,
+    data: Partial<NewDialogue>,
+  ): Promise<Dialogue> {
+    try {
+      const [dialogue] = await db
+        .update(dialogues)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(dialogues.id, id))
+        .returning();
+
+      console.log(
+        `[ContentDatabaseService] Updated Dialogue for: ${dialogue.npcName}`,
+      );
+
+      // Re-index to Qdrant (async, don't block)
+      this.indexDialogue(dialogue).catch((error) => {
+        console.warn(
+          `[ContentDatabaseService] Failed to re-index Dialogue embedding:`,
+          error,
+        );
+      });
+
+      return dialogue;
+    } catch (error) {
+      console.error(
+        `[ContentDatabaseService] Failed to update Dialogue:`,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -261,18 +400,24 @@ export class ContentDatabaseService {
    */
   async deleteDialogue(id: string): Promise<void> {
     try {
-      await db.delete(dialogues).where(eq(dialogues.id, id))
-      console.log(`[ContentDatabaseService] Deleted Dialogue: ${id}`)
+      await db.delete(dialogues).where(eq(dialogues.id, id));
+      console.log(`[ContentDatabaseService] Deleted Dialogue: ${id}`);
 
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
-        qdrantService.delete('dialogues', id).catch(error => {
-          console.warn(`[ContentDatabaseService] Failed to delete Dialogue embedding:`, error)
-        })
+        qdrantService.delete("dialogues", id).catch((error) => {
+          console.warn(
+            `[ContentDatabaseService] Failed to delete Dialogue embedding:`,
+            error,
+          );
+        });
       }
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to delete Dialogue:`, error)
-      throw error
+      console.error(
+        `[ContentDatabaseService] Failed to delete Dialogue:`,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -285,23 +430,29 @@ export class ContentDatabaseService {
    */
   async createLore(data: NewLore): Promise<Lore> {
     try {
-      const [lore] = await db.insert(lores).values({
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }).returning()
+      const [lore] = await db
+        .insert(lores)
+        .values({
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
 
-      console.log(`[ContentDatabaseService] Created Lore: ${lore.title}`)
+      console.log(`[ContentDatabaseService] Created Lore: ${lore.title}`);
 
       // Index to Qdrant (async, don't block)
-      this.indexLore(lore).catch(error => {
-        console.warn(`[ContentDatabaseService] Failed to index Lore embedding:`, error)
-      })
+      this.indexLore(lore).catch((error) => {
+        console.warn(
+          `[ContentDatabaseService] Failed to index Lore embedding:`,
+          error,
+        );
+      });
 
-      return lore
+      return lore;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to create Lore:`, error)
-      throw error
+      console.error(`[ContentDatabaseService] Failed to create Lore:`, error);
+      throw error;
     }
   }
 
@@ -310,15 +461,16 @@ export class ContentDatabaseService {
    */
   async getLore(id: string): Promise<Lore | null> {
     try {
-      const result = await db.select()
+      const result = await db
+        .select()
         .from(lores)
         .where(eq(lores.id, id))
-        .limit(1)
+        .limit(1);
 
-      return result[0] || null
+      return result[0] || null;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to get Lore:`, error)
-      return null
+      console.error(`[ContentDatabaseService] Failed to get Lore:`, error);
+      return null;
     }
   }
 
@@ -327,16 +479,48 @@ export class ContentDatabaseService {
    */
   async listLores(limit = 50, offset = 0): Promise<Lore[]> {
     try {
-      const result = await db.select()
+      const result = await db
+        .select()
         .from(lores)
         .orderBy(desc(lores.createdAt))
         .limit(limit)
-        .offset(offset)
+        .offset(offset);
 
-      return result
+      return result;
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to list Lores:`, error)
-      return []
+      console.error(`[ContentDatabaseService] Failed to list Lores:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Update Lore by ID
+   */
+  async updateLore(id: string, data: Partial<NewLore>): Promise<Lore> {
+    try {
+      const [lore] = await db
+        .update(lores)
+        .set({
+          ...data,
+          updatedAt: new Date(),
+        })
+        .where(eq(lores.id, id))
+        .returning();
+
+      console.log(`[ContentDatabaseService] Updated Lore: ${lore.title}`);
+
+      // Re-index to Qdrant (async, don't block)
+      this.indexLore(lore).catch((error) => {
+        console.warn(
+          `[ContentDatabaseService] Failed to re-index Lore embedding:`,
+          error,
+        );
+      });
+
+      return lore;
+    } catch (error) {
+      console.error(`[ContentDatabaseService] Failed to update Lore:`, error);
+      throw error;
     }
   }
 
@@ -345,18 +529,21 @@ export class ContentDatabaseService {
    */
   async deleteLore(id: string): Promise<void> {
     try {
-      await db.delete(lores).where(eq(lores.id, id))
-      console.log(`[ContentDatabaseService] Deleted Lore: ${id}`)
+      await db.delete(lores).where(eq(lores.id, id));
+      console.log(`[ContentDatabaseService] Deleted Lore: ${id}`);
 
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
-        qdrantService.delete('lore', id).catch(error => {
-          console.warn(`[ContentDatabaseService] Failed to delete Lore embedding:`, error)
-        })
+        qdrantService.delete("lore", id).catch((error) => {
+          console.warn(
+            `[ContentDatabaseService] Failed to delete Lore embedding:`,
+            error,
+          );
+        });
       }
     } catch (error) {
-      console.error(`[ContentDatabaseService] Failed to delete Lore:`, error)
-      throw error
+      console.error(`[ContentDatabaseService] Failed to delete Lore:`, error);
+      throw error;
     }
   }
 
@@ -368,32 +555,35 @@ export class ContentDatabaseService {
    * Index NPC to Qdrant
    */
   private async indexNPC(npc: NPC): Promise<void> {
-    if (!process.env.QDRANT_URL) return
+    if (!process.env.QDRANT_URL) return;
 
     try {
-      const text = embeddingService.prepareNPCText(npc)
-      const { embedding } = await embeddingService.generateEmbedding(text)
+      const text = embeddingService.prepareNPCText(npc);
+      const { embedding } = await embeddingService.generateEmbedding(text);
 
       await qdrantService.upsert({
-        collection: 'npcs',
+        collection: "npcs",
         id: npc.id,
         vector: embedding,
         payload: {
-          type: 'npc',
+          type: "npc",
           name: npc.name,
           archetype: npc.archetype,
           tags: npc.tags,
           metadata: {
             createdBy: npc.createdBy,
             createdAt: npc.createdAt?.toISOString(),
-          }
-        }
-      })
+          },
+        },
+      });
 
-      console.log(`[ContentDatabaseService] Indexed NPC to Qdrant: ${npc.id}`)
+      console.log(`[ContentDatabaseService] Indexed NPC to Qdrant: ${npc.id}`);
     } catch (error) {
-      console.error(`[ContentDatabaseService] Error indexing NPC ${npc.id} to Qdrant:`, error)
-      throw error
+      console.error(
+        `[ContentDatabaseService] Error indexing NPC ${npc.id} to Qdrant:`,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -401,18 +591,18 @@ export class ContentDatabaseService {
    * Index Quest to Qdrant
    */
   private async indexQuest(quest: Quest): Promise<void> {
-    if (!process.env.QDRANT_URL) return
+    if (!process.env.QDRANT_URL) return;
 
     try {
-      const text = embeddingService.prepareQuestText(quest)
-      const { embedding } = await embeddingService.generateEmbedding(text)
+      const text = embeddingService.prepareQuestText(quest);
+      const { embedding } = await embeddingService.generateEmbedding(text);
 
       await qdrantService.upsert({
-        collection: 'quests',
+        collection: "quests",
         id: quest.id,
         vector: embedding,
         payload: {
-          type: 'quest',
+          type: "quest",
           title: quest.title,
           questType: quest.questType,
           difficulty: quest.difficulty,
@@ -420,14 +610,19 @@ export class ContentDatabaseService {
           metadata: {
             createdBy: quest.createdBy,
             createdAt: quest.createdAt?.toISOString(),
-          }
-        }
-      })
+          },
+        },
+      });
 
-      console.log(`[ContentDatabaseService] Indexed Quest to Qdrant: ${quest.id}`)
+      console.log(
+        `[ContentDatabaseService] Indexed Quest to Qdrant: ${quest.id}`,
+      );
     } catch (error) {
-      console.error(`[ContentDatabaseService] Error indexing Quest ${quest.id} to Qdrant:`, error)
-      throw error
+      console.error(
+        `[ContentDatabaseService] Error indexing Quest ${quest.id} to Qdrant:`,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -435,18 +630,18 @@ export class ContentDatabaseService {
    * Index Lore to Qdrant
    */
   private async indexLore(lore: Lore): Promise<void> {
-    if (!process.env.QDRANT_URL) return
+    if (!process.env.QDRANT_URL) return;
 
     try {
-      const text = embeddingService.prepareLoreText(lore)
-      const { embedding } = await embeddingService.generateEmbedding(text)
+      const text = embeddingService.prepareLoreText(lore);
+      const { embedding } = await embeddingService.generateEmbedding(text);
 
       await qdrantService.upsert({
-        collection: 'lore',
+        collection: "lore",
         id: lore.id,
         vector: embedding,
         payload: {
-          type: 'lore',
+          type: "lore",
           title: lore.title,
           category: lore.category,
           summary: lore.summary,
@@ -454,14 +649,19 @@ export class ContentDatabaseService {
           metadata: {
             createdBy: lore.createdBy,
             createdAt: lore.createdAt?.toISOString(),
-          }
-        }
-      })
+          },
+        },
+      });
 
-      console.log(`[ContentDatabaseService] Indexed Lore to Qdrant: ${lore.id}`)
+      console.log(
+        `[ContentDatabaseService] Indexed Lore to Qdrant: ${lore.id}`,
+      );
     } catch (error) {
-      console.error(`[ContentDatabaseService] Error indexing Lore ${lore.id} to Qdrant:`, error)
-      throw error
+      console.error(
+        `[ContentDatabaseService] Error indexing Lore ${lore.id} to Qdrant:`,
+        error,
+      );
+      throw error;
     }
   }
 
@@ -469,34 +669,39 @@ export class ContentDatabaseService {
    * Index Dialogue to Qdrant
    */
   private async indexDialogue(dialogue: Dialogue): Promise<void> {
-    if (!process.env.QDRANT_URL) return
+    if (!process.env.QDRANT_URL) return;
 
     try {
-      const text = embeddingService.prepareDialogueText(dialogue)
-      const { embedding } = await embeddingService.generateEmbedding(text)
+      const text = embeddingService.prepareDialogueText(dialogue);
+      const { embedding } = await embeddingService.generateEmbedding(text);
 
       await qdrantService.upsert({
-        collection: 'dialogues',
+        collection: "dialogues",
         id: dialogue.id,
         vector: embedding,
         payload: {
-          type: 'dialogue',
+          type: "dialogue",
           npcName: dialogue.npcName,
           context: dialogue.context,
           metadata: {
             createdBy: dialogue.createdBy,
             createdAt: dialogue.createdAt?.toISOString(),
-          }
-        }
-      })
+          },
+        },
+      });
 
-      console.log(`[ContentDatabaseService] Indexed Dialogue to Qdrant: ${dialogue.id}`)
+      console.log(
+        `[ContentDatabaseService] Indexed Dialogue to Qdrant: ${dialogue.id}`,
+      );
     } catch (error) {
-      console.error(`[ContentDatabaseService] Error indexing Dialogue ${dialogue.id} to Qdrant:`, error)
-      throw error
+      console.error(
+        `[ContentDatabaseService] Error indexing Dialogue ${dialogue.id} to Qdrant:`,
+        error,
+      );
+      throw error;
     }
   }
 }
 
 // Export singleton instance
-export const contentDatabaseService = new ContentDatabaseService()
+export const contentDatabaseService = new ContentDatabaseService();

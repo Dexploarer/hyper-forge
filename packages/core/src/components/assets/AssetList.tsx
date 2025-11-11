@@ -49,6 +49,8 @@ const AssetList: React.FC<AssetListProps> = ({ assets, onAssetDelete }) => {
     selectedAssetIds,
     toggleSelectionMode,
     toggleAssetSelection,
+    selectAllAssets,
+    clearSelection,
   } = useAssetsStore();
   const { showNotification } = useApp();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -455,6 +457,30 @@ const AssetList: React.FC<AssetListProps> = ({ assets, onAssetDelete }) => {
                 <List size={14} />
               </button>
             </div>
+
+            {/* Select All / Deselect All (only in selection mode) */}
+            {selectionMode && (
+              <>
+                <button
+                  onClick={() => selectAllAssets(assets.map((a) => a.id))}
+                  disabled={selectedAssetIds.size === assets.length}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 bg-bg-tertiary text-text-tertiary hover:text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Select all assets"
+                >
+                  <CheckSquare size={14} />
+                  <span>Select All</span>
+                </button>
+                <button
+                  onClick={clearSelection}
+                  disabled={selectedAssetIds.size === 0}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 bg-bg-tertiary text-text-tertiary hover:text-text-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Deselect all assets"
+                >
+                  <Square size={14} />
+                  <span>Deselect All</span>
+                </button>
+              </>
+            )}
 
             {/* Selection mode toggle */}
             <button

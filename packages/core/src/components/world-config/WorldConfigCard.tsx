@@ -72,6 +72,7 @@ export const WorldConfigCard: React.FC<WorldConfigCardProps> = ({
     ...(onPreview
       ? [
           {
+            id: "preview",
             label: "Preview AI Context",
             icon: FileText,
             onClick: () => onPreview(config.id),
@@ -82,16 +83,18 @@ export const WorldConfigCard: React.FC<WorldConfigCardProps> = ({
     ...(!config.isActive && onActivate
       ? [
           {
+            id: "activate",
             label: "Activate",
             icon: Play,
             onClick: () => onActivate(config.id),
-            variant: "primary" as const,
+            variant: "default" as const,
           },
         ]
       : []),
     ...(onClone
       ? [
           {
+            id: "clone",
             label: "Clone",
             icon: Copy,
             onClick: () => onClone(config.id),
@@ -102,6 +105,7 @@ export const WorldConfigCard: React.FC<WorldConfigCardProps> = ({
     ...(onEdit
       ? [
           {
+            id: "edit",
             label: "Edit",
             icon: Edit,
             onClick: () => onEdit(config.id),
@@ -112,6 +116,7 @@ export const WorldConfigCard: React.FC<WorldConfigCardProps> = ({
     ...(onExport
       ? [
           {
+            id: "export",
             label: "Export",
             icon: Download,
             onClick: () => onExport(config.id),
@@ -122,6 +127,7 @@ export const WorldConfigCard: React.FC<WorldConfigCardProps> = ({
     ...(onDelete && !config.isActive
       ? [
           {
+            id: "delete",
             label: "Delete",
             icon: Trash2,
             onClick: () => onDelete(config.id),
@@ -176,7 +182,7 @@ export const WorldConfigCard: React.FC<WorldConfigCardProps> = ({
             >
               <QuickActionMenu
                 actions={actions}
-                triggerButton={
+                trigger={
                   <button
                     className={cn(
                       "p-1.5 rounded-md transition-all",
@@ -234,7 +240,7 @@ export const WorldConfigCard: React.FC<WorldConfigCardProps> = ({
               Active
             </Badge>
           )}
-          {config.isTemplate && <Badge variant="info">Template</Badge>}
+          {config.isTemplate && <Badge variant="primary">Template</Badge>}
           {!config.isActive && !config.isTemplate && (
             <Badge variant="secondary">Inactive</Badge>
           )}

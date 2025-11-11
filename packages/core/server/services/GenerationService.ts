@@ -50,6 +50,7 @@ interface CustomPrompts {
 
 interface AssetMetadata {
   characterHeight?: number;
+  useGPT4Enhancement?: boolean;
 }
 
 interface PipelineConfig {
@@ -68,10 +69,11 @@ interface PipelineConfig {
   referenceImage?: ReferenceImage;
   riggingOptions?: RiggingOptions;
   customPrompts?: CustomPrompts;
-  metadata?: AssetMetadata & {
-    useGPT4Enhancement?: boolean;
+  metadata?: AssetMetadata;
+  user?: {
+    userId: string;
+    walletAddress?: string;
   };
-  user?: UserContextType;
 }
 
 interface StageResult {
@@ -79,6 +81,12 @@ interface StageResult {
   progress: number;
   result?: unknown;
   error?: string;
+  normalized?: boolean;
+  dimensions?: {
+    width: number;
+    height: number;
+    depth: number;
+  };
 }
 
 interface Pipeline {
@@ -90,14 +98,7 @@ interface Pipeline {
     textInput: StageResult;
     promptOptimization: StageResult;
     imageGeneration: StageResult;
-    image3D: StageResult & {
-      normalized?: boolean;
-      dimensions?: {
-        width: number;
-        height: number;
-        depth: number;
-      };
-    };
+    image3D: StageResult;
     textureGeneration: StageResult;
     rigging?: StageResult;
     spriteGeneration?: StageResult;
@@ -283,8 +284,11 @@ export class GenerationService extends EventEmitter {
       createdAt: new Date().toISOString(),
     };
 
-    // Save to database
-    await generationJobService.createJob(pipelineId, config);
+    // Save to database (cast config to match GenerationJobService's PipelineConfig type)
+    await generationJobService.createJob(
+      pipelineId,
+      config as import("./GenerationJobService").PipelineConfig,
+    );
 
     // Start processing asynchronously
     this.processPipeline(pipelineId).catch(async (error) => {
@@ -306,11 +310,14 @@ export class GenerationService extends EventEmitter {
    * Get pipeline status
    */
   async getPipelineStatus(pipelineId: string): Promise<PipelineStatusResponse> {
-    const pipeline = this.activePipelines.get(pipelineId);
+    const job = await generationJobService.getJobByPipelineId(pipelineId);
 
-    if (!pipeline) {
+    if (!job) {
       throw new Error(`Pipeline ${pipelineId} not found`);
     }
+
+    // Convert job to pipeline format
+    const pipeline = generationJobService.jobToPipeline(job);
 
     // Convert stages to Record format with name property for each stage
     const stagesWithNames: Record<string, PipelineStageWithName> = {};
@@ -343,24 +350,27 @@ export class GenerationService extends EventEmitter {
    * Process a pipeline through all stages
    */
   private async processPipeline(pipelineId: string): Promise<void> {
-    const pipeline = this.activePipelines.get(pipelineId);
-    if (!pipeline) return;
+    const job = await generationJobService.getJobByPipelineId(pipelineId);
+    if (!job) return;
+
+    const pipeline = generationJobService.jobToPipeline(job);
+
+    // Cast the config to our local PipelineConfig type for proper typing
+    const config = pipeline.config as PipelineConfig;
 
     try {
       pipeline.status = "processing";
-      let enhancedPrompt = pipeline.config.description;
+      let enhancedPrompt = config.description;
       let imageUrl: string | null = null;
       let meshyTaskId: string | null = null;
       let baseModelPath: string | null = null;
 
       // Stage 1: GPT-4 Prompt Enhancement (honor toggle; skip if explicitly disabled)
-      if (pipeline.config.metadata?.useGPT4Enhancement !== false) {
+      if (config.metadata?.useGPT4Enhancement !== false) {
         pipeline.stages.promptOptimization.status = "processing";
 
         try {
-          const optimizationResult = await this.enhancePromptWithGPT4(
-            pipeline.config,
-          );
+          const optimizationResult = await this.enhancePromptWithGPT4(config);
           enhancedPrompt = optimizationResult.optimizedPrompt;
 
           pipeline.stages.promptOptimization.status = "completed";
@@ -375,8 +385,8 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.promptOptimization.status = "completed";
           pipeline.stages.promptOptimization.progress = 100;
           pipeline.stages.promptOptimization.result = {
-            originalPrompt: pipeline.config.description,
-            optimizedPrompt: pipeline.config.description,
+            originalPrompt: config.description,
+            optimizedPrompt: config.description,
             error: (error as Error).message,
           };
         }
@@ -388,15 +398,13 @@ export class GenerationService extends EventEmitter {
 
       // Stage 2: Image Source (User-provided or AI-generated)
       const hasUserRef = !!(
-        pipeline.config.referenceImage &&
-        (pipeline.config.referenceImage.url ||
-          pipeline.config.referenceImage.dataUrl)
+        config.referenceImage &&
+        (config.referenceImage.url || config.referenceImage.dataUrl)
       );
       if (hasUserRef) {
         // Use user-provided reference image; skip auto image generation
         imageUrl =
-          pipeline.config.referenceImage!.dataUrl ||
-          pipeline.config.referenceImage!.url!;
+          config.referenceImage!.dataUrl || config.referenceImage!.url!;
         pipeline.stages.imageGeneration.status = "skipped";
         pipeline.stages.imageGeneration.progress = 0;
         pipeline.stages.imageGeneration.result = { source: "user-provided" };
@@ -415,10 +423,9 @@ export class GenerationService extends EventEmitter {
           // Build effective style text from custom prompts when available
           // Also, if HQ cues are present, sanitize prompt from low-poly cues and add HQ details
           const effectiveStyle =
-            pipeline.config.customPrompts &&
-            pipeline.config.customPrompts.gameStyle
-              ? pipeline.config.customPrompts.gameStyle
-              : pipeline.config.style || "game-ready";
+            config.customPrompts && config.customPrompts.gameStyle
+              ? config.customPrompts.gameStyle
+              : config.style || "game-ready";
 
           const wantsHQPrompt =
             /\b(4k|ultra|high\s*quality|realistic|cinematic|photoreal|pbr)\b/i.test(
@@ -435,17 +442,17 @@ export class GenerationService extends EventEmitter {
             imagePrompt = `${imagePrompt} highly detailed, realistic, sharp features, high-resolution textures`;
           }
           if (
-            pipeline.config.generationType === "avatar" ||
-            pipeline.config.type === "character"
+            config.generationType === "avatar" ||
+            config.type === "character"
           ) {
             const tposePrompt =
               generationPrompts?.posePrompts?.avatar?.tpose ||
               "standing in T-pose with arms stretched out horizontally";
             imagePrompt = `${enhancedPrompt} ${tposePrompt}`;
-          } else if (pipeline.config.type === "armor") {
+          } else if (config.type === "armor") {
             const isChest =
-              pipeline.config.subtype?.toLowerCase().includes("chest") ||
-              pipeline.config.subtype?.toLowerCase().includes("body");
+              config.subtype?.toLowerCase().includes("chest") ||
+              config.subtype?.toLowerCase().includes("body");
             if (isChest) {
               const chestPrompt =
                 generationPrompts?.posePrompts?.armor?.chest ||
@@ -461,7 +468,7 @@ export class GenerationService extends EventEmitter {
 
           const imageResult = await this.aiService
             .getImageService()
-            .generateImage(imagePrompt, pipeline.config.type, effectiveStyle);
+            .generateImage(imagePrompt, config.type, effectiveStyle);
 
           imageUrl = imageResult.imageUrl;
 
@@ -489,7 +496,7 @@ export class GenerationService extends EventEmitter {
           const imageBuffer = Buffer.from(imageData, "base64");
           const imagePath = path.join(
             "temp-images",
-            `${pipeline.config.assetId}-concept.png`,
+            `${config.assetId}-concept.png`,
           );
           await fs.mkdir("temp-images", { recursive: true });
           await fs.writeFile(imagePath, imageBuffer);
@@ -538,19 +545,16 @@ export class GenerationService extends EventEmitter {
 
         // Determine quality settings based on explicit config, style cues, and avatar type
         const styleText =
-          (pipeline.config.customPrompts &&
-            pipeline.config.customPrompts.gameStyle) ||
-          "";
+          (config.customPrompts && config.customPrompts.gameStyle) || "";
         const wantsHighQuality =
           /\b(4k|ultra|high\s*quality|realistic|cinematic|marvel|skyrim)\b/i.test(
             styleText,
           );
         const isAvatar =
-          pipeline.config.generationType === "avatar" ||
-          pipeline.config.type === "character";
+          config.generationType === "avatar" || config.type === "character";
 
         const quality =
-          pipeline.config.quality ||
+          config.quality ||
           (wantsHighQuality || isAvatar ? "ultra" : "standard");
         const targetPolycount =
           quality === "ultra" ? 20000 : quality === "high" ? 12000 : 6000;
@@ -623,23 +627,17 @@ export class GenerationService extends EventEmitter {
 
         // Download and save the model
         const modelBuffer = await this.downloadFile(meshyResult.model_urls.glb);
-        const outputDir = path.join("gdd-assets", pipeline.config.assetId);
+        const outputDir = path.join("gdd-assets", config.assetId);
         await fs.mkdir(outputDir, { recursive: true });
 
         // Save raw model first
-        const rawModelPath = path.join(
-          outputDir,
-          `${pipeline.config.assetId}_raw.glb`,
-        );
+        const rawModelPath = path.join(outputDir, `${config.assetId}_raw.glb`);
         await fs.writeFile(rawModelPath, modelBuffer);
 
         // Normalize the model based on type
-        let normalizedModelPath = path.join(
-          outputDir,
-          `${pipeline.config.assetId}.glb`,
-        );
+        let normalizedModelPath = path.join(outputDir, `${config.assetId}.glb`);
 
-        if (pipeline.config.type === "character") {
+        if (config.type === "character") {
           // Normalize character height
           console.log("🔧 Normalizing character model...");
           try {
@@ -649,8 +647,8 @@ export class GenerationService extends EventEmitter {
             const normalizer = new AssetNormalizationService();
 
             const targetHeight =
-              pipeline.config.metadata?.characterHeight ||
-              pipeline.config.riggingOptions?.heightMeters ||
+              config.metadata?.characterHeight ||
+              config.riggingOptions?.heightMeters ||
               1.83;
 
             const normalized = await normalizer.normalizeCharacter(
@@ -665,8 +663,9 @@ export class GenerationService extends EventEmitter {
             console.log(`✅ Character normalized to ${targetHeight}m height`);
 
             // Update with normalized dimensions
-            pipeline.stages.image3D.normalized = true;
-            pipeline.stages.image3D.dimensions = normalized.metadata.dimensions;
+            (pipeline.stages.image3D as StageResult).normalized = true;
+            (pipeline.stages.image3D as StageResult).dimensions =
+              normalized.metadata.dimensions;
           } catch (error) {
             console.warn(
               "⚠️ Normalization failed, using raw model:",
@@ -674,7 +673,7 @@ export class GenerationService extends EventEmitter {
             );
             await fs.copyFile(rawModelPath, normalizedModelPath);
           }
-        } else if (pipeline.config.type === "weapon") {
+        } else if (config.type === "weapon") {
           // Normalize weapon with grip at origin
           console.log("🔧 Normalizing weapon model...");
           try {
@@ -693,8 +692,8 @@ export class GenerationService extends EventEmitter {
 
             // Update with normalized dimensions
             // Map weapon dimensions (length, width, height) to pipeline format (width, height, depth)
-            pipeline.stages.image3D.normalized = true;
-            pipeline.stages.image3D.dimensions = {
+            (pipeline.stages.image3D as StageResult).normalized = true;
+            (pipeline.stages.image3D as StageResult).dimensions = {
               width: result.dimensions.width,
               height: result.dimensions.height,
               depth: result.dimensions.length, // blade length maps to depth
@@ -725,18 +724,18 @@ export class GenerationService extends EventEmitter {
 
         // Save metadata - EXACT structure from arrows-base reference
         const metadata = {
-          id: pipeline.config.assetId,
-          name: pipeline.config.assetId,
-          gameId: pipeline.config.assetId,
-          type: pipeline.config.type,
-          subtype: pipeline.config.subtype,
-          description: pipeline.config.description,
+          id: config.assetId,
+          name: config.assetId,
+          gameId: config.assetId,
+          type: config.type,
+          subtype: config.subtype,
+          description: config.description,
           detailedPrompt: enhancedPrompt,
           generatedAt: new Date().toISOString(),
           completedAt: new Date().toISOString(),
           isBaseModel: true,
-          materialVariants: pipeline.config.materialPresets
-            ? pipeline.config.materialPresets.map((preset) => preset.id)
+          materialVariants: config.materialPresets
+            ? config.materialPresets.map((preset) => preset.id)
             : [],
           isPlaceholder: false,
           hasModel: true,
@@ -752,14 +751,16 @@ export class GenerationService extends EventEmitter {
           lastVariantGenerated: undefined,
           updatedAt: new Date().toISOString(),
           // Normalization info
-          normalized: pipeline.stages.image3D.normalized || false,
-          normalizationDate: pipeline.stages.image3D.normalized
+          normalized:
+            (pipeline.stages.image3D as StageResult).normalized || false,
+          normalizationDate: (pipeline.stages.image3D as StageResult).normalized
             ? new Date().toISOString()
             : undefined,
-          dimensions: pipeline.stages.image3D.dimensions || undefined,
+          dimensions:
+            (pipeline.stages.image3D as StageResult).dimensions || undefined,
           // Ownership tracking (Phase 1)
-          createdBy: pipeline.config.user?.userId || null,
-          walletAddress: pipeline.config.user?.walletAddress || null,
+          createdBy: config.user?.userId || null,
+          walletAddress: config.user?.walletAddress || null,
           isPublic: true, // Default to public for Phase 1
         };
 
@@ -769,13 +770,13 @@ export class GenerationService extends EventEmitter {
         );
 
         // Create database record for the asset
-        if (pipeline.config.user?.userId) {
+        if (config.user?.userId) {
           try {
             await assetDatabaseService.createAssetRecord(
-              pipeline.config.assetId,
+              config.assetId,
               metadata as import("../models").AssetMetadataType,
-              pipeline.config.user.userId,
-              `${pipeline.config.assetId}/${pipeline.config.assetId}.glb`,
+              config.user.userId,
+              `${config.assetId}/${config.assetId}.glb`,
             );
           } catch (error) {
             console.error(
@@ -804,17 +805,14 @@ export class GenerationService extends EventEmitter {
       }
 
       // Stage 4: Material Variant Generation (Retexturing)
-      if (
-        pipeline.config.enableRetexturing &&
-        pipeline.config.materialPresets?.length! > 0
-      ) {
+      if (config.enableRetexturing && config.materialPresets?.length! > 0) {
         pipeline.stages.textureGeneration.status = "processing";
 
         const variants: VariantResult[] = [];
-        const totalVariants = pipeline.config.materialPresets!.length;
+        const totalVariants = config.materialPresets!.length;
 
         for (let i = 0; i < totalVariants; i++) {
-          const preset = pipeline.config.materialPresets![i];
+          const preset = config.materialPresets![i] as MaterialPresetType;
 
           try {
             console.log(
@@ -866,7 +864,7 @@ export class GenerationService extends EventEmitter {
             }
 
             // Save variant
-            const variantId = `${pipeline.config.assetId}-${preset.id}`;
+            const variantId = `${config.assetId}-${preset.id}`;
             const variantDir = path.join("gdd-assets", variantId);
             await fs.mkdir(variantDir, { recursive: true });
 
@@ -881,7 +879,7 @@ export class GenerationService extends EventEmitter {
             // Copy concept art
             const conceptArtPath = path.join(
               "gdd-assets",
-              pipeline.config.assetId,
+              config.assetId,
               "concept-art.png",
             );
             if (
@@ -901,11 +899,11 @@ export class GenerationService extends EventEmitter {
               id: variantId,
               gameId: variantId,
               name: variantId,
-              type: pipeline.config.type,
-              subtype: pipeline.config.subtype,
+              type: config.type,
+              subtype: config.subtype,
               isBaseModel: false,
               isVariant: true,
-              parentBaseModel: pipeline.config.assetId,
+              parentBaseModel: config.assetId,
               materialPreset: {
                 id: preset.id,
                 displayName: preset.displayName,
@@ -924,12 +922,12 @@ export class GenerationService extends EventEmitter {
               hasConceptArt: true,
               generatedAt: new Date().toISOString(),
               completedAt: new Date().toISOString(),
-              description: pipeline.config.description,
+              description: config.description,
               isPlaceholder: false,
               gddCompliant: true,
               // Ownership tracking (Phase 1) - inherit from parent
-              createdBy: pipeline.config.user?.userId || null,
-              walletAddress: pipeline.config.user?.walletAddress || null,
+              createdBy: config.user?.userId || null,
+              walletAddress: config.user?.walletAddress || null,
               isPublic: true, // Default to public for Phase 1
             };
 
@@ -950,7 +948,7 @@ export class GenerationService extends EventEmitter {
               error,
             );
             variants.push({
-              id: `${pipeline.config.assetId}-${preset.id}`,
+              id: `${config.assetId}-${preset.id}`,
               name: preset.displayName,
               success: false,
               error: (error as Error).message,
@@ -970,7 +968,7 @@ export class GenerationService extends EventEmitter {
         if (successfulVariants.length > 0) {
           const baseMetadataPath = path.join(
             "gdd-assets",
-            pipeline.config.assetId,
+            config.assetId,
             "metadata.json",
           );
           const baseMetadata = JSON.parse(
@@ -994,8 +992,8 @@ export class GenerationService extends EventEmitter {
 
       // Stage 5: Auto-Rigging (for avatars only)
       if (
-        pipeline.config.generationType === "avatar" &&
-        pipeline.config.enableRigging &&
+        config.generationType === "avatar" &&
+        config.enableRigging &&
         meshyTaskId
       ) {
         pipeline.stages.rigging = { status: "processing", progress: 0 };
@@ -1009,8 +1007,7 @@ export class GenerationService extends EventEmitter {
             .startRiggingTask(
               { inputTaskId: meshyTaskId },
               {
-                heightMeters:
-                  pipeline.config.riggingOptions?.heightMeters || 1.7,
+                heightMeters: config.riggingOptions?.heightMeters || 1.7,
               },
             );
 
@@ -1045,7 +1042,7 @@ export class GenerationService extends EventEmitter {
           }
 
           // Download rigged model and animations
-          const outputDir = path.join("gdd-assets", pipeline.config.assetId);
+          const outputDir = path.join("gdd-assets", config.assetId);
           const riggedAssets: Record<string, string> = {};
 
           // IMPORTANT: For rigged avatars, we DON'T replace the main model
@@ -1100,7 +1097,7 @@ export class GenerationService extends EventEmitter {
               //   - Running: Play the running animation
               const riggedModelPath = path.join(
                 outputDir,
-                `${pipeline.config.assetId}_rigged.glb`,
+                `${config.assetId}_rigged.glb`,
               );
               await fs.writeFile(riggedModelPath, walkingBuffer);
               console.log("✅ Saved rigged model for animation player");
@@ -1129,12 +1126,11 @@ export class GenerationService extends EventEmitter {
           metadata.riggingTaskId = riggingTaskId;
           metadata.riggingStatus = "completed";
           metadata.rigType = "humanoid-standard";
-          metadata.characterHeight =
-            pipeline.config.riggingOptions?.heightMeters || 1.7;
+          metadata.characterHeight = config.riggingOptions?.heightMeters || 1.7;
           metadata.animations = {
             basic: riggedAssets,
           };
-          metadata.riggedModelPath = `${pipeline.config.assetId}_rigged.glb`;
+          metadata.riggedModelPath = `${config.assetId}_rigged.glb`;
           metadata.tposeModelPath = riggedAssets.tpose || null;
           metadata.supportsAnimation = true;
           metadata.animationCompatibility = ["mixamo", "unity", "unreal"];
@@ -1155,7 +1151,7 @@ export class GenerationService extends EventEmitter {
 
           // Update metadata to indicate rigging failed
           try {
-            const outputDir = path.join("gdd-assets", pipeline.config.assetId);
+            const outputDir = path.join("gdd-assets", config.assetId);
             const metadataPath = path.join(outputDir, "metadata.json");
             const metadata = JSON.parse(
               await fs.readFile(metadataPath, "utf-8"),
@@ -1196,10 +1192,10 @@ export class GenerationService extends EventEmitter {
         | undefined;
 
       pipeline.finalAsset = {
-        id: pipeline.config.assetId,
-        name: pipeline.config.name,
-        modelUrl: `/assets/${pipeline.config.assetId}/${pipeline.config.assetId}.glb`,
-        conceptArtUrl: `/assets/${pipeline.config.assetId}/concept-art.png`,
+        id: config.assetId,
+        name: config.name,
+        modelUrl: `/assets/${config.assetId}/${config.assetId}.glb`,
+        conceptArtUrl: `/assets/${config.assetId}/concept-art.png`,
         variants: textureResult?.variants || [],
       };
     } catch (error) {
@@ -1528,32 +1524,22 @@ Your task is to enhance the user's description to create better results with ima
   }
 
   /**
-   * Clean up old pipelines
+   * Clean up old pipelines (now handled by generationJobService)
    */
-  cleanupOldPipelines(): void {
-    const oneHourAgo = Date.now() - 60 * 60 * 1000;
-
-    for (const [id, pipeline] of this.activePipelines.entries()) {
-      const createdAt = new Date(pipeline.createdAt).getTime();
-      if (
-        createdAt < oneHourAgo &&
-        (pipeline.status === "completed" || pipeline.status === "failed")
-      ) {
-        this.activePipelines.delete(id);
-      }
-    }
+  async cleanupOldPipelines(): Promise<void> {
+    // Cleanup is now handled by generationJobService.cleanupExpiredJobs()
+    // and generationJobService.cleanupOldFailedJobs() via cron jobs
+    // This method is kept for backwards compatibility
+    await generationJobService.cleanupExpiredJobs();
+    await generationJobService.cleanupOldFailedJobs();
   }
 }
 
-// Cleanup old pipelines periodically
+// Cleanup is now handled by cron jobs in api-elysia.ts
+// This interval is kept for backwards compatibility but does nothing
 setInterval(
   () => {
-    const globalWithService = global as typeof global & {
-      generationService?: GenerationService;
-    };
-    if (globalWithService.generationService) {
-      globalWithService.generationService.cleanupOldPipelines();
-    }
+    // No-op: cleanup is handled by cron jobs
   },
   30 * 60 * 1000,
 ); // Every 30 minutes

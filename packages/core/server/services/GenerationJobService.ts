@@ -215,9 +215,10 @@ export class GenerationJobService {
           lt(generationJobs.expiresAt, new Date()),
           eq(generationJobs.status, "completed"),
         ),
-      );
+      )
+      .returning({ id: generationJobs.id });
 
-    return result.rowCount || 0;
+    return result.length;
   }
 
   /**
@@ -234,9 +235,10 @@ export class GenerationJobService {
           lt(generationJobs.createdAt, sevenDaysAgo),
           eq(generationJobs.status, "failed"),
         ),
-      );
+      )
+      .returning({ id: generationJobs.id });
 
-    return result.rowCount || 0;
+    return result.length;
   }
 }
 

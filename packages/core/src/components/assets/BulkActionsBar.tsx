@@ -1,14 +1,17 @@
-import { Star, X, CheckCircle, Circle } from "lucide-react";
+import { Star, X, CheckCircle, Circle, Download } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
+import JSZip from "jszip";
 
 import { AssetService } from "@/services/api/AssetService";
 import { useAssetsStore } from "@/store";
 import { useApp } from "@/contexts/AppContext";
+import type { Asset } from "@/types";
 
 interface BulkActionsBarProps {
   onActionComplete?: () => void;
   variant?: "floating" | "tray";
+  assets: Asset[]; // For batch export
 }
 
 type AssetStatus =
@@ -29,6 +32,7 @@ interface StatusOption {
 export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   onActionComplete,
   variant = "floating",
+  assets,
 }) => {
   const { selectedAssetIds, clearSelection } = useAssetsStore();
   const { showNotification } = useApp();
@@ -124,6 +128,85 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
     }
   };
 
+  const handleBatchExport = async (): Promise<void> => {
+    setIsProcessing(true);
+    try {
+      const zip = new JSZip();
+      const selectedAssets = assets.filter((asset) =>
+        selectedAssetIds.has(asset.id),
+      );
+
+      if (selectedAssets.length === 0) {
+        showNotification("No assets selected for export", "error");
+        return;
+      }
+
+      showNotification(
+        `Preparing ${selectedAssets.length} asset${selectedAssets.length > 1 ? "s" : ""} for export...`,
+        "info",
+      );
+
+      // Fetch and add each asset to ZIP
+      for (const asset of selectedAssets) {
+        try {
+          // Fetch GLB file
+          const modelUrl = AssetService.getModelUrl(asset.id);
+          const response = await fetch(modelUrl);
+
+          if (!response.ok) {
+            console.warn(`Failed to fetch model for ${asset.name}`);
+            continue;
+          }
+
+          const blob = await response.blob();
+
+          // Sanitize filename
+          const sanitizedName = asset.name
+            .replace(/[^a-z0-9_-]/gi, "_")
+            .toLowerCase();
+          zip.file(`${sanitizedName}.glb`, blob);
+
+          // Add metadata JSON
+          const metadata = {
+            id: asset.id,
+            name: asset.name,
+            description: asset.description,
+            type: asset.type,
+            metadata: asset.metadata,
+            generatedAt: asset.generatedAt,
+          };
+          zip.file(`${sanitizedName}.json`, JSON.stringify(metadata, null, 2));
+        } catch (error) {
+          console.error(`Failed to add ${asset.name} to ZIP:`, error);
+        }
+      }
+
+      // Generate ZIP blob
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+
+      // Download ZIP
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `asset-forge-export-${new Date().toISOString().split("T")[0]}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showNotification(
+        `Exported ${selectedAssets.length} asset${selectedAssets.length > 1 ? "s" : ""} successfully`,
+        "success",
+      );
+      clearSelection();
+    } catch (error) {
+      console.error("Failed to export assets:", error);
+      showNotification("Failed to export assets. Please try again.", "error");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const statusOptions: StatusOption[] = [
     { value: "draft", label: "Draft", icon: Circle },
     { value: "approved", label: "Approved", icon: CheckCircle },
@@ -152,6 +235,18 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
 
           {/* Actions */}
           <div className="flex items-center gap-1">
+            {/* Export as ZIP */}
+            <button
+              onClick={handleBatchExport}
+              disabled={isProcessing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-primary/10 text-text-secondary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed micro-bounce"
+              title="Export as ZIP"
+              aria-label="Export as ZIP"
+            >
+              <Download size={14} />
+              <span>Export ZIP</span>
+            </button>
+
             {/* Add to favorites */}
             <button
               onClick={() => handleBulkFavorite(true)}

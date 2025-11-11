@@ -69,4 +69,15 @@ export { QuickActionMenu } from "./QuickActionMenu";
 export type { QuickActionMenuProps, QuickAction } from "./QuickActionMenu";
 export { CommandPalette } from "./CommandPalette";
 export type { CommandPaletteProps, CommandPaletteItem } from "./CommandPalette";
+export { KeyboardShortcutsModal } from "./KeyboardShortcutsModal";
+export { WorkflowProgress } from "./WorkflowProgress";
+export type { WorkflowProgressProps } from "./WorkflowProgress";
 export { SelectOrCustom } from "./SelectOrCustom";
+export { HelpTooltip } from "./HelpTooltip";
+export type { HelpTooltipProps } from "./HelpTooltip";
+export {
+  OnboardingTour,
+  hasCompletedOnboarding,
+  resetOnboarding,
+} from "./OnboardingTour";
+export type { OnboardingTourProps } from "./OnboardingTour";

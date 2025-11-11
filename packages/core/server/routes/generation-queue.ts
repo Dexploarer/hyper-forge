@@ -13,11 +13,12 @@ export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
    */
   .get(
     "/jobs/:pipelineId",
-    async ({ params: { pipelineId }, error }) => {
+    async ({ params: { pipelineId }, set }) => {
       const job = await generationJobService.getJobByPipelineId(pipelineId);
 
       if (!job) {
-        return error(404, { message: "Job not found" });
+        set.status = 404;
+        return { error: "Job not found" };
       }
 
       return {
@@ -41,6 +42,27 @@ export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
       params: t.Object({
         pipelineId: t.String(),
       }),
+      response: {
+        200: t.Object({
+          id: t.String(),
+          pipelineId: t.String(),
+          assetId: t.Nullable(t.String()),
+          assetName: t.Nullable(t.String()),
+          status: t.String(),
+          progress: t.Number(),
+          stages: t.Any(),
+          results: t.Any(),
+          finalAsset: t.Any(),
+          error: t.Nullable(t.String()),
+          createdAt: t.Any(),
+          startedAt: t.Nullable(t.Any()),
+          completedAt: t.Nullable(t.Any()),
+          lastUpdatedAt: t.Any(),
+        }),
+        404: t.Object({
+          error: t.String(),
+        }),
+      },
     },
   )
 
@@ -49,11 +71,12 @@ export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
    */
   .get(
     "/jobs/:pipelineId/stream",
-    async ({ params: { pipelineId }, error, set }) => {
+    async ({ params: { pipelineId }, set }) => {
       const job = await generationJobService.getJobByPipelineId(pipelineId);
 
       if (!job) {
-        return error(404, { message: "Job not found" });
+        set.status = 404;
+        return { error: "Job not found" };
       }
 
       // Set SSE headers
@@ -103,18 +126,20 @@ export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
    */
   .delete(
     "/jobs/:pipelineId",
-    async ({ params: { pipelineId }, error }) => {
+    async ({ params: { pipelineId }, set }) => {
       const job = await generationJobService.getJobByPipelineId(pipelineId);
 
       if (!job) {
-        return error(404, { message: "Job not found" });
+        set.status = 404;
+        return { error: "Job not found" };
       }
 
       // Can only cancel jobs that are initializing or processing
       if (job.status !== "initializing" && job.status !== "processing") {
-        return error(400, {
-          message: `Cannot cancel job with status: ${job.status}`,
-        });
+        set.status = 400;
+        return {
+          error: `Cannot cancel job with status: ${job.status}`,
+        };
       }
 
       // Remove from Redis queue
