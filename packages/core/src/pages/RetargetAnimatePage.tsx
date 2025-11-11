@@ -78,6 +78,28 @@ export const RetargetAnimatePage: React.FC = () => {
       const loader = new GLTFLoader()
       const gltf = await loader.loadAsync(sourceModelUrl)
 
+      // Validate GLB loaded correctly
+      if (!gltf || !gltf.scene) {
+        throw new Error('Failed to load GLB file - scene is empty')
+      }
+
+      console.log('[RetargetAnimatePage] GLB loaded successfully')
+      console.log(`  - Scene children: ${gltf.scene.children.length}`)
+      console.log(`  - Animations: ${gltf.animations.length}`)
+      
+      // Check for SkinnedMesh before conversion
+      let hasSkinnedMesh = false
+      gltf.scene.traverse((obj) => {
+        if (obj instanceof THREE.SkinnedMesh) {
+          hasSkinnedMesh = true
+          console.log(`  - Found SkinnedMesh: ${obj.name || 'unnamed'}`)
+        }
+      })
+
+      if (!hasSkinnedMesh) {
+        throw new Error('GLB file does not contain a SkinnedMesh. Please ensure you are using a rigged character model.')
+      }
+
       // Convert to VRM
       const result = await convertGLBToVRM(gltf.scene, {
         avatarName: sourceModelAssetId || 'Converted Avatar',

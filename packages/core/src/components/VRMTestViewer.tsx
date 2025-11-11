@@ -6,19 +6,17 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { VRMLoaderPlugin, VRMUtils } from "@pixiv/three-vrm";
 import styled from "styled-components";
 import { retargetAnimation } from "../services/retargeting/AnimationRetargeting";
-
-// Import OrbitControls from three addons (not three-stdlib to avoid type conflicts)
-import { OrbitControls as OrbitControlsImpl } from "three/addons/controls/OrbitControls.js";
 
 const Container = styled.div`
   width: 100%;
   height: 600px;
   position: relative;
-  background: var(--bg-secondary);
+  background: #1a1a1a;
   border-radius: 8px;
   overflow: hidden;
 `;
@@ -35,42 +33,29 @@ const Controls = styled.div`
   transform: translateX(-50%);
   display: flex;
   gap: 10px;
-  background: var(--bg-primary);
-  opacity: 0.95;
+  background: rgba(0, 0, 0, 0.7);
   padding: 15px;
   border-radius: 8px;
   backdrop-filter: blur(10px);
-  border: 1px solid var(--border-primary);
 `;
 
 const Button = styled.button<{ active?: boolean }>`
   padding: 10px 20px;
-  background: ${(props) =>
-    props.active ? "var(--color-success)" : "var(--color-info)"};
+  background: ${(props) => (props.active ? "#4CAF50" : "#2196F3")};
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: all 0.2s ease-out;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background 0.2s;
 
   &:hover {
-    background: ${(props) =>
-      props.active ? "var(--color-success-dark)" : "var(--color-info-dark)"};
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  &:active {
-    transform: translateY(0);
+    background: ${(props) => (props.active ? "#45a049" : "#0b7dda")};
   }
 
   &:disabled {
-    background: var(--bg-tertiary);
-    color: var(--text-tertiary);
+    background: #666;
     cursor: not-allowed;
-    opacity: 0.5;
   }
 `;
 
@@ -78,28 +63,22 @@ const Info = styled.div`
   position: absolute;
   top: 20px;
   left: 20px;
-  background: var(--bg-primary);
-  opacity: 0.95;
-  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
   padding: 15px;
   border-radius: 8px;
   font-size: 14px;
   backdrop-filter: blur(10px);
-  border: 1px solid var(--border-primary);
-  box-shadow: var(--shadow-md);
 `;
 
 const UploadBox = styled.div`
   position: absolute;
   top: 20px;
   right: 20px;
-  background: var(--bg-primary);
-  opacity: 0.95;
+  background: rgba(0, 0, 0, 0.7);
   padding: 15px;
   border-radius: 8px;
   backdrop-filter: blur(10px);
-  border: 1px solid var(--border-primary);
-  box-shadow: var(--shadow-md);
 `;
 
 const FileInput = styled.input`
@@ -109,22 +88,15 @@ const FileInput = styled.input`
 const UploadButton = styled.label`
   display: inline-block;
   padding: 10px 20px;
-  background: var(--color-secondary);
+  background: #9c27b0;
   color: white;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: all 0.2s ease-out;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background 0.2s;
 
   &:hover {
-    background: var(--color-secondary-dark);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  &:active {
-    transform: translateY(0);
+    background: #7b1fa2;
   }
 `;
 
@@ -173,16 +145,12 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
     }
   };
 
-  // Animation URLs (served from asset-forge public directory)
-  // Use relative URLs in production, localhost in development
-  const baseUrl = import.meta.env.PROD
-    ? ""
-    : `http://localhost:${import.meta.env.VITE_API_PORT || "3004"}`;
+  // Animation URLs (using Hyperscape CDN)
   const animations = {
-    idle: `${baseUrl}/emotes/emote-idle.glb`,
-    walk: `${baseUrl}/emotes/emote-walk.glb`,
-    run: `${baseUrl}/emotes/emote-run.glb`,
-    jump: `${baseUrl}/emotes/emote-jump.glb`,
+    idle: "http://localhost:8080/emotes/emote-idle.glb",
+    walk: "http://localhost:8080/emotes/emote-walk.glb",
+    run: "http://localhost:8080/emotes/emote-run.glb",
+    jump: "http://localhost:8080/emotes/emote-jump.glb",
   };
 
   useEffect(() => {
@@ -213,7 +181,7 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
     renderer.setPixelRatio(window.devicePixelRatio);
 
     // Orbit controls
-    const controls = new OrbitControlsImpl(camera, canvas);
+    const controls = new OrbitControls(camera, canvas);
     controls.target.set(0, 1, 0);
     controls.update();
 
@@ -400,15 +368,6 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
         }
 
         scene.add(vrm.scene);
-
-        // Simple camera setup - no scene manipulation, let VRM structure be natural
-        // Position camera based on standard VRM height (1.6m)
-        console.log("[VRMTestViewer] Setting up camera for VRM viewer");
-        const standardHeight = 1.6;
-        camera.position.set(0, standardHeight, 3);
-        controls.target.set(0, standardHeight * 0.6, 0);
-        controls.update();
-        console.log("  ✓ Camera positioned for standard VRM viewing");
 
         // Find the skinned mesh (required for animation mixer)
         vrm.scene.traverse((obj: THREE.Object3D) => {
@@ -734,9 +693,7 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
       )}
 
       {error && (
-        <Info style={{ background: "var(--color-error)", opacity: 0.9 }}>
-          ❌ {error}
-        </Info>
+        <Info style={{ background: "rgba(220, 53, 69, 0.9)" }}>❌ {error}</Info>
       )}
 
       <UploadBox>
