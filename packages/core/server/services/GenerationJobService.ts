@@ -76,6 +76,13 @@ export class GenerationJobService {
     pipelineId: string,
     config: PipelineConfig,
   ): Promise<GenerationJob> {
+    // Require authentication - users must be logged in to generate
+    if (!config.user?.userId) {
+      throw new Error(
+        "Authentication required: You must be logged in to generate assets",
+      );
+    }
+
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24); // Jobs expire after 24 hours
 
@@ -83,7 +90,7 @@ export class GenerationJobService {
       pipelineId,
       assetId: config.assetId,
       assetName: config.name,
-      userId: config.user!.userId,
+      userId: config.user.userId,
       config: config as unknown as Record<string, unknown>,
       status: "initializing",
       progress: 0,

@@ -29,10 +29,12 @@ export const generationJobs = pgTable(
     assetId: varchar("asset_id", { length: 255 }).notNull(),
     assetName: varchar("asset_name", { length: 255 }).notNull(),
 
-    // Ownership
+    // Ownership (required - users must be authenticated to generate)
     userId: uuid("user_id")
       .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+      .references(() => users.id, {
+        onDelete: "cascade",
+      }),
 
     // Job configuration (stores the full PipelineConfig)
     config: jsonb("config").notNull(),

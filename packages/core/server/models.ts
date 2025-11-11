@@ -324,8 +324,12 @@ export const PipelineConfig = t.Object({
       useGPT4Enhancement: t.Optional(t.Boolean()),
     }),
   ),
-  // User context for ownership tracking
-  user: t.Optional(UserContext),
+  // User context for ownership tracking (required - authentication mandatory)
+  user: t.Object({
+    userId: t.String({ minLength: 1 }), // Required for generation
+    walletAddress: t.Optional(t.String()),
+    isAdmin: t.Optional(t.Boolean()),
+  }),
 });
 
 export const PipelineResponse = t.Object({
