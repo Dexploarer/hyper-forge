@@ -479,11 +479,11 @@ const app = new Elysia()
 
     return {
       securityHeaders: {
-        "Cross-Origin-Opener-Policy": set.headers["Cross-Origin-Opener-Policy"],
+        "Cross-Origin-Opener-Policy": set.headers["cross-origin-opener-policy"],
         "Cross-Origin-Embedder-Policy":
-          set.headers["Cross-Origin-Embedder-Policy"],
-        "X-Content-Type-Options": set.headers["X-Content-Type-Options"],
-        "X-Frame-Options": set.headers["X-Frame-Options"],
+          set.headers["cross-origin-embedder-policy"],
+        "X-Content-Type-Options": set.headers["x-content-type-options"],
+        "X-Frame-Options": set.headers["x-frame-options"],
       },
       environment: {
         NODE_ENV: process.env.NODE_ENV,
