@@ -99,7 +99,8 @@ describe("Material Routes", () => {
     it("should handle missing file gracefully", async () => {
       // Temporarily rename the file
       const tempPath = presetsPath + ".temp";
-      const fileExists = fs.existsSync(presetsPath);
+      const file = Bun.file(presetsPath);
+      const fileExists = await file.exists();
 
       if (fileExists) {
         await fs.promises.rename(presetsPath, tempPath);

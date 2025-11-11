@@ -221,113 +221,191 @@ const app = new Elysia()
 
   // Static file serving using native Bun.file() for reliability
   // Bun.file() works better than @elysiajs/static on Railway
-  .get("/gdd-assets/*", ({ params }) => {
+  .get("/gdd-assets/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
-    return Bun.file(filePath);
-  })
-  .head("/gdd-assets/*", ({ params }) => {
-    const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
-    if (!fs.existsSync(filePath)) {
-      return new Response(null, { status: 404 });
+    const file = Bun.file(filePath);
+    
+    if (!(await file.exists())) {
+      set.status = 404;
+      return new Response("File not found", { status: 404 });
     }
-    return new Response(null, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/octet-stream",
-      },
-    });
+    
+    return file;
   })
-  .get("/temp-images/*", ({ params }) => {
+  .head("/gdd-assets/*", async ({ params }) => {
+    try {
+      const relativePath = (params as any)["*"] || "";
+      const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/octet-stream",
+        },
+      });
+    } catch (error) {
+      console.error(`[HEAD /gdd-assets/*] Error:`, error);
+      return new Response(null, { status: 500 });
+    }
+  })
+  .get("/temp-images/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
-    return Bun.file(filePath);
-  })
-  .head("/temp-images/*", ({ params }) => {
-    const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
-    if (!fs.existsSync(filePath)) {
-      return new Response(null, { status: 404 });
+    const file = Bun.file(filePath);
+    
+    if (!(await file.exists())) {
+      set.status = 404;
+      return new Response("File not found", { status: 404 });
     }
-    return new Response(null, {
-      status: 200,
-      headers: {
-        "Content-Type": "image/png",
-      },
-    });
+    
+    return file;
   })
-  .get("/emotes/*", ({ params }) => {
+  .head("/temp-images/*", async ({ params }) => {
+    try {
+      const relativePath = (params as any)["*"] || "";
+      const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "Content-Type": "image/png",
+        },
+      });
+    } catch (error) {
+      console.error(`[HEAD /temp-images/*] Error:`, error);
+      return new Response(null, { status: 500 });
+    }
+  })
+  .get("/emotes/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/emotes", relativePath);
-    return Bun.file(filePath);
-  })
-  .head("/emotes/*", ({ params }) => {
-    const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ROOT_DIR, "public/emotes", relativePath);
-    if (!fs.existsSync(filePath)) {
-      return new Response(null, { status: 404 });
+    const file = Bun.file(filePath);
+    
+    if (!(await file.exists())) {
+      set.status = 404;
+      return new Response("File not found", { status: 404 });
     }
-    return new Response(null, {
-      status: 200,
-      headers: {
-        "Content-Type": "model/gltf-binary",
-      },
-    });
+    
+    return file;
   })
-  .get("/rigs/*", ({ params }) => {
+  .head("/emotes/*", async ({ params }) => {
+    try {
+      const relativePath = (params as any)["*"] || "";
+      const filePath = path.join(ROOT_DIR, "public/emotes", relativePath);
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "Content-Type": "model/gltf-binary",
+        },
+      });
+    } catch (error) {
+      console.error(`[HEAD /emotes/*] Error:`, error);
+      return new Response(null, { status: 500 });
+    }
+  })
+  .get("/rigs/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/rigs", relativePath);
-    return Bun.file(filePath);
-  })
-  .head("/rigs/*", ({ params }) => {
-    const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ROOT_DIR, "public/rigs", relativePath);
-    if (!fs.existsSync(filePath)) {
-      return new Response(null, { status: 404 });
+    const file = Bun.file(filePath);
+    
+    if (!(await file.exists())) {
+      set.status = 404;
+      return new Response("File not found", { status: 404 });
     }
-    return new Response(null, {
-      status: 200,
-      headers: {
-        "Content-Type": "model/gltf-binary",
-      },
-    });
+    
+    return file;
   })
-  .get("/images/*", ({ params }) => {
+  .head("/rigs/*", async ({ params }) => {
+    try {
+      const relativePath = (params as any)["*"] || "";
+      const filePath = path.join(ROOT_DIR, "public/rigs", relativePath);
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "Content-Type": "model/gltf-binary",
+        },
+      });
+    } catch (error) {
+      console.error(`[HEAD /rigs/*] Error:`, error);
+      return new Response(null, { status: 500 });
+    }
+  })
+  .get("/images/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/images", relativePath);
-    return Bun.file(filePath);
-  })
-  .head("/images/*", ({ params }) => {
-    const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ROOT_DIR, "public/images", relativePath);
-    if (!fs.existsSync(filePath)) {
-      return new Response(null, { status: 404 });
+    const file = Bun.file(filePath);
+    
+    if (!(await file.exists())) {
+      set.status = 404;
+      return new Response("File not found", { status: 404 });
     }
-    return new Response(null, {
-      status: 200,
-      headers: {
-        "Content-Type": "image/png",
-      },
-    });
+    
+    return file;
   })
-  .get("/prompts/*", ({ params }) => {
+  .head("/images/*", async ({ params }) => {
+    try {
+      const relativePath = (params as any)["*"] || "";
+      const filePath = path.join(ROOT_DIR, "public/images", relativePath);
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "Content-Type": "image/png",
+        },
+      });
+    } catch (error) {
+      console.error(`[HEAD /images/*] Error:`, error);
+      return new Response(null, { status: 500 });
+    }
+  })
+  .get("/prompts/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/prompts", relativePath);
-    return Bun.file(filePath);
-  })
-  .head("/prompts/*", ({ params }) => {
-    const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ROOT_DIR, "public/prompts", relativePath);
-    if (!fs.existsSync(filePath)) {
-      return new Response(null, { status: 404 });
+    const file = Bun.file(filePath);
+    
+    if (!(await file.exists())) {
+      set.status = 404;
+      return new Response("File not found", { status: 404 });
     }
-    return new Response(null, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    
+    return file;
+  })
+  .head("/prompts/*", async ({ params }) => {
+    try {
+      const relativePath = (params as any)["*"] || "";
+      const filePath = path.join(ROOT_DIR, "public/prompts", relativePath);
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        return new Response(null, { status: 404 });
+      }
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.error(`[HEAD /prompts/*] Error:`, error);
+      return new Response(null, { status: 500 });
+    }
   })
 
   // Image proxy to avoid CORS issues with external images
@@ -421,23 +499,35 @@ const app = new Elysia()
     let files: string[] = [];
     let bowBaseFiles: string[] = [];
 
+    // Helper to check if path exists (works for both files and directories)
+    const pathExists = async (p: string): Promise<boolean> => {
+      try {
+        await fs.promises.access(p);
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
     try {
       files = await fs.promises.readdir(assetsPath);
-      if (fs.existsSync(bowBasePath)) {
+      if (await pathExists(bowBasePath)) {
         bowBaseFiles = await fs.promises.readdir(bowBasePath);
       }
     } catch (e) {
       // ignore
     }
 
+    const modelFile = Bun.file(modelPath);
+
     return {
       cwd: process.cwd(),
       __dirname,
       ROOT_DIR,
       gddAssetsPath: assetsPath,
-      gddAssetsExists: fs.existsSync(assetsPath),
-      bowBaseExists: fs.existsSync(bowBasePath),
-      modelGlbExists: fs.existsSync(modelPath),
+      gddAssetsExists: await pathExists(assetsPath),
+      bowBaseExists: await pathExists(bowBasePath),
+      modelGlbExists: await modelFile.exists(),
       filesInGddAssets: files,
       filesInBowBase: bowBaseFiles,
     };
@@ -503,23 +593,27 @@ const app = new Elysia()
 
   // Serve built frontend assets (CSS, JS, images) - Bun-native
   // This must come BEFORE the SPA fallback to match first
-  .get("/assets/*", ({ params }) => {
+  .get("/assets/*", async ({ params, set }) => {
     const filePath = path.join(ROOT_DIR, "dist", "assets", params["*"]);
-    if (!fs.existsSync(filePath)) {
+    const file = Bun.file(filePath);
+    if (!(await file.exists())) {
+      set.status = 404;
       return new Response("Not Found", { status: 404 });
     }
-    return Bun.file(filePath);
+    return file;
   })
 
   // SPA fallback - serve index.html for all non-API routes
   // This must be LAST to allow API routes and static assets to match first
-  .get("/*", () => {
+  .get("/*", async ({ set }) => {
     try {
       const indexPath = path.join(ROOT_DIR, "dist", "index.html");
-      if (!fs.existsSync(indexPath)) {
+      const file = Bun.file(indexPath);
+      if (!(await file.exists())) {
         console.error(`❌ Frontend not found at: ${indexPath}`);
         console.error(`   Current working directory: ${process.cwd()}`);
         console.error(`   ROOT_DIR: ${ROOT_DIR}`);
+        set.status = 404;
         return new Response(
           "Frontend build not found. Please run 'bun run build'.",
           {
@@ -527,19 +621,21 @@ const app = new Elysia()
           },
         );
       }
-      return Bun.file(indexPath);
+      return file;
     } catch (error) {
       console.error("[GET /*] Error serving SPA:", error);
+      set.status = 500;
       return new Response("Internal Server Error", { status: 500 });
     }
   })
 
   // HEAD handler for SPA fallback - MUST be immediately after GET for proper routing
   // See: https://github.com/elysiajs/elysia/issues - Elysia v1.4.15 HEAD handling issue
-  .head("/*", () => {
+  .head("/*", async () => {
     try {
       const indexPath = path.join(ROOT_DIR, "dist", "index.html");
-      if (!fs.existsSync(indexPath)) {
+      const file = Bun.file(indexPath);
+      if (!(await file.exists())) {
         return new Response(null, { status: 404 });
       }
       // Return successful HEAD response with content-type

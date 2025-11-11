@@ -67,26 +67,32 @@ export const createAssetRoutes = (
 
         // HEAD request for model existence check
         .head("/:id/model", async ({ params: { id }, set }) => {
-          const modelPath = await assetService.getModelPath(id);
-          const modelFile = Bun.file(modelPath);
+          try {
+            const modelPath = await assetService.getModelPath(id);
+            const modelFile = Bun.file(modelPath);
 
-          if (!(await modelFile.exists())) {
-            set.status = 404;
-          } else {
-            set.status = 200;
-
-            // Set correct content-type header for HEAD requests too
-            const ext = modelPath.toLowerCase().split(".").pop();
-            if (ext === "glb") {
-              set.headers["Content-Type"] = "model/gltf-binary";
-            } else if (ext === "gltf") {
-              set.headers["Content-Type"] = "model/gltf+json";
+            if (!(await modelFile.exists())) {
+              set.status = 404;
             } else {
-              set.headers["Content-Type"] = "application/octet-stream";
-            }
-          }
+              set.status = 200;
 
-          return null;
+              // Set correct content-type header for HEAD requests too
+              const ext = modelPath.toLowerCase().split(".").pop();
+              if (ext === "glb") {
+                set.headers["Content-Type"] = "model/gltf-binary";
+              } else if (ext === "gltf") {
+                set.headers["Content-Type"] = "model/gltf+json";
+              } else {
+                set.headers["Content-Type"] = "application/octet-stream";
+              }
+            }
+
+            return null;
+          } catch (error) {
+            console.error(`[HEAD /:id/model] Error for asset ${id}:`, error);
+            set.status = 500;
+            return null;
+          }
         })
 
         // Serve any file from an asset directory
@@ -117,29 +123,43 @@ export const createAssetRoutes = (
 
         // HEAD request for file existence check (wildcard route)
         .head("/:id/*", async ({ params, set }) => {
-          const assetId = params.id;
-          const filePath = params["*"]; // Everything after the asset ID
+          try {
+            const assetId = params.id;
+            const filePath = params["*"]; // Everything after the asset ID
 
-          const fullPath = path.join(rootDir, "gdd-assets", assetId, filePath);
+            const fullPath = path.join(
+              rootDir,
+              "gdd-assets",
+              assetId,
+              filePath,
+            );
 
-          // Security check to prevent directory traversal
-          const normalizedPath = path.normalize(fullPath);
-          const assetDir = path.join(rootDir, "gdd-assets", assetId);
+            // Security check to prevent directory traversal
+            const normalizedPath = path.normalize(fullPath);
+            const assetDir = path.join(rootDir, "gdd-assets", assetId);
 
-          if (!normalizedPath.startsWith(assetDir)) {
-            set.status = 403;
+            if (!normalizedPath.startsWith(assetDir)) {
+              set.status = 403;
+              return null;
+            }
+
+            const file = Bun.file(fullPath);
+
+            if (!(await file.exists())) {
+              set.status = 404;
+            } else {
+              set.status = 200;
+            }
+
+            return null;
+          } catch (error) {
+            console.error(
+              `[HEAD /:id/*] Error for ${params.id}/${params["*"]}:`,
+              error,
+            );
+            set.status = 500;
             return null;
           }
-
-          const file = Bun.file(fullPath);
-
-          if (!(await file.exists())) {
-            set.status = 404;
-          } else {
-            set.status = 200;
-          }
-
-          return null;
         })
 
         // Delete asset endpoint

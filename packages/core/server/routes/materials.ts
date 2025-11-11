@@ -10,9 +10,16 @@ import * as Models from '../models'
 
 export const createMaterialRoutes = (rootDir: string) => {
   return new Elysia({ prefix: '/api', name: 'materials' })
-    .get('/material-presets', async () => {
+    .get('/material-presets', async ({ set }) => {
       const presetsPath = path.join(rootDir, 'public/prompts/material-presets.json')
-      const presets = JSON.parse(await fs.promises.readFile(presetsPath, 'utf-8'))
+      const file = Bun.file(presetsPath)
+      
+      if (!(await file.exists())) {
+        set.status = 404
+        return { error: 'Material presets file not found' }
+      }
+      
+      const presets = JSON.parse(await file.text())
       return presets
     }, {
       response: Models.MaterialPresetList,

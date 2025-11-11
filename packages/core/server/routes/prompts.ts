@@ -14,14 +14,19 @@ const PROMPTS_DIR = path.join(ROOT_DIR, 'public', 'prompts')
 
 export const promptRoutes = new Elysia({ prefix: '/api/prompts' })
   // Get game style prompts
-  .get('/game-styles', async () => {
+  .get('/game-styles', async ({ set }) => {
+    const file = Bun.file(path.join(PROMPTS_DIR, 'game-style-prompts.json'))
+    if (!(await file.exists())) {
+      set.status = 404
+      return { error: 'Game style prompts file not found' }
+    }
     try {
-      const file = Bun.file(path.join(PROMPTS_DIR, 'game-style-prompts.json'))
       const data = await file.json()
       return data
     } catch (error) {
       console.error('Error loading game style prompts:', error)
-      throw new Error('Failed to load game style prompts')
+      set.status = 500
+      return { error: 'Failed to load game style prompts' }
     }
   }, {
     detail: {
@@ -32,14 +37,19 @@ export const promptRoutes = new Elysia({ prefix: '/api/prompts' })
   })
 
   // Get asset type prompts
-  .get('/asset-types', async () => {
+  .get('/asset-types', async ({ set }) => {
+    const file = Bun.file(path.join(PROMPTS_DIR, 'asset-type-prompts.json'))
+    if (!(await file.exists())) {
+      set.status = 404
+      return { error: 'Asset type prompts file not found' }
+    }
     try {
-      const file = Bun.file(path.join(PROMPTS_DIR, 'asset-type-prompts.json'))
       const data = await file.json()
       return data
     } catch (error) {
       console.error('Error loading asset type prompts:', error)
-      throw new Error('Failed to load asset type prompts')
+      set.status = 500
+      return { error: 'Failed to load asset type prompts' }
     }
   }, {
     detail: {
@@ -50,14 +60,19 @@ export const promptRoutes = new Elysia({ prefix: '/api/prompts' })
   })
 
   // Get material prompts
-  .get('/materials', async () => {
+  .get('/materials', async ({ set }) => {
+    const file = Bun.file(path.join(PROMPTS_DIR, 'material-prompts.json'))
+    if (!(await file.exists())) {
+      set.status = 404
+      return { error: 'Material prompts file not found' }
+    }
     try {
-      const file = Bun.file(path.join(PROMPTS_DIR, 'material-prompts.json'))
       const data = await file.json()
       return data
     } catch (error) {
       console.error('Error loading material prompts:', error)
-      throw new Error('Failed to load material prompts')
+      set.status = 500
+      return { error: 'Failed to load material prompts' }
     }
   }, {
     detail: {
@@ -68,14 +83,19 @@ export const promptRoutes = new Elysia({ prefix: '/api/prompts' })
   })
 
   // Get generation prompts
-  .get('/generation', async () => {
+  .get('/generation', async ({ set }) => {
+    const file = Bun.file(path.join(PROMPTS_DIR, 'generation-prompts.json'))
+    if (!(await file.exists())) {
+      set.status = 404
+      return { error: 'Generation prompts file not found' }
+    }
     try {
-      const file = Bun.file(path.join(PROMPTS_DIR, 'generation-prompts.json'))
       const data = await file.json()
       return data
     } catch (error) {
       console.error('Error loading generation prompts:', error)
-      throw new Error('Failed to load generation prompts')
+      set.status = 500
+      return { error: 'Failed to load generation prompts' }
     }
   }, {
     detail: {
@@ -86,14 +106,19 @@ export const promptRoutes = new Elysia({ prefix: '/api/prompts' })
   })
 
   // Get GPT-4 enhancement prompts
-  .get('/gpt4-enhancement', async () => {
+  .get('/gpt4-enhancement', async ({ set }) => {
+    const file = Bun.file(path.join(PROMPTS_DIR, 'gpt4-enhancement-prompts.json'))
+    if (!(await file.exists())) {
+      set.status = 404
+      return { error: 'GPT-4 enhancement prompts file not found' }
+    }
     try {
-      const file = Bun.file(path.join(PROMPTS_DIR, 'gpt4-enhancement-prompts.json'))
       const data = await file.json()
       return data
     } catch (error) {
       console.error('Error loading GPT-4 enhancement prompts:', error)
-      throw new Error('Failed to load GPT-4 enhancement prompts')
+      set.status = 500
+      return { error: 'Failed to load GPT-4 enhancement prompts' }
     }
   }, {
     detail: {
@@ -104,14 +129,19 @@ export const promptRoutes = new Elysia({ prefix: '/api/prompts' })
   })
 
   // Get material presets
-  .get('/material-presets', async () => {
+  .get('/material-presets', async ({ set }) => {
+    const file = Bun.file(path.join(PROMPTS_DIR, 'material-presets.json'))
+    if (!(await file.exists())) {
+      set.status = 404
+      return { error: 'Material presets file not found' }
+    }
     try {
-      const file = Bun.file(path.join(PROMPTS_DIR, 'material-presets.json'))
       const data = await file.json()
       return data
     } catch (error) {
       console.error('Error loading material presets:', error)
-      throw new Error('Failed to load material presets')
+      set.status = 500
+      return { error: 'Failed to load material presets' }
     }
   }, {
     detail: {
@@ -122,14 +152,19 @@ export const promptRoutes = new Elysia({ prefix: '/api/prompts' })
   })
 
   // Get weapon detection prompts
-  .get('/weapon-detection', async () => {
+  .get('/weapon-detection', async ({ set }) => {
+    const file = Bun.file(path.join(PROMPTS_DIR, 'weapon-detection-prompts.json'))
+    if (!(await file.exists())) {
+      set.status = 404
+      return { error: 'Weapon detection prompts file not found' }
+    }
     try {
-      const file = Bun.file(path.join(PROMPTS_DIR, 'weapon-detection-prompts.json'))
       const data = await file.json()
       return data
     } catch (error) {
       console.error('Error loading weapon detection prompts:', error)
-      throw new Error('Failed to load weapon detection prompts')
+      set.status = 500
+      return { error: 'Failed to load weapon detection prompts' }
     }
   }, {
     detail: {
