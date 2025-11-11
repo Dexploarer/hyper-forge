@@ -502,6 +502,7 @@ const app = new Elysia()
   })
 
   // Serve built frontend assets (CSS, JS, images) - Bun-native
+  // This must come BEFORE the SPA fallback to match first
   .get("/assets/*", ({ params }) => {
     const filePath = path.join(ROOT_DIR, "dist", "assets", params["*"]);
     if (!fs.existsSync(filePath)) {
@@ -513,35 +514,45 @@ const app = new Elysia()
   // SPA fallback - serve index.html for all non-API routes
   // This must be LAST to allow API routes and static assets to match first
   .get("/*", () => {
-    const indexPath = path.join(ROOT_DIR, "dist", "index.html");
-    if (!fs.existsSync(indexPath)) {
-      console.error(`❌ Frontend not found at: ${indexPath}`);
-      console.error(`   Current working directory: ${process.cwd()}`);
-      console.error(`   ROOT_DIR: ${ROOT_DIR}`);
-      return new Response(
-        "Frontend build not found. Please run 'bun run build'.",
-        {
-          status: 500,
-        },
-      );
+    try {
+      const indexPath = path.join(ROOT_DIR, "dist", "index.html");
+      if (!fs.existsSync(indexPath)) {
+        console.error(`❌ Frontend not found at: ${indexPath}`);
+        console.error(`   Current working directory: ${process.cwd()}`);
+        console.error(`   ROOT_DIR: ${ROOT_DIR}`);
+        return new Response(
+          "Frontend build not found. Please run 'bun run build'.",
+          {
+            status: 404,
+          },
+        );
+      }
+      return Bun.file(indexPath);
+    } catch (error) {
+      console.error("[GET /*] Error serving SPA:", error);
+      return new Response("Internal Server Error", { status: 500 });
     }
-    return Bun.file(indexPath);
   })
 
-  // HEAD handler for SPA fallback to prevent Elysia HEAD bug
+  // HEAD handler for SPA fallback - MUST be immediately after GET for proper routing
   // See: https://github.com/elysiajs/elysia/issues - Elysia v1.4.15 HEAD handling issue
   .head("/*", () => {
-    const indexPath = path.join(ROOT_DIR, "dist", "index.html");
-    if (!fs.existsSync(indexPath)) {
-      return new Response(null, { status: 404 });
+    try {
+      const indexPath = path.join(ROOT_DIR, "dist", "index.html");
+      if (!fs.existsSync(indexPath)) {
+        return new Response(null, { status: 404 });
+      }
+      // Return successful HEAD response with content-type
+      return new Response(null, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html; charset=utf-8",
+        },
+      });
+    } catch (error) {
+      console.error("[HEAD /*] Error checking SPA:", error);
+      return new Response(null, { status: 500 });
     }
-    // Return successful HEAD response with content-type
-    return new Response(null, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-      },
-    });
   })
 
   // Start server
