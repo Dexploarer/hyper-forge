@@ -241,22 +241,18 @@ const app = new Elysia()
     return new Response(file);
   })
   .head("/gdd-assets/*", async ({ params, set }) => {
-    try {
-      const relativePath = (params as any)["*"] || "";
-      const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
-      const file = Bun.file(filePath);
-      if (!(await file.exists())) {
-        set.status = 404;
-      } else {
-        set.status = 200;
-        set.headers["Content-Type"] = "application/octet-stream";
-      }
-      return null;
-    } catch (error) {
-      console.error("[HEAD /gdd-assets/*] Error:", error);
-      set.status = 500;
-      return null;
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
+    const file = Bun.file(filePath);
+
+    if (!(await file.exists())) {
+      return new Response(null, { status: 404 });
     }
+
+    return new Response(null, {
+      status: 200,
+      headers: { "Content-Type": "application/octet-stream" },
+    });
   })
   .get("/temp-images/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
@@ -271,23 +267,19 @@ const app = new Elysia()
     // Wrap Bun.file() in Response for proper HEAD request handling
     return new Response(file);
   })
-  .head("/temp-images/*", async ({ params, set }) => {
-    try {
-      const relativePath = (params as any)["*"] || "";
-      const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
-      const file = Bun.file(filePath);
-      if (!(await file.exists())) {
-        set.status = 404;
-      } else {
-        set.status = 200;
-        set.headers["Content-Type"] = "image/png";
-      }
-      return null;
-    } catch (error) {
-      console.error("[HEAD /temp-images/*] Error:", error);
-      set.status = 500;
-      return null;
+  .head("/temp-images/*", async ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
+    const file = Bun.file(filePath);
+
+    if (!(await file.exists())) {
+      return new Response(null, { status: 404 });
     }
+
+    return new Response(null, {
+      status: 200,
+      headers: { "Content-Type": "image/png" },
+    });
   })
   .get("/emotes/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
@@ -302,23 +294,19 @@ const app = new Elysia()
     // Wrap Bun.file() in Response for proper HEAD request handling
     return new Response(file);
   })
-  .head("/emotes/*", async ({ params, set }) => {
-    try {
-      const relativePath = (params as any)["*"] || "";
-      const filePath = path.join(ROOT_DIR, "public/emotes", relativePath);
-      const file = Bun.file(filePath);
-      if (!(await file.exists())) {
-        set.status = 404;
-      } else {
-        set.status = 200;
-        set.headers["Content-Type"] = "model/gltf-binary";
-      }
-      return null;
-    } catch (error) {
-      console.error("[HEAD /emotes/*] Error:", error);
-      set.status = 500;
-      return null;
+  .head("/emotes/*", async ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/emotes", relativePath);
+    const file = Bun.file(filePath);
+
+    if (!(await file.exists())) {
+      return new Response(null, { status: 404 });
     }
+
+    return new Response(null, {
+      status: 200,
+      headers: { "Content-Type": "model/gltf-binary" },
+    });
   })
   .get("/rigs/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
@@ -333,23 +321,19 @@ const app = new Elysia()
     // Wrap Bun.file() in Response for proper HEAD request handling
     return new Response(file);
   })
-  .head("/rigs/*", async ({ params, set }) => {
-    try {
-      const relativePath = (params as any)["*"] || "";
-      const filePath = path.join(ROOT_DIR, "public/rigs", relativePath);
-      const file = Bun.file(filePath);
-      if (!(await file.exists())) {
-        set.status = 404;
-      } else {
-        set.status = 200;
-        set.headers["Content-Type"] = "model/gltf-binary";
-      }
-      return null;
-    } catch (error) {
-      console.error("[HEAD /rigs/*] Error:", error);
-      set.status = 500;
-      return null;
+  .head("/rigs/*", async ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/rigs", relativePath);
+    const file = Bun.file(filePath);
+
+    if (!(await file.exists())) {
+      return new Response(null, { status: 404 });
     }
+
+    return new Response(null, {
+      status: 200,
+      headers: { "Content-Type": "model/gltf-binary" },
+    });
   })
   .get("/images/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
@@ -364,23 +348,19 @@ const app = new Elysia()
     // Wrap Bun.file() in Response for proper HEAD request handling
     return new Response(file);
   })
-  .head("/images/*", async ({ params, set }) => {
-    try {
-      const relativePath = (params as any)["*"] || "";
-      const filePath = path.join(ROOT_DIR, "public/images", relativePath);
-      const file = Bun.file(filePath);
-      if (!(await file.exists())) {
-        set.status = 404;
-      } else {
-        set.status = 200;
-        set.headers["Content-Type"] = "image/png";
-      }
-      return null;
-    } catch (error) {
-      console.error("[HEAD /images/*] Error:", error);
-      set.status = 500;
-      return null;
+  .head("/images/*", async ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/images", relativePath);
+    const file = Bun.file(filePath);
+
+    if (!(await file.exists())) {
+      return new Response(null, { status: 404 });
     }
+
+    return new Response(null, {
+      status: 200,
+      headers: { "Content-Type": "image/png" },
+    });
   })
   .get("/prompts/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
@@ -395,23 +375,19 @@ const app = new Elysia()
     // Wrap Bun.file() in Response for proper HEAD request handling
     return new Response(file);
   })
-  .head("/prompts/*", async ({ params, set }) => {
-    try {
-      const relativePath = (params as any)["*"] || "";
-      const filePath = path.join(ROOT_DIR, "public/prompts", relativePath);
-      const file = Bun.file(filePath);
-      if (!(await file.exists())) {
-        set.status = 404;
-      } else {
-        set.status = 200;
-        set.headers["Content-Type"] = "application/json";
-      }
-      return null;
-    } catch (error) {
-      console.error("[HEAD /prompts/*] Error:", error);
-      set.status = 500;
-      return null;
+  .head("/prompts/*", async ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    const filePath = path.join(ROOT_DIR, "public/prompts", relativePath);
+    const file = Bun.file(filePath);
+
+    if (!(await file.exists())) {
+      return new Response(null, { status: 404 });
     }
+
+    return new Response(null, {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   })
 
   // Image proxy to avoid CORS issues with external images
@@ -641,22 +617,18 @@ const app = new Elysia()
     // Wrap Bun.file() in Response for proper HEAD request handling
     return new Response(file);
   })
-  .head("/assets/*", async ({ params, set }) => {
-    try {
-      const filePath = path.join(ROOT_DIR, "dist", "assets", params["*"]);
-      const file = Bun.file(filePath);
-      if (!(await file.exists())) {
-        set.status = 404;
-      } else {
-        set.status = 200;
-        set.headers["Content-Type"] = "application/octet-stream";
-      }
-      return null;
-    } catch (error) {
-      console.error("[HEAD /assets/*] Error:", error);
-      set.status = 500;
-      return null;
+  .head("/assets/*", async ({ params }) => {
+    const filePath = path.join(ROOT_DIR, "dist", "assets", params["*"]);
+    const file = Bun.file(filePath);
+
+    if (!(await file.exists())) {
+      return new Response(null, { status: 404 });
     }
+
+    return new Response(null, {
+      status: 200,
+      headers: { "Content-Type": "application/octet-stream" },
+    });
   })
 
   // SPA fallback - serve index.html for all non-API routes
@@ -685,22 +657,18 @@ const app = new Elysia()
       return new Response("Internal Server Error", { status: 500 });
     }
   })
-  .head("/*", async ({ set }) => {
-    try {
-      const indexPath = path.join(ROOT_DIR, "dist", "index.html");
-      const file = Bun.file(indexPath);
-      if (!(await file.exists())) {
-        set.status = 404;
-      } else {
-        set.status = 200;
-        set.headers["Content-Type"] = "text/html; charset=utf-8";
-      }
-      return null;
-    } catch (error) {
-      console.error("[HEAD /*] Error serving SPA:", error);
-      set.status = 500;
-      return null;
+  .head("/*", async () => {
+    const indexPath = path.join(ROOT_DIR, "dist", "index.html");
+    const file = Bun.file(indexPath);
+
+    if (!(await file.exists())) {
+      return new Response(null, { status: 404 });
     }
+
+    return new Response(null, {
+      status: 200,
+      headers: { "Content-Type": "text/html; charset=utf-8" },
+    });
   })
 
   // Start server

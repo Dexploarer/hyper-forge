@@ -110,6 +110,12 @@ export const AdminDashboardPage: React.FC = () => {
     try {
       setLoading(true);
       const accessToken = await getAccessToken();
+
+      if (!accessToken) {
+        setError("Authentication required. Please log in.");
+        return;
+      }
+
       const response = await fetch("/api/users", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -133,6 +139,13 @@ export const AdminDashboardPage: React.FC = () => {
     try {
       setRoleChangeLoading(true);
       const accessToken = await getAccessToken();
+
+      if (!accessToken) {
+        alert("Authentication required. Please log in.");
+        setRoleChangeUser(null);
+        return;
+      }
+
       const response = await fetch(
         `/api/admin/users/${roleChangeUser.user.id}/role`,
         {
