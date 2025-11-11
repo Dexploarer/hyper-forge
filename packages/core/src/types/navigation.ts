@@ -1,17 +1,36 @@
 export type NavigationView =
+  // Core pages
+  | "dashboard"
   | "assets"
-  | "generation"
-  | "audio"
-  | "content"
   | "contentLibrary"
+  // 3D Generation pages
+  | "generation/character"
+  | "generation/prop"
+  | "generation/environment"
+  | "generation/world"
+  // Content Generation pages
+  | "content/npc"
+  | "content/quest"
+  | "content/dialogue"
+  | "content/lore"
+  // Audio Generation pages
+  | "audio/voice"
+  | "audio/sfx"
+  | "audio/music"
+  // Tools
   | "playtester"
   | "equipment"
   | "handRigging"
-  | "armorFitting"
   | "retargetAnimate"
   | "worldConfig"
+  // System
   | "adminDashboard"
-  | "settings";
+  | "settings"
+  // Legacy/deprecated
+  | "generation"
+  | "audio"
+  | "content"
+  | "armorFitting";
 
 export interface NavigationState {
   currentView: NavigationView;

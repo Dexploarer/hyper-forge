@@ -1,3 +1,8 @@
+/**
+ * Asset Details Panel
+ * Sliding side panel with asset information, metadata, and actions
+ */
+
 import {
   X,
   Package,
@@ -17,16 +22,23 @@ import {
   Share2,
   Code,
   FileText,
+  Trash2,
+  Edit,
+  Image as ImageIcon,
 } from "lucide-react";
 import React, { useState } from "react";
 
-import { getTierColor } from "../../constants";
-import { Asset } from "../../types";
+import { getTierColor } from "@/constants";
+import { Asset } from "@/types";
+import { AssetService } from "@/services/api/AssetService";
 
 interface AssetDetailsPanelProps {
   asset: Asset;
   isOpen: boolean;
   onClose: () => void;
+  onCreateVariants?: (asset: Asset) => void;
+  onDelete?: (asset: Asset) => void;
+  onEdit?: (asset: Asset) => void;
   modelInfo?: {
     vertices: number;
     faces: number;
@@ -39,12 +51,19 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
   asset,
   isOpen,
   onClose,
+  onCreateVariants,
+  onDelete,
+  onEdit,
   modelInfo,
 }) => {
   const [copiedId, setCopiedId] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "metadata" | "actions">(
     "info",
   );
+  const [imageError, setImageError] = useState(false);
+
+  const previewUrl = AssetService.getPreviewImageUrl(asset);
+  const hasPreview = previewUrl && !imageError;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -59,362 +78,459 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
     return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
   };
 
+  const handleDownload = async () => {
+    try {
+      const modelUrl = AssetService.getModelUrl(asset.id);
+      const response = await fetch(modelUrl);
+      if (!response.ok) throw new Error("Download failed");
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${asset.name}.glb`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download model:", error);
+    }
+  };
+
   return (
-    <div
-      className={`absolute top-0 right-0 h-full w-80 solid-panel shadow-2xl transform transition-all duration-300 ease-out z-20 ${
-        isOpen ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
-      }`}
-    >
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <div className="relative p-5 pb-4 border-b border-border-primary bg-gradient-to-r from-bg-secondary to-bg-tertiary">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-bg-hover transition-colors"
-            aria-label="Close details panel"
-          >
-            <X size={18} className="text-text-secondary" />
-          </button>
+    <>
+      {/* Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 animate-fade-in"
+          onClick={onClose}
+        />
+      )}
 
-          {/* Asset info */}
-          <div className="pr-8">
-            <div className="flex items-center gap-2 mb-2">
-              <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                  asset.hasModel
-                    ? "bg-primary bg-opacity-20 text-primary"
-                    : "bg-bg-primary text-text-secondary"
-                }`}
-              >
-                <Package size={20} />
+      {/* Panel */}
+      <div
+        className={`fixed top-0 right-0 h-full w-96 solid-panel shadow-2xl transform transition-all duration-300 ease-out z-40 ${
+          isOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        <div className="h-full flex flex-col">
+          {/* Preview Image Header */}
+          <div className="relative h-56 bg-bg-tertiary border-b border-border-primary">
+            {hasPreview ? (
+              <img
+                src={previewUrl}
+                alt={asset.name}
+                className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-bg-tertiary to-bg-secondary">
+                <Package className="w-16 h-16 text-text-tertiary opacity-30" />
               </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-text-primary leading-tight">
-                  {asset.name}
-                </h2>
-                <p className="text-xs text-text-secondary capitalize">
-                  {asset.type}
-                </p>
-              </div>
-            </div>
+            )}
 
-            {/* Tags */}
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {asset.metadata.tier && (
-                <div
-                  className="px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1"
-                  style={{
-                    backgroundColor: `${getTierColor(asset.metadata.tier)}20`,
-                    color: getTierColor(asset.metadata.tier),
-                    border: `1px solid ${getTierColor(asset.metadata.tier)}40`,
-                  }}
-                >
-                  <Layers size={10} />
-                  {asset.metadata.tier}
-                </div>
-              )}
-              {asset.metadata.isPlaceholder && (
-                <div className="px-2 py-1 bg-warning bg-opacity-20 text-warning rounded-full text-xs font-medium border border-warning border-opacity-40 flex items-center gap-1">
-                  <AlertCircle size={10} />
-                  Placeholder
-                </div>
-              )}
-              {asset.hasModel && (
-                <div className="px-2 py-1 bg-success bg-opacity-20 text-success rounded-full text-xs font-medium border border-success border-opacity-40 flex items-center gap-1">
-                  <Sparkles size={10} />
-                  3D Model
-                </div>
-              )}
+            {/* Overlay gradient */}
+            <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/50 to-transparent" />
+
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 rounded-lg bg-white/90 backdrop-blur-sm hover:bg-white transition-all shadow-sm z-10"
+              aria-label="Close details panel"
+            >
+              <X size={18} className="text-gray-900" />
+            </button>
+
+            {/* Asset info overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-5">
+              <h2 className="text-xl font-bold text-white mb-2 line-clamp-2">
+                {asset.name}
+              </h2>
+              <div className="flex flex-wrap gap-1.5">
+                {asset.hasModel && (
+                  <div className="px-2 py-1 bg-success/90 backdrop-blur-sm text-white rounded-md text-xs font-medium flex items-center gap-1">
+                    <Sparkles size={12} />
+                    <span>3D Model</span>
+                  </div>
+                )}
+                {asset.metadata?.isBaseModel && (
+                  <div className="px-2 py-1 bg-primary/90 backdrop-blur-sm text-white rounded-md text-xs font-medium">
+                    BASE
+                  </div>
+                )}
+                {asset.metadata?.isPlaceholder && (
+                  <div className="px-2 py-1 bg-warning/90 backdrop-blur-sm text-white rounded-md text-xs font-medium flex items-center gap-1">
+                    <AlertCircle size={12} />
+                    <span>Placeholder</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-border-primary">
-          <button
-            onClick={() => setActiveTab("info")}
-            className={`flex-1 px-4 py-2.5 text-xs font-medium transition-colors relative ${
-              activeTab === "info"
-                ? "text-primary"
-                : "text-text-tertiary hover:text-text-secondary"
-            }`}
-          >
-            Information
+          {/* Tabs */}
+          <div className="flex border-b border-border-primary bg-bg-secondary">
+            <button
+              onClick={() => setActiveTab("info")}
+              className={`flex-1 px-4 py-3 text-xs font-medium transition-colors relative ${
+                activeTab === "info"
+                  ? "text-primary bg-bg-primary"
+                  : "text-text-tertiary hover:text-text-secondary hover:bg-bg-hover"
+              }`}
+            >
+              Information
+              {activeTab === "info" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("metadata")}
+              className={`flex-1 px-4 py-3 text-xs font-medium transition-colors relative ${
+                activeTab === "metadata"
+                  ? "text-primary bg-bg-primary"
+                  : "text-text-tertiary hover:text-text-secondary hover:bg-bg-hover"
+              }`}
+            >
+              Metadata
+              {activeTab === "metadata" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("actions")}
+              className={`flex-1 px-4 py-3 text-xs font-medium transition-colors relative ${
+                activeTab === "actions"
+                  ? "text-primary bg-bg-primary"
+                  : "text-text-tertiary hover:text-text-secondary hover:bg-bg-hover"
+              }`}
+            >
+              Actions
+              {activeTab === "actions" && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+              )}
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {/* Information Tab */}
             {activeTab === "info" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("metadata")}
-            className={`flex-1 px-4 py-2.5 text-xs font-medium transition-colors relative ${
-              activeTab === "metadata"
-                ? "text-primary"
-                : "text-text-tertiary hover:text-text-secondary"
-            }`}
-          >
-            Metadata
-            {activeTab === "metadata" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab("actions")}
-            className={`flex-1 px-4 py-2.5 text-xs font-medium transition-colors relative ${
-              activeTab === "actions"
-                ? "text-primary"
-                : "text-text-tertiary hover:text-text-secondary"
-            }`}
-          >
-            Actions
-            {activeTab === "actions" && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-            )}
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
-          {/* Information Tab */}
-          {activeTab === "info" && (
-            <div className="p-5 space-y-4">
-              {/* Basic Info */}
-              <div className="space-y-3">
-                <div className="flex items-start gap-3 group">
-                  <Hash className="text-text-muted mt-0.5" size={14} />
-                  <div className="flex-1">
-                    <p className="text-xs text-text-secondary uppercase tracking-wider">
-                      Asset ID
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs text-text-secondary font-mono">
-                        {asset.id}
+              <div className="p-5 space-y-4">
+                {/* Basic Info */}
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 group">
+                    <Hash className="text-text-muted mt-0.5" size={14} />
+                    <div className="flex-1">
+                      <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">
+                        Asset ID
                       </p>
-                      <button
-                        onClick={() => copyToClipboard(asset.id)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        {copiedId ? (
-                          <Check size={12} className="text-success" />
-                        ) : (
-                          <Copy
-                            size={12}
-                            className="text-text-muted hover:text-text-primary"
-                          />
-                        )}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-text-secondary font-mono">
+                          {asset.id}
+                        </p>
+                        <button
+                          onClick={() => copyToClipboard(asset.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          {copiedId ? (
+                            <Check size={12} className="text-success" />
+                          ) : (
+                            <Copy
+                              size={12}
+                              className="text-text-muted hover:text-text-primary"
+                            />
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex items-start gap-3">
-                  <Package className="text-text-muted mt-0.5" size={14} />
-                  <div className="flex-1">
-                    <p className="text-xs text-text-secondary uppercase tracking-wider">
-                      Type
-                    </p>
-                    <p className="text-xs text-text-secondary capitalize">
-                      {asset.type}
-                    </p>
-                  </div>
-                </div>
-
-                {asset.metadata.subtype && (
                   <div className="flex items-start gap-3">
-                    <Tag className="text-text-muted mt-0.5" size={14} />
+                    <Package className="text-text-muted mt-0.5" size={14} />
                     <div className="flex-1">
-                      <p className="text-xs text-text-secondary uppercase tracking-wider">
-                        Subtype
+                      <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">
+                        Type
                       </p>
-                      <p className="text-xs text-text-secondary capitalize">
-                        {asset.metadata.subtype}
+                      <p className="text-xs text-text-primary capitalize font-medium">
+                        {asset.type}
                       </p>
+                    </div>
+                  </div>
+
+                  {asset.metadata?.subtype && (
+                    <div className="flex items-start gap-3">
+                      <Tag className="text-text-muted mt-0.5" size={14} />
+                      <div className="flex-1">
+                        <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">
+                          Subtype
+                        </p>
+                        <p className="text-xs text-text-primary capitalize font-medium">
+                          {asset.metadata.subtype}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {asset.metadata?.tier && (
+                    <div className="flex items-start gap-3">
+                      <Layers className="text-text-muted mt-0.5" size={14} />
+                      <div className="flex-1">
+                        <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">
+                          Tier
+                        </p>
+                        <div
+                          className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium"
+                          style={{
+                            backgroundColor: `${getTierColor(asset.metadata.tier)}20`,
+                            color: getTierColor(asset.metadata.tier),
+                          }}
+                        >
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{
+                              backgroundColor: getTierColor(
+                                asset.metadata.tier,
+                              ),
+                            }}
+                          />
+                          {asset.metadata.tier}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {asset.generatedAt && (
+                    <div className="flex items-start gap-3">
+                      <Calendar className="text-text-muted mt-0.5" size={14} />
+                      <div className="flex-1">
+                        <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">
+                          Created
+                        </p>
+                        <p className="text-xs text-text-primary font-medium">
+                          {new Date(asset.generatedAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            },
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Model Info */}
+                {asset.hasModel && (
+                  <div className="pt-4 border-t border-border-primary">
+                    <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+                      <Box size={14} className="text-primary" />
+                      3D Model Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 bg-bg-secondary rounded-lg border border-border-primary">
+                        <p className="text-xs text-text-tertiary mb-1">
+                          Polygons
+                        </p>
+                        <p className="text-sm text-text-primary font-semibold">
+                          {modelInfo?.faces
+                            ? modelInfo.faces.toLocaleString()
+                            : "..."}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-bg-secondary rounded-lg border border-border-primary">
+                        <p className="text-xs text-text-tertiary mb-1">
+                          Vertices
+                        </p>
+                        <p className="text-sm text-text-primary font-semibold">
+                          {modelInfo?.vertices
+                            ? modelInfo.vertices.toLocaleString()
+                            : "..."}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-bg-secondary rounded-lg border border-border-primary">
+                        <p className="text-xs text-text-tertiary mb-1">
+                          File Size
+                        </p>
+                        <p className="text-sm text-text-primary font-semibold">
+                          {modelInfo?.fileSize
+                            ? formatFileSize(modelInfo.fileSize)
+                            : "..."}
+                        </p>
+                      </div>
+                      <div className="p-3 bg-bg-secondary rounded-lg border border-border-primary">
+                        <p className="text-xs text-text-tertiary mb-1">
+                          Format
+                        </p>
+                        <p className="text-sm text-text-primary font-semibold uppercase">
+                          GLB
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
 
-                {asset.metadata.generatedAt && (
-                  <div className="flex items-start gap-3">
-                    <Calendar className="text-text-muted mt-0.5" size={14} />
-                    <div className="flex-1">
-                      <p className="text-xs text-text-secondary uppercase tracking-wider">
-                        Created
-                      </p>
-                      <p className="text-xs text-text-secondary">
-                        {new Date(
-                          asset.metadata.generatedAt,
-                        ).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </p>
-                    </div>
+                {/* Description */}
+                {asset.description && (
+                  <div className="pt-4 border-t border-border-primary">
+                    <h3 className="text-sm font-semibold text-text-primary mb-2 flex items-center gap-2">
+                      <FileText size={14} className="text-primary" />
+                      Description
+                    </h3>
+                    <p className="text-xs text-text-secondary leading-relaxed">
+                      {asset.description}
+                    </p>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Model Info */}
-              {asset.hasModel && (
-                <div className="pt-3 border-t border-border-primary">
-                  <h3 className="text-xs font-semibold text-text-primary mb-3 flex items-center gap-2">
-                    <Box size={14} className="text-primary" />
-                    Model Information
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <p className="text-text-secondary text-xs">Polygons</p>
-                      <p className="text-text-secondary font-medium">
-                        {modelInfo?.faces
-                          ? modelInfo.faces.toLocaleString()
-                          : "Loading..."}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-text-secondary text-xs">File Size</p>
-                      <p className="text-text-secondary font-medium">
-                        {modelInfo?.fileSize
-                          ? formatFileSize(modelInfo.fileSize)
-                          : "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-text-secondary text-xs">Format</p>
-                      <p className="text-text-secondary font-medium uppercase">
-                        {asset.metadata.format || "GLB"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-text-secondary text-xs">Vertices</p>
-                      <p className="text-text-secondary font-medium">
-                        {modelInfo?.vertices
-                          ? modelInfo.vertices.toLocaleString()
-                          : "Loading..."}
-                      </p>
-                    </div>
+            {/* Metadata Tab */}
+            {activeTab === "metadata" && (
+              <div className="p-5">
+                {Object.keys(asset.metadata).length > 0 ? (
+                  <div className="space-y-2">
+                    {Object.entries(asset.metadata)
+                      .filter(
+                        ([key]) =>
+                          ![
+                            "tier",
+                            "subtype",
+                            "isPlaceholder",
+                            "isFavorite",
+                          ].includes(key),
+                      )
+                      .map(([key, value]) => (
+                        <div
+                          key={key}
+                          className="py-2.5 border-b border-border-primary last:border-0"
+                        >
+                          <p className="text-xs text-text-tertiary uppercase tracking-wider mb-1">
+                            {key.replace(/([A-Z])/g, " $1").trim()}
+                          </p>
+                          <p className="text-xs text-text-primary font-medium">
+                            {typeof value === "boolean"
+                              ? value
+                                ? "Yes"
+                                : "No"
+                              : typeof value === "object"
+                                ? JSON.stringify(value, null, 2)
+                                : String(value)}
+                          </p>
+                        </div>
+                      ))}
                   </div>
-                </div>
-              )}
-
-              {/* Notes Section */}
-              {asset.metadata.notes && (
-                <div className="pt-3 border-t border-border-primary">
-                  <h3 className="text-xs font-semibold text-text-primary mb-3 flex items-center gap-2">
-                    <FileText size={14} className="text-primary" />
-                    Notes
-                  </h3>
-                  <div className="bg-bg-secondary bg-opacity-50 rounded-lg p-3 border border-border-primary">
-                    <p className="text-xs text-text-secondary whitespace-pre-wrap leading-relaxed">
-                      {asset.metadata.notes}
+                ) : (
+                  <div className="text-center py-12">
+                    <FileCode
+                      size={32}
+                      className="text-text-muted mx-auto mb-3 opacity-50"
+                    />
+                    <p className="text-sm text-text-tertiary">
+                      No additional metadata
                     </p>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
 
-          {/* Metadata Tab */}
-          {activeTab === "metadata" && (
-            <div className="p-5">
-              {Object.keys(asset.metadata).length > 0 ? (
-                <div className="space-y-2">
-                  {Object.entries(asset.metadata)
-                    .filter(
-                      ([key]) =>
-                        ![
-                          "tier",
-                          "subtype",
-                          "isPlaceholder",
-                          "generatedAt",
-                          "polygon_count",
-                          "file_size",
-                          "format",
-                          "lod_count",
-                        ].includes(key),
-                    )
-                    .map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="py-2 border-b border-border-primary last:border-0"
-                      >
-                        <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">
-                          {key.replace(/([A-Z])/g, " $1").trim()}
-                        </p>
-                        <p className="text-xs text-text-secondary font-medium">
-                          {typeof value === "boolean"
-                            ? value
-                              ? "Yes"
-                              : "No"
-                            : String(value)}
-                        </p>
-                      </div>
-                    ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FileCode
-                    size={32}
-                    className="text-text-muted mx-auto mb-2 opacity-50"
+            {/* Actions Tab */}
+            {activeTab === "actions" && (
+              <div className="p-5 space-y-2">
+                {onCreateVariants && (
+                  <button
+                    onClick={() => onCreateVariants(asset)}
+                    className="w-full px-4 py-3 bg-primary bg-opacity-10 hover:bg-opacity-20 text-primary rounded-lg transition-all flex items-center justify-between group text-sm font-medium border border-primary border-opacity-20"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Palette size={16} />
+                      <span>Create Variants</span>
+                    </div>
+                    <ChevronRight
+                      size={16}
+                      className="group-hover:translate-x-1 transition-transform"
+                    />
+                  </button>
+                )}
+
+                <button
+                  onClick={handleDownload}
+                  className="w-full px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg transition-all flex items-center justify-between group text-sm font-medium border border-border-primary"
+                >
+                  <div className="flex items-center gap-2">
+                    <Download size={16} />
+                    <span>Download Model</span>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    className="group-hover:translate-x-1 transition-transform"
                   />
-                  <p className="text-xs text-text-tertiary">
-                    No additional metadata
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+                </button>
 
-          {/* Actions Tab */}
-          {activeTab === "actions" && (
-            <div className="p-5 space-y-3">
-              <button className="w-full px-3 py-2 bg-primary bg-opacity-10 hover:bg-opacity-20 text-primary rounded-lg transition-colors flex items-center justify-between group text-xs font-medium">
-                <div className="flex items-center gap-2">
-                  <Palette size={14} />
-                  <span>Create Variants</span>
-                </div>
-                <ChevronRight
-                  size={14}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              </button>
+                <button className="w-full px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg transition-all flex items-center justify-between group text-sm font-medium border border-border-primary">
+                  <div className="flex items-center gap-2">
+                    <Code size={16} />
+                    <span>View in Editor</span>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </button>
 
-              <button className="w-full px-3 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg transition-colors flex items-center justify-between group text-xs font-medium border border-border-primary">
-                <div className="flex items-center gap-2">
-                  <Download size={14} />
-                  <span>Download Model</span>
-                </div>
-                <ChevronRight
-                  size={14}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              </button>
+                <button className="w-full px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg transition-all flex items-center justify-between group text-sm font-medium border border-border-primary">
+                  <div className="flex items-center gap-2">
+                    <Share2 size={16} />
+                    <span>Share Asset</span>
+                  </div>
+                  <ChevronRight
+                    size={16}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </button>
 
-              <button className="w-full px-3 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg transition-colors flex items-center justify-between group text-xs font-medium border border-border-primary">
-                <div className="flex items-center gap-2">
-                  <Code size={14} />
-                  <span>View in Editor</span>
-                </div>
-                <ChevronRight
-                  size={14}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              </button>
+                {onEdit && (
+                  <button
+                    onClick={() => onEdit(asset)}
+                    className="w-full px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg transition-all flex items-center justify-between group text-sm font-medium border border-border-primary"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Edit size={16} />
+                      <span>Edit Metadata</span>
+                    </div>
+                    <ChevronRight
+                      size={16}
+                      className="group-hover:translate-x-1 transition-transform"
+                    />
+                  </button>
+                )}
 
-              <button className="w-full px-3 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg transition-colors flex items-center justify-between group text-xs font-medium border border-border-primary">
-                <div className="flex items-center gap-2">
-                  <Share2 size={14} />
-                  <span>Share Asset</span>
-                </div>
-                <ChevronRight
-                  size={14}
-                  className="group-hover:translate-x-1 transition-transform"
-                />
-              </button>
-            </div>
-          )}
+                {onDelete && (
+                  <>
+                    <div className="border-t border-border-primary my-4" />
+                    <button
+                      onClick={() => onDelete(asset)}
+                      className="w-full px-4 py-3 bg-error bg-opacity-10 hover:bg-opacity-20 text-error rounded-lg transition-all flex items-center justify-between group text-sm font-medium border border-error border-opacity-20"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Trash2 size={16} />
+                        <span>Delete Asset</span>
+                      </div>
+                      <ChevronRight
+                        size={16}
+                        className="group-hover:translate-x-1 transition-transform"
+                      />
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

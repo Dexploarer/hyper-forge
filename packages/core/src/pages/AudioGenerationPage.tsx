@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { ChevronLeft, List } from 'lucide-react'
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, List } from "lucide-react";
 
 import {
   AudioTypeSelector,
@@ -8,79 +8,105 @@ import {
   SFXGenerationCard,
   MusicGenerationCard,
   GeneratedAudioList,
-  AudioPreviewCard
-} from '@/components/audio'
-import { VoiceServiceStatus } from '@/components/voice'
-import { Button, Drawer } from '@/components/common'
-import type { AudioType, AudioView, GeneratedAudio } from '@/types/audio'
+  AudioPreviewCard,
+} from "@/components/audio";
+import { VoiceServiceStatus } from "@/components/voice";
+import { Button, Drawer } from "@/components/common";
+import type { AudioType, AudioView, GeneratedAudio } from "@/types/audio";
 
 interface AudioGenerationPageProps {
-  initialPrompt?: string
+  initialPrompt?: string;
+  initialType?: AudioType; // Optional initial audio type to skip selector
 }
 
-export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initialPrompt }) => {
+export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
+  initialPrompt,
+  initialType,
+}) => {
   // Audio type selection
-  const [audioType, setAudioType] = useState<AudioType | null>(null)
+  const [audioType, setAudioType] = useState<AudioType | null>(
+    initialType || null,
+  );
 
   // View management
-  const [activeView, setActiveView] = useState<AudioView>('config')
+  const [activeView, setActiveView] = useState<AudioView>("config");
 
   // Generated audios
-  const [generatedAudios, setGeneratedAudios] = useState<GeneratedAudio[]>([])
-  const [selectedAudio, setSelectedAudio] = useState<GeneratedAudio | null>(null)
-  const [showAudioDrawer, setShowAudioDrawer] = useState(false)
+  const [generatedAudios, setGeneratedAudios] = useState<GeneratedAudio[]>([]);
+  const [selectedAudio, setSelectedAudio] = useState<GeneratedAudio | null>(
+    null,
+  );
+  const [showAudioDrawer, setShowAudioDrawer] = useState(false);
 
-  // Auto-detect audio type from prompt and set it
+  // Auto-detect audio type from prompt and set it (only if no initialType provided)
   useEffect(() => {
-    if (initialPrompt && !audioType) {
-      const lowerPrompt = initialPrompt.toLowerCase()
+    if (initialPrompt && !audioType && !initialType) {
+      const lowerPrompt = initialPrompt.toLowerCase();
       // Detect audio type from keywords
-      if (lowerPrompt.includes('voice') || lowerPrompt.includes('speech') || lowerPrompt.includes('tts') || lowerPrompt.includes('narrat')) {
-        setAudioType('voice')
-      } else if (lowerPrompt.includes('sfx') || lowerPrompt.includes('sound effect') || lowerPrompt.includes('effect')) {
-        setAudioType('sfx')
-      } else if (lowerPrompt.includes('music') || lowerPrompt.includes('song') || lowerPrompt.includes('track') || lowerPrompt.includes('soundtrack')) {
-        setAudioType('music')
+      if (
+        lowerPrompt.includes("voice") ||
+        lowerPrompt.includes("speech") ||
+        lowerPrompt.includes("tts") ||
+        lowerPrompt.includes("narrat")
+      ) {
+        setAudioType("voice");
+      } else if (
+        lowerPrompt.includes("sfx") ||
+        lowerPrompt.includes("sound effect") ||
+        lowerPrompt.includes("effect")
+      ) {
+        setAudioType("sfx");
+      } else if (
+        lowerPrompt.includes("music") ||
+        lowerPrompt.includes("song") ||
+        lowerPrompt.includes("track") ||
+        lowerPrompt.includes("soundtrack")
+      ) {
+        setAudioType("music");
       } else {
         // Default to music if unclear
-        setAudioType('music')
+        setAudioType("music");
       }
     }
-  }, [initialPrompt, audioType])
+  }, [initialPrompt, audioType, initialType]);
 
   // Handle audio generation completion
   const handleAudioGenerated = (audioData: string | Blob, metadata: any) => {
-    const id = `audio-${Date.now()}`
-    let audioUrl: string
+    const id = `audio-${Date.now()}`;
+    let audioUrl: string;
 
     // Convert to object URL if it's a Blob
     if (audioData instanceof Blob) {
-      audioUrl = URL.createObjectURL(audioData)
+      audioUrl = URL.createObjectURL(audioData);
     } else {
       // It's base64 audio data
-      audioUrl = `data:audio/mpeg;base64,${audioData}`
+      audioUrl = `data:audio/mpeg;base64,${audioData}`;
     }
 
     const newAudio: GeneratedAudio = {
       id,
-      type: metadata.type || audioType || 'voice',
-      name: metadata.prompt || metadata.text || metadata.description || `${metadata.type || audioType} ${generatedAudios.length + 1}`,
+      type: metadata.type || audioType || "voice",
+      name:
+        metadata.prompt ||
+        metadata.text ||
+        metadata.description ||
+        `${metadata.type || audioType} ${generatedAudios.length + 1}`,
       audioUrl,
       audioData: audioData instanceof Blob ? undefined : audioData,
       metadata,
-      createdAt: new Date().toISOString()
-    }
+      createdAt: new Date().toISOString(),
+    };
 
-    setGeneratedAudios(prev => [newAudio, ...prev])
-    setSelectedAudio(newAudio)
-    setActiveView('results')
-  }
+    setGeneratedAudios((prev) => [newAudio, ...prev]);
+    setSelectedAudio(newAudio);
+    setActiveView("results");
+  };
 
   // Reset to type selection
   const handleBack = () => {
-    setAudioType(null)
-    setActiveView('config')
-  }
+    setAudioType(null);
+    setActiveView("config");
+  };
 
   // Show type selector if no type selected
   if (!audioType) {
@@ -88,7 +114,7 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initia
       <div className="h-full overflow-y-auto">
         <AudioTypeSelector onSelectType={setAudioType} />
       </div>
-    )
+    );
   }
 
   return (
@@ -104,7 +130,7 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initia
         </div>
 
         {/* Config View */}
-        {activeView === 'config' && (
+        {activeView === "config" && (
           <div className="animate-fade-in">
             <div className="flex items-center justify-between mb-6">
               {/* Back Button */}
@@ -135,35 +161,51 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initia
             {/* Main Generation Card */}
             <div className="max-w-4xl space-y-4">
               {/* Voice Service Status - Only show for voice generation */}
-              {audioType === 'voice' && (
-                <VoiceServiceStatus autoRefresh={true} refreshInterval={60000} />
+              {audioType === "voice" && (
+                <VoiceServiceStatus
+                  autoRefresh={true}
+                  refreshInterval={60000}
+                />
               )}
 
-              {audioType === 'voice' && (
-                <VoiceGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
+              {audioType === "voice" && (
+                <VoiceGenerationCard
+                  onGenerated={handleAudioGenerated}
+                  initialPrompt={initialPrompt}
+                />
               )}
-              {audioType === 'sfx' && (
-                <SFXGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
+              {audioType === "sfx" && (
+                <SFXGenerationCard
+                  onGenerated={handleAudioGenerated}
+                  initialPrompt={initialPrompt}
+                />
               )}
-              {audioType === 'music' && (
-                <MusicGenerationCard onGenerated={handleAudioGenerated} initialPrompt={initialPrompt} />
+              {audioType === "music" && (
+                <MusicGenerationCard
+                  onGenerated={handleAudioGenerated}
+                  initialPrompt={initialPrompt}
+                />
               )}
             </div>
           </div>
         )}
 
         {/* Progress View */}
-        {activeView === 'progress' && (
+        {activeView === "progress" && (
           <div className="animate-fade-in text-center py-12">
-            <p className="text-text-secondary">Progress tracking coming soon...</p>
+            <p className="text-text-secondary">
+              Progress tracking coming soon...
+            </p>
           </div>
         )}
 
         {/* Results View */}
-        {activeView === 'results' && (
+        {activeView === "results" && (
           <div className="animate-fade-in">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-text-primary">Generated Audio</h2>
+              <h2 className="text-xl font-semibold text-text-primary">
+                Generated Audio
+              </h2>
               <Button
                 variant="secondary"
                 size="sm"
@@ -199,21 +241,25 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initia
       >
         <div className="p-6">
           <GeneratedAudioList
-            audios={activeView === 'results' ? generatedAudios : generatedAudios.slice(0, 5)}
+            audios={
+              activeView === "results"
+                ? generatedAudios
+                : generatedAudios.slice(0, 5)
+            }
             selectedAudio={selectedAudio}
             onAudioSelect={(audio) => {
-              setSelectedAudio(audio)
-              setActiveView('results')
-              setShowAudioDrawer(false)
+              setSelectedAudio(audio);
+              setActiveView("results");
+              setShowAudioDrawer(false);
             }}
           />
-          {activeView === 'config' && generatedAudios.length > 0 && (
+          {activeView === "config" && generatedAudios.length > 0 && (
             <div className="mt-4">
               <Button
                 variant="primary"
                 onClick={() => {
-                  setActiveView('results')
-                  setShowAudioDrawer(false)
+                  setActiveView("results");
+                  setShowAudioDrawer(false);
                 }}
                 className="w-full"
               >
@@ -224,7 +270,7 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({ initia
         </div>
       </Drawer>
     </div>
-  )
-}
+  );
+};
 
-export default AudioGenerationPage
+export default AudioGenerationPage;

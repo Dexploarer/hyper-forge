@@ -307,6 +307,7 @@ export const createAssetRoutes = (
               spriteCount: sprites.length,
               spriteConfig: config,
               lastSpriteGeneration: new Date().toISOString(),
+              thumbnailPath: "sprites/0deg.png", // Use the first sprite (0 degrees) as thumbnail
               updatedAt: new Date().toISOString(),
             };
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   Package,
@@ -7,11 +7,25 @@ import {
   Play,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   LogOut,
   Library,
   TestTube2,
   Users,
   Settings,
+  LayoutDashboard,
+  Box,
+  Blocks,
+  TreePine,
+  Globe,
+  User,
+  Scroll,
+  MessageSquare,
+  Book,
+  Mic,
+  Music,
+  Volume2,
+  Wrench,
 } from "lucide-react";
 import { NavigationView } from "@/types";
 import { NAVIGATION_VIEWS } from "@/constants";
@@ -30,65 +44,237 @@ interface NavItem {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   label: string;
   description: string;
+  requiresAdmin?: boolean;
 }
 
-const BASE_NAV_ITEMS: NavItem[] = [
+interface NavParent {
+  id: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  label: string;
+  description: string;
+  children: NavItem[];
+}
+
+interface NavSection {
+  type: "section" | "item" | "parent";
+  label?: string; // For section headers
+  item?: NavItem; // For simple items
+  parent?: NavParent; // For expandable parents
+}
+
+// Storage key for expanded state
+const EXPANDED_STATE_KEY = "sidebar-expanded-sections";
+
+// Define navigation structure with sections
+const NAVIGATION_STRUCTURE: NavSection[] = [
+  // Core pages
   {
-    view: NAVIGATION_VIEWS.GENERATION,
-    icon: Sparkles,
-    label: "Generate",
-    description: "AI-powered content generation",
+    type: "item",
+    item: {
+      view: NAVIGATION_VIEWS.DASHBOARD,
+      icon: LayoutDashboard,
+      label: "Dashboard",
+      description: "Overview & quick actions",
+    },
   },
   {
-    view: NAVIGATION_VIEWS.ASSETS,
-    icon: Package,
-    label: "Assets",
-    description: "Browse & manage assets",
+    type: "item",
+    item: {
+      view: NAVIGATION_VIEWS.ASSETS,
+      icon: Package,
+      label: "Assets",
+      description: "Browse & manage assets",
+    },
   },
   {
-    view: NAVIGATION_VIEWS.CONTENT_LIBRARY,
-    icon: Library,
-    label: "Library",
-    description: "Saved content browser",
+    type: "item",
+    item: {
+      view: NAVIGATION_VIEWS.CONTENT_LIBRARY,
+      icon: Library,
+      label: "Library",
+      description: "Saved content browser",
+    },
   },
+
+  // Generation section header
   {
-    view: NAVIGATION_VIEWS.PLAYTESTER,
-    icon: TestTube2,
-    label: "Playtester",
-    description: "Test content with AI feedback",
+    type: "section",
+    label: "GENERATION",
   },
+
+  // 3D Generation (expandable)
   {
-    view: NAVIGATION_VIEWS.EQUIPMENT,
-    icon: Shield,
-    label: "Equipment Fitting",
-    description: "Weapons, armor & helmets",
+    type: "parent",
+    parent: {
+      id: "3d-generation",
+      icon: Box,
+      label: "3D Generation",
+      description: "Create 3D assets & models",
+      children: [
+        {
+          view: NAVIGATION_VIEWS.GENERATION_CHARACTER,
+          icon: User,
+          label: "Characters",
+          description: "Generate character models",
+        },
+        {
+          view: NAVIGATION_VIEWS.GENERATION_PROP,
+          icon: Blocks,
+          label: "Props & Items",
+          description: "Generate props, weapons, items",
+        },
+        {
+          view: NAVIGATION_VIEWS.GENERATION_ENVIRONMENT,
+          icon: TreePine,
+          label: "Environments",
+          description: "Generate buildings & scenery",
+        },
+        {
+          view: NAVIGATION_VIEWS.GENERATION_WORLD,
+          icon: Globe,
+          label: "World Builder",
+          description: "Generate complete worlds",
+        },
+      ],
+    },
   },
+
+  // Content Generation (expandable)
   {
-    view: NAVIGATION_VIEWS.HAND_RIGGING,
-    icon: Hand,
-    label: "Hand Rigging",
-    description: "Setup weapon grips automatically",
+    type: "parent",
+    parent: {
+      id: "content-generation",
+      icon: Scroll,
+      label: "Content Generation",
+      description: "Create game content",
+      children: [
+        {
+          view: NAVIGATION_VIEWS.CONTENT_NPC,
+          icon: User,
+          label: "NPCs",
+          description: "Generate NPC characters",
+        },
+        {
+          view: NAVIGATION_VIEWS.CONTENT_QUEST,
+          icon: Scroll,
+          label: "Quests",
+          description: "Generate quest content",
+        },
+        {
+          view: NAVIGATION_VIEWS.CONTENT_DIALOGUE,
+          icon: MessageSquare,
+          label: "Dialogue Trees",
+          description: "Generate conversations",
+        },
+        {
+          view: NAVIGATION_VIEWS.CONTENT_LORE,
+          icon: Book,
+          label: "Lore & Stories",
+          description: "Generate world lore",
+        },
+      ],
+    },
   },
+
+  // Audio Generation (expandable)
   {
-    view: NAVIGATION_VIEWS.RETARGET_ANIMATE,
-    icon: Play,
-    label: "Animation Tools",
-    description: "Retarget animations to custom rigs",
+    type: "parent",
+    parent: {
+      id: "audio-generation",
+      icon: Music,
+      label: "Audio Generation",
+      description: "Create audio content",
+      children: [
+        {
+          view: NAVIGATION_VIEWS.AUDIO_VOICE,
+          icon: Mic,
+          label: "Voice & Speech",
+          description: "Generate voice & TTS",
+        },
+        {
+          view: NAVIGATION_VIEWS.AUDIO_SFX,
+          icon: Volume2,
+          label: "Sound Effects",
+          description: "Generate SFX",
+        },
+        {
+          view: NAVIGATION_VIEWS.AUDIO_MUSIC,
+          icon: Music,
+          label: "Music & Soundtracks",
+          description: "Generate music",
+        },
+      ],
+    },
   },
+
+  // Tools section header
   {
-    view: NAVIGATION_VIEWS.SETTINGS,
-    icon: Settings,
-    label: "Settings",
-    description: "View prompts & config",
+    type: "section",
+    label: "TOOLS",
+  },
+
+  // Tools (expandable)
+  {
+    type: "parent",
+    parent: {
+      id: "tools",
+      icon: Wrench,
+      label: "Tools",
+      description: "Asset processing & testing",
+      children: [
+        {
+          view: NAVIGATION_VIEWS.EQUIPMENT,
+          icon: Shield,
+          label: "Equipment Fitting",
+          description: "Weapons, armor & helmets",
+        },
+        {
+          view: NAVIGATION_VIEWS.HAND_RIGGING,
+          icon: Hand,
+          label: "Hand Rigging",
+          description: "Setup weapon grips",
+        },
+        {
+          view: NAVIGATION_VIEWS.RETARGET_ANIMATE,
+          icon: Play,
+          label: "Animation Tools",
+          description: "Retarget animations",
+        },
+        {
+          view: NAVIGATION_VIEWS.PLAYTESTER,
+          icon: TestTube2,
+          label: "Playtester",
+          description: "Test with AI feedback",
+        },
+      ],
+    },
   },
 ];
 
-const ADMIN_NAV_ITEMS: NavItem[] = [
+// Admin-only navigation items
+const ADMIN_NAVIGATION: NavSection[] = [
   {
-    view: NAVIGATION_VIEWS.ADMIN_DASHBOARD,
-    icon: Users,
-    label: "Admin Dashboard",
-    description: "Manage users & admins",
+    type: "item",
+    item: {
+      view: NAVIGATION_VIEWS.ADMIN_DASHBOARD,
+      icon: Users,
+      label: "Admin Dashboard",
+      description: "Manage users & admins",
+      requiresAdmin: true,
+    },
+  },
+];
+
+// System navigation items
+const SYSTEM_NAVIGATION: NavSection[] = [
+  {
+    type: "item",
+    item: {
+      view: NAVIGATION_VIEWS.SETTINGS,
+      icon: Settings,
+      label: "Settings",
+      description: "View prompts & config",
+    },
   },
 ];
 
@@ -97,11 +283,33 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   const { logout, user } = useAuth();
   const { recentlyViewed } = useAssetsStore();
 
-  // Determine nav items based on role
+  // Load expanded state from localStorage
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem(EXPANDED_STATE_KEY);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Save expanded state to localStorage
+  useEffect(() => {
+    localStorage.setItem(
+      EXPANDED_STATE_KEY,
+      JSON.stringify(Array.from(expandedSections)),
+    );
+  }, [expandedSections]);
+
+  // Determine if user is admin
   const isAdmin = user?.role === "admin";
-  const NAV_ITEMS = isAdmin
-    ? [...BASE_NAV_ITEMS, ...ADMIN_NAV_ITEMS]
-    : BASE_NAV_ITEMS;
+
+  // Build final navigation structure
+  const navigationSections = [
+    ...NAVIGATION_STRUCTURE,
+    ...(isAdmin ? ADMIN_NAVIGATION : []),
+    ...SYSTEM_NAVIGATION,
+  ];
 
   const handleLogout = () => {
     if (confirm("Are you sure you want to logout?")) {
@@ -110,9 +318,26 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
   };
 
   const handleRecentAssetClick = (assetId: string) => {
-    // Navigate to assets view when clicking a recently viewed asset
     onViewChange(NAVIGATION_VIEWS.ASSETS);
-    // The asset selection will be handled by the assets page itself via URL or state
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) {
+        next.delete(sectionId);
+      } else {
+        next.add(sectionId);
+      }
+      return next;
+    });
+  };
+
+  // Check if a view is active or if it's a parent of the active view
+  const isViewActive = (view: NavigationView) => currentView === view;
+
+  const isParentActive = (parent: NavParent) => {
+    return parent.children.some((child) => child.view === currentView);
   };
 
   return (
@@ -178,50 +403,177 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
         aria-label="Main navigation"
         className="flex-1 p-2 space-y-0.5 overflow-y-auto"
       >
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentView === item.view;
+        {navigationSections.map((section, index) => {
+          // Render section header
+          if (section.type === "section") {
+            if (isCollapsed) {
+              return (
+                <div
+                  key={`section-${index}`}
+                  className="h-px bg-border-primary my-2"
+                />
+              );
+            }
+            return (
+              <div
+                key={`section-${index}`}
+                className="px-3 py-2 mt-2 mb-1 text-xs font-semibold text-text-tertiary uppercase tracking-wider"
+              >
+                {section.label}
+              </div>
+            );
+          }
 
-          return (
-            <button
-              key={item.view}
-              onClick={() => onViewChange(item.view)}
-              className={cn(
-                "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group",
-                isActive
-                  ? "bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 text-primary shadow-lg shadow-primary/10"
-                  : "hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-transparent",
-              )}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <Icon
+          // Render simple nav item
+          if (section.type === "item" && section.item) {
+            const item = section.item;
+            const Icon = item.icon;
+            const isActive = isViewActive(item.view);
+
+            return (
+              <button
+                key={item.view}
+                onClick={() => onViewChange(item.view)}
                 className={cn(
-                  "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
-                  isActive && "text-primary",
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group",
+                  isActive
+                    ? "bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 text-primary shadow-lg shadow-primary/10"
+                    : "hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-transparent",
                 )}
-              />
+                title={isCollapsed ? item.label : undefined}
+              >
+                <Icon
+                  className={cn(
+                    "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
+                    isActive && "text-primary",
+                  )}
+                />
 
-              {!isCollapsed && (
-                <div className="flex-1 text-left min-w-0">
-                  <div
+                {!isCollapsed && (
+                  <div className="flex-1 text-left min-w-0">
+                    <div
+                      className={cn(
+                        "font-medium text-sm truncate",
+                        isActive ? "text-primary" : "text-text-primary",
+                      )}
+                    >
+                      {item.label}
+                    </div>
+                    <div className="text-xs text-text-tertiary truncate">
+                      {item.description}
+                    </div>
+                  </div>
+                )}
+
+                {!isCollapsed && isActive && (
+                  <div className="w-1.5 h-8 bg-primary rounded-full" />
+                )}
+              </button>
+            );
+          }
+
+          // Render expandable parent item
+          if (section.type === "parent" && section.parent) {
+            const parent = section.parent;
+            const Icon = parent.icon;
+            const isExpanded = expandedSections.has(parent.id);
+            const hasActiveChild = isParentActive(parent);
+
+            return (
+              <div key={parent.id}>
+                {/* Parent button */}
+                <button
+                  onClick={() => toggleSection(parent.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group",
+                    hasActiveChild
+                      ? "bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-primary"
+                      : "hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-transparent",
+                  )}
+                  title={isCollapsed ? parent.label : undefined}
+                >
+                  <Icon
                     className={cn(
-                      "font-medium text-sm truncate",
-                      isActive ? "text-primary" : "text-text-primary",
+                      "w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110",
+                      hasActiveChild && "text-primary",
                     )}
-                  >
-                    {item.label}
-                  </div>
-                  <div className="text-xs text-text-tertiary truncate">
-                    {item.description}
-                  </div>
-                </div>
-              )}
+                  />
 
-              {!isCollapsed && isActive && (
-                <div className="w-1.5 h-8 bg-primary rounded-full" />
-              )}
-            </button>
-          );
+                  {!isCollapsed && (
+                    <>
+                      <div className="flex-1 text-left min-w-0">
+                        <div
+                          className={cn(
+                            "font-medium text-sm truncate",
+                            hasActiveChild
+                              ? "text-primary"
+                              : "text-text-primary",
+                          )}
+                        >
+                          {parent.label}
+                        </div>
+                        <div className="text-xs text-text-tertiary truncate">
+                          {parent.description}
+                        </div>
+                      </div>
+
+                      <ChevronDown
+                        className={cn(
+                          "w-4 h-4 flex-shrink-0 transition-transform duration-200",
+                          isExpanded && "rotate-180",
+                          hasActiveChild
+                            ? "text-primary"
+                            : "text-text-tertiary",
+                        )}
+                      />
+                    </>
+                  )}
+                </button>
+
+                {/* Children (only show when expanded and not collapsed) */}
+                {!isCollapsed && isExpanded && (
+                  <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-border-primary pl-2">
+                    {parent.children.map((child) => {
+                      const ChildIcon = child.icon;
+                      const isActive = isViewActive(child.view);
+
+                      return (
+                        <button
+                          key={child.view}
+                          onClick={() => onViewChange(child.view)}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg transition-all duration-200 group",
+                            isActive
+                              ? "bg-primary/20 border border-primary/30 text-primary"
+                              : "hover:bg-bg-hover text-text-secondary hover:text-text-primary border border-transparent",
+                          )}
+                        >
+                          <ChildIcon
+                            className={cn(
+                              "w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-110",
+                              isActive && "text-primary",
+                            )}
+                          />
+                          <div className="flex-1 text-left min-w-0">
+                            <div
+                              className={cn(
+                                "font-medium text-sm truncate",
+                                isActive ? "text-primary" : "text-text-primary",
+                              )}
+                            >
+                              {child.label}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return null;
         })}
       </nav>
 

@@ -9,7 +9,14 @@ import { apiFetch } from "@/utils/api";
 
 export type { MaterialPreset };
 
-export type AssetStatus = 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived';
+export type AssetStatus =
+  | "draft"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "approved"
+  | "published"
+  | "archived";
 
 export interface BulkUpdateRequest {
   status?: AssetStatus;
@@ -25,6 +32,8 @@ export interface Asset {
   hasModel: boolean;
   modelFile?: string;
   generatedAt: string;
+  thumbnailPath?: string; // Path to thumbnail/sprite image (e.g., "sprites/0deg.png" or "pfp.png")
+  conceptArtPath?: string; // Path to concept art image
 }
 
 export interface RetextureRequest {
@@ -33,7 +42,7 @@ export interface RetextureRequest {
   materialPreset?: MaterialPreset;
   customPrompt?: string;
   imageUrl?: string;
-  artStyle?: 'realistic' | 'cartoon';
+  artStyle?: "realistic" | "cartoon";
   outputName?: string;
 }
 
@@ -134,6 +143,30 @@ class AssetServiceClass {
   }
 
   /**
+   * Get preview image URL for an asset
+   * Returns thumbnail, concept art, or null if no preview available
+   */
+  getPreviewImageUrl(asset: Asset): string | null {
+    // Priority 1: Thumbnail (sprite or PFP)
+    if (asset.thumbnailPath) {
+      return `/api/assets/${asset.id}/${asset.thumbnailPath}`;
+    }
+
+    // Priority 2: Concept art from metadata
+    if (asset.metadata?.hasConceptArt && asset.metadata?.conceptArtPath) {
+      return `/api/assets/${asset.id}/${asset.metadata.conceptArtPath}`;
+    }
+
+    // Priority 3: Concept art from conceptArtPath field
+    if (asset.conceptArtPath) {
+      return `/api/assets/${asset.id}/${asset.conceptArtPath}`;
+    }
+
+    // No preview available
+    return null;
+  }
+
+  /**
    * Upload VRM file to server
    * Saves the converted VRM alongside the original asset
    */
@@ -185,7 +218,7 @@ class AssetServiceClass {
    */
   async bulkUpdateAssets(
     assetIds: string[],
-    updates: BulkUpdateRequest
+    updates: BulkUpdateRequest,
   ): Promise<{
     success: boolean;
     updated: number;
@@ -193,9 +226,9 @@ class AssetServiceClass {
     errors?: Array<{ assetId: string; error: string }>;
   }> {
     const response = await apiFetch(`${this.baseUrl}/assets/bulk-update`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         assetIds,
@@ -206,7 +239,7 @@ class AssetServiceClass {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error?.message || 'Bulk update failed');
+      throw new Error(error.error?.message || "Bulk update failed");
     }
 
     return response.json();

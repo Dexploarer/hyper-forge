@@ -17,6 +17,7 @@ import { useGlobalShortcuts } from "./hooks/useGlobalShortcuts";
 import { LandingPage } from "./pages/LandingPage";
 
 // Lazy load routes for code splitting
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const UnifiedEquipmentPage = lazy(() => import("./pages/UnifiedEquipmentPage"));
 const AssetsPage = lazy(() => import("./pages/AssetsPage"));
 const ChatGenerationPage = lazy(() => import("./pages/ChatGenerationPage"));
@@ -52,6 +53,45 @@ const SettingsPage = lazy(() =>
   })),
 );
 
+// 3D Generation pages
+const CharacterGenerationPage = lazy(
+  () => import("./pages/generation/CharacterGenerationPage"),
+);
+const PropGenerationPage = lazy(
+  () => import("./pages/generation/PropGenerationPage"),
+);
+const EnvironmentGenerationPage = lazy(
+  () => import("./pages/generation/EnvironmentGenerationPage"),
+);
+const WorldBuilderPage = lazy(
+  () => import("./pages/generation/WorldBuilderPage"),
+);
+
+// Content Generation pages
+const NPCGenerationPage = lazy(
+  () => import("./pages/generation/NPCGenerationPage"),
+);
+const QuestGenerationPage = lazy(
+  () => import("./pages/generation/QuestGenerationPage"),
+);
+const DialogueGenerationPage = lazy(
+  () => import("./pages/generation/DialogueGenerationPage"),
+);
+const LoreGenerationPage = lazy(
+  () => import("./pages/generation/LoreGenerationPage"),
+);
+
+// Audio Generation pages
+const VoiceGenerationPage = lazy(
+  () => import("./pages/generation/VoiceGenerationPage"),
+);
+const SFXGenerationPage = lazy(
+  () => import("./pages/generation/SFXGenerationPage"),
+);
+const MusicGenerationPage = lazy(
+  () => import("./pages/generation/MusicGenerationPage"),
+);
+
 function AppContent() {
   const { isAuthenticated } = useAuth();
   const { currentView, navigateTo, navigateToAsset } = useNavigation();
@@ -71,16 +111,63 @@ function AppContent() {
       <NotificationBar />
       <MainLayout currentView={currentView} onViewChange={navigateTo}>
         <Suspense fallback={<PageSkeleton />}>
+          {/* Core pages */}
+          {currentView === NAVIGATION_VIEWS.DASHBOARD && <DashboardPage />}
           {currentView === NAVIGATION_VIEWS.ASSETS && <AssetsPage />}
-          {currentView === NAVIGATION_VIEWS.GENERATION && (
-            <ChatGenerationPage
+          {currentView === NAVIGATION_VIEWS.CONTENT_LIBRARY && (
+            <ContentLibraryPage />
+          )}
+
+          {/* 3D Generation pages */}
+          {currentView === NAVIGATION_VIEWS.GENERATION_CHARACTER && (
+            <CharacterGenerationPage
               onNavigateToAssets={() => navigateTo(NAVIGATION_VIEWS.ASSETS)}
               onNavigateToAsset={navigateToAsset}
             />
           )}
-          {currentView === NAVIGATION_VIEWS.CONTENT_LIBRARY && (
-            <ContentLibraryPage />
+          {currentView === NAVIGATION_VIEWS.GENERATION_PROP && (
+            <PropGenerationPage
+              onNavigateToAssets={() => navigateTo(NAVIGATION_VIEWS.ASSETS)}
+              onNavigateToAsset={navigateToAsset}
+            />
           )}
+          {currentView === NAVIGATION_VIEWS.GENERATION_ENVIRONMENT && (
+            <EnvironmentGenerationPage
+              onNavigateToAssets={() => navigateTo(NAVIGATION_VIEWS.ASSETS)}
+              onNavigateToAsset={navigateToAsset}
+            />
+          )}
+          {currentView === NAVIGATION_VIEWS.GENERATION_WORLD && (
+            <WorldBuilderPage
+              onNavigateToAssets={() => navigateTo(NAVIGATION_VIEWS.ASSETS)}
+              onNavigateToAsset={navigateToAsset}
+            />
+          )}
+
+          {/* Content Generation pages */}
+          {currentView === NAVIGATION_VIEWS.CONTENT_NPC && (
+            <NPCGenerationPage />
+          )}
+          {currentView === NAVIGATION_VIEWS.CONTENT_QUEST && (
+            <QuestGenerationPage />
+          )}
+          {currentView === NAVIGATION_VIEWS.CONTENT_DIALOGUE && (
+            <DialogueGenerationPage />
+          )}
+          {currentView === NAVIGATION_VIEWS.CONTENT_LORE && (
+            <LoreGenerationPage />
+          )}
+
+          {/* Audio Generation pages */}
+          {currentView === NAVIGATION_VIEWS.AUDIO_VOICE && (
+            <VoiceGenerationPage />
+          )}
+          {currentView === NAVIGATION_VIEWS.AUDIO_SFX && <SFXGenerationPage />}
+          {currentView === NAVIGATION_VIEWS.AUDIO_MUSIC && (
+            <MusicGenerationPage />
+          )}
+
+          {/* Tools */}
           {currentView === NAVIGATION_VIEWS.PLAYTESTER && (
             <PlaytesterSwarmPage />
           )}
@@ -88,17 +175,26 @@ function AppContent() {
             <UnifiedEquipmentPage />
           )}
           {currentView === NAVIGATION_VIEWS.HAND_RIGGING && <HandRiggingPage />}
-          {/* ARMOR_FITTING route kept for backward compatibility - redirects to unified equipment page */}
-          {currentView === NAVIGATION_VIEWS.ARMOR_FITTING && (
-            <UnifiedEquipmentPage />
-          )}
           {currentView === NAVIGATION_VIEWS.RETARGET_ANIMATE && (
             <RetargetAnimatePage />
           )}
           {currentView === NAVIGATION_VIEWS.WORLD_CONFIG && <WorldConfigPage />}
+
+          {/* System */}
           {currentView === NAVIGATION_VIEWS.SETTINGS && <SettingsPage />}
           {currentView === NAVIGATION_VIEWS.ADMIN_DASHBOARD && (
             <AdminDashboardPage />
+          )}
+
+          {/* Legacy/backward compatibility routes */}
+          {currentView === NAVIGATION_VIEWS.GENERATION && (
+            <ChatGenerationPage
+              onNavigateToAssets={() => navigateTo(NAVIGATION_VIEWS.ASSETS)}
+              onNavigateToAsset={navigateToAsset}
+            />
+          )}
+          {currentView === NAVIGATION_VIEWS.ARMOR_FITTING && (
+            <UnifiedEquipmentPage />
           )}
         </Suspense>
       </MainLayout>

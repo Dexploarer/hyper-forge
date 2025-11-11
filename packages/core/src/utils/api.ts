@@ -44,7 +44,9 @@ export async function apiFetch(input: string, init: RequestOptions = {}): Promis
       
       // Only set Authorization header from global token if it's not already set
       // This allows explicit Authorization headers (e.g., from accessToken parameter) to take precedence
-      if (token && !headers['Authorization']) {
+      // Check both 'Authorization' and 'authorization' for case-insensitivity
+      const hasAuthHeader = headers['Authorization'] || headers['authorization']
+      if (token && !hasAuthHeader) {
         headers['Authorization'] = `Bearer ${token}`
       }
 

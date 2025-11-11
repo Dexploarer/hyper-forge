@@ -809,6 +809,7 @@ export class GenerationService extends EventEmitter {
           hasConceptArt: true,
           modelPath: baseModelPath,
           conceptArtUrl: "./concept-art.png",
+          conceptArtPath: "concept-art.png", // Used for preview thumbnails
           gddCompliant: true,
           workflow: "GPT-4 → GPT-Image-1 → Meshy Image-to-3D (Base Model)",
           meshyTaskId: meshyTaskId,

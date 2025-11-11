@@ -11,19 +11,38 @@ interface MobileTopBarProps {
 }
 
 const VIEW_TITLES: Record<NavigationView, string> = {
-  [NAVIGATION_VIEWS.GENERATION]: "Generate",
+  // Core
+  [NAVIGATION_VIEWS.DASHBOARD]: "Dashboard",
   [NAVIGATION_VIEWS.ASSETS]: "Assets",
-  [NAVIGATION_VIEWS.AUDIO]: "Audio",
-  [NAVIGATION_VIEWS.CONTENT]: "Content",
   [NAVIGATION_VIEWS.CONTENT_LIBRARY]: "Library",
+  // 3D Generation
+  [NAVIGATION_VIEWS.GENERATION_CHARACTER]: "Characters",
+  [NAVIGATION_VIEWS.GENERATION_PROP]: "Props",
+  [NAVIGATION_VIEWS.GENERATION_ENVIRONMENT]: "Environments",
+  [NAVIGATION_VIEWS.GENERATION_WORLD]: "World Builder",
+  // Content Generation
+  [NAVIGATION_VIEWS.CONTENT_NPC]: "NPCs",
+  [NAVIGATION_VIEWS.CONTENT_QUEST]: "Quests",
+  [NAVIGATION_VIEWS.CONTENT_DIALOGUE]: "Dialogue",
+  [NAVIGATION_VIEWS.CONTENT_LORE]: "Lore",
+  // Audio Generation
+  [NAVIGATION_VIEWS.AUDIO_VOICE]: "Voice",
+  [NAVIGATION_VIEWS.AUDIO_SFX]: "SFX",
+  [NAVIGATION_VIEWS.AUDIO_MUSIC]: "Music",
+  // Tools
   [NAVIGATION_VIEWS.PLAYTESTER]: "Playtester",
   [NAVIGATION_VIEWS.EQUIPMENT]: "Equipment",
   [NAVIGATION_VIEWS.HAND_RIGGING]: "Hand Rigging",
-  [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",
   [NAVIGATION_VIEWS.RETARGET_ANIMATE]: "Animation",
   [NAVIGATION_VIEWS.WORLD_CONFIG]: "World Config",
-  [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin",
+  // System
   [NAVIGATION_VIEWS.SETTINGS]: "Settings",
+  [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin",
+  // Legacy
+  [NAVIGATION_VIEWS.GENERATION]: "Generate",
+  [NAVIGATION_VIEWS.AUDIO]: "Audio",
+  [NAVIGATION_VIEWS.CONTENT]: "Content",
+  [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",
 };
 
 export function MobileTopBar({ currentView, onMenuClick }: MobileTopBarProps) {

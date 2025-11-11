@@ -42,28 +42,24 @@ export const createGenerationRoutes = (
                 });
 
                 // If we have an authenticated user from Privy token, use it
-                // Otherwise, allow anonymous generation (for testing/demo)
-                let userId: string;
-                if (authUser) {
-                  userId = authUser.id;
-                  console.log(
-                    `[Generation Route] Using authenticated user ID: ${userId}`,
+                // This is the simplest and most secure approach
+                if (!authUser) {
+                  console.error(
+                    `[Generation Route] No authenticated user found. Auth header present: ${!!authHeader}`,
                   );
-                } else if (body.user?.userId) {
-                  // Allow provided userId for testing (not recommended for production)
-                  userId = body.user.userId;
-                  console.log(
-                    `[Generation Route] Using provided user ID (unauthenticated): ${userId}`,
-                  );
-                } else {
-                  // Anonymous generation - use a test user ID
-                  userId = "anonymous-" + Date.now();
-                  console.log(
-                    `[Generation Route] Using anonymous user ID: ${userId}`,
-                  );
+                  set.status = 401;
+                  return {
+                    error:
+                      "Authentication required. Please log in with Privy to create generation jobs.",
+                  };
                 }
 
-                // Update body with verified or generated userId
+                const userId = authUser.id;
+                console.log(
+                  `[Generation Route] Using authenticated user ID: ${userId}`,
+                );
+
+                // Update body with verified userId
                 const configWithUser = {
                   ...body,
                   user: {

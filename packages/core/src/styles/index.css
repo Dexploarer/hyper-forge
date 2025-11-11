@@ -1351,4 +1351,105 @@ body {
   .viewport-height {
     @apply h-[calc(100vh-60px)];
   }
-} 
+
+  /* Unified Theme Utilities - Dashboard Redesign */
+
+  /* Subtle grid background with adjustable opacity */
+  .grid-bg-subtle {
+    background-image: linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
+                     linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.03;
+  }
+
+  .grid-bg-medium {
+    background-image: linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
+                     linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.05;
+  }
+
+  .grid-bg-strong {
+    background-image: linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
+                     linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.1;
+  }
+
+  /* Gradient text utilities */
+  .gradient-text-primary {
+    @apply bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+  }
+
+  /* Light theme: Use solid primary color for better readability */
+  .light-theme .gradient-text-primary {
+    background: var(--color-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Icon color utility that adapts to theme */
+  .icon-on-gradient {
+    @apply text-white;
+  }
+
+  /* Light theme: Use darker color for icons on gradient backgrounds for better visibility */
+  .light-theme .icon-on-gradient {
+    color: rgba(15, 23, 42, 0.9); /* Very dark slate for maximum contrast */
+  }
+
+  .gradient-text-subtle {
+    background: linear-gradient(to right, var(--text-primary), var(--text-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Floating orb animation - for subtle background accents */
+  @keyframes float-orb {
+    0%, 100% {
+      transform: translate(0, 0) scale(1);
+      opacity: 0.1;
+    }
+    50% {
+      transform: translate(10px, -10px) scale(1.05);
+      opacity: 0.15;
+    }
+  }
+
+  .animate-orb {
+    animation: float-orb 8s ease-in-out infinite;
+  }
+
+  /* Page background with grid - combines bg color + grid pattern */
+  .page-bg-with-grid {
+    @apply relative bg-bg-primary;
+  }
+
+  .page-bg-with-grid::before {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    background-image: linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
+                     linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.03;
+  }
+
+  /* Gradient border utilities */
+  .border-gradient {
+    position: relative;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .border-gradient::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    margin: -1px;
+    border-radius: inherit;
+    background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+  }
+}

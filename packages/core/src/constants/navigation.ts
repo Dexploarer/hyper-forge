@@ -2,19 +2,44 @@ import { NavigationView } from "../types";
 
 // Navigation view constants
 export const NAVIGATION_VIEWS = {
+  // Core pages
+  DASHBOARD: "dashboard",
   ASSETS: "assets",
-  GENERATION: "generation",
-  AUDIO: "audio",
-  CONTENT: "content",
   CONTENT_LIBRARY: "contentLibrary",
+
+  // 3D Generation pages (expanded from single "generation" view)
+  GENERATION_CHARACTER: "generation/character",
+  GENERATION_PROP: "generation/prop",
+  GENERATION_ENVIRONMENT: "generation/environment",
+  GENERATION_WORLD: "generation/world",
+
+  // Content Generation pages (extracted from ChatGenerationPage)
+  CONTENT_NPC: "content/npc",
+  CONTENT_QUEST: "content/quest",
+  CONTENT_DIALOGUE: "content/dialogue",
+  CONTENT_LORE: "content/lore",
+
+  // Audio Generation pages (extracted from ChatGenerationPage)
+  AUDIO_VOICE: "audio/voice",
+  AUDIO_SFX: "audio/sfx",
+  AUDIO_MUSIC: "audio/music",
+
+  // Tools
   PLAYTESTER: "playtester",
   EQUIPMENT: "equipment",
   HAND_RIGGING: "handRigging",
-  ARMOR_FITTING: "armorFitting",
   RETARGET_ANIMATE: "retargetAnimate",
   WORLD_CONFIG: "worldConfig",
-  ADMIN_DASHBOARD: "adminDashboard",
+
+  // System
   SETTINGS: "settings",
+  ADMIN_DASHBOARD: "adminDashboard",
+
+  // Legacy/deprecated (kept for backward compatibility)
+  GENERATION: "generation", // @deprecated Use specific generation pages instead
+  AUDIO: "audio", // @deprecated Use specific audio pages instead
+  CONTENT: "content", // @deprecated Use specific content pages instead
+  ARMOR_FITTING: "armorFitting", // @deprecated Use EQUIPMENT instead
 } as const satisfies Record<string, NavigationView>;
 
 // Grid background styles for the app

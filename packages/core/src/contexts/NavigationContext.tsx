@@ -15,7 +15,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [currentView, setCurrentView] = useState<NavigationView>(
-    NAVIGATION_VIEWS.GENERATION,
+    NAVIGATION_VIEWS.DASHBOARD,
   );
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [navigationHistory, setNavigationHistory] = useState<NavigationView[]>(
