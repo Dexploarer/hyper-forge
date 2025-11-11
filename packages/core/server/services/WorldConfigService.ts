@@ -74,7 +74,8 @@ export class WorldConfigService {
         "[WorldConfigService] Error listing configurations:",
         error,
       );
-      throw new Error("Failed to list configurations");
+      // Return empty array instead of throwing - world config is optional
+      return [];
     }
   }
 
@@ -116,7 +117,8 @@ export class WorldConfigService {
         "[WorldConfigService] Error getting active configuration:",
         error,
       );
-      throw new Error("Failed to get active configuration");
+      // Return null instead of throwing - world config is optional
+      return null;
     }
   }
 

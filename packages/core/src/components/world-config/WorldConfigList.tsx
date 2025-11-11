@@ -38,12 +38,14 @@ export const WorldConfigList: React.FC<WorldConfigListProps> = ({
 
   // Extract unique genres for filter
   const genres = useMemo(() => {
+    if (!configurations || configurations.length === 0) return [];
     const uniqueGenres = new Set(configurations.map((c) => c.genre));
     return Array.from(uniqueGenres).sort();
   }, [configurations]);
 
   // Filter configurations
   const filteredConfigs = useMemo(() => {
+    if (!configurations || configurations.length === 0) return [];
     return configurations.filter((config) => {
       // Search filter
       const matchesSearch =
@@ -63,8 +65,8 @@ export const WorldConfigList: React.FC<WorldConfigListProps> = ({
   }, [configurations, searchQuery, genreFilter]);
 
   // Group by active status
-  const activeConfig = filteredConfigs.find((c) => c.isActive);
-  const inactiveConfigs = filteredConfigs.filter((c) => !c.isActive);
+  const activeConfig = filteredConfigs?.find((c) => c.isActive);
+  const inactiveConfigs = filteredConfigs?.filter((c) => !c.isActive) || [];
 
   if (loading) {
     return (
@@ -79,7 +81,7 @@ export const WorldConfigList: React.FC<WorldConfigListProps> = ({
     );
   }
 
-  if (configurations.length === 0) {
+  if (!configurations || configurations.length === 0) {
     return (
       <div className="flex items-center justify-center py-12">
         <EmptyState

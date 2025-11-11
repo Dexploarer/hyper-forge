@@ -104,38 +104,57 @@ export class GenerationJobService {
       return job;
     } catch (error: any) {
       // Enhanced error logging for database constraint violations
+      const errorMessage = error?.message || String(error);
+      const errorCode = error?.code || error?.errno || error?.sqlState;
+      const errorDetail = error?.detail || error?.message;
+      
       console.error("[GenerationJobService] Failed to create job:", {
         pipelineId,
         assetId: config.assetId,
         userId: config.user.userId,
-        error: error.message,
-        code: error.code,
-        constraint: error.constraint,
-        detail: error.detail,
-        hint: error.hint,
+        error: errorMessage,
+        code: errorCode,
+        constraint: error?.constraint,
+        detail: errorDetail,
+        hint: error?.hint,
+        fullError: error,
       });
 
-      // Check for specific constraint violations
-      if (error.code === "23503") {
-        // Foreign key violation
+      // Check for foreign key violation (user_id constraint)
+      // PostgreSQL error code 23503 = foreign key violation
+      // Also check error message for common patterns
+      const isForeignKeyViolation = 
+        errorCode === "23503" ||
+        errorMessage?.includes("foreign key") ||
+        errorMessage?.includes("violates foreign key") ||
+        errorMessage?.includes("user_id") ||
+        error?.constraint?.includes("user_id") ||
+        error?.constraint?.includes("generation_jobs_user_id_users_id_fk");
+
+      if (isForeignKeyViolation) {
+        // Foreign key violation - most likely user doesn't exist
         throw new Error(
-          `User not found: ${config.user.userId}. Please ensure you are logged in with a valid account.`,
+          `User not found: ${config.user.userId}. Please ensure you are logged in with a valid account. The user ID must exist in the database before creating a generation job.`,
         );
-      } else if (error.code === "23505") {
-        // Unique constraint violation
+      }
+
+      // Check for unique constraint violation (pipeline_id)
+      if (errorCode === "23505" || errorMessage?.includes("unique constraint") || errorMessage?.includes("duplicate key")) {
         throw new Error(
           `Pipeline ID already exists: ${pipelineId}. Please try again.`,
         );
-      } else if (error.code === "23502") {
-        // NOT NULL constraint violation
+      }
+
+      // Check for NOT NULL constraint violation
+      if (errorCode === "23502" || errorMessage?.includes("null value") || errorMessage?.includes("not null")) {
         throw new Error(
-          `Missing required field: ${error.column || "unknown"}. Please check your request.`,
+          `Missing required field: ${error?.column || "unknown"}. Please check your request.`,
         );
       }
 
       // Re-throw with original message for other errors
       throw new Error(
-        `Failed to create generation job: ${error.message || "Unknown database error"}`,
+        `Failed to create generation job: ${errorMessage || "Unknown database error"}`,
       );
     }
   }

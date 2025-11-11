@@ -60,6 +60,7 @@ import { useMaterialPresets } from "@/hooks";
 import { Asset, AssetService } from "@/services/api/AssetService";
 import { GenerationAPIClient } from "@/services/api/GenerationAPIClient";
 import { api } from "@/lib/api-client";
+import { usePrivy } from "@privy-io/react-auth";
 
 interface GenerationPageProps {
   onClose?: () => void;
@@ -79,6 +80,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
 
   // Get authenticated user context for ownership tracking
   const { user } = useAuth();
+  const { getAccessToken } = usePrivy();
 
   // Get all state and actions from the store
   const {
@@ -691,7 +693,9 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
     console.log("Material variants to generate:", config.materialPresets);
 
     try {
-      const pipelineId = await apiClient.startPipeline(config);
+      // Get Privy access token for authentication
+      const accessToken = await getAccessToken();
+      const pipelineId = await apiClient.startPipeline(config, accessToken || undefined);
       setCurrentPipelineId(pipelineId);
     } catch (error) {
       console.error("Failed to start generation:", error);

@@ -54,12 +54,13 @@ export const WorldConfigPage: React.FC = () => {
       const result = await worldConfigClient.listConfigurations({
         includeTemplates: false,
       });
-      setConfigurations(result.configurations);
+      // Safety check - ensure configs is always an array
+      const configs = result?.configs || [];
+      setConfigurations(configs);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load configurations";
-      setError(errorMessage);
-      notify.error(errorMessage);
+      // World config is optional - don't show error, just use empty array
+      console.warn("WorldConfigPage: Failed to load configurations (optional):", err);
+      setConfigurations([]);
     } finally {
       setLoading(false);
     }

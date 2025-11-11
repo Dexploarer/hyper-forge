@@ -5,7 +5,21 @@
 
 import type { GripBounds } from '@/types'
 
-const API_BASE = '/api'
+// Get API base URL
+// In production (Railway), frontend and API are served from same domain, so use relative URLs
+// In development, Vite proxy handles /api routes, so use relative URLs
+const getApiBaseUrl = (): string => {
+  // If VITE_API_URL is explicitly set, use it
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // In production, use relative URLs (same domain)
+  // In development, use relative URLs (Vite proxy handles /api -> localhost:3004)
+  return "";
+}
+
+const API_BASE = `${getApiBaseUrl()}/api`
 
 export interface HandleDetectionParams {
   image: string // base64 image data URL

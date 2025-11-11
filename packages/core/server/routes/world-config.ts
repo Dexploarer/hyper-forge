@@ -29,22 +29,31 @@ export const worldConfigRoutes = new Elysia({
       // GET /api/world-config - List configurations
       .get(
         "/",
-        async ({ query }) => {
-          const limit = query.limit ? parseInt(query.limit) : 50;
-          const offset = query.offset ? parseInt(query.offset) : 0;
-          const includeTemplates = query.includeTemplates === "true";
+        async ({ query, set }) => {
+          try {
+            const limit = query.limit ? parseInt(query.limit) : 50;
+            const offset = query.offset ? parseInt(query.offset) : 0;
+            const includeTemplates = query.includeTemplates === "true";
 
-          const configs = await worldConfigService.listConfigurations({
-            limit,
-            offset,
-            includeTemplates,
-          });
+            const configs = await worldConfigService.listConfigurations({
+              limit,
+              offset,
+              includeTemplates,
+            });
 
-          return {
-            success: true,
-            configs,
-            count: configs.length,
-          };
+            return {
+              success: true,
+              configs,
+              count: configs.length,
+            };
+          } catch (error) {
+            console.error("[WorldConfig Route] Error listing configurations:", error);
+            set.status = 500;
+            return {
+              success: false,
+              error: error instanceof Error ? error.message : "Failed to list configurations",
+            };
+          }
         },
         {
           query: t.Object({
@@ -63,20 +72,30 @@ export const worldConfigRoutes = new Elysia({
       // GET /api/world-config/active - Get active configuration
       .get(
         "/active",
-        async () => {
-          const config = await worldConfigService.getActiveConfiguration();
+        async ({ set }) => {
+          try {
+            const config = await worldConfigService.getActiveConfiguration();
 
-          if (!config) {
+            if (!config) {
+              // Return success with null config - this is optional
+              return {
+                success: true,
+                config: null,
+              };
+            }
+
             return {
-              success: false,
-              error: "No active configuration found",
+              success: true,
+              config,
+            };
+          } catch (error) {
+            console.error("[WorldConfig Route] Error getting active configuration:", error);
+            // Return success with null config - world config is optional
+            return {
+              success: true,
+              config: null,
             };
           }
-
-          return {
-            success: true,
-            config,
-          };
         },
         {
           detail: {

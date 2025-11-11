@@ -11,9 +11,10 @@ import * as Models from '../models'
 export const aiVisionRoutes = new Elysia({ prefix: '/api', name: 'ai-vision' })
   .guard({
     beforeHandle: ({ set }) => {
-      if (!process.env.OPENAI_API_KEY) {
+      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key') {
         set.status = 500
-        return { success: false, error: 'OpenAI API key not configured' }
+        console.error('[AI Vision] OpenAI API key not configured or is placeholder')
+        return { success: false, error: 'OpenAI API key not configured. Please set OPENAI_API_KEY in your environment variables.' }
       }
     }
   }, (app) => app

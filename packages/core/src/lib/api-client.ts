@@ -15,18 +15,27 @@
 
 import { treaty } from "@elysiajs/eden";
 import type { App } from "../../server/api-elysia";
+import { getAuthToken } from "@/utils/auth-token-store";
 
 // Get API base URL
 // In production (Railway), frontend and API are served from same domain, so use relative URLs
-// In development, use explicit localhost URL
+// In development, Vite proxy handles /api routes, so use relative URLs
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
-  (import.meta.env.PROD ? "" : `http://localhost:${import.meta.env.VITE_API_PORT || 3004}`);
+  ""; // Empty string = relative URL (Vite proxy handles /api -> localhost:3004 in dev)
 
 /**
- * Get authentication headers (currently no auth)
+ * Get authentication headers with Privy token
  */
 function getAuthHeaders(): Record<string, string> {
+  const token = getAuthToken();
+  
+  if (token) {
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+  
   return {};
 }
 

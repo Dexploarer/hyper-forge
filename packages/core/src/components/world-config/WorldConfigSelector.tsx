@@ -36,29 +36,32 @@ export const WorldConfigSelector: React.FC<WorldConfigSelectorProps> = ({
       const result = await worldConfigClient.listConfigurations({
         includeTemplates: false,
       });
-      setConfigurations(result.configurations);
+
+      // Safety check - ensure configs is always an array
+      const configs = result?.configs || [];
+      setConfigurations(configs);
 
       // If no value is set, default to the active configuration
-      if (!value) {
-        const activeConfig = result.configurations.find((c) => c.isActive);
+      if (!value && configs.length > 0) {
+        const activeConfig = configs.find((c) => c.isActive);
         if (activeConfig) {
           onChange(activeConfig.id);
         }
       }
     } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Failed to load world configurations";
-      setError(errorMessage);
-      console.error("WorldConfigSelector error:", err);
+      // World config is optional - don't show error, just use empty array
+      console.warn(
+        "WorldConfigSelector: Failed to load configurations (optional):",
+        err,
+      );
+      setConfigurations([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedConfig = configurations.find((c) => c.id === value);
-  const activeConfig = configurations.find((c) => c.isActive);
+  const selectedConfig = configurations?.find((c) => c.id === value);
+  const activeConfig = configurations?.find((c) => c.isActive);
 
   if (loading) {
     return (
@@ -90,7 +93,7 @@ export const WorldConfigSelector: React.FC<WorldConfigSelectorProps> = ({
     );
   }
 
-  if (configurations.length === 0) {
+  if (!configurations || configurations.length === 0) {
     return (
       <div className={`space-y-2 ${className}`}>
         <label className="text-sm font-medium text-text-primary flex items-center gap-2">
@@ -120,7 +123,7 @@ export const WorldConfigSelector: React.FC<WorldConfigSelectorProps> = ({
         className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
       >
         <option value="">Use Active Configuration</option>
-        {configurations.map((config) => (
+        {(configurations || []).map((config) => (
           <option key={config.id} value={config.id}>
             {config.name}
             {config.isActive ? " (Active)" : ""}
@@ -143,7 +146,7 @@ export const WorldConfigSelector: React.FC<WorldConfigSelectorProps> = ({
               <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-md font-medium">
                 {selectedConfig.genre}
               </span>
-              {selectedConfig.tags.slice(0, 3).map((tag) => (
+              {selectedConfig.tags?.slice(0, 3).map((tag) => (
                 <span
                   key={tag}
                   className="px-2 py-0.5 bg-bg-tertiary text-text-tertiary text-xs rounded-md"

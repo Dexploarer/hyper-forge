@@ -46,15 +46,26 @@ export async function optionalAuth(context: any): Promise<{ user?: AuthUser }> {
     const verifiedClaims = await privy.verifyAuthToken(token);
     const privyUserId = verifiedClaims.userId;
 
+    console.log(`[Auth Middleware] Verifying token for Privy userId: ${privyUserId}`);
+
     // Find or create user in database
     let user = await userService.findByPrivyUserId(privyUserId);
 
     if (!user) {
+      console.log(`[Auth Middleware] User not found for Privy userId ${privyUserId}, creating new user...`);
       // Auto-create user on first request with valid Privy token
-      user = await userService.createUser({
-        privyUserId,
-        role: "member", // Default role - admins must be promoted manually
-      });
+      try {
+        user = await userService.createUser({
+          privyUserId,
+          role: "member", // Default role - admins must be promoted manually
+        });
+        console.log(`[Auth Middleware] Created new user: ${user.id} for Privy userId: ${privyUserId}`);
+      } catch (error) {
+        console.error(`[Auth Middleware] Failed to create user for Privy userId ${privyUserId}:`, error);
+        throw error;
+      }
+    } else {
+      console.log(`[Auth Middleware] Found existing user: ${user.id} for Privy userId: ${privyUserId}`);
     }
 
     // Update last login timestamp

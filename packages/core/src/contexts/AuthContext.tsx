@@ -9,6 +9,7 @@ import { usePrivy, useLogin } from "@privy-io/react-auth";
 import { ProfileCompletionModal } from "../components/auth/ProfileCompletionModal";
 import { OnboardingTour, hasCompletedOnboarding } from "../components/common";
 import type { User } from "@/services/api/UsersAPIClient";
+import { setAuthToken, clearAuthToken } from "@/utils/auth-token-store";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -57,8 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const accessToken = await getAccessToken();
 
       if (!accessToken) {
+        clearAuthToken();
         return;
       }
+
+      // Store token globally for API clients
+      setAuthToken(accessToken);
 
       const response = await fetch("/api/users/me", {
         headers: {
@@ -107,6 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     privyLogout();
     setUser(null);
     setNeedsProfileCompletion(false);
+    clearAuthToken();
   };
 
   const checkAuth = (): boolean => {

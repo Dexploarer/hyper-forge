@@ -61,18 +61,21 @@ export function useWorldConfigOptions(
         try {
           setOptions((prev) => ({ ...prev, loading: true, error: null }));
           const result = await worldConfigClient.getActiveConfiguration();
-          if (result.configuration) {
-            parseConfigOptions(result.configuration);
+          // Handle both 'config' and 'configuration' field names
+          const config = result.config || (result as any).configuration;
+          if (config) {
+            parseConfigOptions(config);
           } else {
-            // No active config, return empty options
+            // No active config, return empty options (this is fine - world config is optional)
             setOptions((prev) => ({ ...prev, loading: false }));
           }
         } catch (err) {
-          console.error("Failed to fetch active world config:", err);
+          // World config is optional - don't show error, just return empty options
+          console.warn("Failed to fetch active world config (optional):", err);
           setOptions((prev) => ({
             ...prev,
             loading: false,
-            error: "Failed to load world configuration",
+            // Don't set error - world config is optional
           }));
         }
         return;
@@ -82,13 +85,25 @@ export function useWorldConfigOptions(
       try {
         setOptions((prev) => ({ ...prev, loading: true, error: null }));
         const result = await worldConfigClient.getConfiguration(worldConfigId);
-        parseConfigOptions(result.configuration);
+        // Safety check - ensure configuration exists before parsing
+        const config = result?.configuration || (result as any)?.config;
+        if (config) {
+          parseConfigOptions(config);
+        } else {
+          // No configuration found - return empty options (world config is optional)
+          setOptions((prev) => ({
+            ...prev,
+            loading: false,
+            error: null,
+          }));
+        }
       } catch (err) {
-        console.error("Failed to fetch world config:", err);
+        // World config is optional - don't show error, just return empty options
+        console.warn("Failed to fetch world config (optional):", err);
         setOptions((prev) => ({
           ...prev,
           loading: false,
-          error: "Failed to load world configuration",
+          error: null, // Don't set error - world config is optional
         }));
       }
     };
@@ -97,6 +112,12 @@ export function useWorldConfigOptions(
   }, [worldConfigId]);
 
   const parseConfigOptions = (config: WorldConfigurationData) => {
+    // Safety check - ensure config exists
+    if (!config) {
+      console.warn("parseConfigOptions: config is null or undefined");
+      return;
+    }
+
     // Extract NPC archetypes from multiple sources
     const npcArchetypes: string[] = [];
     config.npcCategories

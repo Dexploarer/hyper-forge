@@ -79,20 +79,28 @@ export class GenerationAPIClient extends TypedEventEmitter<GenerationAPIEvents> 
   
   constructor(apiUrl?: string) {
     super()
-    // Use environment variable if available, otherwise use relative URL in production
+    // Use environment variable if available, otherwise use relative URL (Vite proxy handles /api in dev)
     const envApiUrl = (import.meta as ExtendedImportMeta).env?.VITE_GENERATION_API_URL
-    this.apiUrl = apiUrl || envApiUrl || (import.meta.env.PROD ? '/api' : 'http://localhost:3004/api')
+    this.apiUrl = apiUrl || envApiUrl || '/api'
   }
   
   /**
    * Start a new generation pipeline
+   * @param config Generation configuration
+   * @param accessToken Optional Privy access token for authentication
    */
-  async startPipeline(config: GenerationConfig): Promise<string> {
+  async startPipeline(config: GenerationConfig, accessToken?: string): Promise<string> {
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json'
+    }
+    
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`
+    }
+    
     const response = await apiFetch(`${this.apiUrl}/generation/pipeline`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify(config),
       timeoutMs: 30000
     })

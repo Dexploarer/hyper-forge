@@ -324,27 +324,50 @@ export class WorldConfigAPIClient {
 
   /**
    * List all world configurations
+   * Returns empty array if error occurs (world config is optional)
    */
   async listConfigurations(params?: {
     limit?: number;
     offset?: number;
     includeTemplates?: boolean;
-  }): Promise<{ success: boolean; configurations: WorldConfigurationData[] }> {
-    const queryParams = new URLSearchParams();
-    if (params?.limit) queryParams.set("limit", params.limit.toString());
-    if (params?.offset) queryParams.set("offset", params.offset.toString());
-    if (params?.includeTemplates !== undefined) {
-      queryParams.set("includeTemplates", params.includeTemplates.toString());
+  }): Promise<{ success: boolean; configs: WorldConfigurationData[]; count: number }> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.limit) queryParams.set("limit", params.limit.toString());
+      if (params?.offset) queryParams.set("offset", params.offset.toString());
+      if (params?.includeTemplates !== undefined) {
+        queryParams.set("includeTemplates", params.includeTemplates.toString());
+      }
+
+      const url = `${API_BASE}${queryParams.toString() ? `?${queryParams}` : ""}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        // World config is optional - return empty array instead of throwing
+        console.warn(`[WorldConfigAPIClient] Failed to list configurations: ${response.statusText}`);
+        return {
+          success: true,
+          configs: [],
+          count: 0,
+        };
+      }
+
+      const data = await response.json();
+      // Handle both 'configs' and 'configurations' field names for backwards compatibility
+      return {
+        success: data.success,
+        configs: data.configs || data.configurations || [],
+        count: data.count || (data.configs || data.configurations || []).length,
+      };
+    } catch (error) {
+      // World config is optional - return empty array instead of throwing
+      console.warn("[WorldConfigAPIClient] Error listing configurations:", error);
+      return {
+        success: true,
+        configs: [],
+        count: 0,
+      };
     }
-
-    const url = `${API_BASE}${queryParams.toString() ? `?${queryParams}` : ""}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to list configurations: ${response.statusText}`);
-    }
-
-    return await response.json();
   }
 
   /**
@@ -364,20 +387,38 @@ export class WorldConfigAPIClient {
 
   /**
    * Get the active configuration
+   * Returns null if no active configuration exists (this is optional)
    */
   async getActiveConfiguration(): Promise<{
     success: boolean;
-    configuration: WorldConfigurationData | null;
+    config: WorldConfigurationData | null;
   }> {
-    const response = await fetch(`${API_BASE}/active`);
+    try {
+      const response = await fetch(`${API_BASE}/active`);
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to get active configuration: ${response.statusText}`,
-      );
+      if (!response.ok) {
+        // World config is optional - return null instead of throwing
+        console.warn(`[WorldConfigAPIClient] Failed to get active configuration: ${response.statusText}`);
+        return {
+          success: true,
+          config: null,
+        };
+      }
+
+      const data = await response.json();
+      // Handle both 'config' and 'configuration' field names for backwards compatibility
+      return {
+        success: data.success,
+        config: data.config || data.configuration || null,
+      };
+    } catch (error) {
+      // World config is optional - return null instead of throwing
+      console.warn("[WorldConfigAPIClient] Error fetching active configuration:", error);
+      return {
+        success: true,
+        config: null,
+      };
     }
-
-    return await response.json();
   }
 
   // ==================== Create & Update ====================

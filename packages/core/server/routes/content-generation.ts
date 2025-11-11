@@ -101,40 +101,50 @@ export const contentGenerationRoutes = new Elysia({
         // POST /api/content/generate-npc
         .post(
           "/generate-npc",
-          async ({ body, user }) => {
-            console.log(
-              `[ContentGeneration] Generating NPC${body.archetype ? ` with archetype: ${body.archetype}` : ""}`,
-            );
+          async ({ body, user, set }) => {
+            try {
+              console.log(
+                `[ContentGeneration] Generating NPC${body.archetype ? ` with archetype: ${body.archetype}` : ""}`,
+              );
 
-            const result = await contentGenService.generateNPC({
-              prompt: body.prompt,
-              archetype: body.archetype,
-              context: body.context,
-              quality: body.quality,
-              worldConfigId: body.worldConfigId,
-            });
-
-            // Save to database
-            const npc = await contentDatabaseService.createNPC({
-              name: result.npc.name,
-              archetype: result.npc.archetype,
-              data: result.npc,
-              generationParams: {
+              const result = await contentGenService.generateNPC({
                 prompt: body.prompt,
                 archetype: body.archetype,
                 context: body.context,
                 quality: body.quality,
                 worldConfigId: body.worldConfigId,
-              },
-              tags: [], // Could extract from archetype or personality
-              createdBy: user?.id,
-              walletAddress: user?.walletAddress || undefined,
-            });
+              });
 
-            console.log(
-              `[ContentGeneration] Successfully generated and saved NPC`,
-            );
-            return { ...result, id: npc.id };
+              // Save to database
+              const npc = await contentDatabaseService.createNPC({
+                name: result.npc.name,
+                archetype: result.npc.archetype,
+                data: result.npc,
+                generationParams: {
+                  prompt: body.prompt,
+                  archetype: body.archetype,
+                  context: body.context,
+                  quality: body.quality,
+                  worldConfigId: body.worldConfigId,
+                },
+                tags: [], // Could extract from archetype or personality
+                createdBy: user?.id,
+                walletAddress: user?.walletAddress || undefined,
+              });
+
+              console.log(
+                `[ContentGeneration] Successfully generated and saved NPC`,
+              );
+              return { ...result, id: npc.id };
+            } catch (error) {
+              console.error("[ContentGeneration] Error generating NPC:", error);
+              set.status = 500;
+              throw new Error(
+                error instanceof Error
+                  ? error.message
+                  : "An unexpected error occurred while generating the NPC",
+              );
+            }
           },
           {
             body: Models.GenerateNPCRequest,
