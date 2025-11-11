@@ -21,17 +21,42 @@ export const createGenerationRoutes = (
         // Start generation pipeline
         .post(
           "/pipeline",
-          async ({ body }) => {
-            // User context is already part of the body schema
-            // Cast to GenerationService's PipelineConfig type which has slightly different user field typing
-            const result = await generationService.startPipeline(
-              body as Parameters<typeof generationService.startPipeline>[0],
-            );
-            return result;
+          async ({ body, set }) => {
+            try {
+              // User context is already part of the body schema
+              // Cast to GenerationService's PipelineConfig type which has slightly different user field typing
+              const result = await generationService.startPipeline(
+                body as Parameters<typeof generationService.startPipeline>[0],
+              );
+
+              if (!result || !result.pipelineId) {
+                set.status = 500;
+                return {
+                  error: "Failed to start pipeline - no pipeline ID returned",
+                };
+              }
+
+              return result;
+            } catch (error) {
+              console.error(
+                "[Generation Route] Error starting pipeline:",
+                error,
+              );
+              set.status = 500;
+              return {
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to start generation pipeline",
+              };
+            }
           },
           {
             body: Models.PipelineConfig,
-            response: Models.PipelineResponse,
+            response: {
+              200: Models.PipelineResponse,
+              500: Models.ErrorResponse,
+            },
             detail: {
               tags: ["Generation"],
               summary: "Start generation pipeline",

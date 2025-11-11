@@ -265,7 +265,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
               </div>
             )}
 
-            {/* Bottom-Right Utility Controls */}
+            {/* Bottom-Right Utility Controls - Always visible */}
             <div className="absolute bottom-4 right-4 flex gap-2 z-30">
               {/* Assets button - always visible */}
               <button
@@ -301,8 +301,8 @@ export const UnifiedEquipmentPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Assets Side Panel */}
-      {showAssetDrawer && (selectedAvatar || selectedEquipment) && (
+      {/* Assets Side Panel - Always available to select assets */}
+      {showAssetDrawer && (
         <div className="absolute top-20 left-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-4 z-20 min-w-[320px] max-w-[400px] max-h-[calc(100vh-6rem)] flex flex-col animate-scale-in">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
