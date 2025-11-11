@@ -12,8 +12,7 @@ import {
   UndoRedoControls,
   FittingProgress,
 } from "@/components/armor-fitting";
-import {
-  EquipmentViewer,
+import EquipmentViewer, {
   type EquipmentViewerRef,
 } from "@/components/equipment/EquipmentViewer";
 import {
@@ -213,15 +212,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
                     orientationOffset={manualRotation}
                     positionOffset={manualPosition}
                     isAnimating={isAnimationPlaying}
-                    animationType={
-                      currentAnimation === "TPose"
-                        ? "tpose"
-                        : currentAnimation === "Walking"
-                          ? "walking"
-                          : currentAnimation === "Running"
-                            ? "running"
-                            : "tpose"
-                    }
+                    animationType={currentAnimation}
                   />
                 ) : (
                   <ArmorFittingViewer
@@ -271,7 +262,13 @@ export const UnifiedEquipmentPage: React.FC = () => {
                 {/* Reset Button */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-3 z-10 max-w-[90%]">
                   <button
-                    onClick={() => resetScene(viewerRef)}
+                    onClick={() => {
+                      if (isWeaponMode()) {
+                        resetWeaponAdjustments();
+                      } else {
+                        resetScene(armorViewerRef);
+                      }
+                    }}
                     className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2.5 bg-bg-primary/80  border border-white/10 text-text-primary hover:bg-bg-secondary hover:border-white/20 hover:scale-105"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -432,7 +429,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
                 ).map((slot) => (
                   <button
                     key={slot.id}
-                    onClick={() => setEquipmentSlot(slot.id, viewerRef)}
+                    onClick={() => setEquipmentSlot(slot.id, armorViewerRef)}
                     className={cn(
                       "flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 text-sm font-medium",
                       equipmentSlot === slot.id
@@ -485,7 +482,25 @@ export const UnifiedEquipmentPage: React.FC = () => {
                   onResetAdjustments={resetWeaponAdjustments}
                   onCurrentAnimationChange={setCurrentAnimation}
                   onToggleAnimation={toggleAnimation}
-                  onExportEquipped={() => exportEquippedAvatar(viewerRef)}
+                  onExportEquipped={async () => {
+                    if (weaponViewerRef.current) {
+                      try {
+                        const arrayBuffer =
+                          await weaponViewerRef.current.exportEquippedModel();
+                        const blob = new Blob([arrayBuffer], {
+                          type: "model/gltf-binary",
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `equipped_avatar_${Date.now()}.glb`;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      } catch (error) {
+                        console.error("Export failed:", error);
+                      }
+                    }
+                  }}
                   onSaveConfiguration={saveConfiguration}
                 />
               ) : (
@@ -515,20 +530,26 @@ export const UnifiedEquipmentPage: React.FC = () => {
                   onEnableWeightTransferChange={setEnableWeightTransfer}
                   onVisualizationModeChange={setVisualizationMode}
                   onShowWireframeChange={setShowWireframe}
-                  onPerformFitting={() => performFitting(viewerRef)}
-                  onBindArmorToSkeleton={() => bindArmorToSkeleton(viewerRef)}
-                  onExportArmor={() => exportEquippedAvatar(viewerRef)}
+                  onPerformFitting={() => performFitting(armorViewerRef)}
+                  onBindArmorToSkeleton={() =>
+                    bindArmorToSkeleton(armorViewerRef)
+                  }
+                  onExportArmor={() => exportEquippedAvatar(armorViewerRef)}
                   onSaveConfiguration={saveConfiguration}
                   onHelmetFittingMethodChange={setHelmetFittingMethod}
                   onHelmetSizeMultiplierChange={setHelmetSizeMultiplier}
                   onHelmetVerticalOffsetChange={setHelmetVerticalOffset}
                   onHelmetForwardOffsetChange={setHelmetForwardOffset}
                   onHelmetRotationChange={updateHelmetRotation}
-                  onPerformHelmetFitting={() => performHelmetFitting(viewerRef)}
-                  onAttachHelmetToHead={() => attachHelmetToHead(viewerRef)}
+                  onPerformHelmetFitting={() =>
+                    performHelmetFitting(armorViewerRef)
+                  }
+                  onAttachHelmetToHead={() =>
+                    attachHelmetToHead(armorViewerRef)
+                  }
                   onCurrentAnimationChange={setCurrentAnimation}
                   onToggleAnimation={toggleAnimation}
-                  viewerRef={viewerRef}
+                  viewerRef={armorViewerRef}
                 />
               )}
             </div>
