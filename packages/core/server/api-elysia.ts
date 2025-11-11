@@ -82,6 +82,20 @@ const app = new Elysia()
   // Performance monitoring
   .use(serverTiming())
 
+  // Security headers for Privy embedded wallets and cross-origin isolation
+  // Applied to ALL responses including errors (404, 500, etc.)
+  .onRequest(({ set }) => {
+    // COOP: Allow popups for OAuth flows (required by Privy)
+    set.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups";
+
+    // COEP: Modern credentialless mode for embedded content
+    set.headers["Cross-Origin-Embedder-Policy"] = "credentialless";
+
+    // Additional security headers
+    set.headers["X-Content-Type-Options"] = "nosniff";
+    set.headers["X-Frame-Options"] = "DENY";
+  })
+
   // Rate limiting - protect against abuse
   .use(
     rateLimit({
@@ -225,12 +239,12 @@ const app = new Elysia()
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
     const file = Bun.file(filePath);
-    
+
     if (!(await file.exists())) {
       set.status = 404;
       return new Response("File not found", { status: 404 });
     }
-    
+
     return file;
   })
   .head("/gdd-assets/*", async ({ params }) => {
@@ -256,12 +270,12 @@ const app = new Elysia()
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
     const file = Bun.file(filePath);
-    
+
     if (!(await file.exists())) {
       set.status = 404;
       return new Response("File not found", { status: 404 });
     }
-    
+
     return file;
   })
   .head("/temp-images/*", async ({ params }) => {
@@ -287,12 +301,12 @@ const app = new Elysia()
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/emotes", relativePath);
     const file = Bun.file(filePath);
-    
+
     if (!(await file.exists())) {
       set.status = 404;
       return new Response("File not found", { status: 404 });
     }
-    
+
     return file;
   })
   .head("/emotes/*", async ({ params }) => {
@@ -318,12 +332,12 @@ const app = new Elysia()
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/rigs", relativePath);
     const file = Bun.file(filePath);
-    
+
     if (!(await file.exists())) {
       set.status = 404;
       return new Response("File not found", { status: 404 });
     }
-    
+
     return file;
   })
   .head("/rigs/*", async ({ params }) => {
@@ -349,12 +363,12 @@ const app = new Elysia()
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/images", relativePath);
     const file = Bun.file(filePath);
-    
+
     if (!(await file.exists())) {
       set.status = 404;
       return new Response("File not found", { status: 404 });
     }
-    
+
     return file;
   })
   .head("/images/*", async ({ params }) => {
@@ -380,12 +394,12 @@ const app = new Elysia()
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "public/prompts", relativePath);
     const file = Bun.file(filePath);
-    
+
     if (!(await file.exists())) {
       set.status = 404;
       return new Response("File not found", { status: 404 });
     }
-    
+
     return file;
   })
   .head("/prompts/*", async ({ params }) => {
