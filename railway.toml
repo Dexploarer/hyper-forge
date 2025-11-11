@@ -4,6 +4,7 @@
 
 [build]
 builder = "RAILPACK"
+buildCommand = "cd packages/core && bun run clean && bunx vite build"
 
 [deploy]
 startCommand = "cd packages/core && bun run start:api"
