@@ -1,8 +1,8 @@
-import { Package, RotateCcw, Settings, Menu } from 'lucide-react'
-import React, { useRef, useState } from 'react'
+import { Package, RotateCcw, Settings, Menu, X } from "lucide-react";
+import React, { useRef, useState } from "react";
 
-import { useEquipmentFittingStore } from '../store/useEquipmentFittingStore'
-import { cn } from '../styles'
+import { useEquipmentFittingStore } from "../store/useEquipmentFittingStore";
+import { cn } from "../styles";
 
 import {
   ArmorFittingViewer,
@@ -11,21 +11,26 @@ import {
   ViewportControls,
   UndoRedoControls,
   FittingProgress,
-} from '@/components/armor-fitting'
-import { ErrorNotification, EmptyState, Drawer, CollapsibleSection } from '@/components/common'
+} from "@/components/armor-fitting";
+import {
+  ErrorNotification,
+  EmptyState,
+  Drawer,
+  CollapsibleSection,
+} from "@/components/common";
 import {
   TabSelector,
   ArmorFittingPanel,
   WeaponFittingPanel,
-} from '@/components/equipment'
-import { EQUIPMENT_SLOTS } from '@/constants/equipment'
-import { useAssets } from '@/hooks'
+} from "@/components/equipment";
+import { EQUIPMENT_SLOTS } from "@/constants/equipment";
+import { useAssets } from "@/hooks";
 
 export const UnifiedEquipmentPage: React.FC = () => {
-  const { assets, loading } = useAssets()
-  const viewerRef = useRef<ArmorFittingViewerRef>(null)
-  const [showControlsDrawer, setShowControlsDrawer] = useState(false)
-  const [showAssetDrawer, setShowAssetDrawer] = useState(false)
+  const { assets, loading } = useAssets();
+  const viewerRef = useRef<ArmorFittingViewerRef>(null);
+  const [showControlsDrawer, setShowControlsDrawer] = useState(false);
+  const [showAssetDrawer, setShowAssetDrawer] = useState(false);
 
   // Get state and actions from unified store
   const {
@@ -125,36 +130,36 @@ export const UnifiedEquipmentPage: React.FC = () => {
     // Selectors
     isReadyToFit,
     currentProgress,
-  } = useEquipmentFittingStore()
+  } = useEquipmentFittingStore();
 
   // Keyboard shortcuts for undo/redo
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Undo: Ctrl+Z or Cmd+Z
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault()
-        if (canUndo()) undo()
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (canUndo()) undo();
       }
       // Redo: Ctrl+Shift+Z, Cmd+Shift+Z, or Ctrl+Y
       else if (
-        ((e.ctrlKey || e.metaKey) && e.key === 'z' && e.shiftKey) ||
-        ((e.ctrlKey || e.metaKey) && e.key === 'y')
+        ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) ||
+        ((e.ctrlKey || e.metaKey) && e.key === "y")
       ) {
-        e.preventDefault()
-        if (canRedo()) redo()
+        e.preventDefault();
+        if (canRedo()) redo();
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [undo, redo, canUndo, canRedo])
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo, canUndo, canRedo]);
 
   // Determine which equipment is selected
   const selectedEquipment = isWeaponMode()
     ? selectedWeapon
-    : equipmentSlot === 'Head'
+    : equipmentSlot === "Head"
       ? selectedHelmet
-      : selectedArmor
+      : selectedArmor;
 
   return (
     <>
@@ -164,255 +169,321 @@ export const UnifiedEquipmentPage: React.FC = () => {
           <ErrorNotification error={lastError} onClose={clearError} />
         )}
 
-        {/* Top Bar with Controls */}
-        <div className="absolute top-4 left-4 right-4 z-50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowAssetDrawer(true)}
-              className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"
-            >
-              <Menu className="w-4 h-4" />
-              <span>Assets</span>
-            </button>
-            <button
-              onClick={() => setShowControlsDrawer(true)}
-              className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"
-            >
-              <Settings className="w-4 h-4" />
-              <span>Controls</span>
-            </button>
-          </div>
-        </div>
+        {/* Center - 3D Viewport - FIXED */}
+        <div className="flex-1 flex flex-col">
+          <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl flex items-center justify-center">
+            {selectedAvatar || selectedEquipment ? (
+              <>
+                <ArmorFittingViewer
+                  ref={viewerRef}
+                  avatarUrl={
+                    selectedAvatar?.hasModel
+                      ? `/api/assets/${selectedAvatar.id}/model`
+                      : undefined
+                  }
+                  armorUrl={
+                    selectedArmor?.hasModel
+                      ? `/api/assets/${selectedArmor.id}/model`
+                      : undefined
+                  }
+                  helmetUrl={
+                    selectedHelmet?.hasModel
+                      ? `/api/assets/${selectedHelmet.id}/model`
+                      : undefined
+                  }
+                  weaponUrl={
+                    selectedWeapon?.hasModel
+                      ? `/api/assets/${selectedWeapon.id}/model`
+                      : undefined
+                  }
+                  showWireframe={showWireframe}
+                  equipmentSlot={
+                    equipmentSlot as
+                      | "Head"
+                      | "Spine2"
+                      | "Pelvis"
+                      | "Hand_R"
+                      | "Hand_L"
+                  }
+                  selectedAvatar={selectedAvatar}
+                  currentAnimation={currentAnimation}
+                  isAnimationPlaying={isAnimationPlaying}
+                  visualizationMode={
+                    visualizationMode === "hull" ? "none" : visualizationMode
+                  }
+                  selectedBone={0}
+                  onModelsLoaded={() => console.log("Models loaded")}
+                  onBodyRegionsDetected={() => {}}
+                  onCollisionsDetected={() => {}}
+                />
 
-      {/* Center - 3D Viewport - FIXED */}
-      <div className="flex-1 flex flex-col">
-              <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl flex items-center justify-center">
-                {selectedAvatar || selectedEquipment ? (
-                  <>
-                    <ArmorFittingViewer
-                      ref={viewerRef}
-                      avatarUrl={selectedAvatar?.hasModel ? `/api/assets/${selectedAvatar.id}/model` : undefined}
-                      armorUrl={selectedArmor?.hasModel ? `/api/assets/${selectedArmor.id}/model` : undefined}
-                      helmetUrl={selectedHelmet?.hasModel ? `/api/assets/${selectedHelmet.id}/model` : undefined}
-                      weaponUrl={selectedWeapon?.hasModel ? `/api/assets/${selectedWeapon.id}/model` : undefined}
-                      showWireframe={showWireframe}
-                      equipmentSlot={equipmentSlot as 'Head' | 'Spine2' | 'Pelvis' | 'Hand_R' | 'Hand_L'}
-                      selectedAvatar={selectedAvatar}
-                      currentAnimation={currentAnimation}
-                      isAnimationPlaying={isAnimationPlaying}
-                      visualizationMode={visualizationMode === 'hull' ? 'none' : visualizationMode}
-                      selectedBone={0}
-                      onModelsLoaded={() => console.log('Models loaded')}
-                      onBodyRegionsDetected={() => {}}
-                      onCollisionsDetected={() => {}}
-                    />
+                {/* Bottom-Right Utility Controls */}
+                {(selectedAvatar || selectedEquipment) && (
+                  <div className="absolute bottom-4 right-4 flex gap-2 z-10">
+                    <button
+                      onClick={() => setShowAssetDrawer(!showAssetDrawer)}
+                      className={`p-2 rounded-md transition-all duration-200 ${
+                        showAssetDrawer
+                          ? "bg-primary bg-opacity-20 text-primary border border-primary border-opacity-50"
+                          : "bg-bg-secondary bg-opacity-90 text-text-secondary hover:text-text-primary border border-transparent"
+                      } hover:scale-105 active:scale-95`}
+                      title="Toggle Assets Panel"
+                      aria-label="Toggle Assets Panel"
+                    >
+                      <Menu size={16} />
+                    </button>
 
-                    {/* Reset Button */}
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-3 z-10 max-w-[90%]">
-                      <button
-                        onClick={() => resetScene(viewerRef)}
-                        className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2.5 bg-bg-primary/80  border border-white/10 text-text-primary hover:bg-bg-secondary hover:border-white/20 hover:scale-105"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                        <span>Reset</span>
-                      </button>
-                    </div>
-
-                    {/* Viewport Controls */}
-                    <ViewportControls
-                      showWireframe={showWireframe}
-                      onToggleWireframe={() => setShowWireframe(!showWireframe)}
-                      onResetCamera={() => {/* Camera reset */}}
-                    />
-
-                    {/* Undo/Redo Controls (armor mode only) */}
-                    {isArmorMode() && (
-                      <UndoRedoControls
-                        canUndo={canUndo()}
-                        canRedo={canRedo()}
-                        onUndo={undo}
-                        onRedo={redo}
-                      />
-                    )}
-
-                    {/* Fitting Progress */}
-                    {isFitting && (
-                      <FittingProgress
-                        progress={fittingProgress}
-                        message={currentProgress()}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <EmptyState
-                      icon={Package}
-                      title="No Preview Available"
-                      description={`Select an avatar and ${isWeaponMode() ? 'weapon' : 'armor piece'} to begin fitting`}
-                    />
+                    <button
+                      onClick={() => setShowControlsDrawer(!showControlsDrawer)}
+                      className={`p-2 rounded-md transition-all duration-200 ${
+                        showControlsDrawer
+                          ? "bg-primary bg-opacity-20 text-primary border border-primary border-opacity-50"
+                          : "bg-bg-secondary bg-opacity-90 text-text-secondary hover:text-text-primary border border-transparent"
+                      } hover:scale-105 active:scale-95`}
+                      title="Toggle Controls Panel"
+                      aria-label="Toggle Controls Panel"
+                    >
+                      <Settings size={16} />
+                    </button>
                   </div>
                 )}
-              </div>
-      </div>
-      </div>
 
-      {/* Asset Selection Drawer */}
-      <Drawer
-        open={showAssetDrawer}
-        onClose={() => setShowAssetDrawer(false)}
-        side="left"
-        size="lg"
-        title="Asset Selection"
-      >
-        <div className="p-6">
-          <ArmorAssetList
-            assets={assets}
-            loading={loading}
-            assetType={assetTypeFilter}
-            selectedAsset={selectedEquipment}
-            selectedAvatar={selectedAvatar}
-            selectedArmor={selectedArmor}
-            selectedHelmet={selectedHelmet}
-            selectedWeapon={selectedWeapon}
-            onAssetSelect={(asset) => {
-              handleAssetSelect(asset)
-              setShowAssetDrawer(false)
-            }}
-            onAssetTypeChange={setAssetTypeFilter}
-            hideTypeToggle={true}
-            equipmentSlot={equipmentSlot as 'Head' | 'Spine2' | 'Pelvis' | 'Hand_R' | 'Hand_L'}
-          />
-        </div>
-      </Drawer>
+                {/* Reset Button */}
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-3 z-10 max-w-[90%]">
+                  <button
+                    onClick={() => resetScene(viewerRef)}
+                    className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2.5 bg-bg-primary/80  border border-white/10 text-text-primary hover:bg-bg-secondary hover:border-white/20 hover:scale-105"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>Reset</span>
+                  </button>
+                </div>
 
-      {/* Controls Drawer */}
-      <Drawer
-        open={showControlsDrawer}
-        onClose={() => setShowControlsDrawer(false)}
-        side="right"
-        size="lg"
-        title="Equipment Fitting Controls"
-      >
-        <div className="p-6 space-y-4">
-          {/* Equipment Slot Selector */}
-          <CollapsibleSection
-            title="Equipment Slot"
-            defaultOpen={true}
-            icon={Package}
-          >
-            <div className="grid grid-cols-2 gap-2">
-              {EQUIPMENT_SLOTS.filter(slot =>
-                slot.id === 'Head' || slot.id === 'Spine2' || slot.id === 'Hips' || slot.id === 'Hand_R' || slot.id === 'Hand_L'
-              ).map((slot) => (
-                <button
-                  key={slot.id}
-                  onClick={() => setEquipmentSlot(slot.id, viewerRef)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 text-sm font-medium",
-                    equipmentSlot === slot.id
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-bg-tertiary text-text-secondary hover:text-text-primary hover:bg-bg-secondary"
-                  )}
-                  title={slot.description}
-                >
-                  <slot.icon className="w-4 h-4" />
-                  <span className="truncate">{slot.name}</span>
-                </button>
-              ))}
-            </div>
-          </CollapsibleSection>
+                {/* Viewport Controls */}
+                <ViewportControls
+                  showWireframe={showWireframe}
+                  onToggleWireframe={() => setShowWireframe(!showWireframe)}
+                  onResetCamera={() => {
+                    /* Camera reset */
+                  }}
+                />
 
-          {/* Tab Selector */}
-          <div className="pb-4 border-b border-border-primary">
-            <TabSelector
-              activeTab={currentTab}
-              onTabChange={setCurrentTab}
-            />
-          </div>
+                {/* Undo/Redo Controls (armor mode only) */}
+                {isArmorMode() && (
+                  <UndoRedoControls
+                    canUndo={canUndo()}
+                    canRedo={canRedo()}
+                    onUndo={undo}
+                    onRedo={redo}
+                  />
+                )}
 
-          {/* Scrollable Controls */}
-          <div className="space-y-4">
-            {isWeaponMode() ? (
-              // Weapon Fitting Panel
-              <WeaponFittingPanel
-                currentTab={currentTab}
-                equipmentSlot={equipmentSlot}
-                selectedWeapon={selectedWeapon}
-                handleDetectionResult={handleDetectionResult}
-                isDetectingHandle={isDetectingHandle}
-                avatarHeight={avatarHeight}
-                creatureCategory={creatureCategory}
-                autoScaleWeapon={autoScaleWeapon}
-                weaponScaleOverride={weaponScaleOverride}
-                manualPosition={manualPosition}
-                manualRotation={manualRotation}
-                showSkeleton={showSkeleton}
-                currentAnimation={currentAnimation}
-                isAnimationPlaying={isAnimationPlaying}
-                isExporting={isExporting}
-                onDetectGripPoint={() => selectedWeapon && detectGripPoint(selectedWeapon)}
-                onAvatarHeightChange={setAvatarHeight}
-                onCreatureCategoryChange={setCreatureCategory}
-                onAutoScaleWeaponChange={setAutoScaleWeapon}
-                onWeaponScaleOverrideChange={setWeaponScaleOverride}
-                onManualPositionChange={setManualPosition}
-                onManualRotationChange={setManualRotation}
-                onShowSkeletonChange={setShowSkeleton}
-                onResetAdjustments={resetWeaponAdjustments}
-                onCurrentAnimationChange={setCurrentAnimation}
-                onToggleAnimation={toggleAnimation}
-                onExportEquipped={() => exportEquippedAvatar(viewerRef)}
-                onSaveConfiguration={saveConfiguration}
-              />
+                {/* Fitting Progress */}
+                {isFitting && (
+                  <FittingProgress
+                    progress={fittingProgress}
+                    message={currentProgress()}
+                  />
+                )}
+              </>
             ) : (
-              // Armor Fitting Panel
-              <ArmorFittingPanel
-                currentTab={currentTab}
-                equipmentSlot={equipmentSlot}
-                fittingConfig={fittingConfig}
-                enableWeightTransfer={enableWeightTransfer}
-                visualizationMode={visualizationMode}
-                showWireframe={showWireframe}
-                isFitting={isFitting}
-                canFit={isReadyToFit()}
-                isArmorFitted={isArmorFitted}
-                isArmorBound={isArmorBound}
-                isExporting={isExporting}
-                hasHelmet={!!selectedHelmet}
-                helmetFittingMethod={helmetFittingMethod}
-                helmetSizeMultiplier={helmetSizeMultiplier}
-                helmetVerticalOffset={helmetVerticalOffset}
-                helmetForwardOffset={helmetForwardOffset}
-                helmetRotation={helmetRotation}
-                isHelmetFitted={isHelmetFitted}
-                isHelmetAttached={isHelmetAttached}
-                currentAnimation={currentAnimation}
-                isAnimationPlaying={isAnimationPlaying}
-                onFittingConfigChange={updateFittingConfig}
-                onEnableWeightTransferChange={setEnableWeightTransfer}
-                onVisualizationModeChange={setVisualizationMode}
-                onShowWireframeChange={setShowWireframe}
-                onPerformFitting={() => performFitting(viewerRef)}
-                onBindArmorToSkeleton={() => bindArmorToSkeleton(viewerRef)}
-                onExportArmor={() => exportEquippedAvatar(viewerRef)}
-                onSaveConfiguration={saveConfiguration}
-                onHelmetFittingMethodChange={setHelmetFittingMethod}
-                onHelmetSizeMultiplierChange={setHelmetSizeMultiplier}
-                onHelmetVerticalOffsetChange={setHelmetVerticalOffset}
-                onHelmetForwardOffsetChange={setHelmetForwardOffset}
-                onHelmetRotationChange={updateHelmetRotation}
-                onPerformHelmetFitting={() => performHelmetFitting(viewerRef)}
-                onAttachHelmetToHead={() => attachHelmetToHead(viewerRef)}
-                onCurrentAnimationChange={setCurrentAnimation}
-                onToggleAnimation={toggleAnimation}
-                viewerRef={viewerRef}
-              />
+              <div className="flex items-center justify-center h-full">
+                <EmptyState
+                  icon={Package}
+                  title="No Preview Available"
+                  description={`Select an avatar and ${isWeaponMode() ? "weapon" : "armor piece"} to begin fitting`}
+                />
+              </div>
             )}
           </div>
         </div>
-      </Drawer>
-    </>
-  )
-}
+      </div>
 
-export default UnifiedEquipmentPage
+      {/* Assets Side Panel */}
+      {showAssetDrawer && (selectedAvatar || selectedEquipment) && (
+        <div className="absolute top-20 left-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-4 z-20 min-w-[320px] max-w-[400px] max-h-[calc(100vh-6rem)] flex flex-col animate-scale-in">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-text-primary text-sm font-semibold">
+              Asset Selection
+            </h3>
+            <button
+              onClick={() => setShowAssetDrawer(false)}
+              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-colors"
+              aria-label="Close Assets Panel"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1">
+            <ArmorAssetList
+              assets={assets}
+              loading={loading}
+              assetType={assetTypeFilter}
+              selectedAsset={selectedEquipment}
+              selectedAvatar={selectedAvatar}
+              selectedArmor={selectedArmor}
+              selectedHelmet={selectedHelmet}
+              selectedWeapon={selectedWeapon}
+              onAssetSelect={handleAssetSelect}
+              onAssetTypeChange={setAssetTypeFilter}
+              hideTypeToggle={true}
+              equipmentSlot={
+                equipmentSlot as
+                  | "Head"
+                  | "Spine2"
+                  | "Pelvis"
+                  | "Hand_R"
+                  | "Hand_L"
+              }
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Controls Side Panel */}
+      {showControlsDrawer && (selectedAvatar || selectedEquipment) && (
+        <div className="absolute top-20 right-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-4 z-20 min-w-[360px] max-w-[420px] max-h-[calc(100vh-6rem)] flex flex-col animate-scale-in">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-text-primary text-sm font-semibold">
+              Equipment Fitting Controls
+            </h3>
+            <button
+              onClick={() => setShowControlsDrawer(false)}
+              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-colors"
+              aria-label="Close Controls Panel"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 space-y-4">
+            {/* Equipment Slot Selector */}
+            <CollapsibleSection
+              title="Equipment Slot"
+              defaultOpen={true}
+              icon={Package}
+            >
+              <div className="grid grid-cols-2 gap-2">
+                {EQUIPMENT_SLOTS.filter(
+                  (slot) =>
+                    slot.id === "Head" ||
+                    slot.id === "Spine2" ||
+                    slot.id === "Hips" ||
+                    slot.id === "Hand_R" ||
+                    slot.id === "Hand_L",
+                ).map((slot) => (
+                  <button
+                    key={slot.id}
+                    onClick={() => setEquipmentSlot(slot.id, viewerRef)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-md transition-all duration-200 text-sm font-medium",
+                      equipmentSlot === slot.id
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-bg-tertiary text-text-secondary hover:text-text-primary hover:bg-bg-secondary",
+                    )}
+                    title={slot.description}
+                  >
+                    <slot.icon className="w-4 h-4" />
+                    <span className="truncate">{slot.name}</span>
+                  </button>
+                ))}
+              </div>
+            </CollapsibleSection>
+
+            {/* Tab Selector */}
+            <div className="pb-4 border-b border-border-primary">
+              <TabSelector activeTab={currentTab} onTabChange={setCurrentTab} />
+            </div>
+
+            {/* Scrollable Controls */}
+            <div className="space-y-4">
+              {isWeaponMode() ? (
+                <WeaponFittingPanel
+                  currentTab={currentTab}
+                  equipmentSlot={equipmentSlot}
+                  selectedWeapon={selectedWeapon}
+                  handleDetectionResult={handleDetectionResult}
+                  isDetectingHandle={isDetectingHandle}
+                  avatarHeight={avatarHeight}
+                  creatureCategory={creatureCategory}
+                  autoScaleWeapon={autoScaleWeapon}
+                  weaponScaleOverride={weaponScaleOverride}
+                  manualPosition={manualPosition}
+                  manualRotation={manualRotation}
+                  showSkeleton={showSkeleton}
+                  currentAnimation={currentAnimation}
+                  isAnimationPlaying={isAnimationPlaying}
+                  isExporting={isExporting}
+                  onDetectGripPoint={() =>
+                    selectedWeapon && detectGripPoint(selectedWeapon)
+                  }
+                  onAvatarHeightChange={setAvatarHeight}
+                  onCreatureCategoryChange={setCreatureCategory}
+                  onAutoScaleWeaponChange={setAutoScaleWeapon}
+                  onWeaponScaleOverrideChange={setWeaponScaleOverride}
+                  onManualPositionChange={setManualPosition}
+                  onManualRotationChange={setManualRotation}
+                  onShowSkeletonChange={setShowSkeleton}
+                  onResetAdjustments={resetWeaponAdjustments}
+                  onCurrentAnimationChange={setCurrentAnimation}
+                  onToggleAnimation={toggleAnimation}
+                  onExportEquipped={() => exportEquippedAvatar(viewerRef)}
+                  onSaveConfiguration={saveConfiguration}
+                />
+              ) : (
+                <ArmorFittingPanel
+                  currentTab={currentTab}
+                  equipmentSlot={equipmentSlot}
+                  fittingConfig={fittingConfig}
+                  enableWeightTransfer={enableWeightTransfer}
+                  visualizationMode={visualizationMode}
+                  showWireframe={showWireframe}
+                  isFitting={isFitting}
+                  canFit={isReadyToFit()}
+                  isArmorFitted={isArmorFitted}
+                  isArmorBound={isArmorBound}
+                  isExporting={isExporting}
+                  hasHelmet={!!selectedHelmet}
+                  helmetFittingMethod={helmetFittingMethod}
+                  helmetSizeMultiplier={helmetSizeMultiplier}
+                  helmetVerticalOffset={helmetVerticalOffset}
+                  helmetForwardOffset={helmetForwardOffset}
+                  helmetRotation={helmetRotation}
+                  isHelmetFitted={isHelmetFitted}
+                  isHelmetAttached={isHelmetAttached}
+                  currentAnimation={currentAnimation}
+                  isAnimationPlaying={isAnimationPlaying}
+                  onFittingConfigChange={updateFittingConfig}
+                  onEnableWeightTransferChange={setEnableWeightTransfer}
+                  onVisualizationModeChange={setVisualizationMode}
+                  onShowWireframeChange={setShowWireframe}
+                  onPerformFitting={() => performFitting(viewerRef)}
+                  onBindArmorToSkeleton={() => bindArmorToSkeleton(viewerRef)}
+                  onExportArmor={() => exportEquippedAvatar(viewerRef)}
+                  onSaveConfiguration={saveConfiguration}
+                  onHelmetFittingMethodChange={setHelmetFittingMethod}
+                  onHelmetSizeMultiplierChange={setHelmetSizeMultiplier}
+                  onHelmetVerticalOffsetChange={setHelmetVerticalOffset}
+                  onHelmetForwardOffsetChange={setHelmetForwardOffset}
+                  onHelmetRotationChange={updateHelmetRotation}
+                  onPerformHelmetFitting={() => performHelmetFitting(viewerRef)}
+                  onAttachHelmetToHead={() => attachHelmetToHead(viewerRef)}
+                  onCurrentAnimationChange={setCurrentAnimation}
+                  onToggleAnimation={toggleAnimation}
+                  viewerRef={viewerRef}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default UnifiedEquipmentPage;
