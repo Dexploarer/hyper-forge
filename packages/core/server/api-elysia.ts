@@ -43,6 +43,7 @@ import { soundEffectsRoutes } from "./routes/sound-effects";
 import { contentGenerationRoutes } from "./routes/content-generation";
 import { usersRoutes } from "./routes/users";
 import { adminRoutes } from "./routes/admin";
+import { projectsRoutes } from "./routes/projects";
 import { vectorSearchRoutes } from "./routes/vector-search";
 import { createSeedDataRoutes } from "./routes/seed-data";
 import { worldConfigRoutes } from "./routes/world-config";
@@ -318,6 +319,7 @@ const app = new Elysia()
   .use(aiVisionRoutes)
   .use(usersRoutes)
   .use(adminRoutes)
+  .use(projectsRoutes)
   .use(createAssetRoutes(ROOT_DIR, assetService))
   .use(createMaterialRoutes(ROOT_DIR))
   .use(createRetextureRoutes(ROOT_DIR, retextureService))

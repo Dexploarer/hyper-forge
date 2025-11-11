@@ -4,10 +4,9 @@
  */
 
 import { Elysia, t } from "elysia";
-import { eq } from "drizzle-orm";
-import { db, users } from "../db";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/requireAdmin";
+import { userService } from "../services/UserService";
 
 export const usersRoutes = new Elysia({ prefix: "/users" })
   // Get current user profile (requires authentication)
@@ -28,10 +27,11 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       detail: {
         tags: ["Users"],
         summary: "Get current user profile",
-        description: "Gets the current authenticated user profile. Requires Privy JWT.",
+        description:
+          "Gets the current authenticated user profile. Requires Privy JWT.",
         security: [{ BearerAuth: [] }],
       },
-    }
+    },
   )
 
   // Update/Complete user profile (requires authentication)
@@ -46,26 +46,16 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       }
 
       const { user: authUser } = authResult;
-      const { displayName, email, discordUsername } = body as any;
+      const { displayName, email, discordUsername } = body;
 
       // Update profile (only set profileCompleted if not already set)
-      const updateData: any = {
-        displayName,
-        email,
-        discordUsername,
-        updatedAt: new Date(),
-      };
+      const markCompleted = !authUser.profileCompleted;
 
-      // Only set profileCompleted timestamp on first completion
-      if (!authUser.profileCompleted) {
-        updateData.profileCompleted = new Date();
-      }
-
-      const [updatedUser] = await db
-        .update(users)
-        .set(updateData)
-        .where(eq(users.id, authUser.id))
-        .returning();
+      const updatedUser = await userService.updateProfile(
+        authUser.id,
+        { displayName, email, discordUsername },
+        markCompleted,
+      );
 
       return { user: updatedUser };
     },
@@ -78,10 +68,11 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
       detail: {
         tags: ["Users"],
         summary: "Update user profile",
-        description: "Save or update user profile information. Requires Privy JWT.",
+        description:
+          "Save or update user profile information. Requires Privy JWT.",
         security: [{ BearerAuth: [] }],
       },
-    }
+    },
   )
 
   // Get all users (admin only)
@@ -95,9 +86,7 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         return adminResult;
       }
 
-      const allUsers = await db.query.users.findMany({
-        orderBy: (users, { desc }) => [desc(users.createdAt)],
-      });
+      const allUsers = await userService.getAllUsers();
 
       return { users: allUsers };
     },
@@ -108,5 +97,5 @@ export const usersRoutes = new Elysia({ prefix: "/users" })
         description: "Get all users for admin dashboard. Requires admin role.",
         security: [{ BearerAuth: [] }],
       },
-    }
+    },
   );

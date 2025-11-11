@@ -5,8 +5,9 @@
 
 import { Elysia, t } from "elysia";
 import { eq, desc, and } from "drizzle-orm";
-import { db, users, activityLog } from "../db";
+import { db, activityLog } from "../db";
 import { requireAdmin } from "../middleware/requireAdmin";
+import { userService } from "../services/UserService";
 
 export const adminRoutes = new Elysia({ prefix: "/admin" })
   // Update user role (admin only)
@@ -53,13 +54,26 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
       }
 
       // Update user role
-      const [updatedUser] = await db
-        .update(users)
-        .set({ role, updatedAt: new Date() })
-        .where(eq(users.id, id))
-        .returning();
+      try {
+        const updatedUser = await userService.updateRole(
+          id,
+          role as "admin" | "member",
+        );
 
-      if (!updatedUser) {
+        // Log activity
+        await db.insert(activityLog).values({
+          userId: adminUser.id,
+          action: "role_change",
+          entityType: "user",
+          entityId: id,
+          details: {
+            newRole: role,
+            targetUser: updatedUser.displayName || updatedUser.email || id,
+          },
+        });
+
+        return { success: true, user: updatedUser };
+      } catch (error) {
         return new Response(
           JSON.stringify({
             error: "User not found",
@@ -71,20 +85,6 @@ export const adminRoutes = new Elysia({ prefix: "/admin" })
           },
         );
       }
-
-      // Log activity
-      await db.insert(activityLog).values({
-        userId: adminUser.id,
-        action: "role_change",
-        entityType: "user",
-        entityId: id,
-        details: {
-          newRole: role,
-          targetUser: updatedUser.displayName || updatedUser.email || id,
-        },
-      });
-
-      return { success: true, user: updatedUser };
     },
     {
       params: t.Object({

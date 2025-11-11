@@ -13,6 +13,10 @@ import {
   FittingProgress,
 } from "@/components/armor-fitting";
 import {
+  EquipmentViewer,
+  type EquipmentViewerRef,
+} from "@/components/equipment/EquipmentViewer";
+import {
   ErrorNotification,
   EmptyState,
   Drawer,
