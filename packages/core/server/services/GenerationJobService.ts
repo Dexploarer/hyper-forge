@@ -99,8 +99,45 @@ export class GenerationJobService {
       expiresAt,
     };
 
-    const [job] = await db.insert(generationJobs).values(newJob).returning();
-    return job;
+    try {
+      const [job] = await db.insert(generationJobs).values(newJob).returning();
+      return job;
+    } catch (error: any) {
+      // Enhanced error logging for database constraint violations
+      console.error("[GenerationJobService] Failed to create job:", {
+        pipelineId,
+        assetId: config.assetId,
+        userId: config.user.userId,
+        error: error.message,
+        code: error.code,
+        constraint: error.constraint,
+        detail: error.detail,
+        hint: error.hint,
+      });
+
+      // Check for specific constraint violations
+      if (error.code === "23503") {
+        // Foreign key violation
+        throw new Error(
+          `User not found: ${config.user.userId}. Please ensure you are logged in with a valid account.`,
+        );
+      } else if (error.code === "23505") {
+        // Unique constraint violation
+        throw new Error(
+          `Pipeline ID already exists: ${pipelineId}. Please try again.`,
+        );
+      } else if (error.code === "23502") {
+        // NOT NULL constraint violation
+        throw new Error(
+          `Missing required field: ${error.column || "unknown"}. Please check your request.`,
+        );
+      }
+
+      // Re-throw with original message for other errors
+      throw new Error(
+        `Failed to create generation job: ${error.message || "Unknown database error"}`,
+      );
+    }
   }
 
   /**
