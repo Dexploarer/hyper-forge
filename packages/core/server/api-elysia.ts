@@ -657,18 +657,30 @@ const app = new Elysia()
       return new Response("Internal Server Error", { status: 500 });
     }
   })
-  .head("/*", async () => {
-    const indexPath = path.join(ROOT_DIR, "dist", "index.html");
-    const file = Bun.file(indexPath);
+  .head("/*", async ({ set }) => {
+    try {
+      const indexPath = path.join(ROOT_DIR, "dist", "index.html");
+      const file = Bun.file(indexPath);
 
-    if (!(await file.exists())) {
-      return new Response(null, { status: 404 });
+      if (!(await file.exists())) {
+        console.warn(`[HEAD /*] Frontend not found at: ${indexPath}`);
+        console.warn(`   Current working directory: ${process.cwd()}`);
+        console.warn(`   ROOT_DIR: ${ROOT_DIR}`);
+        set.status = 404;
+        return null;
+      }
+
+      set.status = 200;
+      set.headers["Content-Type"] = "text/html; charset=utf-8";
+      return null;
+    } catch (error) {
+      console.error("[HEAD /*] Error checking SPA:", error);
+      console.error(`   ROOT_DIR: ${ROOT_DIR}`);
+      console.error(`   cwd: ${process.cwd()}`);
+      console.error(`   Error details:`, error instanceof Error ? error.message : String(error));
+      set.status = 500;
+      return null;
     }
-
-    return new Response(null, {
-      status: 200,
-      headers: { "Content-Type": "text/html; charset=utf-8" },
-    });
   })
 
   // Start server
