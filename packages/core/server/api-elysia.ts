@@ -54,6 +54,7 @@ import { generationQueueRoutes } from "./routes/generation-queue";
 
 // Cron and job cleanup
 import { cron } from "@elysiajs/cron";
+import { generationJobService } from "./services/GenerationJobService";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -80,7 +81,8 @@ const retextureService = new RetextureService({
 const generationService = new GenerationService();
 
 // Create Elysia app
-const app = new Elysia()
+// Type as 'any' to avoid non-portable croner package reference from @elysiajs/cron plugin
+const app: any = new Elysia()
   // Performance monitoring
   .use(serverTiming())
 
@@ -211,12 +213,15 @@ const app = new Elysia()
   // Cron jobs for background cleanup
   .use(
     cron({
-      name: "cleanup-old-pipelines",
+      name: "cleanup-expired-jobs",
       pattern: "0 * * * *", // Every hour
       async run() {
-        console.log("[Cron] Running pipeline cleanup...");
-        await generationService.cleanupOldPipelines();
-        console.log("[Cron] Pipeline cleanup completed");
+        console.log("[Cron] Running job cleanup...");
+        const expiredCount = await generationJobService.cleanupExpiredJobs();
+        const failedCount = await generationJobService.cleanupOldFailedJobs();
+        console.log(
+          `[Cron] Cleaned up ${expiredCount} expired and ${failedCount} old failed jobs`,
+        );
       },
     }),
   )

@@ -26,8 +26,8 @@ import {
   Edit,
   Image as ImageIcon,
 } from "lucide-react";
-import React, { useState } from "react";
-
+import React, { useState } from "react"; 
+import { Modal, ModalBody, ModalHeader, ModalFooter } from "../common";
 import { getTierColor } from "@/constants";
 import { Asset } from "@/types";
 import { AssetService } from "@/services/api/AssetService";
@@ -99,7 +99,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
   };
 
   return (
-    <>
+    <Modal open={isOpen} onClose={onClose}>
       {/* Backdrop */}
       {isOpen && (
         <div
@@ -530,7 +530,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
           </div>
         </div>
       </div>
-    </>
+    </Modal>
   );
 };
 
