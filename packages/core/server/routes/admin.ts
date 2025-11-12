@@ -8,6 +8,9 @@ import { eq, desc, and } from "drizzle-orm";
 import { db, activityLog } from "../db";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { userService } from "../services/UserService";
+import { MediaStorageService } from "../services/MediaStorageService";
+
+const mediaStorageService = new MediaStorageService();
 
 export const adminRoutes = new Elysia({ prefix: "/api/admin" })
   /**
@@ -268,6 +271,105 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
         summary: "Get activity log (Admin only)",
         description:
           "Retrieve paginated activity log with optional filtering by user or action.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
+  )
+
+  /**
+   * Get media storage health (admin only)
+   * GET /api/admin/media-storage/health
+   * Check for orphaned database records and storage issues
+   */
+  .get(
+    "/media-storage/health",
+    async ({ request }) => {
+      const adminResult = await requireAdmin({ request });
+
+      if (adminResult instanceof Response) {
+        return adminResult;
+      }
+
+      const health = await mediaStorageService.verifyStorageHealth();
+
+      return {
+        success: true,
+        health: {
+          totalRecords: health.totalRecords,
+          validFiles: health.validFiles,
+          orphanedRecords: health.orphanedRecords,
+          healthPercentage:
+            health.totalRecords > 0
+              ? Math.round((health.validFiles / health.totalRecords) * 100)
+              : 100,
+        },
+        warning:
+          health.orphanedRecords > 0
+            ? `${health.orphanedRecords} orphaned records found. Consider running cleanup.`
+            : null,
+        volumeConfigured: !!process.env.RAILWAY_VOLUME_MOUNT_PATH,
+        volumeWarning: !process.env.RAILWAY_VOLUME_MOUNT_PATH
+          ? "Railway volume not detected. Media files may be lost on deployment. See RAILWAY_VOLUME_SETUP.md"
+          : null,
+      };
+    },
+    {
+      detail: {
+        tags: ["Admin"],
+        summary: "Check media storage health (Admin only)",
+        description:
+          "Verify media storage integrity and detect orphaned database records without corresponding files.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
+  )
+
+  /**
+   * Cleanup orphaned media records (admin only)
+   * POST /api/admin/media-storage/cleanup
+   * Remove database records for files that don't exist
+   */
+  .post(
+    "/media-storage/cleanup",
+    async ({ request }) => {
+      const adminResult = await requireAdmin({ request });
+
+      if (adminResult instanceof Response) {
+        return adminResult;
+      }
+
+      const { user: adminUser } = adminResult;
+
+      console.log(
+        `[AdminRoutes] Starting media storage cleanup by admin: ${adminUser.id}`,
+      );
+
+      const result = await mediaStorageService.cleanupOrphanedRecords();
+
+      // Log activity
+      await db.insert(activityLog).values({
+        userId: adminUser.id,
+        action: "media_cleanup",
+        entityType: "system",
+        entityId: "media-storage",
+        details: {
+          removedCount: result.removedCount,
+          removedIds: result.removedIds,
+        },
+      });
+
+      return {
+        success: true,
+        message: `Removed ${result.removedCount} orphaned media records`,
+        removedCount: result.removedCount,
+      };
+    },
+    {
+      detail: {
+        tags: ["Admin"],
+        summary: "Cleanup orphaned media records (Admin only)",
+        description:
+          "Remove database records for media files that don't exist on disk. Use after checking health status.",
         security: [{ BearerAuth: [] }],
       },
     },

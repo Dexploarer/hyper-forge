@@ -53,6 +53,7 @@ import { createSeedDataRoutes } from "./routes/seed-data";
 import { worldConfigRoutes } from "./routes/world-config";
 import { generationQueueRoutes } from "./routes/generation-queue";
 import { publicProfilesRoutes } from "./routes/public-profiles";
+import { debugStorageRoute } from "./routes/debug-storage";
 
 // Cron and job cleanup
 import { cron } from "@elysiajs/cron";
@@ -489,6 +490,7 @@ const app: any = new Elysia()
   .use(createSeedDataRoutes())
   .use(worldConfigRoutes)
   .use(generationQueueRoutes)
+  .use(debugStorageRoute)
 
   // Debug endpoint to verify security headers
   .get("/api/debug/headers", async ({ set, request }) => {

@@ -42,6 +42,7 @@ export class MediaStorageService {
 
   /**
    * Save media file to filesystem and create database record
+   * Uses atomic file writes with rollback on database failure
    */
   async saveMedia(params: SaveMediaParams): Promise<{
     id: string;
@@ -68,45 +69,107 @@ export class MediaStorageService {
     const dirPath = path.join(this.mediaRoot, relativePath);
     const filePath = path.join(dirPath, fileName);
 
-    // Ensure directory exists
-    await fs.promises.mkdir(dirPath, { recursive: true });
+    try {
+      // Ensure directory exists
+      await fs.promises.mkdir(dirPath, { recursive: true });
 
-    // Write file
-    await fs.promises.writeFile(filePath, data);
+      // Write file atomically
+      await fs.promises.writeFile(filePath, data);
 
-    console.log(`[MediaStorage] Saved ${type} file: ${filePath}`);
+      // Verify file was written successfully
+      const fileExists = await fs.promises
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
 
-    // Generate public URL
-    const fileUrl = `/gdd-assets/media/${path.join(relativePath, fileName)}`;
+      if (!fileExists) {
+        throw new Error(
+          `File write verification failed: ${filePath} does not exist after write`,
+        );
+      }
 
-    // Get file size
-    const stats = await fs.promises.stat(filePath);
-    const fileSize = stats.size;
+      console.log(`[MediaStorage] Saved ${type} file: ${filePath}`);
 
-    // Create database record
-    const [mediaAsset] = await db
-      .insert(mediaAssets)
-      .values({
-        type,
-        entityType,
-        entityId,
+      // Generate public URL
+      const fileUrl = `/gdd-assets/media/${path.join(relativePath, fileName)}`;
+
+      // Get file size
+      const stats = await fs.promises.stat(filePath);
+      const fileSize = stats.size;
+
+      // Create database record
+      let mediaAsset;
+      try {
+        [mediaAsset] = await db
+          .insert(mediaAssets)
+          .values({
+            type,
+            entityType,
+            entityId,
+            fileUrl,
+            fileName,
+            metadata: {
+              ...metadata,
+              fileSize,
+            },
+            createdBy,
+          } as NewMediaAsset)
+          .returning();
+
+        console.log(
+          `[MediaStorage] Created media asset record: ${mediaAsset.id}`,
+        );
+      } catch (dbError) {
+        // Rollback: Delete the file since database insert failed
+        console.error(
+          `[MediaStorage] Database insert failed, rolling back file: ${filePath}`,
+        );
+        try {
+          await fs.promises.unlink(filePath);
+          console.log(
+            `[MediaStorage] Successfully rolled back file: ${filePath}`,
+          );
+        } catch (unlinkError) {
+          console.error(
+            `[MediaStorage] Failed to rollback file: ${filePath}`,
+            unlinkError,
+          );
+        }
+        throw new Error(
+          `Failed to create database record: ${dbError instanceof Error ? dbError.message : "Unknown error"}`,
+        );
+      }
+
+      // IMPORTANT: Check if running in production without persistent storage
+      if (
+        process.env.NODE_ENV === "production" &&
+        !process.env.RAILWAY_VOLUME_MOUNT_PATH
+      ) {
+        console.warn(
+          `⚠️  [MediaStorage] WARNING: Running in production without Railway volume!`,
+        );
+        console.warn(
+          `⚠️  [MediaStorage] Media files will be LOST on restart/redeploy.`,
+        );
+        console.warn(
+          `⚠️  [MediaStorage] Configure a volume at /app/packages/core/gdd-assets`,
+        );
+        console.warn(
+          `⚠️  [MediaStorage] See RAILWAY_VOLUME_SETUP.md for instructions`,
+        );
+      }
+
+      return {
+        id: mediaAsset.id,
         fileUrl,
-        fileName,
-        metadata: {
-          ...metadata,
-          fileSize,
-        },
-        createdBy,
-      } as NewMediaAsset)
-      .returning();
-
-    console.log(`[MediaStorage] Created media asset record: ${mediaAsset.id}`);
-
-    return {
-      id: mediaAsset.id,
-      fileUrl,
-      filePath,
-    };
+        filePath,
+      };
+    } catch (error) {
+      console.error(`[MediaStorage] Failed to save media:`, error);
+      throw new Error(
+        `Media storage failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    }
   }
 
   /**
@@ -115,15 +178,15 @@ export class MediaStorageService {
   async getMediaForEntity(
     entityType: string,
     entityId: string,
-  ): Promise<typeof mediaAssets.$inferSelect[]> {
+  ): Promise<(typeof mediaAssets.$inferSelect)[]> {
     const assets = await db
       .select()
       .from(mediaAssets)
       .where(
         and(
           eq(mediaAssets.entityType, entityType),
-          eq(mediaAssets.entityId, entityId)
-        )
+          eq(mediaAssets.entityId, entityId),
+        ),
       );
 
     console.log(
@@ -139,7 +202,7 @@ export class MediaStorageService {
   async getMediaByType(
     type: string,
     options?: { limit?: number; createdBy?: string },
-  ): Promise<typeof mediaAssets.$inferSelect[]> {
+  ): Promise<(typeof mediaAssets.$inferSelect)[]> {
     // Build where conditions
     const conditions = [eq(mediaAssets.type, type)];
     if (options?.createdBy) {
@@ -182,10 +245,7 @@ export class MediaStorageService {
       await fs.promises.unlink(filePath);
       console.log(`[MediaStorage] Deleted file: ${filePath}`);
     } catch (error) {
-      console.warn(
-        `[MediaStorage] Could not delete file: ${filePath}`,
-        error,
-      );
+      console.warn(`[MediaStorage] Could not delete file: ${filePath}`, error);
       // Continue to delete database record even if file deletion fails
     }
 
@@ -210,5 +270,59 @@ export class MediaStorageService {
       .limit(1);
 
     return asset || null;
+  }
+
+  /**
+   * Verify media storage health
+   * Checks for orphaned database records (records without corresponding files)
+   */
+  async verifyStorageHealth(): Promise<{
+    totalRecords: number;
+    validFiles: number;
+    orphanedRecords: number;
+    orphanedIds: string[];
+  }> {
+    const allAssets = await db.select().from(mediaAssets);
+    const orphanedIds: string[] = [];
+
+    for (const asset of allAssets) {
+      const filePath = path.join(ROOT_DIR, asset.fileUrl);
+      const fileExists = await fs.promises
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
+
+      if (!fileExists) {
+        orphanedIds.push(asset.id);
+      }
+    }
+
+    return {
+      totalRecords: allAssets.length,
+      validFiles: allAssets.length - orphanedIds.length,
+      orphanedRecords: orphanedIds.length,
+      orphanedIds,
+    };
+  }
+
+  /**
+   * Cleanup orphaned media records
+   * Removes database records for media files that don't exist on disk
+   */
+  async cleanupOrphanedRecords(): Promise<{
+    removedCount: number;
+    removedIds: string[];
+  }> {
+    const health = await this.verifyStorageHealth();
+
+    for (const id of health.orphanedIds) {
+      await db.delete(mediaAssets).where(eq(mediaAssets.id, id));
+      console.log(`[MediaStorage] Removed orphaned record: ${id}`);
+    }
+
+    return {
+      removedCount: health.orphanedRecords,
+      removedIds: health.orphanedIds,
+    };
   }
 }
