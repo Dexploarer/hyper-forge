@@ -417,7 +417,7 @@ export function MeshFittingDebugger({ onClose }: MeshFittingDebuggerProps) {
     }
 
     return (
-        <div className="fixed inset-0 z-40 flex items-center justify-center solid-overlay  pt-16">
+        <div className="fixed inset-x-0 top-14 bottom-16 lg:top-16 lg:bottom-0 z-40 flex items-center justify-center solid-overlay overflow-hidden">
             <div className="relative w-[90vw] h-[85vh] max-w-[1600px] bg-bg-primary rounded-2xl shadow-2xl flex overflow-hidden">
                 {/* Header */}
                 <div className="absolute top-0 left-0 right-0 h-16 bg-bg-secondary/80  border-b border-border-primary flex items-center justify-between px-6 z-20">

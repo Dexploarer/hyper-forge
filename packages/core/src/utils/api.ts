@@ -38,8 +38,25 @@ export async function apiFetch(input: string, init: RequestOptions = {}): Promis
       // Get auth token and add to headers
       // Only set Authorization from global token if not already explicitly provided
       const token = getAuthToken()
-      const headers: Record<string, string> = {
-        ...(rest.headers as Record<string, string> || {}),
+      
+      // Convert rest.headers to a plain object, handling Headers objects, arrays, and plain objects
+      const headers: Record<string, string> = {}
+      
+      if (rest.headers) {
+        if (rest.headers instanceof Headers) {
+          // Headers object - iterate over entries
+          rest.headers.forEach((value, key) => {
+            headers[key] = value
+          })
+        } else if (Array.isArray(rest.headers)) {
+          // Array of [key, value] tuples
+          rest.headers.forEach(([key, value]) => {
+            headers[key] = value
+          })
+        } else {
+          // Plain object
+          Object.assign(headers, rest.headers)
+        }
       }
       
       // Only set Authorization header from global token if it's not already set
