@@ -73,37 +73,12 @@ export const createAssetRoutes = (
             set.headers["Content-Type"] = "application/octet-stream";
           }
 
-          // Wrap Bun.file() in Response for proper HEAD request handling
+          // Wrap Bun.file() in Response for proper file serving
           return new Response(modelFile);
         })
-        .head("/:id/model", async ({ params: { id }, set }) => {
-          try {
-            const modelPath = await assetService.getModelPath(id);
-            const modelFile = Bun.file(modelPath);
-
-            if (!(await modelFile.exists())) {
-              set.status = 404;
-            } else {
-              set.status = 200;
-
-              // Set correct content-type header for HEAD requests too
-              const ext = modelPath.toLowerCase().split(".").pop();
-              if (ext === "glb") {
-                set.headers["Content-Type"] = "model/gltf-binary";
-              } else if (ext === "gltf") {
-                set.headers["Content-Type"] = "model/gltf+json";
-              } else {
-                set.headers["Content-Type"] = "application/octet-stream";
-              }
-            }
-
-            return null;
-          } catch (error) {
-            console.error(`[HEAD /:id/model] Error for asset ${id}:`, error);
-            set.status = 500;
-            return null;
-          }
-        })
+        // NOTE: HEAD handlers removed due to Elysia 1.4.15 bug
+        // See: https://github.com/elysiajs/elysia/issues - TypeError: undefined is not an object (evaluating '_res.headers.set')
+        // HEAD requests will return 404, which is acceptable since we don't use them in the frontend
 
         // Serve any file from an asset directory
         .get("/:id/*", async ({ params, set }) => {
@@ -128,45 +103,10 @@ export const createAssetRoutes = (
             return { error: "File not found" };
           }
 
-          // Wrap Bun.file() in Response for proper HEAD request handling
+          // Wrap Bun.file() in Response for proper file serving
           return new Response(file);
         })
-        .head("/:id/*", async ({ params, set }) => {
-          try {
-            const assetId = params.id;
-            const filePath = params["*"]; // Everything after the asset ID
-
-            const fullPath = path.join(
-              rootDir,
-              "gdd-assets",
-              assetId,
-              filePath,
-            );
-
-            // Security check to prevent directory traversal
-            const normalizedPath = path.normalize(fullPath);
-            const assetDir = path.join(rootDir, "gdd-assets", assetId);
-
-            if (!normalizedPath.startsWith(assetDir)) {
-              set.status = 403;
-              return null;
-            }
-
-            const file = Bun.file(fullPath);
-
-            if (!(await file.exists())) {
-              set.status = 404;
-            } else {
-              set.status = 200;
-            }
-
-            return null;
-          } catch (error) {
-            console.error(`[HEAD /:id/*] Error:`, error);
-            set.status = 500;
-            return null;
-          }
-        })
+        // NOTE: HEAD handler removed due to Elysia 1.4.15 bug (same reason as above)
 
         // Delete asset endpoint
         .delete(
