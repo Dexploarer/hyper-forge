@@ -120,7 +120,7 @@ class AssetServiceClass {
     }
 
     // Try to load t-pose.glb from user assets via API
-    const apiTposeUrl = `/api/assets/${assetId}/t-pose`;
+    const apiTposeUrl = `/api/assets/${assetId}/t-pose.glb`;
     try {
       const response = await fetch(apiTposeUrl, { method: "HEAD" });
       if (response.ok) {
@@ -149,17 +149,17 @@ class AssetServiceClass {
   getPreviewImageUrl(asset: Asset): string | null {
     // Priority 1: Thumbnail (sprite or PFP)
     if (asset.thumbnailPath) {
-      return `/api/assets/${asset.id}/${asset.thumbnailPath}`;
+      return `/gdd-assets/${asset.id}/${asset.thumbnailPath}`;
     }
 
     // Priority 2: Concept art from metadata
     if (asset.metadata?.hasConceptArt && asset.metadata?.conceptArtPath) {
-      return `/api/assets/${asset.id}/${asset.metadata.conceptArtPath}`;
+      return `/gdd-assets/${asset.id}/${asset.metadata.conceptArtPath}`;
     }
 
     // Priority 3: Concept art from conceptArtPath field
     if (asset.conceptArtPath) {
-      return `/api/assets/${asset.id}/${asset.conceptArtPath}`;
+      return `/gdd-assets/${asset.id}/${asset.conceptArtPath}`;
     }
 
     // No preview available

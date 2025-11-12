@@ -6,26 +6,24 @@
 import { Elysia, t } from "elysia";
 import type { GenerationService } from "../services/GenerationService";
 import { optionalAuth } from "../middleware/auth";
-import { userService } from "../services/UserService";
 import * as Models from "../models";
 
 export const createGenerationRoutes = (
   generationService: GenerationService,
-) => {
-  return new Elysia({ prefix: "/api/generation", name: "generation" })
-    .derive(async (context) => {
-      // Extract user from auth token if present (optional)
-      const authResult = await optionalAuth(context);
-      return { user: authResult.user };
-    })
-    .guard(
-      {
-        beforeHandle: ({ request }) => {
-          console.log(`[Generation Pipeline] ${request.method} operation`);
-        },
+) => new Elysia({ prefix: "/api/generation", name: "generation" })
+  .derive(async (context) => {
+    // Extract user from auth token if present (optional)
+    const authResult = await optionalAuth(context as any);
+    return { user: authResult.user };
+  })
+  .guard(
+    {
+      beforeHandle: ({ request }) => {
+        console.log(`[Generation Pipeline] ${request.method} operation`);
       },
-      (app) =>
-        app
+    },
+    (app) =>
+      app
           // Start generation pipeline
           .post(
             "/pipeline",
@@ -155,5 +153,4 @@ export const createGenerationRoutes = (
               },
             },
           ),
-    );
-};
+  );

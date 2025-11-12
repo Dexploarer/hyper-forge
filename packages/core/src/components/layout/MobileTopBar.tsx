@@ -50,7 +50,7 @@ export function MobileTopBar({ currentView, onMenuClick }: MobileTopBarProps) {
 
   return (
     <>
-      <header className="h-14 solid-surface border-b border-white/10 flex items-center justify-between px-4 sticky top-0 z-[10001]">
+      <header className="h-14 solid-surface border-b border-white/10 flex items-center justify-between px-4 sticky top-0 z-[100]">
         {/* Hamburger Menu Button */}
         <button
           onClick={onMenuClick}

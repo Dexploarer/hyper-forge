@@ -9,8 +9,8 @@ import { AICreationService } from "../services/AICreationService";
 import { contentDatabaseService } from "../services/ContentDatabaseService";
 import { MediaStorageService } from "../services/MediaStorageService";
 import { RelationshipService } from "../services/RelationshipService";
-import { optionalAuth, type AuthUser } from "../middleware/auth";
 import * as Models from "../models";
+import { optionalAuth } from "../middleware/auth";
 
 const contentGenService = new ContentGenerationService();
 const mediaStorageService = new MediaStorageService();
@@ -22,7 +22,7 @@ export const contentGenerationRoutes = new Elysia({
 })
   .derive(async (context) => {
     // Extract user from auth token if present (optional)
-    const authResult = await optionalAuth(context);
+    const authResult = await optionalAuth(context as any);
     return { user: authResult.user };
   })
   .guard(

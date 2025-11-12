@@ -45,7 +45,7 @@ export function BottomNav({
   onMoreClick,
 }: BottomNavProps) {
   return (
-    <nav className="h-16 solid-nav-bottom fixed bottom-0 left-0 right-0 z-[10001] safe-area-inset-bottom">
+    <nav className="h-16 solid-nav-bottom fixed bottom-0 left-0 right-0 z-[100] safe-area-inset-bottom">
       <div className="h-full flex items-center justify-around px-2">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon as React.FC<{ className?: string }>;

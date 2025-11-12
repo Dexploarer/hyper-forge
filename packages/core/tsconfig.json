@@ -38,6 +38,7 @@
   },
   "include": [
     "src/**/*",
+    "server/**/*.ts",
     "vite.config.ts",
     "scripts/**/*.ts",
     "examples/**/*.ts"
