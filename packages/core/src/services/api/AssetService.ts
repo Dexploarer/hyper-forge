@@ -104,15 +104,38 @@ class AssetServiceClass {
 
   /**
    * Get T-pose model URL for retargeting workflow
-   * Returns direct path to t-pose.glb, GLB loader will handle 404 gracefully
+   * Tries to load t-pose.glb, falls back to regular model if not found
    */
   async getTPoseUrl(assetId: string): Promise<string> {
-    // Return t-pose URL directly without checking existence
-    // The GLTFLoader will handle 404 and the calling code can fall back to regular model
-    // This avoids unnecessary HEAD requests that cause Elysia routing errors
-    const tposeUrl = `/gdd-assets/${assetId}/t-pose.glb`;
-    console.log(`[AssetService] Attempting T-pose URL: ${tposeUrl}`);
-    return tposeUrl;
+    // Try gdd-assets first (for any asset that might be in that folder)
+    const gddTposeUrl = `/gdd-assets/${assetId}/t-pose.glb`;
+    try {
+      const response = await fetch(gddTposeUrl, { method: "HEAD" });
+      if (response.ok) {
+        console.log(`[AssetService] T-pose found in gdd-assets: ${assetId}`);
+        return gddTposeUrl;
+      }
+    } catch (error) {
+      // Silently continue to next check
+    }
+
+    // Try to load t-pose.glb from user assets via API
+    const apiTposeUrl = `/api/assets/${assetId}/t-pose.glb`;
+    try {
+      const response = await fetch(apiTposeUrl, { method: "HEAD" });
+      if (response.ok) {
+        console.log(`[AssetService] T-pose found via API for ${assetId}`);
+        return apiTposeUrl;
+      }
+    } catch (error) {
+      // Silently continue to fallback
+    }
+
+    console.log(
+      `[AssetService] No T-pose found for ${assetId}, using regular model`,
+    );
+    // Fall back to regular model
+    return this.getModelUrl(assetId);
   }
 
   getConceptArtUrl(assetId: string): string {

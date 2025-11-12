@@ -403,10 +403,9 @@ export const RetargetAnimatePage: React.FC = () => {
                       const assetId = e.target.value;
                       const asset = avatarAssets.find((a) => a.id === assetId);
                       if (asset) {
-                        // Use regular model URL (t-pose files are optional)
-                        const modelUrl = AssetService.getModelUrl(asset.id);
-                        console.log(
-                          `[RetargetAnimatePage] Loading model for ${assetId}`,
+                        // Use T-pose URL if available
+                        const modelUrl = await AssetService.getTPoseUrl(
+                          asset.id,
                         );
                         setSourceModel(modelUrl, asset.id);
                       }
