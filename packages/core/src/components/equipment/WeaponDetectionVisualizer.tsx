@@ -165,7 +165,7 @@ export const WeaponDetectionVisualizer: React.FC<WeaponDetectionVisualizerProps>
           {/* Full Image Modal */}
           {showFullImage && detectionResult.annotatedImage && (
             <div
-              className="fixed inset-0 solid-overlay flex items-center justify-center z-50 p-4"
+              className="fixed inset-x-0 top-14 bottom-16 lg:top-16 lg:bottom-0 solid-overlay flex items-center justify-center z-50 p-4 overflow-hidden"
               onClick={() => setShowFullImage(false)}
             >
               <div className="max-w-2xl max-h-[90vh] relative">

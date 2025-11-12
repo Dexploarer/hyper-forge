@@ -164,8 +164,8 @@ export const VariantTreeViewer: React.FC<VariantTreeViewerProps> = ({
   }, [variantMap]);
 
   return (
-    <div className="fixed inset-0 solid-overlay z-50 flex items-center justify-center p-4">
-      <div className="bg-bg-primary border border-border-primary rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-x-0 top-14 bottom-16 lg:top-16 lg:bottom-0 solid-overlay z-50 flex items-center justify-center p-4 overflow-hidden">
+      <div className="bg-bg-primary border border-border-primary rounded-xl shadow-2xl w-full max-w-7xl h-full max-h-full flex flex-col overflow-hidden">
         {/* Header */}
         <div className="p-4 border-b border-border-primary flex items-center justify-between bg-gradient-to-r from-bg-secondary to-bg-primary">
           <div className="flex items-center gap-3">
