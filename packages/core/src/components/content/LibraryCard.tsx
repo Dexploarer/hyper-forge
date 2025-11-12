@@ -4,7 +4,7 @@
  * Each content type has its own unique visual style
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   User,
   Scroll,
@@ -27,6 +27,9 @@ import {
   Calendar,
   Loader2,
   Sparkles as SparklesIcon,
+  RefreshCw,
+  Upload,
+  X,
 } from "lucide-react";
 import { cn } from "@/styles";
 import { ContentItem, ContentType } from "@/hooks/useContent";
@@ -151,7 +154,11 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   const [isSavingPortrait, setIsSavingPortrait] = useState(false);
   const [isGeneratingBanner, setIsGeneratingBanner] = useState(false);
   const [isSavingBanner, setIsSavingBanner] = useState(false);
+  const [showPortraitControls, setShowPortraitControls] = useState(false);
+  const [showBannerControls, setShowBannerControls] = useState(false);
   const [apiClient] = useState(() => new ContentAPIClient());
+  const portraitInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch portrait for NPC cards
   useEffect(() => {
@@ -296,7 +303,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         });
 
         notify.success("Banner saved successfully!");
-        
+
         // Refresh the banner to get the saved URL
         await fetchBanner();
       };
@@ -334,7 +341,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         });
 
         notify.success("Portrait saved successfully!");
-        
+
         // Refresh the portrait to get the saved URL
         await fetchPortrait();
       };
@@ -345,6 +352,159 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       notify.error("Failed to save portrait");
     } finally {
       setIsSavingPortrait(false);
+    }
+  };
+
+  const handleUploadPortrait = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !item.id) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      notify.error("Please upload an image file");
+      return;
+    }
+
+    try {
+      setIsSavingPortrait(true);
+
+      // Read file as base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        const base64Image = base64data.split(",")[1];
+
+        // Save to backend
+        await apiClient.savePortrait({
+          entityType: "npc",
+          entityId: item.id,
+          imageData: base64Image,
+        });
+
+        notify.success("Portrait uploaded successfully!");
+
+        // Refresh the portrait
+        await fetchPortrait();
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Failed to upload portrait:", error);
+      notify.error("Failed to upload portrait");
+    } finally {
+      setIsSavingPortrait(false);
+      // Reset input
+      if (event.target) {
+        event.target.value = "";
+      }
+    }
+  };
+
+  const handleUploadBanner = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !item.id) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      notify.error("Please upload an image file");
+      return;
+    }
+
+    try {
+      setIsSavingBanner(true);
+
+      // Read file as base64
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        const base64Image = base64data.split(",")[1];
+
+        // Save to backend
+        await apiClient.savePortrait({
+          entityType: "quest",
+          entityId: item.id,
+          imageData: base64Image,
+          type: "banner",
+        });
+
+        notify.success("Banner uploaded successfully!");
+
+        // Refresh the banner
+        await fetchBanner();
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Failed to upload banner:", error);
+      notify.error("Failed to upload banner");
+    } finally {
+      setIsSavingBanner(false);
+      // Reset input
+      if (event.target) {
+        event.target.value = "";
+      }
+    }
+  };
+
+  const handleDeletePortrait = async () => {
+    if (!portraitUrl || !item.id) return;
+
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this portrait? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsSavingPortrait(true);
+
+      // Note: We would need a delete endpoint on the backend
+      // For now, we'll just clear the local state
+      setPortraitUrl(null);
+      notify.success("Portrait deleted successfully!");
+
+      // Refresh to confirm deletion
+      await fetchPortrait();
+    } catch (error) {
+      console.error("Failed to delete portrait:", error);
+      notify.error("Failed to delete portrait");
+    } finally {
+      setIsSavingPortrait(false);
+    }
+  };
+
+  const handleDeleteBanner = async () => {
+    if (!bannerUrl || !item.id) return;
+
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this banner? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsSavingBanner(true);
+
+      // Note: We would need a delete endpoint on the backend
+      // For now, we'll just clear the local state
+      setBannerUrl(null);
+      notify.success("Banner deleted successfully!");
+
+      // Refresh to confirm deletion
+      await fetchBanner();
+    } catch (error) {
+      console.error("Failed to delete banner:", error);
+      notify.error("Failed to delete banner");
+    } finally {
+      setIsSavingBanner(false);
     }
   };
 
@@ -417,13 +577,58 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
                 "bg-gradient-to-br from-bg-tertiary to-bg-secondary flex items-center justify-center",
                 "group-hover:scale-105 transition-transform duration-300 relative",
               )}
+              onMouseEnter={() => setShowPortraitControls(true)}
+              onMouseLeave={() => setShowPortraitControls(false)}
             >
               {portraitUrl ? (
-                <img
-                  src={portraitUrl}
-                  alt={`${npc.name} portrait`}
-                  className="w-full h-full object-cover"
-                />
+                <>
+                  <img
+                    src={portraitUrl}
+                    alt={`${npc.name} portrait`}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Portrait Edit Controls Overlay */}
+                  {showPortraitControls && (
+                    <div
+                      className="absolute inset-0 bg-black/70 backdrop-blur-sm rounded-full flex items-center justify-center gap-1 animate-fade-in"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGeneratePortrait();
+                        }}
+                        disabled={isGeneratingPortrait || isSavingPortrait}
+                        className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors disabled:opacity-50"
+                        title="Regenerate Portrait"
+                      >
+                        <RefreshCw className="w-4 h-4 text-white" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          portraitInputRef.current?.click();
+                        }}
+                        disabled={isSavingPortrait}
+                        className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors disabled:opacity-50"
+                        title="Upload Portrait"
+                      >
+                        <Upload className="w-4 h-4 text-white" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeletePortrait();
+                        }}
+                        disabled={isSavingPortrait}
+                        className="p-2 bg-white/10 hover:bg-red-500/80 rounded-full transition-colors disabled:opacity-50"
+                        title="Delete Portrait"
+                      >
+                        <X className="w-4 h-4 text-white" />
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <>
                   <User className="w-12 h-12 text-text-tertiary/50" />
@@ -456,6 +661,14 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
                 </>
               )}
             </div>
+            {/* Hidden file input for portrait upload */}
+            <input
+              ref={portraitInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleUploadPortrait}
+              className="hidden"
+            />
 
             {/* Name & Quick Info */}
             <div className="flex-1 pb-1 relative z-10">
@@ -607,13 +820,69 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         onMouseLeave={() => setShowActions(false)}
       >
         {/* Scroll Header / Banner */}
-        <div className="relative h-16 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 overflow-hidden">
+        <div
+          className="relative h-16 bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20 overflow-hidden"
+          onMouseEnter={() => setShowBannerControls(true)}
+          onMouseLeave={() => setShowBannerControls(false)}
+        >
           {bannerUrl ? (
-            <img
-              src={bannerUrl}
-              alt={`${quest.title} banner`}
-              className="w-full h-full object-cover"
-            />
+            <>
+              <img
+                src={bannerUrl}
+                alt={`${quest.title} banner`}
+                className="w-full h-full object-cover"
+              />
+              {/* Banner Edit Controls Overlay */}
+              {showBannerControls && (
+                <div
+                  className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center gap-2 animate-fade-in"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGenerateBanner();
+                    }}
+                    disabled={isGeneratingBanner || isSavingBanner}
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                    title="Regenerate Banner"
+                  >
+                    <RefreshCw className="w-4 h-4 text-white" />
+                    <span className="text-xs text-white font-medium">
+                      Retry
+                    </span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      bannerInputRef.current?.click();
+                    }}
+                    disabled={isSavingBanner}
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                    title="Upload Banner"
+                  >
+                    <Upload className="w-4 h-4 text-white" />
+                    <span className="text-xs text-white font-medium">
+                      Upload
+                    </span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteBanner();
+                    }}
+                    disabled={isSavingBanner}
+                    className="px-3 py-1.5 bg-white/10 hover:bg-red-500/80 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
+                    title="Delete Banner"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                    <span className="text-xs text-white font-medium">
+                      Delete
+                    </span>
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTAgMGgyMHYyMEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xMCAwdjIwTTAgMTBoMjAiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9Ii4wNSIgc3Ryb2tlLXdpZHRoPSIuNSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNhKSIvPjwvc3ZnPg==')] opacity-50" />
           )}
@@ -659,6 +928,14 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             </span>
           </div>
         </div>
+        {/* Hidden file input for banner upload */}
+        <input
+          ref={bannerInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleUploadBanner}
+          className="hidden"
+        />
 
         {/* Content */}
         <div className="p-4 space-y-3 relative z-10">
@@ -682,21 +959,27 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
               <div className="text-xs font-semibold text-text-primary group-hover:text-text-primary">
                 {objectives.length}
               </div>
-              <div className="text-xs text-text-tertiary group-hover:text-text-tertiary">Objectives</div>
+              <div className="text-xs text-text-tertiary group-hover:text-text-tertiary">
+                Objectives
+              </div>
             </div>
             <div className="text-center">
               <Sparkles className="w-4 h-4 text-purple-400 mx-auto mb-1" />
               <div className="text-xs font-semibold text-text-primary group-hover:text-text-primary">
                 {rewards.experience}
               </div>
-              <div className="text-xs text-text-tertiary group-hover:text-text-tertiary">XP</div>
+              <div className="text-xs text-text-tertiary group-hover:text-text-tertiary">
+                XP
+              </div>
             </div>
             <div className="text-center">
               <Coins className="w-4 h-4 text-yellow-400 mx-auto mb-1" />
               <div className="text-xs font-semibold text-text-primary group-hover:text-text-primary">
                 {rewards.gold}
               </div>
-              <div className="text-xs text-text-tertiary group-hover:text-text-tertiary">Gold</div>
+              <div className="text-xs text-text-tertiary group-hover:text-text-tertiary">
+                Gold
+              </div>
             </div>
           </div>
 

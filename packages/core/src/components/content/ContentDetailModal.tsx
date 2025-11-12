@@ -4,7 +4,7 @@
  * Shows full details in an immersive, content-type-specific layout
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   X,
   User,
@@ -27,9 +27,16 @@ import {
   Trash2,
   Download,
   Share2,
+  RefreshCw,
+  Upload,
+  Loader2,
+  Sparkles as SparklesIcon,
+  Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/styles";
 import { ContentItem } from "@/hooks/useContent";
+import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { notify } from "@/utils/notify";
 import type {
   NPCData,
   QuestData,
@@ -53,11 +60,28 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   onDelete,
 }) => {
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
+  const [isGeneratingPortrait, setIsGeneratingPortrait] = useState(false);
+  const [isSavingPortrait, setIsSavingPortrait] = useState(false);
+  const [isGeneratingBanner, setIsGeneratingBanner] = useState(false);
+  const [isSavingBanner, setIsSavingBanner] = useState(false);
+  const [showPortraitControls, setShowPortraitControls] = useState(false);
+  const [showBannerControls, setShowBannerControls] = useState(false);
+  const [apiClient] = useState(() => new ContentAPIClient());
+  const portraitInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch portrait for NPC items
   useEffect(() => {
     if (open && item.type === "npc") {
       fetchPortrait();
+    }
+  }, [open, item.id, item.type]);
+
+  // Fetch banner for Quest items
+  useEffect(() => {
+    if (open && item.type === "quest") {
+      fetchBanner();
     }
   }, [open, item.id, item.type]);
 
@@ -79,6 +103,268 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       }
     } catch (error) {
       console.error("Failed to fetch portrait:", error);
+    }
+  };
+
+  const fetchBanner = async () => {
+    try {
+      const response = await fetch(
+        `/api/content/media/${item.type}/${item.id}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const mediaAssets = data.media || (Array.isArray(data) ? data : []);
+        const banner = mediaAssets.find(
+          (asset: any) => asset.type === "banner",
+        );
+        if (banner) {
+          setBannerUrl(banner.fileUrl);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch banner:", error);
+    }
+  };
+
+  const handleGeneratePortrait = async () => {
+    if (item.type !== "npc") return;
+    const npc = item.data as NPCData;
+
+    try {
+      setIsGeneratingPortrait(true);
+      const result = await apiClient.generateNPCPortrait({
+        npcName: npc.name,
+        archetype: npc.archetype || "default",
+        appearance: npc.appearance?.description || "",
+        personality: npc.personality?.traits?.join(", ") || "",
+      });
+
+      setPortraitUrl(result.imageUrl);
+      notify.success("Portrait generated successfully!");
+      await handleSavePortrait(result.imageUrl);
+    } catch (error) {
+      console.error("Failed to generate portrait:", error);
+      notify.error("Failed to generate portrait");
+    } finally {
+      setIsGeneratingPortrait(false);
+    }
+  };
+
+  const handleGenerateBanner = async () => {
+    if (item.type !== "quest") return;
+    const quest = item.data as QuestData;
+    const difficulty = (item.data as any).difficulty || "medium";
+    const questType = (item.data as any).questType || "general";
+
+    try {
+      setIsGeneratingBanner(true);
+      const result = await apiClient.generateQuestBanner({
+        questTitle: quest.title,
+        description: quest.description || "",
+        questType: questType,
+        difficulty: difficulty,
+      });
+
+      setBannerUrl(result.imageUrl);
+      notify.success("Banner generated successfully!");
+      await handleSaveBanner(result.imageUrl);
+    } catch (error) {
+      console.error("Failed to generate banner:", error);
+      notify.error("Failed to generate banner");
+    } finally {
+      setIsGeneratingBanner(false);
+    }
+  };
+
+  const handleSavePortrait = async (imageUrl?: string) => {
+    const urlToSave = imageUrl || portraitUrl;
+    if (!urlToSave || !item.id) return;
+
+    try {
+      setIsSavingPortrait(true);
+      const response = await fetch(urlToSave);
+      const blob = await response.blob();
+      const reader = new FileReader();
+
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        const base64Image = base64data.split(",")[1];
+
+        await apiClient.savePortrait({
+          entityType: "npc",
+          entityId: item.id,
+          imageData: base64Image,
+        });
+
+        notify.success("Portrait saved successfully!");
+        await fetchPortrait();
+      };
+
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.error("Failed to save portrait:", error);
+      notify.error("Failed to save portrait");
+    } finally {
+      setIsSavingPortrait(false);
+    }
+  };
+
+  const handleSaveBanner = async (imageUrl?: string) => {
+    const urlToSave = imageUrl || bannerUrl;
+    if (!urlToSave || !item.id) return;
+
+    try {
+      setIsSavingBanner(true);
+      const response = await fetch(urlToSave);
+      const blob = await response.blob();
+      const reader = new FileReader();
+
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        const base64Image = base64data.split(",")[1];
+
+        await apiClient.savePortrait({
+          entityType: "quest",
+          entityId: item.id,
+          imageData: base64Image,
+          type: "banner",
+        });
+
+        notify.success("Banner saved successfully!");
+        await fetchBanner();
+      };
+
+      reader.readAsDataURL(blob);
+    } catch (error) {
+      console.error("Failed to save banner:", error);
+      notify.error("Failed to save banner");
+    } finally {
+      setIsSavingBanner(false);
+    }
+  };
+
+  const handleUploadPortrait = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !item.id) return;
+
+    if (!file.type.startsWith("image/")) {
+      notify.error("Please upload an image file");
+      return;
+    }
+
+    try {
+      setIsSavingPortrait(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        const base64Image = base64data.split(",")[1];
+
+        await apiClient.savePortrait({
+          entityType: "npc",
+          entityId: item.id,
+          imageData: base64Image,
+        });
+
+        notify.success("Portrait uploaded successfully!");
+        await fetchPortrait();
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Failed to upload portrait:", error);
+      notify.error("Failed to upload portrait");
+    } finally {
+      setIsSavingPortrait(false);
+      if (event.target) event.target.value = "";
+    }
+  };
+
+  const handleUploadBanner = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !item.id) return;
+
+    if (!file.type.startsWith("image/")) {
+      notify.error("Please upload an image file");
+      return;
+    }
+
+    try {
+      setIsSavingBanner(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        const base64Image = base64data.split(",")[1];
+
+        await apiClient.savePortrait({
+          entityType: "quest",
+          entityId: item.id,
+          imageData: base64Image,
+          type: "banner",
+        });
+
+        notify.success("Banner uploaded successfully!");
+        await fetchBanner();
+      };
+
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Failed to upload banner:", error);
+      notify.error("Failed to upload banner");
+    } finally {
+      setIsSavingBanner(false);
+      if (event.target) event.target.value = "";
+    }
+  };
+
+  const handleDeletePortrait = async () => {
+    if (!portraitUrl || !item.id) return;
+
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this portrait? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsSavingPortrait(true);
+      setPortraitUrl(null);
+      notify.success("Portrait deleted successfully!");
+      await fetchPortrait();
+    } catch (error) {
+      console.error("Failed to delete portrait:", error);
+      notify.error("Failed to delete portrait");
+    } finally {
+      setIsSavingPortrait(false);
+    }
+  };
+
+  const handleDeleteBanner = async () => {
+    if (!bannerUrl || !item.id) return;
+
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this banner? This action cannot be undone.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsSavingBanner(true);
+      setBannerUrl(null);
+      notify.success("Banner deleted successfully!");
+      await fetchBanner();
+    } catch (error) {
+      console.error("Failed to delete banner:", error);
+      notify.error("Failed to delete banner");
+    } finally {
+      setIsSavingBanner(false);
     }
   };
 
@@ -113,19 +399,89 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         {/* Header with Portrait */}
         <div className="flex items-start gap-6">
           {/* Portrait */}
-          <div className="w-32 h-32 rounded-xl overflow-hidden flex-shrink-0 border-2 border-border-primary shadow-xl bg-gradient-to-br from-bg-tertiary to-bg-secondary">
+          <div
+            className="w-32 h-32 rounded-xl overflow-hidden flex-shrink-0 border-2 border-border-primary shadow-xl bg-gradient-to-br from-bg-tertiary to-bg-secondary relative group/portrait"
+            onMouseEnter={() => setShowPortraitControls(true)}
+            onMouseLeave={() => setShowPortraitControls(false)}
+          >
             {portraitUrl ? (
-              <img
-                src={portraitUrl}
-                alt={`${npc.name} portrait`}
-                className="w-full h-full object-cover"
-              />
+              <>
+                <img
+                  src={portraitUrl}
+                  alt={`${npc.name} portrait`}
+                  className="w-full h-full object-cover"
+                />
+                {/* Portrait Edit Controls */}
+                {showPortraitControls && (
+                  <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center gap-1.5 animate-fade-in">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleGeneratePortrait();
+                      }}
+                      disabled={isGeneratingPortrait || isSavingPortrait}
+                      className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
+                      title="Regenerate Portrait"
+                    >
+                      <RefreshCw className="w-5 h-5 text-white" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        portraitInputRef.current?.click();
+                      }}
+                      disabled={isSavingPortrait}
+                      className="p-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50"
+                      title="Upload Portrait"
+                    >
+                      <Upload className="w-5 h-5 text-white" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeletePortrait();
+                      }}
+                      disabled={isSavingPortrait}
+                      className="p-2 bg-white/10 hover:bg-red-500/80 rounded-lg transition-colors disabled:opacity-50"
+                      title="Delete Portrait"
+                    >
+                      <X className="w-5 h-5 text-white" />
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
+              <div className="w-full h-full flex items-center justify-center relative">
                 <User className="w-16 h-16 text-text-tertiary/30" />
+                {/* Generate Portrait Button */}
+                <button
+                  onClick={handleGeneratePortrait}
+                  disabled={isGeneratingPortrait || isSavingPortrait}
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-all disabled:opacity-50"
+                  title="Generate Portrait"
+                >
+                  {isGeneratingPortrait || isSavingPortrait ? (
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  ) : (
+                    <>
+                      <SparklesIcon className="w-8 h-8 text-white" />
+                      <span className="text-xs text-white font-medium">
+                        Generate
+                      </span>
+                    </>
+                  )}
+                </button>
               </div>
             )}
           </div>
+          {/* Hidden file input for portrait upload */}
+          <input
+            ref={portraitInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleUploadPortrait}
+            className="hidden"
+          />
 
           {/* Name & Archetype */}
           <div className="flex-1">
@@ -322,6 +678,100 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
     return (
       <div className="space-y-6">
+        {/* Banner Image */}
+        <div
+          className="relative h-48 rounded-xl overflow-hidden border-2 border-border-primary shadow-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/20 to-amber-500/20"
+          onMouseEnter={() => setShowBannerControls(true)}
+          onMouseLeave={() => setShowBannerControls(false)}
+        >
+          {bannerUrl ? (
+            <>
+              <img
+                src={bannerUrl}
+                alt={`${quest.title} banner`}
+                className="w-full h-full object-cover"
+              />
+              {/* Banner Edit Controls */}
+              {showBannerControls && (
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center gap-2 animate-fade-in">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleGenerateBanner();
+                    }}
+                    disabled={isGeneratingBanner || isSavingBanner}
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                    title="Regenerate Banner"
+                  >
+                    <RefreshCw className="w-5 h-5 text-white" />
+                    <span className="text-sm text-white font-medium">
+                      Retry
+                    </span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      bannerInputRef.current?.click();
+                    }}
+                    disabled={isSavingBanner}
+                    className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                    title="Upload Banner"
+                  >
+                    <Upload className="w-5 h-5 text-white" />
+                    <span className="text-sm text-white font-medium">
+                      Upload
+                    </span>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteBanner();
+                    }}
+                    disabled={isSavingBanner}
+                    className="px-4 py-2 bg-white/10 hover:bg-red-500/80 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
+                    title="Delete Banner"
+                  >
+                    <X className="w-5 h-5 text-white" />
+                    <span className="text-sm text-white font-medium">
+                      Delete
+                    </span>
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <ImageIcon className="w-16 h-16 text-text-tertiary/30" />
+              {/* Generate Banner Button */}
+              <button
+                onClick={handleGenerateBanner}
+                disabled={isGeneratingBanner || isSavingBanner}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 backdrop-blur-sm hover:bg-black/60 transition-all disabled:opacity-50"
+                title="Generate Banner"
+              >
+                {isGeneratingBanner || isSavingBanner ? (
+                  <Loader2 className="w-10 h-10 text-white animate-spin" />
+                ) : (
+                  <>
+                    <SparklesIcon className="w-10 h-10 text-white" />
+                    <span className="text-sm text-white font-medium">
+                      Generate Banner
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Hidden file input for banner upload */}
+        <input
+          ref={bannerInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleUploadBanner}
+          className="hidden"
+        />
+
         {/* Header */}
         <div>
           <h2 className="text-3xl font-bold text-text-primary mb-3">
