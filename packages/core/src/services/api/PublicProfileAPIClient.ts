@@ -3,8 +3,6 @@
  * Client for accessing public user profile endpoints
  */
 
-import { apiClient } from "@/lib/api-client";
-
 export interface PublicProfile {
   id: string;
   displayName: string | null;
@@ -45,13 +43,44 @@ export interface PublicAchievementsResponse {
   isOwnProfile: boolean;
 }
 
+const API_BASE = "/api/public/users";
+
 export class PublicProfileAPIClient {
+  /**
+   * Get auth token from Privy (optional for public endpoints)
+   */
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      const privy = (window as any).__PRIVY__;
+      if (!privy?.getAccessToken) {
+        return null;
+      }
+      const token = await privy.getAccessToken();
+      return token || null;
+    } catch {
+      return null;
+    }
+  }
+
   /**
    * Get public profile for a user
    */
   async getPublicProfile(userId: string): Promise<PublicProfileResponse> {
-    const response = await apiClient.get(`/api/public/users/${userId}/profile`);
-    return response.data;
+    const token = await this.getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE}/${userId}/profile`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get public profile: ${response.statusText}`);
+    }
+
+    return await response.json();
   }
 
   /**
@@ -61,21 +90,44 @@ export class PublicProfileAPIClient {
     userId: string,
     type?: string,
   ): Promise<PublicAssetsResponse> {
-    const params = type ? { type } : {};
-    const response = await apiClient.get(`/api/public/users/${userId}/assets`, {
-      params,
-    });
-    return response.data;
+    const token = await this.getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const url = type
+      ? `${API_BASE}/${userId}/assets?type=${encodeURIComponent(type)}`
+      : `${API_BASE}/${userId}/assets`;
+
+    const response = await fetch(url, { headers });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get public assets: ${response.statusText}`);
+    }
+
+    return await response.json();
   }
 
   /**
    * Get public projects for a user
    */
   async getPublicProjects(userId: string): Promise<PublicProjectsResponse> {
-    const response = await apiClient.get(
-      `/api/public/users/${userId}/projects`,
-    );
-    return response.data;
+    const token = await this.getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE}/${userId}/projects`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get public projects: ${response.statusText}`);
+    }
+
+    return await response.json();
   }
 
   /**
@@ -84,10 +136,23 @@ export class PublicProfileAPIClient {
   async getPublicAchievements(
     userId: string,
   ): Promise<PublicAchievementsResponse> {
-    const response = await apiClient.get(
-      `/api/public/users/${userId}/achievements`,
-    );
-    return response.data;
+    const token = await this.getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE}/${userId}/achievements`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to get public achievements: ${response.statusText}`,
+      );
+    }
+
+    return await response.json();
   }
 
   /**
@@ -96,8 +161,21 @@ export class PublicProfileAPIClient {
   async getUserStats(
     userId: string,
   ): Promise<{ stats: UserStats; isOwnProfile: boolean }> {
-    const response = await apiClient.get(`/api/public/users/${userId}/stats`);
-    return response.data;
+    const token = await this.getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${API_BASE}/${userId}/stats`, {
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get user stats: ${response.statusText}`);
+    }
+
+    return await response.json();
   }
 }
 
