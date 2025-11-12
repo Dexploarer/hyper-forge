@@ -12,9 +12,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, "..", "..");
 
-export const debugStorageRoute = new Elysia({ prefix: "/api/debug" }).get(
-  "/storage-info",
-  async () => {
+export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
+  .get("/storage-info", async () => {
     const mediaRoot = path.join(ROOT_DIR, "gdd-assets", "media");
 
     // Check if directory exists
@@ -108,5 +107,62 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" }).get(
         })(),
       },
     };
-  },
-);
+  })
+  .get("/check-file", async ({ query }) => {
+    const filePath = query.path as string;
+
+    if (!filePath) {
+      return {
+        error: "Missing 'path' query parameter",
+        example:
+          "/api/debug/check-file?path=/gdd-assets/media/portrait/npc/{id}/{file}.png",
+      };
+    }
+
+    // Build full path
+    const fullPath = path.join(ROOT_DIR, filePath);
+
+    // Security check - must be in gdd-assets
+    const normalizedPath = path.normalize(fullPath);
+    const allowedDir = path.join(ROOT_DIR, "gdd-assets");
+
+    if (!normalizedPath.startsWith(allowedDir)) {
+      return {
+        error: "Access denied - path must be within gdd-assets directory",
+      };
+    }
+
+    try {
+      const exists = await fs.promises
+        .access(fullPath)
+        .then(() => true)
+        .catch(() => false);
+
+      let fileInfo = null;
+      if (exists) {
+        const stats = await fs.promises.stat(fullPath);
+        fileInfo = {
+          size: stats.size,
+          sizeMB: (stats.size / 1024 / 1024).toFixed(2),
+          created: stats.birthtime,
+          modified: stats.mtime,
+          isFile: stats.isFile(),
+          isDirectory: stats.isDirectory(),
+        };
+      }
+
+      return {
+        path: filePath,
+        fullPath,
+        exists,
+        fileInfo,
+      };
+    } catch (error) {
+      return {
+        path: filePath,
+        fullPath,
+        exists: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
+  });

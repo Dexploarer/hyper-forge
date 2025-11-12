@@ -68,13 +68,20 @@ await fs.promises.mkdir(path.join(ROOT_DIR, "temp-images"), {
   recursive: true,
 });
 
-// Initialize Qdrant vector database (async)
+// Initialize Qdrant vector database (async, non-blocking)
 import { initializeQdrantCollections } from "./db/qdrant";
-await initializeQdrantCollections();
+initializeQdrantCollections().catch((error) => {
+  console.error("[Startup] Qdrant initialization failed (non-fatal):", error);
+});
 
-// Initialize default achievements
+// Initialize default achievements (async, non-blocking)
 import { achievementService } from "./services/AchievementService";
-await achievementService.initializeDefaultAchievements();
+achievementService.initializeDefaultAchievements().catch((error) => {
+  console.error(
+    "[Startup] Achievement initialization failed (non-fatal):",
+    error,
+  );
+});
 
 // Initialize services
 // Railway uses PORT, but we fallback to API_PORT for local dev

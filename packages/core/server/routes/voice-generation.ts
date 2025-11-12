@@ -5,229 +5,389 @@
 
 import { Elysia, t } from "elysia";
 import { ElevenLabsVoiceService } from "../services/ElevenLabsVoiceService";
+import { MediaStorageService } from "../services/MediaStorageService";
 import * as Models from "../models";
+import { optionalAuth } from "../middleware/auth";
+
+const mediaStorageService = new MediaStorageService();
 
 export const voiceGenerationRoutes = new Elysia({
   prefix: "/api/voice",
   name: "voice-generation",
-}).guard(
-  {
-    beforeHandle: ({ request }) => {
-      console.log(`[Voice] ${request.method} ${new URL(request.url).pathname}`);
+})
+  .derive(async (context) => {
+    // Extract user from auth token if present (optional)
+    const authResult = await optionalAuth(context as any);
+    return { user: authResult.user };
+  })
+  .guard(
+    {
+      beforeHandle: ({ request }) => {
+        console.log(
+          `[Voice] ${request.method} ${new URL(request.url).pathname}`,
+        );
+      },
     },
-  },
-  (app) =>
-    app
-      // Helper to get API key from env or request
-      .derive(({ request }) => {
-        const apiKey = process.env.ELEVENLABS_API_KEY;
-        const voiceService = new ElevenLabsVoiceService(apiKey);
+    (app) =>
+      app
+        // Helper to get API key from env or request
+        .derive(({ request }) => {
+          const apiKey = process.env.ELEVENLABS_API_KEY;
+          const voiceService = new ElevenLabsVoiceService(apiKey);
 
-        if (!voiceService.isAvailable()) {
-          throw new Error(
-            "Voice generation service not available - ELEVENLABS_API_KEY not configured",
-          );
-        }
+          if (!voiceService.isAvailable()) {
+            throw new Error(
+              "Voice generation service not available - ELEVENLABS_API_KEY not configured",
+            );
+          }
 
-        return { voiceService };
-      })
+          return { voiceService };
+        })
 
-      // GET /api/voice/library - Get available voices
-      .get(
-        "/library",
-        async ({ voiceService }) => {
-          const voices = await voiceService.getAvailableVoices();
-          return {
-            voices,
-            count: voices.length,
-          };
-        },
-        {
-          // Skip response validation - ElevenLabs SDK returns dynamic voice objects
-          detail: {
-            tags: ["Voice Generation"],
-            summary: "Get available voices",
-            description:
-              "Returns all available voices from ElevenLabs voice library",
+        // GET /api/voice/library - Get available voices
+        .get(
+          "/library",
+          async ({ voiceService }) => {
+            const voices = await voiceService.getAvailableVoices();
+            return {
+              voices,
+              count: voices.length,
+            };
           },
-        },
-      )
-
-      // POST /api/voice/generate - Generate single voice clip
-      .post(
-        "/generate",
-        async ({ body, voiceService }) => {
-          const result = await voiceService.generateVoice(body);
-          return result;
-        },
-        {
-          body: Models.GenerateVoiceRequest,
-          response: Models.GenerateVoiceResponse,
-          detail: {
-            tags: ["Voice Generation"],
-            summary: "Generate voice from text",
-            description:
-              "Converts text to speech using ElevenLabs TTS for NPC dialogue",
+          {
+            // Skip response validation - ElevenLabs SDK returns dynamic voice objects
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Get available voices",
+              description:
+                "Returns all available voices from ElevenLabs voice library",
+            },
           },
-        },
-      )
+        )
 
-      // POST /api/voice/batch - Batch generate multiple voice clips
-      .post(
-        "/batch",
-        async ({ body, voiceService }) => {
-          const results = await voiceService.generateVoiceBatch(body);
-          return results;
-        },
-        {
-          body: Models.BatchVoiceRequest,
-          response: Models.BatchVoiceResponse,
-          detail: {
-            tags: ["Voice Generation"],
-            summary: "Batch generate voices",
-            description:
-              "Generate multiple voice clips in a single request for better efficiency",
+        // POST /api/voice/generate - Generate single voice clip
+        .post(
+          "/generate",
+          async ({ body, voiceService }) => {
+            const result = await voiceService.generateVoice(body);
+            return result;
           },
-        },
-      )
-
-      // POST /api/voice/estimate - Estimate cost
-      .post(
-        "/estimate",
-        async ({ body }) => {
-          const voiceService = new ElevenLabsVoiceService();
-          const estimate = voiceService.estimateCost(body.texts, body.settings);
-          return estimate;
-        },
-        {
-          body: t.Object({
-            texts: t.Array(t.String()),
-            settings: t.Optional(Models.VoiceSettings),
-          }),
-          response: t.Object({
-            characterCount: t.Number(),
-            estimatedCostUSD: t.String(),
-            texts: t.Number(),
-          }),
-          detail: {
-            tags: ["Voice Generation"],
-            summary: "Estimate cost for voice generation",
-            description:
-              "Calculate estimated cost based on character count and settings",
+          {
+            body: Models.GenerateVoiceRequest,
+            response: Models.GenerateVoiceResponse,
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Generate voice from text",
+              description:
+                "Converts text to speech using ElevenLabs TTS for NPC dialogue",
+            },
           },
-        },
-      )
+        )
 
-      // GET /api/voice/subscription - Get subscription info
-      .get(
-        "/subscription",
-        async ({ voiceService }) => {
-          const subscription = await voiceService.getSubscriptionInfo();
-          return subscription;
-        },
-        {
-          detail: {
-            tags: ["Voice Generation"],
-            summary: "Get ElevenLabs subscription info",
-            description:
-              "Returns current subscription status, character limits, and usage",
+        // POST /api/voice/batch - Batch generate multiple voice clips
+        .post(
+          "/batch",
+          async ({ body, voiceService }) => {
+            const results = await voiceService.generateVoiceBatch(body);
+            return results;
           },
-        },
-      )
-
-      // GET /api/voice/models - Get available models
-      .get(
-        "/models",
-        async ({ voiceService }) => {
-          const models = await voiceService.getAvailableModels();
-          return {
-            models,
-            count: models.length,
-          };
-        },
-        {
-          response: t.Object({
-            models: t.Array(t.Any()),
-            count: t.Number(),
-          }),
-          detail: {
-            tags: ["Voice Generation"],
-            summary: "Get available voice models",
-            description:
-              "Returns list of available ElevenLabs TTS models (multilingual, monolingual, turbo)",
+          {
+            body: Models.BatchVoiceRequest,
+            response: Models.BatchVoiceResponse,
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Batch generate voices",
+              description:
+                "Generate multiple voice clips in a single request for better efficiency",
+            },
           },
-        },
-      )
+        )
 
-      // GET /api/voice/rate-limit - Get rate limit info
-      .get(
-        "/rate-limit",
-        async ({ voiceService }) => {
-          const rateLimitInfo = voiceService.getRateLimitInfo();
-          return rateLimitInfo;
-        },
-        {
-          detail: {
-            tags: ["Voice Generation"],
-            summary: "Get rate limit status",
-            description: "Returns current rate limit information",
+        // POST /api/voice/estimate - Estimate cost
+        .post(
+          "/estimate",
+          async ({ body }) => {
+            const voiceService = new ElevenLabsVoiceService();
+            const estimate = voiceService.estimateCost(
+              body.texts,
+              body.settings,
+            );
+            return estimate;
           },
-        },
-      )
-
-      // POST /api/voice/design - Design a new voice from description
-      .post(
-        "/design",
-        async ({ body, voiceService }) => {
-          console.log(
-            `[Voice] Designing voice: "${body.voiceDescription.substring(0, 50)}..."`,
-          );
-
-          const result = await voiceService.designVoice(body);
-
-          console.log(
-            `[Voice] Voice design complete: ${(result as any).previews?.length || 0} previews generated`,
-          );
-
-          return result;
-        },
-        {
-          body: Models.DesignVoiceRequest,
-          // Skip response validation - ElevenLabs SDK returns dynamic objects
-          detail: {
-            tags: ["Voice Generation"],
-            summary: "Design a new voice from description",
-            description:
-              "Generate voice previews from text description using ElevenLabs Voice Design API. Returns multiple preview options to choose from.",
+          {
+            body: t.Object({
+              texts: t.Array(t.String()),
+              settings: t.Optional(Models.VoiceSettings),
+            }),
+            response: t.Object({
+              characterCount: t.Number(),
+              estimatedCostUSD: t.String(),
+              texts: t.Number(),
+            }),
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Estimate cost for voice generation",
+              description:
+                "Calculate estimated cost based on character count and settings",
+            },
           },
-        },
-      )
+        )
 
-      // POST /api/voice/create - Save designed voice to library
-      .post(
-        "/create",
-        async ({ body, voiceService }) => {
-          console.log(
-            `[Voice] Creating voice from preview: "${body.voiceName}"`,
-          );
-
-          const result = await voiceService.createVoiceFromPreview(body);
-
-          console.log(
-            `[Voice] Voice created successfully: ${(result as any).voiceId || (result as any).voice_id}`,
-          );
-
-          return result;
-        },
-        {
-          body: Models.CreateVoiceRequest,
-          // Skip response validation - ElevenLabs SDK returns dynamic objects
-          detail: {
-            tags: ["Voice Generation"],
-            summary: "Create voice from preview",
-            description:
-              "Save a designed voice preview to your ElevenLabs voice library for future use",
+        // GET /api/voice/subscription - Get subscription info
+        .get(
+          "/subscription",
+          async ({ voiceService }) => {
+            const subscription = await voiceService.getSubscriptionInfo();
+            return subscription;
           },
-        },
-      ),
-);
+          {
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Get ElevenLabs subscription info",
+              description:
+                "Returns current subscription status, character limits, and usage",
+            },
+          },
+        )
+
+        // GET /api/voice/models - Get available models
+        .get(
+          "/models",
+          async ({ voiceService }) => {
+            const models = await voiceService.getAvailableModels();
+            return {
+              models,
+              count: models.length,
+            };
+          },
+          {
+            response: t.Object({
+              models: t.Array(t.Any()),
+              count: t.Number(),
+            }),
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Get available voice models",
+              description:
+                "Returns list of available ElevenLabs TTS models (multilingual, monolingual, turbo)",
+            },
+          },
+        )
+
+        // GET /api/voice/rate-limit - Get rate limit info
+        .get(
+          "/rate-limit",
+          async ({ voiceService }) => {
+            const rateLimitInfo = voiceService.getRateLimitInfo();
+            return rateLimitInfo;
+          },
+          {
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Get rate limit status",
+              description: "Returns current rate limit information",
+            },
+          },
+        )
+
+        // POST /api/voice/design - Design a new voice from description
+        .post(
+          "/design",
+          async ({ body, voiceService }) => {
+            console.log(
+              `[Voice] Designing voice: "${body.voiceDescription.substring(0, 50)}..."`,
+            );
+
+            const result = await voiceService.designVoice(body);
+
+            console.log(
+              `[Voice] Voice design complete: ${(result as any).previews?.length || 0} previews generated`,
+            );
+
+            return result;
+          },
+          {
+            body: Models.DesignVoiceRequest,
+            // Skip response validation - ElevenLabs SDK returns dynamic objects
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Design a new voice from description",
+              description:
+                "Generate voice previews from text description using ElevenLabs Voice Design API. Returns multiple preview options to choose from.",
+            },
+          },
+        )
+
+        // POST /api/voice/create - Save designed voice to library
+        .post(
+          "/create",
+          async ({ body, voiceService }) => {
+            console.log(
+              `[Voice] Creating voice from preview: "${body.voiceName}"`,
+            );
+
+            const result = await voiceService.createVoiceFromPreview(body);
+
+            console.log(
+              `[Voice] Voice created successfully: ${(result as any).voiceId || (result as any).voice_id}`,
+            );
+
+            return result;
+          },
+          {
+            body: Models.CreateVoiceRequest,
+            // Skip response validation - ElevenLabs SDK returns dynamic objects
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Create voice from preview",
+              description:
+                "Save a designed voice preview to your ElevenLabs voice library for future use",
+            },
+          },
+        )
+
+        // POST /api/voice/save - Save generated audio to database
+        .post(
+          "/save",
+          async ({ body, user }) => {
+            console.log(
+              `[Voice] Saving ${body.type || "voice"} audio: ${body.name}`,
+            );
+
+            // Decode base64 audio data
+            const audioData = Buffer.from(body.audioData, "base64");
+
+            // Determine file extension based on mime type
+            const fileExt =
+              body.metadata?.mimeType === "audio/wav"
+                ? "wav"
+                : body.metadata?.mimeType === "audio/ogg"
+                  ? "ogg"
+                  : "mp3";
+
+            // Generate filename
+            const fileName = `${body.type || "voice"}_${Date.now()}.${fileExt}`;
+
+            // Save media file and create database record
+            const result = await mediaStorageService.saveMedia({
+              type: body.type || "voice",
+              fileName,
+              data: audioData,
+              metadata: body.metadata || {},
+              createdBy: user?.id,
+            });
+
+            console.log(`[Voice] Audio saved successfully: ${result.fileUrl}`);
+
+            return {
+              success: true,
+              id: result.id,
+              fileUrl: result.fileUrl,
+            };
+          },
+          {
+            body: t.Object({
+              name: t.String(),
+              type: t.Union([
+                t.Literal("voice"),
+                t.Literal("music"),
+                t.Literal("sound_effect"),
+              ]),
+              audioData: t.String(), // base64 encoded
+              metadata: t.Optional(
+                t.Object({
+                  voiceId: t.Optional(t.String()),
+                  voiceName: t.Optional(t.String()),
+                  text: t.Optional(t.String()),
+                  prompt: t.Optional(t.String()),
+                  description: t.Optional(t.String()),
+                  duration: t.Optional(t.Number()),
+                  mimeType: t.Optional(t.String()),
+                  settings: t.Optional(t.Any()),
+                }),
+              ),
+            }),
+            response: t.Object({
+              success: t.Boolean(),
+              id: t.String(),
+              fileUrl: t.String(),
+            }),
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "Save generated audio",
+              description:
+                "Save a generated audio file (voice, music, or SFX) to persistent storage",
+            },
+          },
+        )
+
+        // GET /api/voice/saved - List saved audio
+        .get(
+          "/saved",
+          async ({ query, user }) => {
+            console.log(
+              `[Voice] Fetching saved audio${query.type ? ` of type: ${query.type}` : ""}`,
+            );
+
+            const limit = query.limit ? parseInt(query.limit) : 50;
+
+            // Get media by type, optionally filtered by user
+            const audioTypes = query.type
+              ? [query.type]
+              : ["voice", "music", "sound_effect"];
+
+            let allAudio: any[] = [];
+
+            for (const type of audioTypes) {
+              const audio = await mediaStorageService.getMediaByType(type, {
+                limit,
+                createdBy: user?.id,
+              });
+              allAudio = [...allAudio, ...audio];
+            }
+
+            // Sort by creation date, most recent first
+            allAudio.sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime(),
+            );
+
+            // Limit results
+            if (limit) {
+              allAudio = allAudio.slice(0, limit);
+            }
+
+            console.log(`[Voice] Found ${allAudio.length} saved audio files`);
+
+            return {
+              success: true,
+              audio: allAudio,
+              count: allAudio.length,
+            };
+          },
+          {
+            query: t.Object({
+              type: t.Optional(
+                t.Union([
+                  t.Literal("voice"),
+                  t.Literal("music"),
+                  t.Literal("sound_effect"),
+                ]),
+              ),
+              limit: t.Optional(t.String()),
+            }),
+            response: t.Object({
+              success: t.Boolean(),
+              audio: t.Array(t.Any()),
+              count: t.Number(),
+            }),
+            detail: {
+              tags: ["Voice Generation"],
+              summary: "List saved audio",
+              description:
+                "Retrieve list of saved audio files from persistent storage",
+            },
+          },
+        ),
+  );

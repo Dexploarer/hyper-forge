@@ -12,6 +12,8 @@ import {
 } from "@/components/audio";
 import { Button, Drawer } from "@/components/common";
 import type { AudioType, AudioView, GeneratedAudio } from "@/types/audio";
+import { notify } from "@/utils/notify";
+import { api } from "@/lib/api-client";
 
 interface AudioGenerationPageProps {
   initialPrompt?: string;
@@ -69,32 +71,135 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
     }
   }, [initialPrompt, audioType, initialType]);
 
+  // Load saved audio from database when page mounts or audio type changes
+  useEffect(() => {
+    const loadSavedAudio = async () => {
+      try {
+        console.log(
+          `[AudioGenerationPage] Loading saved audio${audioType ? ` of type: ${audioType}` : ""}`,
+        );
+
+        const response = await api.api.voice.saved.get({
+          query: {
+            type: audioType || undefined,
+            limit: "50",
+          },
+        });
+
+        if (response.data && response.data.audio) {
+          // Transform database records to GeneratedAudio format
+          const loadedAudio: GeneratedAudio[] = response.data.audio.map(
+            (record: any) => ({
+              id: record.id,
+              type: record.type,
+              name:
+                record.metadata?.text ||
+                record.metadata?.prompt ||
+                record.fileName ||
+                "Saved Audio",
+              audioUrl: record.fileUrl,
+              audioData: undefined, // Don't need to load the base64 data
+              metadata: record.metadata || {},
+              createdAt: record.createdAt,
+            }),
+          );
+
+          console.log(
+            `[AudioGenerationPage] Loaded ${loadedAudio.length} saved audio files`,
+          );
+
+          // Only set if we have existing state (prepend) or if this is initial load
+          if (generatedAudios.length === 0) {
+            setGeneratedAudios(loadedAudio);
+            if (loadedAudio.length > 0 && !selectedAudio) {
+              setSelectedAudio(loadedAudio[0]);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(
+          "[AudioGenerationPage] Failed to load saved audio:",
+          error,
+        );
+        // Don't show error to user - they can still generate new audio
+      }
+    };
+
+    // Only load if we have an audio type selected
+    if (audioType) {
+      loadSavedAudio();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioType]); // Only run when audioType changes or on mount
+
   // Handle audio generation completion
-  const handleAudioGenerated = (audioData: string | Blob, metadata: any) => {
+  const handleAudioGenerated = async (
+    audioData: string | Blob,
+    metadata: any,
+  ) => {
     const id = `audio-${Date.now()}`;
     let audioUrl: string;
+    let base64Data: string;
 
-    // Convert to object URL if it's a Blob
+    // Convert to base64 if it's a Blob
     if (audioData instanceof Blob) {
       audioUrl = URL.createObjectURL(audioData);
+      // Convert blob to base64 for saving
+      const arrayBuffer = await audioData.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      base64Data = btoa(String.fromCharCode(...bytes));
     } else {
       // It's base64 audio data
       audioUrl = `data:audio/mpeg;base64,${audioData}`;
+      base64Data = audioData;
     }
+
+    const audioName =
+      metadata.prompt ||
+      metadata.text ||
+      metadata.description ||
+      `${metadata.type || audioType} ${generatedAudios.length + 1}`;
 
     const newAudio: GeneratedAudio = {
       id,
       type: metadata.type || audioType || "voice",
-      name:
-        metadata.prompt ||
-        metadata.text ||
-        metadata.description ||
-        `${metadata.type || audioType} ${generatedAudios.length + 1}`,
+      name: audioName,
       audioUrl,
-      audioData: audioData instanceof Blob ? undefined : audioData,
+      audioData: base64Data,
       metadata,
       createdAt: new Date().toISOString(),
     };
+
+    // Save to database in the background
+    try {
+      const response = await api.api.voice.save.post({
+        name: audioName,
+        type: metadata.type || audioType || "voice",
+        audioData: base64Data,
+        metadata: {
+          voiceId: metadata.voiceId,
+          voiceName: metadata.voiceName,
+          text: metadata.text,
+          prompt: metadata.prompt,
+          description: metadata.description,
+          duration: metadata.duration,
+          mimeType: metadata.mimeType || "audio/mpeg",
+          settings: metadata.settings,
+        },
+      });
+
+      if (response.data) {
+        // Update the audio with the saved ID and persistent fileUrl
+        newAudio.id = response.data.id;
+        newAudio.audioUrl = response.data.fileUrl;
+        console.log(
+          `[AudioGenerationPage] Audio saved to database: ${response.data.fileUrl}`,
+        );
+      }
+    } catch (error) {
+      console.error("[AudioGenerationPage] Failed to save audio:", error);
+      notify.error("Audio generated but failed to save to database");
+    }
 
     setGeneratedAudios((prev) => [newAudio, ...prev]);
     setSelectedAudio(newAudio);

@@ -38,12 +38,19 @@ export class AchievementService {
     try {
       const allAchievements = await db.query.achievements.findMany({
         where: eq(achievements.isActive, true),
-        orderBy: [achievements.category, achievements.rarity, achievements.name],
+        orderBy: [
+          achievements.category,
+          achievements.rarity,
+          achievements.name,
+        ],
       });
 
       return allAchievements;
     } catch (error) {
-      console.error("[AchievementService] Failed to get all achievements:", error);
+      console.error(
+        "[AchievementService] Failed to get all achievements:",
+        error,
+      );
       throw error;
     }
   }
@@ -81,7 +88,9 @@ export class AchievementService {
       });
 
       // Get achievement details for earned achievements
-      const earnedAchievementIds = earnedAchievementsList.map((ua) => ua.achievementId);
+      const earnedAchievementIds = earnedAchievementsList.map(
+        (ua) => ua.achievementId,
+      );
       const earnedAchievementDetails =
         earnedAchievementIds.length > 0
           ? await db.query.achievements.findMany({
@@ -96,17 +105,19 @@ export class AchievementService {
       });
 
       // Build progress array
-      const progress: AchievementProgress[] = allAchievements.map((achievement) => {
-        const earned = earnedMap.get(achievement.id);
-        return {
-          achievementId: achievement.id,
-          achievement,
-          progress: earned?.progress || 0,
-          maxProgress: achievement.maxProgress,
-          isEarned: !!earned,
-          earnedAt: earned?.earnedAt || null,
-        };
-      });
+      const progress: AchievementProgress[] = allAchievements.map(
+        (achievement) => {
+          const earned = earnedMap.get(achievement.id);
+          return {
+            achievementId: achievement.id,
+            achievement,
+            progress: earned?.progress || 0,
+            maxProgress: achievement.maxProgress,
+            isEarned: !!earned,
+            earnedAt: earned?.earnedAt || null,
+          };
+        },
+      );
 
       return progress;
     } catch (error) {
@@ -148,7 +159,9 @@ export class AchievementService {
       });
 
       // Get achievement details for recent achievements
-      const recentAchievementIds = recentAchievementsList.map((ua) => ua.achievementId);
+      const recentAchievementIds = recentAchievementsList.map(
+        (ua) => ua.achievementId,
+      );
       const recentAchievementDetails =
         recentAchievementIds.length > 0
           ? await db.query.achievements.findMany({
@@ -158,7 +171,9 @@ export class AchievementService {
 
       // Map recent achievements with details
       const recentAchievements = recentAchievementsList.map((ua) => {
-        const achievement = recentAchievementDetails.find((a) => a.id === ua.achievementId);
+        const achievement = recentAchievementDetails.find(
+          (a) => a.id === ua.achievementId,
+        );
         return {
           ...ua,
           achievement: achievement || ({} as Achievement),
@@ -393,24 +408,34 @@ export class AchievementService {
 
       // Insert achievements that don't exist
       for (const achievement of defaultAchievements) {
-        const existing = await this.getAchievementByCode(achievement.code);
-        if (!existing) {
-          await db.insert(achievements).values(achievement);
-          console.log(
-            `[AchievementService] Created default achievement: ${achievement.code}`,
+        try {
+          const existing = await this.getAchievementByCode(achievement.code);
+          if (!existing) {
+            await db.insert(achievements).values(achievement);
+            console.log(
+              `[AchievementService] Created default achievement: ${achievement.code}`,
+            );
+          }
+        } catch (innerError) {
+          console.warn(
+            `[AchievementService] Failed to create achievement ${achievement.code}:`,
+            innerError,
           );
+          // Continue with other achievements
         }
       }
+
+      console.log("[AchievementService] Achievement initialization complete");
     } catch (error) {
       console.error(
         "[AchievementService] Failed to initialize default achievements:",
         error,
       );
-      throw error;
+      // Don't throw - allow server to start even if achievements fail to initialize
+      return;
     }
   }
 }
 
 // Export singleton instance
 export const achievementService = new AchievementService();
-
