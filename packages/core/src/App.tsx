@@ -20,6 +20,7 @@ import { LandingPage } from "./pages/LandingPage";
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const UnifiedEquipmentPage = lazy(() => import("./pages/UnifiedEquipmentPage"));
 const AssetsPage = lazy(() => import("./pages/AssetsPage"));
+const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
 const ContentLibraryPage = lazy(() => import("./pages/ContentLibraryPage"));
 const HandRiggingPage = lazy(() =>
   import("./pages/HandRiggingPage").then((module) => ({
@@ -91,6 +92,9 @@ const MusicGenerationPage = lazy(
   () => import("./pages/generation/MusicGenerationPage"),
 );
 
+// Public Profile page
+const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
+
 function AppContent() {
   const { isAuthenticated } = useAuth();
   const { currentView, navigateTo, navigateToAsset } = useNavigation();
@@ -113,6 +117,7 @@ function AppContent() {
           {/* Core pages */}
           {currentView === NAVIGATION_VIEWS.DASHBOARD && <DashboardPage />}
           {currentView === NAVIGATION_VIEWS.ASSETS && <AssetsPage />}
+          {currentView === NAVIGATION_VIEWS.PROJECTS && <ProjectsPage />}
           {currentView === NAVIGATION_VIEWS.CONTENT_LIBRARY && (
             <ContentLibraryPage />
           )}
@@ -183,6 +188,11 @@ function AppContent() {
           {currentView === NAVIGATION_VIEWS.SETTINGS && <SettingsPage />}
           {currentView === NAVIGATION_VIEWS.ADMIN_DASHBOARD && (
             <AdminDashboardPage />
+          )}
+
+          {/* Public Profile */}
+          {currentView === NAVIGATION_VIEWS.PUBLIC_PROFILE && (
+            <PublicProfilePage />
           )}
 
           {/* Legacy/backward compatibility routes */}

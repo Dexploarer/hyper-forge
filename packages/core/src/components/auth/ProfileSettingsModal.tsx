@@ -1,4 +1,4 @@
-import { UserCircle, Mail, MessageSquare, X, LogOut, Save } from 'lucide-react'
+import { UserCircle, Mail, X, LogOut, Save } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { Button, Input } from '../common'
@@ -17,7 +17,7 @@ interface ProfileSettingsModalProps {
   onSave: (profile: {
     displayName: string
     email: string
-    discordUsername: string
+    discordUsername?: string
   }) => Promise<void>
   onLogout: () => void
 }
@@ -30,7 +30,6 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
 }) => {
   const [displayName, setDisplayName] = useState(user.displayName || '')
   const [email, setEmail] = useState(user.email || '')
-  const [discordUsername, setDiscordUsername] = useState(user.discordUsername || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -47,17 +46,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
       setError('Please enter a valid email')
       return
     }
-    if (!discordUsername.trim()) {
-      setError('Please enter your Discord username')
-      return
-    }
 
     setIsSubmitting(true)
     try {
       await onSave({
         displayName: displayName.trim(),
         email: email.trim(),
-        discordUsername: discordUsername.trim(),
       })
       onClose()
     } catch (err) {
@@ -84,7 +78,7 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
             </div>
             <div>
               <h2 className="text-2xl font-bold text-text-primary">Profile Settings</h2>
-              <p className="text-sm text-text-secondary">Manage your account</p>
+              <p className="text-sm text-text-secondary">Manage your Asset Forge profile</p>
             </div>
           </div>
           <button
@@ -101,45 +95,36 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary flex items-center gap-2">
               <UserCircle size={16} className="text-text-secondary" />
-              Full Name
+              Display Name <span className="text-red-400">*</span>
             </label>
             <Input
               type="text"
-              placeholder="e.g., John Doe"
+              placeholder="e.g., Alex GameDev"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className="w-full"
             />
+            <p className="text-xs text-text-tertiary">
+              This name appears on your assets and projects
+            </p>
           </div>
 
           {/* Email */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary flex items-center gap-2">
               <Mail size={16} className="text-text-secondary" />
-              Email Address
+              Email Address <span className="text-red-400">*</span>
             </label>
             <Input
               type="email"
-              placeholder="e.g., john@example.com"
+              placeholder="e.g., alex@gamedev.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full"
             />
-          </div>
-
-          {/* Discord Username */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <MessageSquare size={16} className="text-text-secondary" />
-              Discord Username
-            </label>
-            <Input
-              type="text"
-              placeholder="e.g., username#1234 or @username"
-              value={discordUsername}
-              onChange={(e) => setDiscordUsername(e.target.value)}
-              className="w-full"
-            />
+            <p className="text-xs text-text-tertiary">
+              Used for notifications about your asset generation
+            </p>
           </div>
 
           {/* Error Message */}

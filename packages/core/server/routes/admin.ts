@@ -10,7 +10,11 @@ import { requireAdmin } from "../middleware/requireAdmin";
 import { userService } from "../services/UserService";
 
 export const adminRoutes = new Elysia({ prefix: "/api/admin" })
-  // Update user role (admin only)
+  /**
+   * Update user role (admin only)
+   * PUT /api/admin/users/:id/role
+   * Changes a user's role between admin and member
+   */
   .put(
     "/users/:id/role",
     async ({ request, params, body }) => {
@@ -103,7 +107,107 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
     },
   )
 
-  // Get activity log (admin only)
+  /**
+   * Delete user (admin only)
+   * DELETE /api/admin/users/:id
+   * Permanently deletes a user and all their data
+   */
+  .delete(
+    "/users/:id",
+    async ({ request, params }) => {
+      const adminResult = await requireAdmin({ request });
+
+      // If admin check failed, return the error response
+      if (adminResult instanceof Response) {
+        return adminResult;
+      }
+
+      const { user: adminUser } = adminResult;
+      const { id } = params;
+
+      // Don't allow deleting yourself
+      if (id === adminUser.id) {
+        return new Response(
+          JSON.stringify({
+            error: "Cannot delete own account",
+            message: "You cannot delete your own account",
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      try {
+        // Get user details before deletion for logging
+        const targetUser = await userService.findById(id);
+
+        if (!targetUser) {
+          return new Response(
+            JSON.stringify({
+              error: "User not found",
+              message: "The specified user does not exist",
+            }),
+            {
+              status: 404,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+
+        // Delete user (cascade will handle related data)
+        await userService.deleteUser(id);
+
+        // Log activity
+        await db.insert(activityLog).values({
+          userId: adminUser.id,
+          action: "user_delete",
+          entityType: "user",
+          entityId: id,
+          details: {
+            targetUser: targetUser.displayName || targetUser.email || id,
+            targetRole: targetUser.role,
+          },
+        });
+
+        return {
+          success: true,
+          message: "User deleted successfully",
+        };
+      } catch (error) {
+        console.error("[AdminRoutes] Failed to delete user:", error);
+        return new Response(
+          JSON.stringify({
+            error: "Delete failed",
+            message: "Failed to delete user",
+          }),
+          {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      detail: {
+        tags: ["Admin"],
+        summary: "Delete user (Admin only)",
+        description:
+          "Permanently delete a user and all their data. Cannot delete your own account.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
+  )
+
+  /**
+   * Get activity log (admin only)
+   * GET /api/admin/activity-log
+   * Retrieve paginated activity log with optional filtering
+   */
   .get(
     "/activity-log",
     async ({ request, query }) => {

@@ -21,7 +21,7 @@ interface AuthContextType {
   completeProfile: (profile: {
     displayName: string;
     email: string;
-    discordUsername: string;
+    discordUsername?: string;
   }) => Promise<void>;
 }
 
@@ -122,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const completeProfile = async (profile: {
     displayName: string;
     email: string;
-    discordUsername: string;
+    discordUsername?: string;
   }) => {
     const accessToken = await getAccessToken();
 

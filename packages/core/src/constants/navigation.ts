@@ -5,6 +5,7 @@ export const NAVIGATION_VIEWS = {
   // Core pages
   DASHBOARD: "dashboard",
   ASSETS: "assets",
+  PROJECTS: "projects",
   CONTENT_LIBRARY: "contentLibrary",
 
   // 3D Generation pages (expanded from single "generation" view)
@@ -34,6 +35,9 @@ export const NAVIGATION_VIEWS = {
   // System
   SETTINGS: "settings",
   ADMIN_DASHBOARD: "adminDashboard",
+
+  // Public profiles
+  PUBLIC_PROFILE: "publicProfile",
 
   // Legacy/deprecated (kept for backward compatibility)
   AUDIO: "audio", // @deprecated Use specific audio pages instead

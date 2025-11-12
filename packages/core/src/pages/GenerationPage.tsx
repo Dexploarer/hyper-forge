@@ -787,8 +787,8 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
 
   return (
     <>
-      <div className="h-full overflow-y-auto custom-scrollbar">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
+      <div className="viewer-page-container">
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 lg:px-8 py-6">
           {/* Header with tabs */}
           <div className="mb-4">
             {/* Tab Navigation */}

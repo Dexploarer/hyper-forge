@@ -5,25 +5,57 @@ A comprehensive React/Vite application for AI-powered 3D asset generation, riggi
 ## Features
 
 ### 🎨 **AI-Powered Asset Generation**
+
 - Generate 3D models from text descriptions using GPT-4 and Meshy.ai
 - Automatic concept art creation with DALL-E
 - Support for various asset types: weapons, armor, characters, items
 - Material variant generation (bronze, steel, mithril, etc.)
 - Batch generation capabilities
+- World context-aware generation for consistent results
 
 ### 🎮 **3D Asset Management**
+
 - Interactive 3D viewer with Three.js
 - Asset library with categorization and filtering
 - Metadata management and asset organization
 - GLB/GLTF format support
+- Project-based organization
+
+### 🌍 **World Configuration System**
+
+- Define rich game worlds with races, factions, and skills
+- Pre-built templates for common genres (Fantasy, Sci-Fi, Cyberpunk)
+- Import/export configurations as JSON
+- Automatic AI integration for context-aware content generation
+- Configuration history tracking
+- Real-time validation with error detection
+
+### 📁 **Project Management**
+
+- Organize assets into projects
+- Archive completed projects
+- Project statistics and insights
+- Filter assets by project
+- Admin project management
+
+### 👥 **Admin Dashboard**
+
+- Comprehensive user management
+- Role management (admin/member promotion)
+- Activity log with filtering and export
+- User statistics and insights
+- System health monitoring
+- Secure user deletion with audit trail
 
 ### 🤖 **Advanced Rigging & Fitting**
+
 - **Armor Fitting System**: Automatically fit armor pieces to character models
 - **Hand Rigging**: AI-powered hand pose detection and weapon rigging
 - Weight transfer and mesh deformation
 - Bone mapping and skeleton alignment
 
 ### 🔧 **Processing Tools**
+
 - Sprite generation from 3D models
 - Vertex color extraction
 - T-pose extraction from animated models
@@ -44,28 +76,33 @@ A comprehensive React/Vite application for AI-powered 3D asset generation, riggi
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 18+ or Bun runtime
 - API keys for OpenAI and Meshy.ai
 
 ### Installation
 
 1. Clone the repository
+
 ```bash
 git clone [repository-url]
 cd packages/generation
 ```
 
 2. Install dependencies using Bun [[memory:4609218]]
+
 ```bash
 bun install
 ```
 
 3. Create a `.env` file from the example
+
 ```bash
 cp env.example .env
 ```
 
 4. Add your API keys to `.env`
+
 ```
 VITE_OPENAI_API_KEY=your-openai-api-key
 VITE_MESHY_API_KEY=your-meshy-api-key
@@ -74,6 +111,7 @@ VITE_MESHY_API_KEY=your-meshy-api-key
 ### Running the Application
 
 Start both frontend and backend services:
+
 ```bash
 # Terminal 1: Start the React app
 bun run dev:all
@@ -93,6 +131,7 @@ Asset Forge uses **Privy** for authentication, providing secure user management 
 
 1. **Get Privy Credentials**: Sign up at [dashboard.privy.io](https://dashboard.privy.io/) and create an app
 2. **Configure Environment**: Add your Privy credentials to `.env`:
+
    ```env
    # Backend (Server-Side)
    PRIVY_APP_ID=your_privy_app_id
@@ -117,12 +156,14 @@ Asset Forge uses **Privy** for authentication, providing secure user management 
 ### Database Schema
 
 Asset Forge uses Drizzle ORM with PostgreSQL for:
+
 - User profiles and authentication
 - Asset ownership and permissions
 - Project organization
 - Activity logging and audit trails
 
 Run migrations:
+
 ```bash
 bun run db:migrate
 ```
@@ -132,21 +173,22 @@ bun run db:migrate
 The Eden Treaty client automatically includes authentication:
 
 ```typescript
-import { api } from '@/lib/api-client'
+import { api } from "@/lib/api-client";
 
 // Public endpoint (no auth required)
-const { data: health } = await api.api.health.get()
+const { data: health } = await api.api.health.get();
 
 // Authenticated endpoint (automatic JWT inclusion)
-const { data } = await api.api.assets({ id: 'sword-001' }).delete({
-  query: { includeVariants: 'true' }
-})
+const { data } = await api.api.assets({ id: "sword-001" }).delete({
+  query: { includeVariants: "true" },
+});
 // ✅ Only succeeds if user owns the asset or is an admin
 ```
 
 ### Admin Access
 
 Admins can be managed via the database `admin_whitelist` table or through admin routes. Admin users can:
+
 - Delete any asset
 - Update any asset metadata
 - View system statistics
@@ -178,6 +220,7 @@ asset-forge/
 ## Main Features
 
 ### 1. Asset Generation (`/generation`)
+
 - Text-to-3D model pipeline
 - Prompt enhancement with GPT-4
 - Concept art generation
@@ -185,23 +228,27 @@ asset-forge/
 - Material variant generation
 
 ### 2. Asset Library (`/assets`)
+
 - Browse and manage generated assets
 - Filter by type, tier, and category
 - 3D preview with rotation controls
 - Export and download assets
 
 ### 3. Equipment System (`/equipment`)
+
 - Manage weapon and armor sets
 - Preview equipment combinations
 - Configure equipment properties
 
 ### 4. Armor Fitting (`/armor-fitting`)
+
 - Upload character models
 - Automatically fit armor pieces
 - Adjust positioning and scaling
 - Export fitted models
 
 ### 5. Hand Rigging (`/hand-rigging`)
+
 - Upload weapon models
 - AI-powered hand pose detection
 - Automatic grip point calculation
@@ -224,68 +271,69 @@ This project includes a fully type-safe API client using Elysia's Eden Treaty. T
 Import the client from `src/lib/api-client.ts`:
 
 ```typescript
-import { api } from '@/lib/api-client'
+import { api } from "@/lib/api-client";
 
 // Health check - fully typed response
-const { data, error } = await api.api.health.get()
+const { data, error } = await api.api.health.get();
 if (data) {
-  console.log('Status:', data.status)
-  console.log('Services:', data.services.meshy, data.services.openai)
+  console.log("Status:", data.status);
+  console.log("Services:", data.services.meshy, data.services.openai);
 }
 
 // List all assets
-const { data: assets } = await api.api.assets.get()
+const { data: assets } = await api.api.assets.get();
 
 // Get single asset model
-const { data: model } = await api.api.assets({ id: 'sword-001' }).model.get()
+const { data: model } = await api.api.assets({ id: "sword-001" }).model.get();
 
 // Delete an asset with query parameters
-const { data } = await api.api.assets({ id: 'sword-001' }).delete({
-  query: { includeVariants: 'true' }
-})
+const { data } = await api.api.assets({ id: "sword-001" }).delete({
+  query: { includeVariants: "true" },
+});
 
 // Update asset metadata
-const { data: updated } = await api.api.assets({ id: 'sword-001' }).patch({
-  name: 'Updated Sword',
-  tier: 3
-})
+const { data: updated } = await api.api.assets({ id: "sword-001" }).patch({
+  name: "Updated Sword",
+  tier: 3,
+});
 
 // Start retexture job
 const { data: result } = await api.api.retexture.post({
-  baseAssetId: 'sword-001',
-  materialPreset: 'steel',
-  outputName: 'steel-sword'
-})
+  baseAssetId: "sword-001",
+  materialPreset: "steel",
+  outputName: "steel-sword",
+});
 
 // Start generation pipeline
 const { data: pipeline } = await api.api.generation.pipeline.post({
-  name: 'Iron Sword',
-  type: 'weapon',
-  subtype: 'sword',
-  tier: 1
-})
+  name: "Iron Sword",
+  type: "weapon",
+  subtype: "sword",
+  tier: 1,
+});
 
 // Check pipeline status
 const { data: status } = await api.api.generation
-  .pipeline({ pipelineId: '123' })
-  .get()
+  .pipeline({ pipelineId: "123" })
+  .get();
 
 // Weapon handle detection with GPT-4 Vision
-const { data: gripData } = await api.api['weapon-handle-detect'].post({
-  image: 'data:image/png;base64,...',
-  angle: 'side',
-  promptHint: 'medieval sword'
-})
+const { data: gripData } = await api.api["weapon-handle-detect"].post({
+  image: "data:image/png;base64,...",
+  angle: "side",
+  promptHint: "medieval sword",
+});
 
 // Save sprites for an asset
-const { data: result } = await api.api.assets({ id: 'sword-001' })
+const { data: result } = await api.api
+  .assets({ id: "sword-001" })
   .sprites.post({
     sprites: [
-      { angle: 0, imageData: 'data:image/png;base64,...' },
-      { angle: 45, imageData: 'data:image/png;base64,...' }
+      { angle: 0, imageData: "data:image/png;base64,..." },
+      { angle: 45, imageData: "data:image/png;base64,..." },
     ],
-    config: { resolution: 512, angles: 8 }
-  })
+    config: { resolution: 512, angles: 8 },
+  });
 ```
 
 ### Configuration
@@ -300,6 +348,7 @@ VITE_API_URL=http://localhost:3004  # Optional, defaults to localhost
 ## API Endpoints
 
 ### Assets
+
 - `GET /api/assets` - List all assets
 - `GET /api/assets/:id/model` - Download asset model
 - `GET /api/assets/:id/*` - Get any file from asset directory
@@ -310,22 +359,27 @@ VITE_API_URL=http://localhost:3004  # Optional, defaults to localhost
 - `POST /api/assets/upload-vrm` - Upload VRM character file
 
 ### Generation
+
 - `POST /api/generation/pipeline` - Start new generation pipeline
 - `GET /api/generation/pipeline/:pipelineId` - Get pipeline status
 
 ### Retexturing
+
 - `POST /api/retexture` - Generate material variants
 - `POST /api/regenerate-base/:baseAssetId` - Regenerate base model
 
 ### Material Presets
+
 - `GET /api/material-presets` - Get all material presets
 - `POST /api/material-presets` - Save material presets
 
 ### AI Vision
+
 - `POST /api/weapon-handle-detect` - Detect weapon grip location with GPT-4 Vision
 - `POST /api/weapon-orientation-detect` - Detect if weapon is upside down
 
 ### Health
+
 - `GET /api/health` - Health check and service status
 
 ## Scripts
@@ -342,9 +396,32 @@ VITE_API_URL=http://localhost:3004  # Optional, defaults to localhost
 ## Configuration
 
 The system uses JSON-based configuration for:
+
 - Material presets (`public/material-presets.json`)
 - Asset metadata (stored with each asset) [[memory:3843922]]
 - Generation prompts and styles
+
+## Documentation
+
+Comprehensive documentation is available in the `/dev-book` directory:
+
+### User Guides
+
+- [Projects Management](dev-book/user-guide/projects.md) - Organize assets into projects
+- [Admin Dashboard](dev-book/user-guide/admin-dashboard.md) - User and system management
+- [World Configuration](dev-book/user-guide/world-configuration-advanced.md) - Define rich game worlds
+
+### Developer Documentation
+
+- [Projects API Reference](server/routes/docs/README-projects.md) - Projects API endpoints
+- [Admin API Reference](server/routes/docs/README-admin.md) - Admin API endpoints
+- [World Config Integration](dev-book/developer/world-config-integration.md) - AI context integration
+
+### Quick Links
+
+- **Projects**: Organize your assets into manageable projects
+- **Admin Dashboard**: Full user management and activity monitoring
+- **World Configuration**: Create context-aware AI generation with custom game worlds
 
 ## Contributing
 

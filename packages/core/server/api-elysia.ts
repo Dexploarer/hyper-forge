@@ -47,10 +47,12 @@ import { contentGenerationRoutes } from "./routes/content-generation";
 import { usersRoutes } from "./routes/users";
 import { adminRoutes } from "./routes/admin";
 import { projectsRoutes } from "./routes/projects";
+import { achievementsRoutes } from "./routes/achievements";
 import { vectorSearchRoutes } from "./routes/vector-search";
 import { createSeedDataRoutes } from "./routes/seed-data";
 import { worldConfigRoutes } from "./routes/world-config";
 import { generationQueueRoutes } from "./routes/generation-queue";
+import { publicProfilesRoutes } from "./routes/public-profiles";
 
 // Cron and job cleanup
 import { cron } from "@elysiajs/cron";
@@ -68,6 +70,10 @@ await fs.promises.mkdir(path.join(ROOT_DIR, "temp-images"), {
 // Initialize Qdrant vector database (async)
 import { initializeQdrantCollections } from "./db/qdrant";
 await initializeQdrantCollections();
+
+// Initialize default achievements
+import { achievementService } from "./services/AchievementService";
+await achievementService.initializeDefaultAchievements();
 
 // Initialize services
 // Railway uses PORT, but we fallback to API_PORT for local dev
@@ -122,6 +128,15 @@ const app: any = new Elysia()
           {
             name: "Users",
             description: "User profile and settings management",
+          },
+          {
+            name: "Public Profiles",
+            description:
+              "Public user profile viewing (no authentication required)",
+          },
+          {
+            name: "Achievements",
+            description: "User achievements and medals system",
           },
           {
             name: "Admin",
@@ -457,8 +472,10 @@ const app: any = new Elysia()
   .use(promptRoutes)
   .use(aiVisionRoutes)
   .use(usersRoutes)
+  .use(achievementsRoutes)
   .use(adminRoutes)
   .use(projectsRoutes)
+  .use(publicProfilesRoutes)
   .use(createAssetRoutes(ROOT_DIR, assetService))
   .use(createMaterialRoutes(ROOT_DIR))
   .use(createRetextureRoutes(ROOT_DIR, retextureService))

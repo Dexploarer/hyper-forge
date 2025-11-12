@@ -2,6 +2,7 @@ export type NavigationView =
   // Core pages
   | "dashboard"
   | "assets"
+  | "projects"
   | "contentLibrary"
   // 3D Generation pages
   | "generation/character"
@@ -26,6 +27,8 @@ export type NavigationView =
   // System
   | "adminDashboard"
   | "settings"
+  // Public profiles
+  | "publicProfile"
   // Legacy/deprecated
   | "generation"
   | "audio"
@@ -35,6 +38,7 @@ export type NavigationView =
 export interface NavigationState {
   currentView: NavigationView;
   selectedAssetId: string | null;
+  selectedProfileUserId: string | null;
   navigationHistory: NavigationView[];
   // Content to import to playtester
   importedPlaytestContent: {
@@ -47,6 +51,7 @@ export interface NavigationContextValue extends NavigationState {
   // Navigation actions
   navigateTo: (view: NavigationView) => void;
   navigateToAsset: (assetId: string) => void;
+  navigateToUserProfile: (userId: string) => void;
   navigateToPlaytester: (
     content: unknown,
     contentType: "quest" | "dialogue" | "npc" | "combat" | "puzzle",

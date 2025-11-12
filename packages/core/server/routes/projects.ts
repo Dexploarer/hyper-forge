@@ -394,4 +394,132 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
         security: [{ BearerAuth: [] }],
       },
     },
+  )
+
+  // Get project assets
+  .get(
+    "/:id/assets",
+    async ({ request, params, query }) => {
+      const authResult = await requireAuth({ request });
+
+      if (authResult instanceof Response) {
+        return authResult;
+      }
+
+      const { user } = authResult;
+      const { id } = params;
+
+      // Check ownership
+      const isOwner = await projectService.isOwner(id, user.id);
+      const isAdmin = user.role === "admin";
+
+      if (!isOwner && !isAdmin) {
+        return new Response(
+          JSON.stringify({
+            error: "Forbidden",
+            message: "You do not have permission to access this project",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      try {
+        const assets = await projectService.getProjectAssets(id, {
+          type: query.type,
+          status: query.status,
+        });
+
+        return { success: true, assets };
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            error: "Project not found",
+            message: "The specified project does not exist",
+          }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      query: t.Object({
+        type: t.Optional(t.String()),
+        status: t.Optional(t.String()),
+      }),
+      detail: {
+        tags: ["Projects"],
+        summary: "Get project assets",
+        description:
+          "Get all assets belonging to a project with optional filtering by type and status. Requires authentication and ownership.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
+  )
+
+  // Get project statistics
+  .get(
+    "/:id/stats",
+    async ({ request, params }) => {
+      const authResult = await requireAuth({ request });
+
+      if (authResult instanceof Response) {
+        return authResult;
+      }
+
+      const { user } = authResult;
+      const { id } = params;
+
+      // Check ownership
+      const isOwner = await projectService.isOwner(id, user.id);
+      const isAdmin = user.role === "admin";
+
+      if (!isOwner && !isAdmin) {
+        return new Response(
+          JSON.stringify({
+            error: "Forbidden",
+            message: "You do not have permission to access this project",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      try {
+        const stats = await projectService.getProjectStats(id);
+        return { success: true, stats };
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            error: "Project not found",
+            message: "The specified project does not exist",
+          }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      detail: {
+        tags: ["Projects"],
+        summary: "Get project statistics",
+        description:
+          "Get project statistics including asset count, breakdown by type, total size, and timestamps. Requires authentication and ownership.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
   );

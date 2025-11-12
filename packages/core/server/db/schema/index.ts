@@ -21,6 +21,9 @@ export * from "./world-config.schema";
 // Generation Jobs
 export * from "./generation-jobs.schema";
 
+// Achievements
+export * from "./achievements.schema";
+
 // Re-export everything for drizzle
 import * as usersSchema from "./users.schema";
 import * as assetsSchema from "./assets.schema";
@@ -28,6 +31,7 @@ import * as contentSchema from "./content.schema";
 import * as mediaSchema from "./media.schema";
 import * as worldConfigSchema from "./world-config.schema";
 import * as generationJobsSchema from "./generation-jobs.schema";
+import * as achievementsSchema from "./achievements.schema";
 
 export const schema = {
   ...usersSchema,
@@ -36,4 +40,5 @@ export const schema = {
   ...mediaSchema,
   ...worldConfigSchema,
   ...generationJobsSchema,
+  ...achievementsSchema,
 };

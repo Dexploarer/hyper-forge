@@ -25,7 +25,7 @@ export function MainLayout({
         {/* Main Content with bottom padding for nav */}
         <main
           id="main-content"
-          className="flex-1 overflow-auto relative pb-16"
+          className="flex-1 overflow-hidden relative pb-16"
           tabIndex={-1}
         >
           {/* Subtle grid background */}
@@ -84,7 +84,7 @@ export function MainLayout({
           {/* Main Canvas/Workspace */}
           <main
             id="main-content"
-            className="flex-1 overflow-auto relative pt-20"
+            className="flex-1 overflow-hidden relative pt-20"
             tabIndex={-1}
           >
             {/* Floating Top Bar - Automatically hides when overlays are open */}

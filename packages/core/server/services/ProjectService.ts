@@ -224,6 +224,156 @@ export class ProjectService {
       return false;
     }
   }
+
+  /**
+   * Get all assets for a project
+   */
+  async getProjectAssets(
+    projectId: string,
+    filters?: { type?: string; status?: string },
+  ): Promise<any[]> {
+    try {
+      // Import assets schema
+      const { assets } = await import("../db/schema");
+
+      // Build where conditions
+      const whereConditions: any[] = [eq(assets.projectId, projectId)];
+
+      if (filters?.type) {
+        whereConditions.push(eq(assets.type, filters.type));
+      }
+
+      if (filters?.status) {
+        whereConditions.push(eq(assets.status, filters.status));
+      }
+
+      // Query assets
+      const projectAssets = await db.query.assets.findMany({
+        where: and(...whereConditions),
+        orderBy: [desc(assets.createdAt)],
+      });
+
+      return projectAssets;
+    } catch (error) {
+      console.error("[ProjectService] Failed to get project assets:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get project statistics
+   */
+  async getProjectStats(projectId: string): Promise<{
+    assetCount: number;
+    assetsByType: Record<string, number>;
+    totalSizeBytes: number;
+    createdAt: string;
+    lastModifiedAt: string | null;
+  }> {
+    try {
+      // Import assets schema
+      const { assets } = await import("../db/schema");
+
+      // Get project
+      const project = await this.getProjectById(projectId);
+      if (!project) {
+        throw new Error(`Project not found: ${projectId}`);
+      }
+
+      // Get all project assets
+      const projectAssets = await db.query.assets.findMany({
+        where: eq(assets.projectId, projectId),
+      });
+
+      // Calculate statistics
+      const assetCount = projectAssets.length;
+
+      // Count by type
+      const assetsByType: Record<string, number> = {};
+      for (const asset of projectAssets) {
+        const type = asset.type || "unknown";
+        assetsByType[type] = (assetsByType[type] || 0) + 1;
+      }
+
+      // Sum file sizes
+      const totalSizeBytes = projectAssets.reduce((sum, asset) => {
+        return sum + (asset.fileSize || 0);
+      }, 0);
+
+      // Find most recent asset update
+      let lastModifiedAt: Date | null = null;
+      for (const asset of projectAssets) {
+        if (asset.updatedAt) {
+          if (!lastModifiedAt || asset.updatedAt > lastModifiedAt) {
+            lastModifiedAt = asset.updatedAt;
+          }
+        }
+      }
+
+      return {
+        assetCount,
+        assetsByType,
+        totalSizeBytes,
+        createdAt: project.createdAt.toISOString(),
+        lastModifiedAt: lastModifiedAt ? lastModifiedAt.toISOString() : null,
+      };
+    } catch (error) {
+      console.error("[ProjectService] Failed to get project stats:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get public projects for a user
+   */
+  async getPublicProjects(userId: string): Promise<Project[]> {
+    try {
+      const publicProjects = await db.query.projects.findMany({
+        where: and(eq(projects.ownerId, userId), eq(projects.status, "active")),
+        orderBy: [desc(projects.createdAt)],
+      });
+
+      // Filter only public projects
+      return publicProjects.filter((p) => p.isPublic);
+    } catch (error) {
+      console.error("[ProjectService] Failed to get public projects:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update project visibility
+   */
+  async updateProjectVisibility(
+    projectId: string,
+    isPublic: boolean,
+  ): Promise<Project> {
+    try {
+      const [updatedProject] = await db
+        .update(projects)
+        .set({
+          isPublic,
+          updatedAt: new Date(),
+        })
+        .where(eq(projects.id, projectId))
+        .returning();
+
+      if (!updatedProject) {
+        throw new Error(`Project not found: ${projectId}`);
+      }
+
+      console.log(
+        `[ProjectService] Updated visibility for project ${projectId}: isPublic=${isPublic}`,
+      );
+      return updatedProject;
+    } catch (error) {
+      console.error(
+        "[ProjectService] Failed to update project visibility:",
+        error,
+      );
+      throw error;
+    }
+  }
 }
 
 // Export singleton instance

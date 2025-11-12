@@ -26,6 +26,7 @@ import {
   Music,
   Volume2,
   Wrench,
+  Folder,
 } from "lucide-react";
 import { NavigationView } from "@/types";
 import { NAVIGATION_VIEWS } from "@/constants";
@@ -84,6 +85,15 @@ const NAVIGATION_STRUCTURE: NavSection[] = [
       icon: Package,
       label: "Assets",
       description: "Browse & manage assets",
+    },
+  },
+  {
+    type: "item",
+    item: {
+      view: NAVIGATION_VIEWS.PROJECTS,
+      icon: Folder,
+      label: "Projects",
+      description: "Organize asset projects",
     },
   },
   {

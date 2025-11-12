@@ -129,8 +129,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
             You're All Set!
           </h2>
           <p className="text-text-secondary">
-            Ready to create your first asset? If you need help later, check out
-            our docs or join the Discord community.
+            Ready to create your first 3D asset? Start by describing what you want to generate, and watch as AI brings your vision to life. Check out the docs if you need help!
           </p>
         </div>
       ),

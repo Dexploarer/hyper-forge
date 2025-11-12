@@ -1101,6 +1101,10 @@
     animation: shimmer-rtl 2s ease-in-out infinite;
   }
 
+  .animate-shimmer-slide {
+    animation: shimmer-rtl 3s ease-in-out infinite;
+  }
+
   /* Shimmer button effect - subtle shimmer on hover */
   .micro-shimmer-button {
     position: relative;
@@ -1320,9 +1324,13 @@ body {
   .page-container {
     @apply flex h-[calc(100vh-60px)] bg-[var(--bg-primary)] p-4 gap-4;
   }
-  
+
   .page-container-no-padding {
     @apply flex h-[calc(100vh-60px)] bg-[var(--bg-primary)];
+  }
+
+  .viewer-page-container {
+    @apply flex h-[calc(100vh-60px)] bg-[var(--bg-primary)] overflow-hidden;
   }
   
   /* Backgrounds */

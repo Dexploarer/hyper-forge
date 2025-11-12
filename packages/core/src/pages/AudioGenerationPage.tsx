@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, List } from "lucide-react";
+import { List } from "lucide-react";
 
 import {
   AudioTypeSelector,
@@ -10,7 +10,6 @@ import {
   GeneratedAudioList,
   AudioPreviewCard,
 } from "@/components/audio";
-import { VoiceServiceStatus } from "@/components/voice";
 import { Button, Drawer } from "@/components/common";
 import type { AudioType, AudioView, GeneratedAudio } from "@/types/audio";
 
@@ -102,12 +101,6 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
     setActiveView("results");
   };
 
-  // Reset to type selection
-  const handleBack = () => {
-    setAudioType(null);
-    setActiveView("config");
-  };
-
   // Show type selector if no type selected
   if (!audioType) {
     return (
@@ -132,20 +125,9 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
         {/* Config View */}
         {activeView === "config" && (
           <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
-              {/* Back Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="text-text-secondary hover:text-text-primary"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back to audio types
-              </Button>
-
-              {/* Audio List Button */}
-              {generatedAudios.length > 0 && (
+            {/* Audio List Button */}
+            {generatedAudios.length > 0 && (
+              <div className="flex justify-end mb-6">
                 <Button
                   variant="secondary"
                   size="sm"
@@ -155,19 +137,11 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
                   <List className="w-4 h-4" />
                   <span>Recent Audio ({generatedAudios.length})</span>
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Main Generation Card */}
             <div className="max-w-4xl space-y-4">
-              {/* Voice Service Status - Only show for voice generation */}
-              {audioType === "voice" && (
-                <VoiceServiceStatus
-                  autoRefresh={true}
-                  refreshInterval={60000}
-                />
-              )}
-
               {audioType === "voice" && (
                 <VoiceGenerationCard
                   onGenerated={handleAudioGenerated}

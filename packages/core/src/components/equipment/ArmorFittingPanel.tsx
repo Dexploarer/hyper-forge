@@ -187,19 +187,41 @@ export const ArmorFittingPanel: React.FC<ArmorFittingPanelProps> = ({
             </div>
           )}
 
-          {/* Bind to Skeleton Button (after fitting) */}
-          {!isHelmetMode &&
-            isArmorFitted &&
-            !isArmorBound &&
-            onBindArmorToSkeleton && (
-              <button
-                onClick={onBindArmorToSkeleton}
-                className="w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 bg-bg-secondary border border-primary/50 text-primary hover:bg-primary/10"
-              >
-                <Link className="w-4 h-4" />
-                <span>Bind to Skeleton</span>
-              </button>
-            )}
+          {/* Bind to Skeleton Button - Always visible in armor mode */}
+          {!isHelmetMode && onBindArmorToSkeleton && (
+            <button
+              onClick={
+                isArmorFitted && !isArmorBound
+                  ? onBindArmorToSkeleton
+                  : undefined
+              }
+              disabled={!isArmorFitted || isArmorBound}
+              className={cn(
+                "w-full px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2",
+                isArmorBound
+                  ? "bg-green-500/10 border border-green-500/50 text-green-400 cursor-not-allowed"
+                  : isArmorFitted
+                    ? "bg-bg-secondary border border-primary/50 text-primary hover:bg-primary/10"
+                    : "bg-bg-tertiary border border-border-primary text-text-tertiary cursor-not-allowed opacity-60",
+              )}
+              title={
+                isArmorBound
+                  ? "Armor is bound to skeleton"
+                  : !isArmorFitted
+                    ? "Fit armor first before binding"
+                    : "Bind armor to avatar's skeleton for animation"
+              }
+            >
+              <Link className="w-4 h-4" />
+              <span>
+                {isArmorBound
+                  ? "Bound ✓"
+                  : isArmorFitted
+                    ? "Bind to Skeleton"
+                    : "Bind to Skeleton (Fit first)"}
+              </span>
+            </button>
+          )}
 
           {/* Attach Helmet Button (after fitting) */}
           {isHelmetMode &&
@@ -572,18 +594,38 @@ export const ArmorFittingPanel: React.FC<ArmorFittingPanelProps> = ({
           Actions
         </h3>
 
-        {!isHelmetMode &&
-          isArmorFitted &&
-          !isArmorBound &&
-          onBindArmorToSkeleton && (
-            <button
-              onClick={onBindArmorToSkeleton}
-              className="w-full px-3 py-2 rounded-md bg-bg-secondary border border-primary/50 text-primary hover:bg-primary/10 transition-colors flex items-center justify-center gap-2"
-            >
-              <Link className="w-4 h-4" />
-              <span>Bind to Skeleton</span>
-            </button>
-          )}
+        {!isHelmetMode && onBindArmorToSkeleton && (
+          <button
+            onClick={
+              isArmorFitted && !isArmorBound ? onBindArmorToSkeleton : undefined
+            }
+            disabled={!isArmorFitted || isArmorBound}
+            className={cn(
+              "w-full px-3 py-2 rounded-md transition-colors flex items-center justify-center gap-2",
+              isArmorBound
+                ? "bg-green-500/10 border border-green-500/50 text-green-400 cursor-not-allowed"
+                : isArmorFitted
+                  ? "bg-bg-secondary border border-primary/50 text-primary hover:bg-primary/10"
+                  : "bg-bg-tertiary border border-border-primary text-text-tertiary cursor-not-allowed opacity-60",
+            )}
+            title={
+              isArmorBound
+                ? "Armor is bound to skeleton"
+                : !isArmorFitted
+                  ? "Fit armor first before binding"
+                  : "Bind armor to avatar's skeleton for animation"
+            }
+          >
+            <Link className="w-4 h-4" />
+            <span>
+              {isArmorBound
+                ? "Bound ✓"
+                : isArmorFitted
+                  ? "Bind to Skeleton"
+                  : "Bind (Fit first)"}
+            </span>
+          </button>
+        )}
 
         {isHelmetMode &&
           isHelmetFitted &&

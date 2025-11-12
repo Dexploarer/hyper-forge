@@ -51,9 +51,18 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
       // Update profile (only set profileCompleted if not already set)
       const markCompleted = !authUser.profileCompleted;
 
+      // Build update object - only include discordUsername if provided
+      const updateData: { displayName: string; email: string; discordUsername?: string } = {
+        displayName,
+        email,
+      };
+      if (discordUsername !== undefined) {
+        updateData.discordUsername = discordUsername;
+      }
+
       const updatedUser = await userService.updateProfile(
         authUser.id,
-        { displayName, email, discordUsername },
+        updateData,
         markCompleted,
       );
 
@@ -63,7 +72,7 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
       body: t.Object({
         displayName: t.String(),
         email: t.String(),
-        discordUsername: t.String(),
+        discordUsername: t.Optional(t.String()),
       }),
       detail: {
         tags: ["Users"],
@@ -78,7 +87,7 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
   // Get all users (admin only)
   .get(
     "/",
-    async ({ request }) => {
+    async ({ request, query }) => {
       const adminResult = await requireAdmin({ request });
 
       // If admin check failed, return the error response
@@ -86,15 +95,75 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
         return adminResult;
       }
 
-      const allUsers = await userService.getAllUsers();
+      // Build filters from query params
+      const filters: {
+        role?: "admin" | "member";
+        profileCompleted?: boolean;
+        search?: string;
+      } = {};
+
+      if (query.role) {
+        filters.role = query.role as "admin" | "member";
+      }
+
+      if (query.profileCompleted !== undefined) {
+        filters.profileCompleted = query.profileCompleted === "true";
+      }
+
+      if (query.search) {
+        filters.search = query.search;
+      }
+
+      const allUsers = await userService.getAllUsers(filters);
 
       return { users: allUsers };
     },
     {
+      query: t.Object({
+        role: t.Optional(t.Union([t.Literal("admin"), t.Literal("member")])),
+        profileCompleted: t.Optional(t.String()),
+        search: t.Optional(t.String()),
+      }),
       detail: {
         tags: ["Users"],
         summary: "Get all users (Admin only)",
-        description: "Get all users for admin dashboard. Requires admin role.",
+        description:
+          "Get all users for admin dashboard with optional filtering by role, profile completion, and search (name/email/privyId). Requires admin role.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
+  )
+
+  // Update user settings (requires authentication)
+  .post(
+    "/settings",
+    async ({ request, body }) => {
+      const authResult = await requireAuth({ request });
+
+      // If auth failed, return the error response
+      if (authResult instanceof Response) {
+        return authResult;
+      }
+
+      const { user: authUser } = authResult;
+      const { settings } = body;
+
+      const updatedUser = await userService.updateSettings(
+        authUser.id,
+        settings,
+      );
+
+      return { user: updatedUser };
+    },
+    {
+      body: t.Object({
+        settings: t.Record(t.String(), t.Any()),
+      }),
+      detail: {
+        tags: ["Users"],
+        summary: "Update user settings",
+        description:
+          "Update user preferences and settings. Settings are merged with existing values. Requires Privy JWT.",
         security: [{ BearerAuth: [] }],
       },
     },

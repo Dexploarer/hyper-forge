@@ -152,9 +152,9 @@ export const AssetsPage: React.FC = () => {
   return (
     <div className="page-container">
       {/* Sidebar - SCROLLABLE */}
-      <div className="card overflow-hidden w-80 flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary">
+      <div className="card overflow-hidden w-64 flex flex-col bg-gradient-to-br from-bg-secondary to-bg-tertiary">
         {/* Header Section */}
-        <div className="p-4 border-b border-border-primary bg-bg-primary bg-opacity-30">
+        <div className="p-3 border-b border-border-primary bg-bg-primary bg-opacity-30">
           <h2 className="text-lg font-semibold text-text-primary">
             Asset Library
           </h2>
@@ -164,8 +164,8 @@ export const AssetsPage: React.FC = () => {
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-          <div className="space-y-3">
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-3">
+          <div className="space-y-2">
             {/* Asset Statistics */}
             <AssetStatisticsCard assets={assets} />
 
@@ -416,7 +416,7 @@ export const AssetsPage: React.FC = () => {
           defaultHeight="md"
           resizable={true}
         >
-          <div className="p-6 space-y-4">
+          <div className="p-4 space-y-3">
             <BulkActionsBar
               assets={assets}
               onActionComplete={() => {

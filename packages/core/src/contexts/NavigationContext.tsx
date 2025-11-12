@@ -18,6 +18,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({
     NAVIGATION_VIEWS.DASHBOARD,
   );
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [selectedProfileUserId, setSelectedProfileUserId] = useState<
+    string | null
+  >(null);
   const [navigationHistory, setNavigationHistory] = useState<NavigationView[]>(
     [],
   );
@@ -44,6 +47,14 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({
     (assetId: string) => {
       setSelectedAssetId(assetId);
       navigateTo(NAVIGATION_VIEWS.ASSETS);
+    },
+    [navigateTo],
+  );
+
+  const navigateToUserProfile = useCallback(
+    (userId: string) => {
+      setSelectedProfileUserId(userId);
+      navigateTo(NAVIGATION_VIEWS.PUBLIC_PROFILE);
     },
     [navigateTo],
   );
@@ -75,12 +86,14 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({
       // State
       currentView,
       selectedAssetId,
+      selectedProfileUserId,
       navigationHistory,
       importedPlaytestContent,
 
       // Actions
       navigateTo,
       navigateToAsset,
+      navigateToUserProfile,
       navigateToPlaytester,
       goBack,
 
@@ -90,10 +103,12 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({
     [
       currentView,
       selectedAssetId,
+      selectedProfileUserId,
       navigationHistory,
       importedPlaytestContent,
       navigateTo,
       navigateToAsset,
+      navigateToUserProfile,
       navigateToPlaytester,
       goBack,
     ],

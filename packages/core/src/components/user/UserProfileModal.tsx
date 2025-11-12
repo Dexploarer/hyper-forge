@@ -1,9 +1,10 @@
-import { User as UserIcon, X, Save, Loader2 } from 'lucide-react'
+import { User as UserIcon, X, Save, Loader2, Trophy } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
 import type { User } from '@/services/api/UsersAPIClient'
 import { usersClient } from '@/services/api/UsersAPIClient'
 import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from '@/components/common'
+import { AchievementDisplay } from '@/components/achievements'
 
 interface UserProfileModalProps {
   open: boolean
@@ -22,16 +23,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 }) => {
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
-  const [discordUsername, setDiscordUsername] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'profile' | 'achievements'>('profile')
 
   // Initialize form with user data
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || '')
       setEmail(user.email || '')
-      setDiscordUsername(user.discordUsername || '')
     }
   }, [user])
 
@@ -44,7 +44,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       const response = await usersClient.updateUserProfile(sessionId, {
         displayName,
         email,
-        discordUsername,
       })
 
       onSuccess?.(response.user)
@@ -67,13 +66,41 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <UserIcon className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-text-primary">Edit Profile</h2>
-              <p className="text-sm text-text-secondary">Update your personal information</p>
+              <h2 className="text-xl font-bold text-text-primary">Profile</h2>
+              <p className="text-sm text-text-secondary">Manage your Asset Forge profile</p>
             </div>
           </div>
         </ModalHeader>
 
+        {/* Tabs */}
+        <div className="border-b border-border-primary px-6">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
+                activeTab === 'profile'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              Profile
+            </button>
+            <button
+              onClick={() => setActiveTab('achievements')}
+              className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 flex items-center gap-2 ${
+                activeTab === 'achievements'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              <Trophy className="w-4 h-4" />
+              Achievements
+            </button>
+          </div>
+        </div>
+
         <ModalBody>
+          {activeTab === 'profile' ? (
           <div className="space-y-4">
             {/* Display Name */}
             <div>
@@ -108,21 +135,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               />
             </div>
 
-            {/* Discord Username */}
-            <div>
-              <label htmlFor="discordUsername" className="block text-sm font-medium text-text-primary mb-1">
-                Discord Username
-              </label>
-              <input
-                id="discordUsername"
-                type="text"
-                value={discordUsername}
-                onChange={(e) => setDiscordUsername(e.target.value)}
-                className="w-full px-3 py-2 bg-bg-secondary border border-border-primary rounded-md text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/50"
-                placeholder="username#1234"
-              />
-              <p className="text-xs text-text-tertiary mt-1">Optional - for team communication</p>
-            </div>
 
             {/* Wallet Address (Read-only) */}
             {user?.walletAddress && (
@@ -144,9 +156,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </div>
             )}
           </div>
+          ) : (
+          <div className="max-h-[60vh] overflow-y-auto">
+            <AchievementDisplay userId={user?.id} showFilters={true} />
+          </div>
+          )}
         </ModalBody>
 
         <ModalFooter>
+          {activeTab === 'profile' && (
           <div className="flex gap-3 justify-end">
             <Button
               type="button"
@@ -174,6 +192,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               )}
             </Button>
           </div>
+          )}
         </ModalFooter>
       </form>
     </Modal>

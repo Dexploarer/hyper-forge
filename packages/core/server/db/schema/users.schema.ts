@@ -11,6 +11,7 @@ import {
   text,
   timestamp,
   jsonb,
+  boolean,
   index,
 } from "drizzle-orm/pg-core";
 
@@ -79,6 +80,9 @@ export const projects = pgTable(
     // Status
     status: varchar("status", { length: 50 }).notNull().default("active"),
 
+    // Visibility
+    isPublic: boolean("is_public").notNull().default(false),
+
     // Project settings and metadata
     settings: jsonb("settings").notNull().default({}),
     metadata: jsonb("metadata").notNull().default({}),
@@ -95,6 +99,10 @@ export const projects = pgTable(
   (table) => ({
     ownerIdx: index("idx_projects_owner").on(table.ownerId),
     statusIdx: index("idx_projects_status").on(table.status),
+    ownerPublicIdx: index("idx_projects_owner_public").on(
+      table.ownerId,
+      table.isPublic,
+    ),
   }),
 );
 

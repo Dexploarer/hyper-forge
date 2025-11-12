@@ -277,10 +277,11 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
       setPlayingPreview(null);
     } else {
       if (audioRef.current) {
-        // Check if it's a URL or base64
-        if (audioSource.startsWith("http")) {
+        // Check if it's already a data URL, HTTP URL, or raw base64
+        if (audioSource.startsWith("http") || audioSource.startsWith("data:")) {
           audioRef.current.src = audioSource;
         } else {
+          // Raw base64, add the data URL prefix
           audioRef.current.src = `data:audio/mpeg;base64,${audioSource}`;
         }
         audioRef.current.play();

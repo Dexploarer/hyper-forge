@@ -9,12 +9,28 @@ import {
   Shield,
   User as UserIcon,
   AlertCircle,
+  UserX,
+  Trash2,
+  RefreshCw,
+  Download,
+  Search,
+  ChevronUp,
+  ChevronDown,
+  Filter,
+  Clock,
 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { usePrivy } from "@privy-io/react-auth";
 
 import { Badge } from "../components/common";
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigation } from "../hooks/useNavigation";
 
 interface User {
   id: string;
@@ -29,11 +45,37 @@ interface User {
   lastLoginAt: string | null;
 }
 
-type AdminTab = "overview" | "profiles";
+interface ActivityLogEntry {
+  id: string;
+  userId: string | null;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  details: Record<string, any>;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    displayName: string | null;
+    email: string | null;
+  } | null;
+}
+
+type AdminTab = "overview" | "profiles" | "activity";
+type SortField = "name" | "role" | "status" | "joined" | "lastLogin";
+type SortDirection = "asc" | "desc";
 
 interface RoleChangeModalProps {
   user: User;
   newRole: "admin" | "member";
+  onConfirm: () => void;
+  onCancel: () => void;
+  loading: boolean;
+}
+
+interface DeleteUserModalProps {
+  user: User;
   onConfirm: () => void;
   onCancel: () => void;
   loading: boolean;
@@ -89,24 +131,146 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
   );
 };
 
+const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
+  user,
+  onConfirm,
+  onCancel,
+  loading,
+}) => {
+  const [confirmChecked, setConfirmChecked] = useState(false);
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+      <div className="card max-w-md w-full mx-4 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+            <Trash2 className="w-6 h-6 text-red-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-text-primary">
+            Delete User
+          </h3>
+        </div>
+
+        <p className="text-text-secondary mb-4">
+          Are you sure you want to delete{" "}
+          <span className="font-medium text-text-primary">
+            {user.displayName || user.email || "this user"}
+          </span>
+          ? This will permanently delete all their data.
+        </p>
+
+        <label className="flex items-center gap-2 mb-6 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={confirmChecked}
+            onChange={(e) => setConfirmChecked(e.target.checked)}
+            className="w-4 h-4 rounded border-border-primary bg-bg-tertiary checked:bg-red-500"
+          />
+          <span className="text-sm text-text-secondary">
+            I understand this action cannot be undone
+          </span>
+        </label>
+
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            className="px-4 py-2 rounded-lg bg-bg-tertiary hover:bg-bg-hover text-text-primary transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading || !confirmChecked}
+            className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            Delete User
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Helper function to format relative time
+const formatRelativeTime = (dateString: string | null): string => {
+  if (!dateString) return "Never";
+
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffSecs < 60) return "Just now";
+  if (diffMins < 60)
+    return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`;
+  if (diffHours < 24)
+    return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+  if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`;
+  if (diffDays < 30)
+    return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) !== 1 ? "s" : ""} ago`;
+  if (diffDays < 365)
+    return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) !== 1 ? "s" : ""} ago`;
+  return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) !== 1 ? "s" : ""} ago`;
+};
+
 export const AdminDashboardPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const { getAccessToken } = usePrivy();
+  const { navigateToUserProfile } = useNavigation();
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<AdminTab>("overview");
+
   const [roleChangeUser, setRoleChangeUser] = useState<{
     user: User;
     newRole: "admin" | "member";
   } | null>(null);
   const [roleChangeLoading, setRoleChangeLoading] = useState(false);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  const [deleteUser, setDeleteUser] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const fetchUsers = async () => {
+  // Activity log state
+  const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([]);
+  const [activityLoading, setActivityLoading] = useState(false);
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityHasMore, setActivityHasMore] = useState(false);
+
+  // Filters and search
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "member">(
+    "all",
+  );
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "complete" | "pending"
+  >("all");
+
+  // Sorting
+  const [sortField, setSortField] = useState<SortField>("joined");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  // Ref to prevent infinite admin check loop
+  const adminCheckRan = useRef(false);
+
+  // Check admin access (only once)
+  useEffect(() => {
+    if (currentUser && !adminCheckRan.current) {
+      adminCheckRan.current = true;
+      if (currentUser.role !== "admin") {
+        alert("Access denied. Admin privileges required.");
+        window.location.href = "/";
+      }
+    }
+  }, [currentUser]);
+
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       const accessToken = await getAccessToken();
@@ -131,7 +295,58 @@ export const AdminDashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getAccessToken]);
+
+  const fetchActivityLog = useCallback(
+    async (page = 1) => {
+      try {
+        setActivityLoading(true);
+        const accessToken = await getAccessToken();
+
+        if (!accessToken) {
+          alert("Authentication required. Please log in.");
+          return;
+        }
+
+        const response = await fetch(
+          `/api/admin/activity-log?page=${page}&limit=50`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch activity log");
+        }
+
+        const data = await response.json();
+        setActivityLogs(
+          page === 1 ? data.logs : [...activityLogs, ...data.logs],
+        );
+        setActivityPage(page);
+        setActivityHasMore(data.hasMore);
+      } catch (err) {
+        console.error("Failed to load activity log:", err);
+      } finally {
+        setActivityLoading(false);
+      }
+    },
+    [getAccessToken, activityLogs],
+  );
+
+  // Fetch users on mount
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Fetch activity log when tab changes
+  useEffect(() => {
+    if (activeTab === "activity" && activityLogs.length === 0) {
+      fetchActivityLog(1);
+    }
+  }, [activeTab, fetchActivityLog, activityLogs.length]);
 
   const handleRoleChange = async () => {
     if (!roleChangeUser) return;
@@ -175,6 +390,60 @@ export const AdminDashboardPage: React.FC = () => {
     }
   };
 
+  const handleDeleteUser = async () => {
+    if (!deleteUser) return;
+
+    try {
+      setDeleteLoading(true);
+      const accessToken = await getAccessToken();
+
+      if (!accessToken) {
+        alert("Authentication required. Please log in.");
+        setDeleteUser(null);
+        return;
+      }
+
+      const response = await fetch(`/api/admin/users/${deleteUser.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to delete user");
+      }
+
+      // Refresh users list
+      await fetchUsers();
+
+      // Close modal
+      setDeleteUser(null);
+
+      alert("User deleted successfully");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete user");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setRoleFilter("all");
+    setStatusFilter("all");
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Never";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -186,8 +455,75 @@ export const AdminDashboardPage: React.FC = () => {
     });
   };
 
+  // Filtered and sorted users
+  const filteredAndSortedUsers = useMemo(() => {
+    let filtered = users.filter((user) => {
+      // Search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+          user.displayName?.toLowerCase().includes(query) ||
+          user.email?.toLowerCase().includes(query) ||
+          user.privyUserId.toLowerCase().includes(query);
+        if (!matchesSearch) return false;
+      }
+
+      // Role filter
+      if (roleFilter !== "all" && user.role !== roleFilter) {
+        return false;
+      }
+
+      // Status filter
+      if (statusFilter !== "all") {
+        const isComplete = user.profileCompleted !== null;
+        if (statusFilter === "complete" && !isComplete) return false;
+        if (statusFilter === "pending" && isComplete) return false;
+      }
+
+      return true;
+    });
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal: any;
+      let bVal: any;
+
+      switch (sortField) {
+        case "name":
+          aVal = a.displayName?.toLowerCase() || "";
+          bVal = b.displayName?.toLowerCase() || "";
+          break;
+        case "role":
+          aVal = a.role;
+          bVal = b.role;
+          break;
+        case "status":
+          aVal = a.profileCompleted ? 1 : 0;
+          bVal = b.profileCompleted ? 1 : 0;
+          break;
+        case "joined":
+          aVal = new Date(a.createdAt).getTime();
+          bVal = new Date(b.createdAt).getTime();
+          break;
+        case "lastLogin":
+          aVal = a.lastLoginAt ? new Date(a.lastLoginAt).getTime() : 0;
+          bVal = b.lastLoginAt ? new Date(b.lastLoginAt).getTime() : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return filtered;
+  }, [users, searchQuery, roleFilter, statusFilter, sortField, sortDirection]);
+
   const adminCount = users.filter((u) => u.role === "admin").length;
   const memberCount = users.filter((u) => u.role === "member").length;
+  const pendingProfilesCount = users.filter((u) => !u.profileCompleted).length;
 
   return (
     <div className="h-full overflow-y-auto p-4">
@@ -232,6 +568,16 @@ export const AdminDashboardPage: React.FC = () => {
             >
               User Profiles
             </button>
+            <button
+              onClick={() => setActiveTab("activity")}
+              className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                activeTab === "activity"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              Activity Log
+            </button>
           </div>
         </div>
 
@@ -239,7 +585,7 @@ export const AdminDashboardPage: React.FC = () => {
         {activeTab === "overview" && (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
               <div className="card p-4 bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
                 <div className="flex items-center justify-between">
                   <div>
@@ -257,7 +603,9 @@ export const AdminDashboardPage: React.FC = () => {
               <div className="card p-4 bg-gradient-to-br from-red-500/10 to-red-500/5 border border-red-500/20">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-text-secondary mb-1">Admins</p>
+                    <p className="text-sm text-text-secondary mb-1">
+                      Total Admins
+                    </p>
                     <p className="text-2xl font-bold text-text-primary">
                       {adminCount}
                     </p>
@@ -291,6 +639,20 @@ export const AdminDashboardPage: React.FC = () => {
                   <CheckCircle className="w-8 h-8 text-green-500/60" />
                 </div>
               </div>
+
+              <div className="card p-4 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border border-yellow-500/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-text-secondary mb-1">
+                      Pending Profiles
+                    </p>
+                    <p className="text-2xl font-bold text-text-primary">
+                      {pendingProfilesCount}
+                    </p>
+                  </div>
+                  <UserX className="w-8 h-8 text-yellow-500/60" />
+                </div>
+              </div>
             </div>
 
             {/* Quick Summary */}
@@ -311,11 +673,77 @@ export const AdminDashboardPage: React.FC = () => {
         {activeTab === "profiles" && (
           <div className="card overflow-hidden">
             <div className="p-4 border-b border-border-primary bg-bg-secondary/30">
-              <h2 className="text-lg font-semibold text-text-primary">
-                User Profiles
-              </h2>
-              <p className="text-sm text-text-tertiary mt-1">
-                View and manage all registered users and their roles
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-text-primary">
+                    User Profiles
+                  </h2>
+                  <p className="text-sm text-text-tertiary mt-1">
+                    View and manage all registered users and their roles
+                  </p>
+                </div>
+                <button
+                  onClick={fetchUsers}
+                  className="px-3 py-2 rounded-lg bg-bg-tertiary hover:bg-bg-hover text-text-primary transition-colors flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+              </div>
+
+              {/* Search and Filters */}
+              <div className="flex flex-wrap gap-3 mt-4">
+                {/* Search */}
+                <div className="flex-1 min-w-[200px] relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, email, or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-bg-tertiary border border-border-primary text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                {/* Role Filter */}
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value as any)}
+                  className="px-4 py-2 rounded-lg bg-bg-tertiary border border-border-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="member">Member</option>
+                </select>
+
+                {/* Status Filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as any)}
+                  className="px-4 py-2 rounded-lg bg-bg-tertiary border border-border-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="all">All Status</option>
+                  <option value="complete">Complete</option>
+                  <option value="pending">Pending</option>
+                </select>
+
+                {/* Clear Filters */}
+                {(searchQuery ||
+                  roleFilter !== "all" ||
+                  statusFilter !== "all") && (
+                  <button
+                    onClick={handleClearFilters}
+                    className="px-4 py-2 rounded-lg bg-bg-tertiary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Results count */}
+              <p className="text-sm text-text-tertiary mt-3">
+                Showing {filteredAndSortedUsers.length} of {users.length} users
               </p>
             </div>
 
@@ -350,20 +778,78 @@ export const AdminDashboardPage: React.FC = () => {
                 <table className="w-full">
                   <thead className="bg-bg-tertiary/20 border-b border-border-primary">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                        User
+                      <th
+                        onClick={() => handleSort("name")}
+                        className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary transition-colors"
+                      >
+                        <div className="flex items-center gap-1">
+                          User
+                          {sortField === "name" &&
+                            (sortDirection === "asc" ? (
+                              <ChevronUp className="w-3 h-3" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3" />
+                            ))}
+                        </div>
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                        Role
+                      <th
+                        onClick={() => handleSort("role")}
+                        className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary transition-colors"
+                      >
+                        <div className="flex items-center gap-1">
+                          Role
+                          {sortField === "role" &&
+                            (sortDirection === "asc" ? (
+                              <ChevronUp className="w-3 h-3" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3" />
+                            ))}
+                        </div>
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                         Contact
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                        Status
+                      <th
+                        onClick={() => handleSort("status")}
+                        className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary transition-colors"
+                      >
+                        <div className="flex items-center gap-1">
+                          Status
+                          {sortField === "status" &&
+                            (sortDirection === "asc" ? (
+                              <ChevronUp className="w-3 h-3" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3" />
+                            ))}
+                        </div>
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                        Joined
+                      <th
+                        onClick={() => handleSort("joined")}
+                        className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary transition-colors"
+                      >
+                        <div className="flex items-center gap-1">
+                          Joined
+                          {sortField === "joined" &&
+                            (sortDirection === "asc" ? (
+                              <ChevronUp className="w-3 h-3" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3" />
+                            ))}
+                        </div>
+                      </th>
+                      <th
+                        onClick={() => handleSort("lastLogin")}
+                        className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider cursor-pointer hover:text-text-primary transition-colors"
+                      >
+                        <div className="flex items-center gap-1">
+                          Last Login
+                          {sortField === "lastLogin" &&
+                            (sortDirection === "asc" ? (
+                              <ChevronUp className="w-3 h-3" />
+                            ) : (
+                              <ChevronDown className="w-3 h-3" />
+                            ))}
+                        </div>
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                         Actions
@@ -371,7 +857,7 @@ export const AdminDashboardPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-primary">
-                    {users.map((user) => {
+                    {filteredAndSortedUsers.map((user) => {
                       const isCurrentUser = user.id === currentUser?.id;
                       return (
                         <tr
@@ -384,14 +870,17 @@ export const AdminDashboardPage: React.FC = () => {
                                 <Users className="w-5 h-5 text-primary" />
                               </div>
                               <div>
-                                <p className="font-medium text-text-primary">
+                                <button
+                                  onClick={() => navigateToUserProfile(user.id)}
+                                  className="font-medium text-text-primary hover:text-primary transition-colors text-left"
+                                >
                                   {user.displayName || "Unnamed User"}
                                   {isCurrentUser && (
                                     <span className="ml-2 text-xs text-text-tertiary">
                                       (You)
                                     </span>
                                   )}
-                                </p>
+                                </button>
                                 <p className="text-xs text-text-tertiary">
                                   {user.privyUserId.substring(0, 20)}...
                                 </p>
@@ -464,6 +953,12 @@ export const AdminDashboardPage: React.FC = () => {
                             </div>
                           </td>
                           <td className="px-4 py-4">
+                            <div className="flex items-center gap-2 text-sm text-text-secondary">
+                              <Clock size={14} />
+                              {formatRelativeTime(user.lastLoginAt)}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4">
                             {!isCurrentUser && (
                               <div className="flex gap-2">
                                 {user.role === "member" ? (
@@ -491,6 +986,13 @@ export const AdminDashboardPage: React.FC = () => {
                                     Demote to Member
                                   </button>
                                 )}
+                                <button
+                                  onClick={() => setDeleteUser(user)}
+                                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-colors flex items-center gap-1"
+                                >
+                                  <Trash2 size={12} />
+                                  Delete
+                                </button>
                               </div>
                             )}
                           </td>
@@ -500,6 +1002,168 @@ export const AdminDashboardPage: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Activity Log Tab */}
+        {activeTab === "activity" && (
+          <div className="card overflow-hidden">
+            <div className="p-4 border-b border-border-primary bg-bg-secondary/30">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-text-primary">
+                    Activity Log
+                  </h2>
+                  <p className="text-sm text-text-tertiary mt-1">
+                    View all admin actions and system events
+                  </p>
+                </div>
+                <button
+                  onClick={() => fetchActivityLog(1)}
+                  className="px-3 py-2 rounded-lg bg-bg-tertiary hover:bg-bg-hover text-text-primary transition-colors flex items-center gap-2"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            {activityLoading && activityLogs.length === 0 ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-2" />
+                  <p className="text-sm text-text-secondary">
+                    Loading activity log...
+                  </p>
+                </div>
+              </div>
+            ) : activityLogs.length === 0 ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <AlertCircle className="w-12 h-12 text-text-tertiary mx-auto mb-2" />
+                  <p className="text-sm text-text-secondary">No activity yet</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-bg-tertiary/20 border-b border-border-primary">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                          Timestamp
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                          User
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                          Action
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                          Entity
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                          Details
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
+                          IP Address
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border-primary">
+                      {activityLogs.map((log) => (
+                        <tr
+                          key={log.id}
+                          className="hover:bg-bg-tertiary/10 transition-colors"
+                        >
+                          <td className="px-4 py-4 text-sm text-text-secondary whitespace-nowrap">
+                            {formatDate(log.createdAt)}
+                          </td>
+                          <td className="px-4 py-4 text-sm">
+                            {log.user ? (
+                              <button
+                                onClick={() =>
+                                  navigateToUserProfile(log.user.id)
+                                }
+                                className="text-text-primary hover:text-primary transition-colors text-left font-medium"
+                              >
+                                {log.user.displayName ||
+                                  log.user.email ||
+                                  "Unknown User"}
+                              </button>
+                            ) : (
+                              <span className="text-text-tertiary">
+                                Unknown User
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4">
+                            <Badge
+                              variant={
+                                log.action === "user_delete"
+                                  ? "error"
+                                  : log.action === "role_change"
+                                    ? "warning"
+                                    : "secondary"
+                              }
+                              className="text-xs"
+                            >
+                              {log.action.replace(/_/g, " ")}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-4 text-sm text-text-secondary">
+                            {log.entityType}
+                            {log.entityId && (
+                              <span className="text-xs text-text-tertiary ml-1">
+                                ({log.entityId.substring(0, 8)}...)
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-text-secondary">
+                            {log.details &&
+                            Object.keys(log.details).length > 0 ? (
+                              <div className="max-w-xs truncate">
+                                {Object.entries(log.details).map(
+                                  ([key, value]) => (
+                                    <div key={key} className="text-xs">
+                                      <span className="font-medium">
+                                        {key}:
+                                      </span>{" "}
+                                      {String(value)}
+                                    </div>
+                                  ),
+                                )}
+                              </div>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-text-tertiary">
+                            {log.ipAddress || "-"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Load More */}
+                {activityHasMore && (
+                  <div className="p-4 border-t border-border-primary">
+                    <button
+                      onClick={() => fetchActivityLog(activityPage + 1)}
+                      disabled={activityLoading}
+                      className="w-full px-4 py-2 rounded-lg bg-bg-tertiary hover:bg-bg-hover text-text-primary transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {activityLoading && (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      )}
+                      Load More
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -513,6 +1177,16 @@ export const AdminDashboardPage: React.FC = () => {
           onConfirm={handleRoleChange}
           onCancel={() => setRoleChangeUser(null)}
           loading={roleChangeLoading}
+        />
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {deleteUser && (
+        <DeleteUserModal
+          user={deleteUser}
+          onConfirm={handleDeleteUser}
+          onCancel={() => setDeleteUser(null)}
+          loading={deleteLoading}
         />
       )}
     </div>

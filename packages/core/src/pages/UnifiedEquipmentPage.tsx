@@ -351,7 +351,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
 
       {/* Assets Side Panel - Always available to select assets */}
       {showAssetDrawer && (
-        <div className="absolute top-20 left-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-4 z-20 min-w-[320px] max-w-[400px] max-h-[calc(100vh-6rem)] flex flex-col animate-scale-in">
+        <div className="absolute top-4 left-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-3 z-20 min-w-[280px] max-w-[340px] max-h-[calc(100vh-2rem)] flex flex-col animate-scale-in">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-text-primary text-sm font-semibold">
@@ -395,7 +395,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
 
       {/* Controls Side Panel */}
       {showControlsDrawer && (selectedAvatar || selectedEquipment) && (
-        <div className="absolute top-20 right-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-4 z-20 min-w-[360px] max-w-[420px] max-h-[calc(100vh-6rem)] flex flex-col animate-scale-in">
+        <div className="absolute top-4 right-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-3 z-20 min-w-[300px] max-w-[360px] max-h-[calc(100vh-2rem)] flex flex-col animate-scale-in">
           {/* Header */}
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-text-primary text-sm font-semibold">

@@ -14,6 +14,7 @@ export interface User {
   walletAddress: string | null;
   role: string;
   profileCompleted: string | null;
+  settings?: Record<string, any>;
   createdAt: string;
   lastLoginAt: string | null;
   updatedAt: string;
@@ -22,7 +23,7 @@ export interface User {
 export interface UserProfileUpdate {
   displayName: string;
   email: string;
-  discordUsername: string;
+  discordUsername?: string;
 }
 
 export interface GetCurrentUserResponse {
@@ -110,10 +111,50 @@ export class UsersAPIClient {
   getProfileCompletionPercentage(user: User | null): number {
     if (!user) return 0;
 
-    const fields = [user.displayName, user.email, user.discordUsername];
+    const requiredFields = [user.displayName, user.email];
+    const completedFields = requiredFields.filter(Boolean).length;
+    return Math.round((completedFields / requiredFields.length) * 100);
+  }
 
-    const completedFields = fields.filter(Boolean).length;
-    return Math.round((completedFields / fields.length) * 100);
+  /**
+   * Get auth token from Privy
+   */
+  private async getAuthToken(): Promise<string> {
+    const privy = (window as any).__PRIVY__;
+    if (!privy?.getAccessToken) {
+      throw new Error("Privy not initialized");
+    }
+    const token = await privy.getAccessToken();
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+    return token;
+  }
+
+  /**
+   * Update user settings
+   */
+  async updateSettings(settings: Record<string, any>): Promise<{ user: User }> {
+    const token = await this.getAuthToken();
+    const response = await fetch(`${API_BASE}/settings`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ settings }),
+    });
+
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
+      throw new Error(
+        error.error || `Failed to update settings: ${response.status}`,
+      );
+    }
+
+    return await response.json();
   }
 }
 

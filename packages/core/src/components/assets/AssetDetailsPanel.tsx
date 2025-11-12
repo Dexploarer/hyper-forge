@@ -15,12 +15,12 @@ import {
   AlertCircle,
   Download,
   Share2,
-  Code,
   FileText,
   Trash2,
   Edit,
   Palette,
   FileCode,
+  Link,
 } from "lucide-react";
 import React, { useState } from "react";
 import { getTierColor } from "@/constants";
@@ -52,6 +52,8 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
   modelInfo,
 }) => {
   const [copiedId, setCopiedId] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
   const [activeTab, setActiveTab] = useState<"info" | "metadata" | "actions">(
     "info",
   );
@@ -91,6 +93,40 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
     } catch (error) {
       console.error("Failed to download model:", error);
     }
+  };
+
+  const getShareUrl = () => {
+    return `${window.location.origin}/assets/${asset.id}`;
+  };
+
+  const getShareText = () => {
+    return `Check out my ${asset.type} '${asset.name}' created with Hyperforge, part of the Hyperscape Ecosystem! 🎮✨`;
+  };
+
+  const handleCopyLink = () => {
+    const shareUrl = getShareUrl();
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedLink(true);
+    setTimeout(() => {
+      setCopiedLink(false);
+      setShowShareMenu(false);
+    }, 2000);
+  };
+
+  const handleShareOnX = () => {
+    const text = getShareText();
+    const url = getShareUrl();
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+    window.open(twitterUrl, "_blank", "noopener,noreferrer");
+    setShowShareMenu(false);
+  };
+
+  const handleShareOnFarcaster = () => {
+    const text = getShareText();
+    const url = getShareUrl();
+    const farcasterUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(`${text}\n\n${url}`)}`;
+    window.open(farcasterUrl, "_blank", "noopener,noreferrer");
+    setShowShareMenu(false);
   };
 
   if (!isOpen) return null;
@@ -449,15 +485,62 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
                 <span>Download Model</span>
               </button>
 
-              <button className="w-full px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded transition-colors flex items-center gap-2.5 text-sm font-semibold border border-border-primary">
-                <Code size={18} />
-                <span>View in Editor</span>
-              </button>
+              {/* Share Asset Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowShareMenu(!showShareMenu)}
+                  className="w-full px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded transition-colors flex items-center gap-2.5 text-sm font-semibold border border-border-primary"
+                >
+                  <Share2 size={18} />
+                  <span>Share Asset</span>
+                </button>
 
-              <button className="w-full px-4 py-3 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded transition-colors flex items-center gap-2.5 text-sm font-semibold border border-border-primary">
-                <Share2 size={18} />
-                <span>Share Asset</span>
-              </button>
+                {/* Share Menu Dropdown */}
+                {showShareMenu && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-bg-primary border border-border-primary rounded-lg shadow-xl overflow-hidden z-50">
+                    <button
+                      onClick={handleShareOnX}
+                      className="w-full px-4 py-3 hover:bg-bg-hover text-text-primary transition-colors flex items-center gap-3 text-sm font-medium border-b border-border-primary"
+                    >
+                      <X size={16} />
+                      <span>Share on X</span>
+                    </button>
+                    <button
+                      onClick={handleShareOnFarcaster}
+                      className="w-full px-4 py-3 hover:bg-bg-hover text-text-primary transition-colors flex items-center gap-3 text-sm font-medium border-b border-border-primary"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 1000 1000"
+                        fill="currentColor"
+                        className="flex-shrink-0"
+                      >
+                        <path d="M257.778 155.556H742.222V844.444H671.111V528.889H670.414C662.554 441.677 589.258 373.333 500 373.333C410.742 373.333 337.446 441.677 329.586 528.889H328.889V844.444H257.778V155.556Z" />
+                        <path d="M128.889 253.333L156.444 326.111H184V485.556H156.444L128.889 558.333H256.111L283.667 485.556H256.111V326.111H283.667L256.111 253.333H128.889Z" />
+                        <path d="M743.889 253.333L771.444 326.111H799V485.556H771.444L743.889 558.333H871.111L898.667 485.556H871.111V326.111H898.667L871.111 253.333H743.889Z" />
+                      </svg>
+                      <span>Share on Farcaster</span>
+                    </button>
+                    <button
+                      onClick={handleCopyLink}
+                      className="w-full px-4 py-3 hover:bg-bg-hover text-text-primary transition-colors flex items-center gap-3 text-sm font-medium"
+                    >
+                      {copiedLink ? (
+                        <>
+                          <Check size={16} className="text-success" />
+                          <span className="text-success">Link Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Link size={16} />
+                          <span>Copy Link</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {onEdit && (
                 <button

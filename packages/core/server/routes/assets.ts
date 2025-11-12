@@ -24,17 +24,28 @@ export const createAssetRoutes = (
         // Asset listing endpoint
         .get(
           "",
-          async () => {
-            const assets = await assetService.listAssets();
+          async ({ query }) => {
+            let assets = await assetService.listAssets();
+
+            // Apply projectId filter if provided
+            if (query.projectId) {
+              assets = assets.filter(
+                (asset) => asset.metadata.projectId === query.projectId,
+              );
+            }
+
             return assets;
           },
           {
+            query: t.Object({
+              projectId: t.Optional(t.String()),
+            }),
             response: Models.AssetListResponse,
             detail: {
               tags: ["Assets"],
               summary: "List all assets",
               description:
-                "Returns a list of all generated 3D assets. (Auth optional - shows public assets, authenticated users see their own assets)",
+                "Returns a list of all generated 3D assets with optional filtering by project. (Auth optional - shows public assets, authenticated users see their own assets)",
             },
           },
         )

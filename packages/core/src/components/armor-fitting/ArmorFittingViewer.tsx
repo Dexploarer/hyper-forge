@@ -402,7 +402,8 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
       }
 
       // Clear weapon if not in Hand mode or no URL
-      const isHandSlot = equipmentSlot === "Hand_R" || equipmentSlot === "Hand_L";
+      const isHandSlot =
+        equipmentSlot === "Hand_R" || equipmentSlot === "Hand_L";
       if (!weaponUrl || !isHandSlot) {
         if (weaponRef.current) {
           weaponRef.current.clear();
@@ -557,46 +558,75 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
       }
 
       if (animations.length > 0) {
-        // Log available animations
-        animations.forEach((clip) => {
+        // Log available animations with detailed info
+        console.log(
+          `=== AVAILABLE ANIMATIONS (${animations.length} total) ===`,
+        );
+        animations.forEach((clip, index) => {
           console.log(
-            `Available animation: "${clip.name}" (duration: ${clip.duration}s)`,
+            `[${index}] "${clip.name}" (duration: ${clip.duration}s)`,
           );
         });
+        console.log(`Looking for: ${currentAnimation}`);
 
         // Find the appropriate animation clip
         let targetClip: THREE.AnimationClip | null = null;
 
         if (currentAnimation === "walking") {
-          targetClip =
-            animations.find((clip) => {
-              const name = clip.name.toLowerCase();
-              return (
-                (name.includes("walk") || name.includes("walking")) &&
-                !name.includes("run") &&
-                !name.includes("running")
-              );
-            }) || animations[0];
+          // Try to find walking animation with more lenient matching
+          targetClip = animations.find((clip) => {
+            const name = clip.name.toLowerCase();
+            // Match walk/walking but exclude run/running (unless it's "run_walk" or similar)
+            const hasWalk = name.includes("walk");
+            const hasRunButNotWalk =
+              name.includes("run") && !name.includes("walk");
+            return hasWalk && !hasRunButNotWalk;
+          });
+
+          if (!targetClip) {
+            console.warn(
+              `❌ No walking animation found! Available clips:`,
+              animations.map((c) => c.name),
+            );
+          } else {
+            console.log(`✅ Found walking animation: "${targetClip.name}"`);
+          }
         } else if (currentAnimation === "running") {
-          targetClip =
-            animations.find((clip) => {
-              const name = clip.name.toLowerCase();
-              return (
-                (name.includes("run") || name.includes("running")) &&
-                !name.includes("walk") &&
-                !name.includes("walking")
-              );
-            }) || animations[0];
+          // Try to find running animation with better pattern matching
+          targetClip = animations.find((clip) => {
+            const name = clip.name.toLowerCase();
+            // Match run/running/sprint/jog but exclude walk
+            const hasRun =
+              name.includes("run") ||
+              name.includes("sprint") ||
+              name.includes("jog");
+            const hasWalk = name.includes("walk");
+            return hasRun && !hasWalk;
+          });
+
+          if (!targetClip) {
+            console.error(
+              `❌ No running animation found in clips:`,
+              animations.map((c) => c.name),
+            );
+            console.error(
+              `Expected clip name to contain: "run", "running", "sprint", or "jog" (without "walk")`,
+            );
+          } else {
+            console.log(`✅ Found running animation: "${targetClip.name}"`);
+          }
         }
 
         if (targetClip) {
-          console.log(`Playing animation: "${targetClip.name}"`);
+          console.log(`▶️  Playing animation: "${targetClip.name}"`);
           const action = mixer.clipAction(targetClip, avatarRef.current);
           action.reset();
           action.setLoop(THREE.LoopRepeat, Infinity);
           action.play();
         } else {
-          console.log("No suitable animation clip found");
+          console.warn(
+            `⚠️  No suitable ${currentAnimation} animation clip found - no animation will play`,
+          );
         }
       } else {
         console.log("No animations available for this avatar");
@@ -696,8 +726,9 @@ const Scene: React.FC<SceneProps> = ({
 
   return (
     <scene ref={sceneRef}>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[10, 10, 5]} intensity={1} />
+      {/* Match EquipmentViewer lighting */}
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[5, 5, 5]} intensity={0.8} castShadow />
       <OrbitControls />
 
       <ModelDemo
@@ -712,7 +743,18 @@ const Scene: React.FC<SceneProps> = ({
         onModelsReady={handleModelsReady}
       />
 
+      {/* Grid helper matching EquipmentViewer */}
       <gridHelper args={[10, 10]} />
+
+      {/* Ground plane matching EquipmentViewer */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+        <planeGeometry args={[20, 20]} />
+        <meshStandardMaterial
+          color={0x444444}
+          roughness={0.8}
+          metalness={0.2}
+        />
+      </mesh>
 
       {/* Add visualization group if provided */}
       {visualizationGroup && <primitive object={visualizationGroup} />}
@@ -2134,7 +2176,15 @@ export const ArmorFittingViewer = forwardRef<
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
-      <Canvas camera={{ position: [5, 5, 5], fov: 50 }}>
+      <Canvas
+        camera={{ position: [5, 5, 5], fov: 50 }}
+        gl={{
+          antialias: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1,
+        }}
+        scene={{ background: new THREE.Color(0x1a1a1a) }}
+      >
         <Scene
           avatarUrl={avatarUrl}
           armorUrl={armorUrl}
