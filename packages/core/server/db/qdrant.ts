@@ -17,8 +17,22 @@ export async function initializeQdrantCollections(): Promise<void> {
   try {
     console.log("[Qdrant] Initializing vector search collections...");
 
-    // Health check
-    const healthy = await qdrantService.healthCheck();
+    // Health check with timeout to prevent hanging
+    const healthCheck = qdrantService.healthCheck();
+    const timeout = new Promise<boolean>((_, reject) =>
+      setTimeout(() => reject(new Error("Qdrant health check timeout")), 10000),
+    );
+
+    const healthy = await Promise.race([healthCheck, timeout]).catch(
+      (error) => {
+        console.warn(
+          "[Qdrant] Health check failed or timed out:",
+          error.message,
+        );
+        return false;
+      },
+    );
+
     if (!healthy) {
       console.warn(
         "[Qdrant] Health check failed - vector search may not be available",
@@ -26,8 +40,16 @@ export async function initializeQdrantCollections(): Promise<void> {
       return;
     }
 
-    // Initialize all collections
-    await qdrantService.initializeCollections();
+    // Initialize all collections with timeout
+    const initialization = qdrantService.initializeCollections();
+    const initTimeout = new Promise<void>((_, reject) =>
+      setTimeout(
+        () => reject(new Error("Qdrant initialization timeout")),
+        30000,
+      ),
+    );
+
+    await Promise.race([initialization, initTimeout]);
 
     console.log("[Qdrant] Vector search initialized successfully");
   } catch (error) {
