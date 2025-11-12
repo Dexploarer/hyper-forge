@@ -4,6 +4,7 @@
  */
 
 import { generateText } from "ai";
+import { aiSDKService } from "./AISDKService";
 
 export interface DialogueNode {
   id: string;
@@ -86,17 +87,11 @@ export class ContentGenerationService {
   }
 
   /**
-   * Get model string for quality level
-   * Returns model in 'creator/model-name' format which automatically uses AI Gateway
+   * Get configured language model for quality level
+   * Returns a properly configured LanguageModel from AISDKService
    */
-  private getModel(quality: "quality" | "speed" | "balanced"): string {
-    const modelMap = {
-      quality: "openai/gpt-4o",
-      speed: "openai/gpt-4o-mini",
-      balanced: "openai/gpt-4o",
-    };
-
-    return modelMap[quality];
+  private async getConfiguredModel(quality: "quality" | "speed" | "balanced") {
+    return await aiSDKService.getConfiguredModel(quality);
   }
 
   /**
@@ -152,7 +147,7 @@ export class ContentGenerationService {
       worldConfigId,
     } = params;
 
-    const model = this.getModel(quality);
+    const model = await this.getConfiguredModel(quality);
 
     const basePrompt = this.buildDialoguePrompt(
       npcName,
@@ -206,7 +201,7 @@ export class ContentGenerationService {
       worldConfigId,
     } = params;
 
-    const model = this.getModel(quality);
+    const model = await this.getConfiguredModel(quality);
 
     const basePrompt = this.buildNPCPrompt(userPrompt, archetype, context);
     const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
@@ -274,7 +269,7 @@ export class ContentGenerationService {
       worldConfigId,
     } = params;
 
-    const model = this.getModel(quality);
+    const model = await this.getConfiguredModel(quality);
 
     const basePrompt = this.buildQuestPrompt(
       userPrompt,
@@ -343,7 +338,7 @@ export class ContentGenerationService {
       worldConfigId,
     } = params;
 
-    const model = this.getModel(quality);
+    const model = await this.getConfiguredModel(quality);
 
     const basePrompt = this.buildLorePrompt(
       userPrompt,
@@ -404,7 +399,7 @@ export class ContentGenerationService {
       quality = "quality",
     } = params;
 
-    const model = this.getModel(quality);
+    const model = await this.getConfiguredModel(quality);
 
     const aiPrompt = this.buildWorldPrompt(theme, complexity, customPrompt);
 

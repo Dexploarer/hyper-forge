@@ -67,6 +67,34 @@ export class ContentAPIClient {
     return await response.json();
   }
 
+  /**
+   * Generate a banner image for a quest
+   */
+  async generateQuestBanner(params: {
+    questTitle: string;
+    description: string;
+    questType: string;
+    difficulty: string;
+  }): Promise<{
+    success: boolean;
+    imageUrl: string;
+    prompt: string;
+  }> {
+    const response = await fetch(`${API_BASE}/content/generate-quest-banner`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to generate quest banner: ${response.statusText}`,
+      );
+    }
+
+    return await response.json();
+  }
+
   // ==================== Quest Generation ====================
 
   /**
@@ -425,6 +453,7 @@ export class ContentAPIClient {
     entityType: string;
     entityId: string;
     imageData: string; // base64 encoded
+    type?: string; // "portrait" | "banner" | etc.
     prompt?: string;
     model?: string;
     createdBy?: string;

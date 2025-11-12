@@ -16,6 +16,10 @@ import {
   TestTube2,
   ChevronDown,
   Image as ImageIcon,
+  Eye,
+  MessageSquare,
+  Briefcase,
+  Maximize2,
 } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 
@@ -38,6 +42,7 @@ import { DialogueWorkflowView } from "./Workflow/DialogueWorkflowView";
 import { QuestWorkflowView } from "./Workflow/QuestWorkflowView";
 import { QuestGenerationModal } from "./QuestGenerationModal";
 import { LoreGenerationModal } from "./LoreGenerationModal";
+import { ImageEnlargeModal } from "./ImageEnlargeModal";
 
 interface ContentPreviewCardProps {
   content: GeneratedContent;
@@ -67,6 +72,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
   const [generatedLoreId, setGeneratedLoreId] = useState<string | null>(null);
   const [showGenerateDropdown, setShowGenerateDropdown] = useState(false);
   const generateDropdownRef = useRef<HTMLDivElement>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
 
   const handleGeneratePortrait = async () => {
     if (content.type !== "npc") return;
@@ -435,119 +441,112 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
       const npc = content.data as NPCData;
       return (
         <div className="space-y-6">
-          {/* Name and Archetype Header */}
-          <div className="pb-4 border-b border-border-primary">
-            <h3 className="text-xl font-bold text-text-primary mb-1">
-              {npc.name}
-            </h3>
-            <p className="text-sm text-text-secondary capitalize">
-              {npc.archetype}
-            </p>
-          </div>
-
-          {/* AI Generation Section with Dropdown */}
-          <div className="flex flex-col gap-4">
-            {/* Compact Icon Row */}
-            <div className="flex items-center gap-4 justify-center">
-              {/* Portrait Icon */}
-              <div className="flex flex-col items-center gap-1.5">
-                <div
-                  className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
-                    portraitUrl
-                      ? "bg-blue-500/20 border border-blue-500/30"
-                      : "bg-bg-tertiary/50 border border-border-primary/50",
-                  )}
-                >
-                  {portraitUrl ? (
-                    <img
-                      src={portraitUrl}
-                      alt={`${npc.name} portrait`}
-                      className="w-8 h-8 rounded object-cover"
-                    />
-                  ) : (
-                    <ImageIcon className="w-4 h-4 text-text-tertiary/60" />
-                  )}
-                </div>
-                {savedPortraitId && (
-                  <Check className="w-3 h-3 text-green-500" />
-                )}
-              </div>
-
-              {/* Voice Icon */}
-              <div className="flex flex-col items-center gap-1.5">
-                <div
-                  className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
-                    voiceAudioUrl
-                      ? "bg-green-500/20 border border-green-500/30"
-                      : "bg-bg-tertiary/50 border border-border-primary/50",
-                  )}
-                >
-                  <Volume2
-                    className={cn(
-                      "w-4 h-4",
-                      voiceAudioUrl
-                        ? "text-green-500"
-                        : "text-text-tertiary/60",
-                    )}
-                  />
-                </div>
-                {savedVoiceId && <Check className="w-3 h-3 text-green-500" />}
-              </div>
-
-              {/* Quest Icon */}
-              <div className="flex flex-col items-center gap-1.5">
-                <div
-                  className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
-                    generatedQuestId
-                      ? "bg-amber-500/20 border border-amber-500/30"
-                      : "bg-bg-tertiary/50 border border-border-primary/50",
-                  )}
-                >
-                  <Scroll
-                    className={cn(
-                      "w-4 h-4",
-                      generatedQuestId
-                        ? "text-amber-500"
-                        : "text-text-tertiary/60",
-                    )}
-                  />
-                </div>
-                {generatedQuestId && (
-                  <Check className="w-3 h-3 text-green-500" />
-                )}
-              </div>
-
-              {/* Lore Icon */}
-              <div className="flex flex-col items-center gap-1.5">
-                <div
-                  className={cn(
-                    "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
-                    generatedLoreId
-                      ? "bg-purple-500/20 border border-purple-500/30"
-                      : "bg-bg-tertiary/50 border border-border-primary/50",
-                  )}
-                >
-                  <Book
-                    className={cn(
-                      "w-4 h-4",
-                      generatedLoreId
-                        ? "text-purple-500"
-                        : "text-text-tertiary/60",
-                    )}
-                  />
-                </div>
-                {generatedLoreId && (
-                  <Check className="w-3 h-3 text-green-500" />
-                )}
-              </div>
+          {/* Social Network Style Profile Header */}
+          <div className="relative">
+            {/* Cover/Banner Area */}
+            <div className="h-24 bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-t-xl border-b border-border-primary relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-transparent via-black/5 to-black/10" />
+              <div
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage:
+                    'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.4"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+                }}
+              />
             </div>
 
-            {/* AI Generate Button with Dropdown */}
+            {/* Profile Picture & Name Section */}
+            <div className="relative px-6 -mt-16">
+              <div className="flex items-end gap-4">
+                {/* Large Circular Profile Picture */}
+                <div className="relative">
+                  <button
+                    onClick={() => portraitUrl && setShowImageModal(true)}
+                    disabled={!portraitUrl}
+                    className={cn(
+                      "w-32 h-32 rounded-full border-4 border-bg-primary shadow-xl overflow-hidden transition-all duration-300",
+                      portraitUrl
+                        ? "cursor-pointer hover:scale-105 hover:shadow-2xl hover:border-primary/50"
+                        : "cursor-default",
+                      isGeneratingPortrait && "animate-pulse",
+                    )}
+                    aria-label={
+                      portraitUrl ? "Click to enlarge portrait" : undefined
+                    }
+                  >
+                    {portraitUrl ? (
+                      <div className="relative w-full h-full group">
+                        <img
+                          src={portraitUrl}
+                          alt={`${npc.name} portrait`}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Enlarge icon overlay on hover */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Maximize2 className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-bg-tertiary to-bg-secondary flex items-center justify-center">
+                        <User className="w-16 h-16 text-text-tertiary/50" />
+                      </div>
+                    )}
+                  </button>
+
+                  {/* Profile completion indicator */}
+                  {savedPortraitId && (
+                    <div className="absolute bottom-1 right-1 w-8 h-8 bg-green-500 rounded-full border-2 border-bg-primary flex items-center justify-center">
+                      <Check className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Name and Archetype */}
+                <div className="flex-1 pb-2">
+                  <h3 className="text-2xl font-bold text-text-primary mb-1">
+                    {npc.name}
+                  </h3>
+                  <p className="text-base text-text-secondary capitalize mb-2">
+                    {npc.archetype}
+                  </p>
+
+                  {/* Generated Content Status Pills */}
+                  <div className="flex flex-wrap gap-2">
+                    {portraitUrl && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/10 border border-blue-500/30 rounded-full text-xs text-blue-400">
+                        <ImageIcon className="w-3 h-3" />
+                        Portrait
+                      </span>
+                    )}
+                    {voiceAudioUrl && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/10 border border-green-500/30 rounded-full text-xs text-green-400">
+                        <Volume2 className="w-3 h-3" />
+                        Voice
+                      </span>
+                    )}
+                    {generatedQuestId && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-xs text-amber-400">
+                        <Scroll className="w-3 h-3" />
+                        Quest
+                      </span>
+                    )}
+                    {generatedLoreId && (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-500/10 border border-purple-500/30 rounded-full text-xs text-purple-400">
+                        <Book className="w-3 h-3" />
+                        Lore
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Generation Actions - Prominent Buttons */}
+          <div className="flex flex-col gap-3 px-6">
+            {/* Primary Generation Actions Row */}
             <div
-              className="relative flex items-center gap-2 justify-center"
+              className="relative flex items-center gap-2"
               ref={generateDropdownRef}
             >
               <Button
@@ -560,18 +559,17 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
                   }
                 }}
                 disabled={isGeneratingPortrait || isGeneratingVoice}
-                className="relative overflow-hidden bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg shadow-primary/20 micro-shimmer-button"
-                size="sm"
+                className="flex-1 relative overflow-hidden bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg shadow-primary/20 micro-shimmer-button"
               >
                 {isGeneratingPortrait || isGeneratingVoice ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                     Generating...
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    AI Generate
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    AI Generate Content
                   </>
                 )}
               </Button>
@@ -581,7 +579,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
                 onClick={() => setShowGenerateDropdown(!showGenerateDropdown)}
                 disabled={isGeneratingPortrait || isGeneratingVoice}
                 className={cn(
-                  "p-2 rounded-lg border border-border-primary bg-bg-secondary hover:bg-bg-tertiary transition-all",
+                  "px-4 py-2 rounded-lg border border-border-primary bg-bg-secondary hover:bg-bg-tertiary transition-all",
                   "disabled:opacity-50 disabled:cursor-not-allowed",
                   showGenerateDropdown &&
                     "bg-bg-tertiary ring-2 ring-primary/30",
@@ -590,7 +588,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
               >
                 <ChevronDown
                   className={cn(
-                    "w-4 h-4 text-text-secondary transition-transform",
+                    "w-5 h-5 text-text-secondary transition-transform",
                     showGenerateDropdown && "rotate-180",
                   )}
                 />
@@ -649,136 +647,197 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
 
             {/* Action Buttons Row (Save/Play) */}
             {(portraitUrl || voiceAudioUrl) && (
-              <div className="flex items-center gap-2 justify-center">
-                {portraitUrl && !savedPortraitId && (
-                  <Button
-                    onClick={handleSavePortrait}
-                    disabled={isSavingPortrait}
-                    size="sm"
-                    variant="secondary"
-                    className="text-xs"
-                  >
-                    {isSavingPortrait ? (
-                      <>
-                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-3 h-3 mr-1" />
-                        Save Portrait
-                      </>
-                    )}
-                  </Button>
+              <div className="flex flex-col items-center gap-2">
+                {/* Info message if content not saved yet */}
+                {!content.id && portraitUrl && (
+                  <div className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-1.5">
+                    Portrait will be temporary until NPC is saved to library
+                  </div>
                 )}
-                {voiceAudioUrl && (
-                  <>
-                    {!savedVoiceId && (
-                      <Button
-                        onClick={handleSaveVoice}
-                        disabled={isSavingVoice}
-                        size="sm"
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        {isSavingVoice ? (
-                          <>
-                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="w-3 h-3 mr-1" />
-                            Save Voice
-                          </>
-                        )}
-                      </Button>
-                    )}
+                <div className="flex items-center gap-2">
+                  {portraitUrl && !savedPortraitId && content.id && (
                     <Button
-                      onClick={handlePlayVoice}
+                      onClick={handleSavePortrait}
+                      disabled={isSavingPortrait}
                       size="sm"
                       variant="secondary"
                       className="text-xs"
                     >
-                      {isPlayingVoice ? (
+                      {isSavingPortrait ? (
                         <>
-                          <Pause className="w-3 h-3 mr-1" />
-                          Pause
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Saving...
                         </>
                       ) : (
                         <>
-                          <Play className="w-3 h-3 mr-1" />
-                          Play
+                          <Save className="w-3 h-3 mr-1" />
+                          Save Portrait
                         </>
                       )}
                     </Button>
-                  </>
-                )}
+                  )}
+                  {voiceAudioUrl && (
+                    <>
+                      {!savedVoiceId && (
+                        <Button
+                          onClick={handleSaveVoice}
+                          disabled={isSavingVoice}
+                          size="sm"
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {isSavingVoice ? (
+                            <>
+                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-3 h-3 mr-1" />
+                              Save Voice
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      <Button
+                        onClick={handlePlayVoice}
+                        size="sm"
+                        variant="secondary"
+                        className="text-xs"
+                      >
+                        {isPlayingVoice ? (
+                          <>
+                            <Pause className="w-3 h-3 mr-1" />
+                            Pause
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-3 h-3 mr-1" />
+                            Play
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          <div>
-            <h4 className="text-sm font-semibold text-text-primary mb-2">
-              Personality
-            </h4>
-            <p className="text-sm text-text-secondary mb-2">
-              {npc.personality.background}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {npc.personality.traits.map((trait, i) => (
-                <span
-                  key={i}
-                  className="px-2 py-1 bg-primary/10 border border-primary/30 rounded text-xs text-primary"
-                >
-                  {trait}
-                </span>
-              ))}
+          {/* Card-Based Information Sections */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6">
+            {/* Personality Card */}
+            <div className="bg-bg-secondary/50 border border-border-primary rounded-xl p-4 hover:border-primary/30 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <User className="w-4 h-4 text-primary" />
+                </div>
+                <h4 className="text-base font-semibold text-text-primary">
+                  Personality
+                </h4>
+              </div>
+              <p className="text-sm text-text-secondary leading-relaxed mb-3">
+                {npc.personality.background}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {npc.personality.traits.map((trait, i) => (
+                  <span
+                    key={i}
+                    className="px-2.5 py-1 bg-primary/10 border border-primary/30 rounded-full text-xs font-medium text-primary"
+                  >
+                    {trait}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Appearance Card */}
+            <div className="bg-bg-secondary/50 border border-border-primary rounded-xl p-4 hover:border-primary/30 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <Eye className="w-4 h-4 text-accent" />
+                </div>
+                <h4 className="text-base font-semibold text-text-primary">
+                  Appearance
+                </h4>
+              </div>
+              <p className="text-sm text-text-secondary leading-relaxed">
+                {npc.appearance.description}
+              </p>
+            </div>
+
+            {/* Dialogue Card */}
+            <div className="bg-bg-secondary/50 border border-border-primary rounded-xl p-4 hover:border-primary/30 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-green-400" />
+                </div>
+                <h4 className="text-base font-semibold text-text-primary">
+                  Dialogue
+                </h4>
+              </div>
+              <div className="space-y-3">
+                <div className="bg-bg-tertiary/30 rounded-lg p-3 border-l-2 border-green-500/50">
+                  <p className="text-xs text-text-tertiary mb-1">Greeting</p>
+                  <p className="text-sm text-text-primary italic">
+                    "{npc.dialogue.greeting}"
+                  </p>
+                </div>
+                <div className="bg-bg-tertiary/30 rounded-lg p-3 border-l-2 border-blue-500/50">
+                  <p className="text-xs text-text-tertiary mb-1">Farewell</p>
+                  <p className="text-sm text-text-primary italic">
+                    "{npc.dialogue.farewell}"
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Behavior Card */}
+            <div className="bg-bg-secondary/50 border border-border-primary rounded-xl p-4 hover:border-primary/30 transition-colors">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                  <Briefcase className="w-4 h-4 text-amber-400" />
+                </div>
+                <h4 className="text-base font-semibold text-text-primary">
+                  Behavior & Role
+                </h4>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs text-text-tertiary mb-1">Role</p>
+                  <p className="text-sm text-text-primary font-medium">
+                    {npc.behavior.role}
+                  </p>
+                </div>
+                <div className="border-t border-border-primary/50 pt-2">
+                  <p className="text-xs text-text-tertiary mb-1">Schedule</p>
+                  <p className="text-sm text-text-secondary">
+                    {npc.behavior.schedule}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div>
-            <h4 className="text-sm font-semibold text-text-primary mb-2">
-              Appearance
-            </h4>
-            <p className="text-sm text-text-secondary">
-              {npc.appearance.description}
-            </p>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-semibold text-text-primary mb-2">
-              Dialogue
-            </h4>
-            <div className="space-y-2 text-sm">
-              <p>
-                <span className="text-text-tertiary">Greeting:</span>{" "}
-                <span className="text-text-secondary">
-                  "{npc.dialogue.greeting}"
-                </span>
-              </p>
-              <p>
-                <span className="text-text-tertiary">Farewell:</span>{" "}
-                <span className="text-text-secondary">
-                  "{npc.dialogue.farewell}"
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm font-semibold text-text-primary mb-2">
-              Behavior
-            </h4>
-            <p className="text-sm text-text-secondary mb-1">
-              <span className="text-text-tertiary">Role:</span>{" "}
-              {npc.behavior.role}
-            </p>
-            <p className="text-sm text-text-secondary">
-              <span className="text-text-tertiary">Schedule:</span>{" "}
-              {npc.behavior.schedule}
-            </p>
-          </div>
+          {/* Image Enlarge Modal */}
+          {portraitUrl && (
+            <ImageEnlargeModal
+              open={showImageModal}
+              onClose={() => setShowImageModal(false)}
+              imageUrl={portraitUrl}
+              alt={`${npc.name} portrait`}
+              title={`${npc.name} - ${npc.archetype}`}
+              onDownload={() => {
+                const a = document.createElement("a");
+                a.href = portraitUrl;
+                a.download = `${npc.name.toLowerCase().replace(/\s+/g, "-")}-portrait.png`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                notify.success("Portrait downloaded!");
+              }}
+            />
+          )}
 
           {/* Quest Generation Modal */}
           {content.id && (

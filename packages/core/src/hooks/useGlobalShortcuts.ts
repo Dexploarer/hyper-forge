@@ -40,10 +40,6 @@ export function useGlobalShortcuts() {
         navigateTo(NAVIGATION_VIEWS.SETTINGS);
       },
 
-      navigateToGeneration: () => {
-        navigateTo(NAVIGATION_VIEWS.GENERATION);
-      },
-
       navigateToAssets: () => {
         navigateTo(NAVIGATION_VIEWS.ASSETS);
       },
@@ -131,39 +127,33 @@ export function useGlobalShortcuts() {
 
       // ==================== CREATION ====================
       newAsset: () => {
-        navigateTo(NAVIGATION_VIEWS.GENERATION);
-        // Dispatch event to focus on asset generation
-        window.dispatchEvent(new CustomEvent("generation:focusAsset"));
+        // Navigate to character generation (most common 3D asset type)
+        navigateTo(NAVIGATION_VIEWS.GENERATION_CHARACTER);
       },
 
       newQuest: () => {
-        navigateTo(NAVIGATION_VIEWS.GENERATION);
-        // Dispatch event to focus on quest generation
-        window.dispatchEvent(new CustomEvent("generation:focusQuest"));
+        // Navigate to quest generation
+        navigateTo(NAVIGATION_VIEWS.CONTENT_QUEST);
       },
 
       newNPC: () => {
-        navigateTo(NAVIGATION_VIEWS.GENERATION);
-        // Dispatch event to focus on NPC generation
-        window.dispatchEvent(new CustomEvent("generation:focusNPC"));
+        // Navigate to NPC generation
+        navigateTo(NAVIGATION_VIEWS.CONTENT_NPC);
       },
 
       newDialogue: () => {
-        navigateTo(NAVIGATION_VIEWS.GENERATION);
-        // Dispatch event to focus on dialogue generation
-        window.dispatchEvent(new CustomEvent("generation:focusDialogue"));
+        // Navigate to dialogue generation
+        navigateTo(NAVIGATION_VIEWS.CONTENT_DIALOGUE);
       },
 
       newCombat: () => {
-        navigateTo(NAVIGATION_VIEWS.GENERATION);
-        // Dispatch event to focus on combat generation
-        window.dispatchEvent(new CustomEvent("generation:focusCombat"));
+        // Navigate to quest generation (combat is quest-related)
+        navigateTo(NAVIGATION_VIEWS.CONTENT_QUEST);
       },
 
       newPuzzle: () => {
-        navigateTo(NAVIGATION_VIEWS.GENERATION);
-        // Dispatch event to focus on puzzle generation
-        window.dispatchEvent(new CustomEvent("generation:focusPuzzle"));
+        // Navigate to quest generation (puzzles are quest-related)
+        navigateTo(NAVIGATION_VIEWS.CONTENT_QUEST);
       },
 
       // ==================== VIEW ====================

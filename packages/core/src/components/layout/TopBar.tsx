@@ -41,7 +41,6 @@ const VIEW_TITLES: Record<NavigationView, string> = {
   [NAVIGATION_VIEWS.SETTINGS]: "Settings & Configuration",
   [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin Dashboard",
   // Legacy
-  [NAVIGATION_VIEWS.GENERATION]: "AI Asset Generation",
   [NAVIGATION_VIEWS.AUDIO]: "Audio Generation",
   [NAVIGATION_VIEWS.CONTENT]: "Content Generation",
   [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",
@@ -69,7 +68,7 @@ export function TopBar({ currentView }: TopBarProps) {
 
   return (
     <>
-      <header className="h-16 solid-surface border-b border-border-primary flex items-center justify-between px-6 relative z-50">
+      <header className="h-16 solid-surface border-b border-border-primary flex items-center justify-between px-6 relative z-[10001]">
         {/* Current page title */}
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-semibold text-text-primary">

@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Package, Shield, MoreHorizontal } from "lucide-react";
+import { Library, Package, Shield, MoreHorizontal } from "lucide-react";
 import { NavigationView } from "@/types";
 import { NAVIGATION_VIEWS } from "@/constants";
 import { cn } from "@/styles";
@@ -18,9 +18,9 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    view: NAVIGATION_VIEWS.GENERATION,
-    icon: Sparkles,
-    label: "Generate",
+    view: NAVIGATION_VIEWS.CONTENT_LIBRARY,
+    icon: Library,
+    label: "Library",
   },
   {
     view: NAVIGATION_VIEWS.ASSETS,
@@ -45,7 +45,7 @@ export function BottomNav({
   onMoreClick,
 }: BottomNavProps) {
   return (
-    <nav className="h-16 solid-nav-bottom fixed bottom-0 left-0 right-0 z-50 safe-area-inset-bottom">
+    <nav className="h-16 solid-nav-bottom fixed bottom-0 left-0 right-0 z-[10001] safe-area-inset-bottom">
       <div className="h-full flex items-center justify-around px-2">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon as React.FC<{ className?: string }>;

@@ -333,6 +333,76 @@ export const contentGenerationRoutes = new Elysia({
           },
         )
 
+        // POST /api/content/generate-quest-banner
+        .post(
+          "/generate-quest-banner",
+          async ({ body }) => {
+            console.log(
+              `[ContentGeneration] Generating banner for quest: ${body.questTitle}`,
+            );
+
+            // Initialize AI service
+            const aiService = new AICreationService({
+              openai: {
+                apiKey: process.env.OPENAI_API_KEY || "",
+                model: "gpt-image-1",
+                imageServerBaseUrl:
+                  process.env.IMAGE_SERVER_URL || "http://localhost:8080",
+              },
+              meshy: {
+                apiKey: process.env.MESHY_API_KEY || "",
+                baseUrl: "https://api.meshy.ai",
+              },
+            });
+
+            // Build image prompt from quest data
+            const promptParts = [
+              `Quest banner artwork for "${body.questTitle}"`,
+              body.description,
+              `Quest type: ${body.questType}, Difficulty: ${body.difficulty}`,
+              "Epic fantasy game quest banner, wide horizontal format, dramatic composition, game UI art style, 16:9 aspect ratio, cinematic lighting",
+            ];
+
+            const imagePrompt = promptParts.join(". ");
+
+            console.log(`[ContentGeneration] Banner prompt: ${imagePrompt}`);
+
+            // Generate image
+            const imageResult = await aiService
+              .getImageService()
+              .generateImage(imagePrompt, "banner", "fantasy");
+
+            console.log(
+              `[ContentGeneration] Banner generated successfully for ${body.questTitle}`,
+            );
+
+            return {
+              success: true,
+              imageUrl: imageResult.imageUrl,
+              prompt: imageResult.prompt,
+            };
+          },
+          {
+            body: t.Object({
+              questTitle: t.String(),
+              description: t.String(),
+              questType: t.String(),
+              difficulty: t.String(),
+            }),
+            response: t.Object({
+              success: t.Boolean(),
+              imageUrl: t.String(),
+              prompt: t.String(),
+            }),
+            detail: {
+              tags: ["Content Generation"],
+              summary: "Generate quest banner",
+              description:
+                "Generate an AI banner image for a quest based on its details",
+            },
+          },
+        )
+
         // ========================
         // NPC Retrieval Endpoints
         // ========================
@@ -664,19 +734,20 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/media/save-portrait",
           async ({ body, user }) => {
+            const mediaType = body.type || "portrait";
             console.log(
-              `[Media] Saving portrait for ${body.entityType}:${body.entityId}`,
+              `[Media] Saving ${mediaType} for ${body.entityType}:${body.entityId}`,
             );
 
             // Decode base64 image data
             const imageData = Buffer.from(body.imageData, "base64");
 
-            // Generate filename
-            const fileName = `portrait_${Date.now()}.png`;
+            // Generate filename based on type
+            const fileName = `${mediaType}_${Date.now()}.png`;
 
             // Save media file and create database record
             const result = await mediaStorageService.saveMedia({
-              type: "portrait",
+              type: mediaType as "portrait" | "banner" | "voice" | "music" | "sound_effect",
               entityType: body.entityType as
                 | "npc"
                 | "quest"
@@ -697,13 +768,13 @@ export const contentGenerationRoutes = new Elysia({
 
             // Create relationship between media and entity
             await relationshipService.createRelationship({
-              sourceType: "npc", // Assuming portrait is for NPC
+              sourceType: body.entityType as any, // Use the actual entity type (npc, quest, etc.)
               sourceId: body.entityId,
-              targetType: "npc" as any, // Media relationship
+              targetType: body.entityType as any, // Media relationship
               targetId: result.id,
               relationshipType: "related_to" as any,
               strength: "strong",
-              metadata: { mediaType: "portrait" },
+              metadata: { mediaType: mediaType },
               createdBy: body.createdBy || user?.id,
             });
 
@@ -722,6 +793,7 @@ export const contentGenerationRoutes = new Elysia({
               entityType: t.String(),
               entityId: t.String(),
               imageData: t.String(), // base64 encoded
+              type: t.Optional(t.String()), // "portrait" | "banner" | etc.
               prompt: t.Optional(t.String()),
               model: t.Optional(t.String()),
               createdBy: t.Optional(t.String()),

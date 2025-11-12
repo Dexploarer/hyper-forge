@@ -36,7 +36,6 @@ export const NAVIGATION_VIEWS = {
   ADMIN_DASHBOARD: "adminDashboard",
 
   // Legacy/deprecated (kept for backward compatibility)
-  GENERATION: "generation", // @deprecated Use specific generation pages instead
   AUDIO: "audio", // @deprecated Use specific audio pages instead
   CONTENT: "content", // @deprecated Use specific content pages instead
   ARMOR_FITTING: "armorFitting", // @deprecated Use EQUIPMENT instead

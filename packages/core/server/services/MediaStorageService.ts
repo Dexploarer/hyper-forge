@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, "..", "..");
 
 export interface SaveMediaParams {
-  type: "portrait" | "voice" | "music" | "sound_effect";
+  type: "portrait" | "banner" | "voice" | "music" | "sound_effect";
   entityType?: "npc" | "quest" | "lore" | "location" | "world" | "dialogue";
   entityId?: string;
   fileName: string;

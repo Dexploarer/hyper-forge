@@ -34,12 +34,6 @@ interface NavItem {
 
 const BASE_NAV_ITEMS: NavItem[] = [
   {
-    view: NAVIGATION_VIEWS.GENERATION,
-    icon: Sparkles,
-    label: "Generate",
-    description: "AI-powered content generation",
-  },
-  {
     view: NAVIGATION_VIEWS.ASSETS,
     icon: Package,
     label: "Assets",

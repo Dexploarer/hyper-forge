@@ -49,7 +49,7 @@ export function LandingPage() {
     if (inputValue.trim()) {
       // Show Privy login modal
       await login();
-      // After successful login, App.tsx will automatically show ChatGenerationPage
+      // After successful login, App.tsx will automatically show the main app
     }
   };
 
@@ -237,7 +237,7 @@ export function LandingPage() {
                 onClick={async () => {
                   // Show Privy login modal - app will automatically show generation page after login
                   await login();
-                  // After successful login, App.tsx will automatically show ChatGenerationPage
+                  // After successful login, App.tsx will automatically show the main app
                 }}
               >
                 <div className="flex flex-col items-start space-y-3">

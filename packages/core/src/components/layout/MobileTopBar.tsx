@@ -39,7 +39,6 @@ const VIEW_TITLES: Record<NavigationView, string> = {
   [NAVIGATION_VIEWS.SETTINGS]: "Settings",
   [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin",
   // Legacy
-  [NAVIGATION_VIEWS.GENERATION]: "Generate",
   [NAVIGATION_VIEWS.AUDIO]: "Audio",
   [NAVIGATION_VIEWS.CONTENT]: "Content",
   [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",
@@ -51,7 +50,7 @@ export function MobileTopBar({ currentView, onMenuClick }: MobileTopBarProps) {
 
   return (
     <>
-      <header className="h-14 solid-surface border-b border-white/10 flex items-center justify-between px-4 sticky top-0 z-50">
+      <header className="h-14 solid-surface border-b border-white/10 flex items-center justify-between px-4 sticky top-0 z-[10001]">
         {/* Hamburger Menu Button */}
         <button
           onClick={onMenuClick}

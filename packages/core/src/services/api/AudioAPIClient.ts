@@ -14,9 +14,9 @@ import type {
   SFXEstimate,
   GenerateMusicParams,
   CompositionPlan,
-} from '@/types/audio'
+} from "@/types/audio";
 
-const API_BASE = '/api'
+const API_BASE = "/api";
 
 export class AudioAPIClient {
   // ==================== Voice Generation ====================
@@ -25,11 +25,11 @@ export class AudioAPIClient {
    * Get available voices from library
    */
   async getVoiceLibrary(): Promise<Voice[]> {
-    const response = await fetch(`${API_BASE}/voice/library`)
+    const response = await fetch(`${API_BASE}/voice/library`);
     if (!response.ok) {
-      throw new Error(`Failed to get voice library: ${response.statusText}`)
+      throw new Error(`Failed to get voice library: ${response.statusText}`);
     }
-    const data = await response.json()
+    const data = await response.json();
     // Map the API response to our Voice interface
     return (data.voices || []).map((v: any) => ({
       voiceId: v.voiceId || v.voice_id,
@@ -37,8 +37,8 @@ export class AudioAPIClient {
       category: v.category,
       description: v.description,
       labels: v.labels,
-      previewUrl: v.previewUrl || v.preview_url
-    }))
+      previewUrl: v.previewUrl || v.preview_url,
+    }));
   }
 
   /**
@@ -46,21 +46,21 @@ export class AudioAPIClient {
    */
   async generateVoice(params: GenerateVoiceParams): Promise<string> {
     const response = await fetch(`${API_BASE}/voice/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to generate voice: ${response.statusText}`)
+      throw new Error(`Failed to generate voice: ${response.statusText}`);
     }
 
-    const data = await response.json()
+    const data = await response.json();
     if (!data.success || !data.audioData) {
-      throw new Error(data.error || 'Voice generation failed')
+      throw new Error(data.error || "Voice generation failed");
     }
 
-    return data.audioData // base64 audio data
+    return data.audioData; // base64 audio data
   }
 
   /**
@@ -70,16 +70,16 @@ export class AudioAPIClient {
     params: DesignVoiceParams,
   ): Promise<{ previews: VoicePreview[]; prompt: string }> {
     const response = await fetch(`${API_BASE}/voice/design`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to design voice: ${response.statusText}`)
+      throw new Error(`Failed to design voice: ${response.statusText}`);
     }
 
-    return await response.json()
+    return await response.json();
   }
 
   /**
@@ -87,44 +87,53 @@ export class AudioAPIClient {
    */
   async createVoiceFromPreview(params: CreateVoiceParams): Promise<Voice> {
     const response = await fetch(`${API_BASE}/voice/create`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to create voice: ${response.statusText}`)
+      throw new Error(`Failed to create voice: ${response.statusText}`);
     }
 
-    const data = await response.json()
+    const data = await response.json();
     // Map the API response to our Voice interface
     return {
       voiceId: data.voice_id,
       name: data.name,
-      description: data.description
-    }
+      description: data.description,
+    };
   }
 
   /**
    * Batch generate multiple voice clips
    */
   async batchGenerateVoice(params: {
-    texts: string[]
-    voiceId: string
-    settings?: VoiceSettings
-  }): Promise<Array<{ success: boolean; audioData?: string; text: string; error?: string }>> {
+    texts: string[];
+    voiceId: string;
+    settings?: VoiceSettings;
+  }): Promise<
+    Array<{
+      success: boolean;
+      audioData?: string;
+      text: string;
+      error?: string;
+    }>
+  > {
     const response = await fetch(`${API_BASE}/voice/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to batch generate voices: ${response.statusText}`)
+      throw new Error(
+        `Failed to batch generate voices: ${response.statusText}`,
+      );
     }
 
-    const data = await response.json()
-    return data.results || []
+    const data = await response.json();
+    return data.results || [];
   }
 
   // ==================== Sound Effects ====================
@@ -135,24 +144,25 @@ export class AudioAPIClient {
    */
   async generateSFX(params: GenerateSFXParams): Promise<Blob> {
     const response = await fetch(`${API_BASE}/sfx/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-    })
+    });
 
     if (!response.ok) {
       // Try to parse error response
       try {
-        const errorData = await response.json()
-        const errorMessage = errorData.message || errorData.error || response.statusText
-        throw new Error(`Failed to generate SFX: ${errorMessage}`)
+        const errorData = await response.json();
+        const errorMessage =
+          errorData.message || errorData.error || response.statusText;
+        throw new Error(`Failed to generate SFX: ${errorMessage}`);
       } catch (e) {
         // If parsing fails, use status text
-        throw new Error(`Failed to generate SFX: ${response.statusText}`)
+        throw new Error(`Failed to generate SFX: ${response.statusText}`);
       }
     }
 
-    return await response.blob()
+    return await response.blob();
   }
 
   /**
@@ -160,27 +170,27 @@ export class AudioAPIClient {
    */
   async batchGenerateSFX(effects: GenerateSFXParams[]): Promise<{
     effects: Array<{
-      index: number
-      success: boolean
-      audioBuffer?: string
-      text: string
-      size?: number
-      error?: string
-    }>
-    successful: number
-    total: number
+      index: number;
+      success: boolean;
+      audioBuffer?: string;
+      text: string;
+      size?: number;
+      error?: string;
+    }>;
+    successful: number;
+    total: number;
   }> {
     const response = await fetch(`${API_BASE}/sfx/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ effects }),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to batch generate SFX: ${response.statusText}`)
+      throw new Error(`Failed to batch generate SFX: ${response.statusText}`);
     }
 
-    return await response.json()
+    return await response.json();
   }
 
   /**
@@ -189,14 +199,14 @@ export class AudioAPIClient {
   async estimateSFXCost(duration?: number): Promise<SFXEstimate> {
     const url = duration
       ? `${API_BASE}/sfx/estimate?duration=${duration}`
-      : `${API_BASE}/sfx/estimate`
+      : `${API_BASE}/sfx/estimate`;
 
-    const response = await fetch(url)
+    const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to estimate SFX cost: ${response.statusText}`)
+      throw new Error(`Failed to estimate SFX cost: ${response.statusText}`);
     }
 
-    return await response.json()
+    return await response.json();
   }
 
   // ==================== Music Generation ====================
@@ -207,16 +217,16 @@ export class AudioAPIClient {
    */
   async generateMusic(params: GenerateMusicParams): Promise<Blob> {
     const response = await fetch(`${API_BASE}/music/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to generate music: ${response.statusText}`)
+      throw new Error(`Failed to generate music: ${response.statusText}`);
     }
 
-    return await response.blob()
+    return await response.blob();
   }
 
   /**
@@ -224,41 +234,43 @@ export class AudioAPIClient {
    * Returns JSON with base64 audio and metadata
    */
   async generateMusicDetailed(params: GenerateMusicParams): Promise<{
-    audio: string
-    metadata: any
-    format: string
+    audio: string;
+    metadata: any;
+    format: string;
   }> {
     const response = await fetch(`${API_BASE}/music/generate-detailed`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to generate music: ${response.statusText}`)
+      throw new Error(`Failed to generate music: ${response.statusText}`);
     }
 
-    return await response.json()
+    return await response.json();
   }
 
   /**
    * Create a composition plan for music generation
    */
   async createCompositionPlan(params: {
-    prompt: string
-    musicLengthMs?: number
+    prompt: string;
+    musicLengthMs?: number;
   }): Promise<CompositionPlan> {
     const response = await fetch(`${API_BASE}/music/plan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to create composition plan: ${response.statusText}`)
+      throw new Error(
+        `Failed to create composition plan: ${response.statusText}`,
+      );
     }
 
-    return await response.json()
+    return await response.json();
   }
 
   /**
@@ -266,43 +278,43 @@ export class AudioAPIClient {
    */
   async batchGenerateMusic(tracks: GenerateMusicParams[]): Promise<{
     results: Array<{
-      success: boolean
-      audio: string | null
-      prompt?: string
-      error?: string
-    }>
-    total: number
-    successful: number
-    failed: number
+      success: boolean;
+      audio: string | null;
+      prompt?: string;
+      error?: string;
+    }>;
+    total: number;
+    successful: number;
+    failed: number;
   }> {
     const response = await fetch(`${API_BASE}/music/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tracks }),
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Failed to batch generate music: ${response.statusText}`)
+      throw new Error(`Failed to batch generate music: ${response.statusText}`);
     }
 
-    return await response.json()
+    return await response.json();
   }
 
   /**
    * Get music service status
    */
   async getMusicStatus(): Promise<{
-    available: boolean
-    service: string
-    model: string
-    maxDuration: number
-    formats: string[]
+    available: boolean;
+    service: string;
+    model: string;
+    maxDuration: number;
+    formats: string[];
   }> {
-    const response = await fetch(`${API_BASE}/music/status`)
+    const response = await fetch(`${API_BASE}/music/status`);
     if (!response.ok) {
-      throw new Error(`Failed to get music status: ${response.statusText}`)
+      throw new Error(`Failed to get music status: ${response.statusText}`);
     }
 
-    return await response.json()
+    return await response.json();
   }
 }

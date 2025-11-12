@@ -20,7 +20,6 @@ import { LandingPage } from "./pages/LandingPage";
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const UnifiedEquipmentPage = lazy(() => import("./pages/UnifiedEquipmentPage"));
 const AssetsPage = lazy(() => import("./pages/AssetsPage"));
-const ChatGenerationPage = lazy(() => import("./pages/ChatGenerationPage"));
 const ContentLibraryPage = lazy(() => import("./pages/ContentLibraryPage"));
 const HandRiggingPage = lazy(() =>
   import("./pages/HandRiggingPage").then((module) => ({
@@ -187,12 +186,6 @@ function AppContent() {
           )}
 
           {/* Legacy/backward compatibility routes */}
-          {currentView === NAVIGATION_VIEWS.GENERATION && (
-            <ChatGenerationPage
-              onNavigateToAssets={() => navigateTo(NAVIGATION_VIEWS.ASSETS)}
-              onNavigateToAsset={navigateToAsset}
-            />
-          )}
           {currentView === NAVIGATION_VIEWS.ARMOR_FITTING && (
             <UnifiedEquipmentPage />
           )}

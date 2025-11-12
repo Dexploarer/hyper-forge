@@ -740,34 +740,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
     ),
   );
 
-  React.useEffect(() => {
-    // Enable smooth scrolling on the body with hidden scrollbar
-    const ensureScrollable = () => {
-      document.body.style.overflow = "auto";
-      document.documentElement.style.overflow = "auto";
-      document.body.classList.add("hide-scrollbar");
-      document.documentElement.classList.add("hide-scrollbar");
-    };
-
-    // Initial setup
-    ensureScrollable();
-
-    // Re-apply on any click to ensure scrolling isn't lost
-    const handleClick = () => {
-      // Small delay to ensure any other handlers have run first
-      setTimeout(ensureScrollable, 0);
-    };
-
-    document.addEventListener("click", handleClick);
-
-    return () => {
-      document.removeEventListener("click", handleClick);
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
-      document.body.classList.remove("hide-scrollbar");
-      document.documentElement.classList.remove("hide-scrollbar");
-    };
-  }, []);
+  // Removed useEffect that was modifying body styles - it was breaking the MainLayout
 
   // World generation handler
   const handleGenerateWorld = async () => {

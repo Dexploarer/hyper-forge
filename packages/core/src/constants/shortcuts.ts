@@ -17,7 +17,6 @@ export interface ShortcutActions {
   goBack: () => void;
   goForward: () => void;
   openSettings: () => void;
-  navigateToGeneration: () => void;
   navigateToAssets: () => void;
   navigateToLibrary: () => void;
   navigateToPlaytester: () => void;
@@ -74,7 +73,7 @@ export function createGlobalShortcuts(
 ): KeyboardShortcut[] {
   return [
     // ======================
-    // NAVIGATION (13 shortcuts)
+    // NAVIGATION (12 shortcuts)
     // ======================
     {
       key: "k",
@@ -102,13 +101,6 @@ export function createGlobalShortcuts(
       modifiers: ["cmd"],
       action: actions.openSettings,
       description: "Open settings",
-      category: "Navigation",
-    },
-    {
-      key: "g",
-      modifiers: ["cmd"],
-      action: actions.navigateToGeneration,
-      description: "Go to Generate",
       category: "Navigation",
     },
     {
