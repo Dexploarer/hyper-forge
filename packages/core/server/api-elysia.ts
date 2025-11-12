@@ -258,4 +258,34 @@ const app: any = new Elysia()
 
     // Wrap Bun.file() in Response for proper HEAD request handling
     return new Response(file);
-  });
+  })
+
+  // Routes
+  .use(healthRoutes)
+  .use(createMaterialRoutes(ROOT_DIR))
+  .use(createRetextureRoutes(ROOT_DIR, retextureService))
+  .use(createGenerationRoutes(generationService))
+  .use(aiVisionRoutes)
+  .use(createAssetRoutes(ROOT_DIR, assetService))
+  .use(promptRoutes)
+  .use(playtesterSwarmRoutes)
+  .use(voiceGenerationRoutes)
+  .use(musicRoutes)
+  .use(soundEffectsRoutes)
+  .use(contentGenerationRoutes)
+  .use(usersRoutes)
+  .use(adminRoutes)
+  .use(projectsRoutes)
+  .use(achievementsRoutes)
+  .use(vectorSearchRoutes)
+  .use(createSeedDataRoutes())
+  .use(worldConfigRoutes)
+  .use(generationQueueRoutes)
+  .use(publicProfilesRoutes);
+
+// Start server
+app.listen(API_PORT, () => {
+  console.log(`[Server] ✓ API server running on port ${API_PORT}`);
+  console.log(`[Server] Health check: http://localhost:${API_PORT}/api/health`);
+  console.log(`[Server] Swagger docs: http://localhost:${API_PORT}/swagger`);
+});
