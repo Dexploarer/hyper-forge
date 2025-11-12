@@ -89,18 +89,53 @@ export const RetargetAnimatePage: React.FC = () => {
       console.log(`  - Scene children: ${gltf.scene.children.length}`);
       console.log(`  - Animations: ${gltf.animations.length}`);
 
-      // Check for SkinnedMesh before conversion
-      let hasSkinnedMesh = false;
+      // Check for SkinnedMesh before conversion with detailed diagnostics
+      let skinnedMesh: THREE.SkinnedMesh | null = null;
+      const allMeshes: Array<{
+        name: string;
+        type: string;
+        hasSkeleton: boolean;
+      }> = [];
+
       gltf.scene.traverse((obj) => {
-        if (obj instanceof THREE.SkinnedMesh) {
-          hasSkinnedMesh = true;
-          console.log(`  - Found SkinnedMesh: ${obj.name || "unnamed"}`);
+        // Log all mesh types for debugging
+        if (obj instanceof THREE.Mesh) {
+          const isSkinned = obj instanceof THREE.SkinnedMesh;
+          const hasSkeleton = "skeleton" in obj && obj.skeleton !== undefined;
+          allMeshes.push({
+            name: obj.name || "unnamed",
+            type: isSkinned ? "SkinnedMesh" : "Mesh",
+            hasSkeleton,
+          });
+
+          // Find the first SkinnedMesh with a skeleton
+          if (
+            !skinnedMesh &&
+            obj instanceof THREE.SkinnedMesh &&
+            obj.skeleton
+          ) {
+            skinnedMesh = obj;
+            console.log(`  ✓ Found SkinnedMesh: ${obj.name || "unnamed"}`);
+            console.log(`    - Bones: ${obj.skeleton.bones.length}`);
+          }
         }
       });
 
-      if (!hasSkinnedMesh) {
+      console.log(`  - Total meshes found: ${allMeshes.length}`);
+      allMeshes.forEach((mesh, idx) => {
+        console.log(
+          `    [${idx}] ${mesh.name} (${mesh.type}, skeleton: ${mesh.hasSkeleton})`,
+        );
+      });
+
+      if (!skinnedMesh) {
+        const diagnosticInfo =
+          allMeshes.length > 0
+            ? `\n\nFound ${allMeshes.length} mesh(es) but none are SkinnedMesh:\n${allMeshes.map((m) => `  - ${m.name} (${m.type})`).join("\n")}`
+            : "\n\nNo meshes found in the GLB file at all.";
+
         throw new Error(
-          "GLB file does not contain a SkinnedMesh. Please ensure you are using a rigged character model.",
+          `GLB file does not contain a valid SkinnedMesh with skeleton. Please ensure you are using a rigged character model.${diagnosticInfo}`,
         );
       }
 
