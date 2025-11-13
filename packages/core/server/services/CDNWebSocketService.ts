@@ -160,22 +160,8 @@ export class CDNWebSocketService {
         firstFile.cdnUrl.lastIndexOf("/"),
       );
 
-      // Build cdnFiles object mapping file types to their URLs
-      const cdnFiles: Record<string, string> = {};
-      for (const file of event.files) {
-        const fileName = file.name.toLowerCase();
-
-        // Determine file type and store URL
-        if (fileName.endsWith(".glb")) {
-          cdnFiles.model = file.cdnUrl;
-        } else if (fileName.endsWith(".png") && fileName.includes("preview")) {
-          cdnFiles.preview = file.cdnUrl;
-        } else if (fileName.endsWith(".png") && !fileName.includes("preview")) {
-          cdnFiles.texture = file.cdnUrl;
-        } else if (fileName === "metadata.json") {
-          cdnFiles.metadata = file.cdnUrl;
-        }
-      }
+      // Build cdnFiles array with all CDN URLs
+      const cdnFiles: string[] = event.files.map((file) => file.cdnUrl);
 
       // Update asset with CDN information
       await db
@@ -183,7 +169,7 @@ export class CDNWebSocketService {
         .set({
           cdnUrl,
           cdnFiles,
-          cdnPublishedAt: new Date(event.uploadedAt),
+          publishedAt: new Date(event.uploadedAt),
         })
         .where(eq(assets.id, event.assetId));
 
