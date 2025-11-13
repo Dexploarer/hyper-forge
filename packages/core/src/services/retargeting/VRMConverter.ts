@@ -281,40 +281,34 @@ export class VRMConverter {
       }
     });
 
-    if (armature) {
-      // TypeScript type assertion needed due to assignment in callback
-      const arm = armature as THREE.Object3D;
-      if (arm.parent) {
-        const armatureScale = arm.scale.x; // Assume uniform scale
+    if (armature && armature.parent) {
+      const armatureScale = armature.scale.x; // Assume uniform scale
+      console.log(`   Found Armature with scale: ${armatureScale.toFixed(3)}`);
+
+      if (Math.abs(armatureScale - 1.0) > 0.001) {
         console.log(
-          `   Found Armature with scale: ${armatureScale.toFixed(3)}`,
+          `   Baking Armature scale ${armatureScale} into skeleton hierarchy...`,
         );
 
-        if (Math.abs(armatureScale - 1.0) > 0.001) {
-          console.log(
-            `   Baking Armature scale ${armatureScale} into skeleton hierarchy...`,
-          );
+        // Bake Armature scale into bone local positions
+        // This keeps bone world positions the same when we remove the parent scale
+        this.bones.forEach((bone) => {
+          bone.position.multiplyScalar(armatureScale);
+        });
 
-          // Bake Armature scale into bone local positions
-          // This keeps bone world positions the same when we remove the parent scale
-          this.bones.forEach((bone) => {
-            bone.position.multiplyScalar(armatureScale);
-          });
+        // Set Armature scale to 1.0 (removing the parent scale)
+        armature.scale.set(1, 1, 1);
 
-          // Set Armature scale to 1.0 (removing the parent scale)
-          arm.scale.set(1, 1, 1);
+        // Update world matrices
+        this.scene.updateMatrixWorld(true);
 
-          // Update world matrices
-          this.scene.updateMatrixWorld(true);
-
-          // Recalculate skeleton inverse bind matrices to match new bone positions
-          if (this.skinnedMesh.skeleton) {
-            this.skinnedMesh.skeleton.calculateInverses();
-            console.log("   ✅ Recalculated skeleton inverse bind matrices");
-          }
-
-          console.log(`   ✅ Armature scale baked into skeleton`);
+        // Recalculate skeleton inverse bind matrices to match new bone positions
+        if (this.skinnedMesh.skeleton) {
+          this.skinnedMesh.skeleton.calculateInverses();
+          console.log("   ✅ Recalculated skeleton inverse bind matrices");
         }
+
+        console.log(`   ✅ Armature scale baked into skeleton`);
       }
     }
 
@@ -327,42 +321,13 @@ export class VRMConverter {
     hipsBone.getWorldPosition(hipsPos);
     headBone.getWorldPosition(headPos);
 
-    // Calculate current heights
-    // For VRM, we want total height (ground to head) to be 1.6m
-    // Hips-to-head distance is typically ~0.7-0.8m for a 1.6m avatar
-    const hipsToHeadDistance = hipsPos.distanceTo(headPos);
-    const totalHeight = headPos.y; // Assuming root is at Y=0
-
-    // Use total height if hips are near ground (Y < 0.5), otherwise use hips-to-head
-    // This handles both cases: models with root at ground vs models with hips at ground
-    let currentHeight: number;
-    let measurementType: string;
-
-    if (hipsPos.y < 0.5) {
-      // Hips are near ground, use total height (head Y position)
-      currentHeight = totalHeight;
-      measurementType = "total height (ground to head)";
-    } else {
-      // Hips are elevated, use hips-to-head distance and scale appropriately
-      // For a 1.6m avatar: hips at ~0.8m, head at ~1.6m, so hips-to-head = ~0.8m
-      // But we want total height = 1.6m, so scale factor should account for hips position
-      // Estimate: if hips-to-head is X, and hips are at Y, then total ≈ Y + X
-      const estimatedTotalHeight = hipsPos.y + hipsToHeadDistance;
-      currentHeight = estimatedTotalHeight;
-      measurementType = "estimated total height (hips Y + hips-to-head)";
-    }
-
+    // Calculate current height
+    const currentHeight = hipsPos.distanceTo(headPos);
     console.log(
-      `   Current ${measurementType}: ${currentHeight.toFixed(3)} units`,
-    );
-    console.log(
-      `   Hips position Y: ${hipsPos.y.toFixed(3)}, Head position Y: ${headPos.y.toFixed(3)}`,
-    );
-    console.log(
-      `   Hips-to-head distance: ${hipsToHeadDistance.toFixed(3)} units`,
+      `   Current height (hips to head): ${currentHeight.toFixed(3)} units`,
     );
 
-    // Target height for VRM (1.6 meters total height)
+    // Target height for VRM (1.6 meters is typical)
     const targetHeight = 1.6;
     const scaleFactor = targetHeight / currentHeight;
 
@@ -410,34 +375,25 @@ export class VRMConverter {
       console.log("   ✅ Scale is already appropriate");
     }
 
-    // VALIDATION: Verify final height is 1.6m (total height, not hips-to-head)
+    // VALIDATION: Verify final height is 1.6m
     this.scene.updateMatrixWorld(true);
     const finalHipsPos = new THREE.Vector3();
     const finalHeadPos = new THREE.Vector3();
     if (hipsBone) hipsBone.getWorldPosition(finalHipsPos);
     if (headBone) headBone.getWorldPosition(finalHeadPos);
-
-    const finalHipsToHead = finalHipsPos.distanceTo(finalHeadPos);
-    const finalTotalHeight = finalHeadPos.y; // Total height from ground to head
+    const finalHeight = finalHipsPos.distanceTo(finalHeadPos);
 
     console.log("📏 [VALIDATION] Final avatar height verification:");
-    console.log(
-      `   Total height (ground to head): ${finalTotalHeight.toFixed(3)}m`,
-    );
-    console.log(`   Hips to Head distance: ${finalHipsToHead.toFixed(3)}m`);
-    console.log(`   Hips Y position: ${finalHipsPos.y.toFixed(3)}m`);
-    console.log(`   Head Y position: ${finalHeadPos.y.toFixed(3)}m`);
-    console.log(`   Target total height: 1.600m`);
-    console.log(
-      `   Difference: ${Math.abs(finalTotalHeight - 1.6).toFixed(3)}m`,
-    );
+    console.log(`   Hips to Head distance: ${finalHeight.toFixed(3)}m`);
+    console.log(`   Target height: 1.600m`);
+    console.log(`   Difference: ${Math.abs(finalHeight - 1.6).toFixed(3)}m`);
 
-    if (Math.abs(finalTotalHeight - 1.6) > 0.1) {
+    if (Math.abs(finalHeight - 1.6) > 0.05) {
       console.warn(
-        `   ⚠️  WARNING: Final total height ${finalTotalHeight.toFixed(3)}m deviates from target 1.6m!`,
+        `   ⚠️  WARNING: Final height ${finalHeight.toFixed(3)}m deviates from target 1.6m!`,
       );
       this.warnings.push(
-        `Final total height ${finalTotalHeight.toFixed(3)}m deviates from target 1.6m`,
+        `Final height ${finalHeight.toFixed(3)}m deviates from target 1.6m`,
       );
     } else {
       console.log("   ✅ Height normalization successful");
