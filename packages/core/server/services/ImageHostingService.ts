@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 /**
  * Image Hosting Service
  * Provides fallback options for hosting images publicly when local server is not accessible

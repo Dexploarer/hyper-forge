@@ -10,6 +10,7 @@
  */
 
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
+import { logger } from '../utils/logger';
 
 /**
  * Encrypted data result
@@ -139,7 +140,7 @@ export class ApiKeyEncryptionService {
 
       return plaintext;
     } catch (error) {
-      console.error("[ApiKeyEncryption] Decryption failed:", error);
+      logger.error({ err: error }, '[ApiKeyEncryption] Decryption failed:');
       throw new Error("Failed to decrypt API key - data may be corrupted");
     }
   }

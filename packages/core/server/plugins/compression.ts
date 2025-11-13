@@ -16,6 +16,7 @@
  */
 
 import { Elysia } from "elysia";
+import { logger } from '../utils/logger';
 import * as zlib from "node:zlib";
 import { generateETag } from "../middleware/caching";
 
@@ -199,7 +200,7 @@ export const compression = new Elysia({ name: "compression" })
             } as HeadersInit,
           });
         } catch (error) {
-          console.error("[Compression] Error compressing response:", error);
+          logger.error({ err: error }, '[Compression] Error compressing response:');
           return data;
         }
       },

@@ -24,6 +24,15 @@ export * from "./generation-jobs.schema";
 // Achievements
 export * from "./achievements.schema";
 
+// Generation Pipelines
+export * from "./generation-pipelines.schema";
+
+// Asset Variants
+export * from "./asset-variants.schema";
+
+// API Errors
+export * from "./api-errors.schema";
+
 // Re-export everything for drizzle
 import * as usersSchema from "./users.schema";
 import * as assetsSchema from "./assets.schema";
@@ -32,6 +41,9 @@ import * as mediaSchema from "./media.schema";
 import * as worldConfigSchema from "./world-config.schema";
 import * as generationJobsSchema from "./generation-jobs.schema";
 import * as achievementsSchema from "./achievements.schema";
+import * as generationPipelinesSchema from "./generation-pipelines.schema";
+import * as assetVariantsSchema from "./asset-variants.schema";
+import * as apiErrorsSchema from "./api-errors.schema";
 
 export const schema = {
   ...usersSchema,
@@ -41,4 +53,7 @@ export const schema = {
   ...worldConfigSchema,
   ...generationJobsSchema,
   ...achievementsSchema,
+  ...generationPipelinesSchema,
+  ...assetVariantsSchema,
+  ...apiErrorsSchema,
 };

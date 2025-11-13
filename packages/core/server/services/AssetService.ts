@@ -4,6 +4,7 @@
  */
 
 import path from "path";
+import { logger } from '../utils/logger';
 import type { UserContextType, AssetMetadataType } from "../models";
 import { assetDatabaseService } from "./AssetDatabaseService";
 import { db } from "../db/db";
@@ -68,7 +69,7 @@ export class AssetService {
         cdnConceptArtUrl: asset.cdnConceptArtUrl,
       }));
     } catch (error) {
-      console.error("Failed to list assets:", error);
+      logger.error({ err: error }, 'Failed to list assets:');
       return [];
     }
   }
@@ -239,7 +240,7 @@ export class AssetService {
         };
       }
     } catch (error) {
-      console.error(`Error updating asset ${assetId}:`, error);
+      logger.error({, error }, 'Error updating asset ${assetId}:');
       throw error;
     }
   }

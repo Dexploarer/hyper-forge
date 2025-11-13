@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { ElevenLabsVoiceService } from "../services/ElevenLabsVoiceService";
 import { MediaStorageService } from "../services/MediaStorageService";
 import * as Models from "../models";
@@ -292,7 +293,7 @@ export const voiceGenerationRoutes = new Elysia({
               createdBy: user?.id,
             });
 
-            console.log(`[Voice] Audio saved successfully: ${result.cdnUrl}`);
+            logger.info({ context: 'Voice' }, 'Audio saved successfully: ${result.cdnUrl}');
 
             return {
               success: true,
@@ -373,7 +374,7 @@ export const voiceGenerationRoutes = new Elysia({
               allAudio = allAudio.slice(0, limit);
             }
 
-            console.log(`[Voice] Found ${allAudio.length} saved audio files`);
+            logger.info({ context: 'Voice' }, 'Found ${allAudio.length} saved audio files');
 
             return {
               success: true,

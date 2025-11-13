@@ -4,6 +4,7 @@
  */
 
 import postgres from "postgres";
+import { logger } from "../utils/logger";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { schema } from "./schema";
 
@@ -99,22 +100,25 @@ export const db = drizzle(queryClient, {
 // Test connection
 queryClient`SELECT NOW()`
   .then((result) => {
-    console.log("[Database] ✓ Connected to PostgreSQL at", result[0].now);
+    logger.info(
+      { time: result[0].now },
+      "[Database] ✓ Connected to PostgreSQL",
+    );
   })
   .catch((error) => {
-    console.error("[Database] ✗ Connection failed:", error.message);
+    logger.error({ err: error }, "[Database] ✗ Connection failed");
     process.exit(1);
   });
 
 // Graceful shutdown
 process.on("SIGINT", async () => {
-  console.log("[Database] Closing connection...");
+  logger.info({}, "[Database] Closing connection...");
   await queryClient.end();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
-  console.log("[Database] Closing connection...");
+  logger.info({}, "[Database] Closing connection...");
   await queryClient.end();
   process.exit(0);
 });

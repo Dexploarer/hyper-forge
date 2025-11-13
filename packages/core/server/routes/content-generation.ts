@@ -337,7 +337,7 @@ export const contentGenerationRoutes = new Elysia({
 
             const imagePrompt = promptParts.join(". ");
 
-            console.log(`[ContentGeneration] Image prompt: ${imagePrompt}`);
+            logger.info({ context: 'ContentGeneration' }, 'Image prompt: ${imagePrompt}');
 
             // Generate image
             const imageResult = await aiService
@@ -434,7 +434,7 @@ export const contentGenerationRoutes = new Elysia({
 
             const imagePrompt = promptParts.join(". ");
 
-            console.log(`[ContentGeneration] Banner prompt: ${imagePrompt}`);
+            logger.info({ context: 'ContentGeneration' }, 'Banner prompt: ${imagePrompt}');
 
             // Generate image
             const imageResult = await aiService
@@ -1144,7 +1144,7 @@ export const contentGenerationRoutes = new Elysia({
               createdBy: body.createdBy || user?.id,
             });
 
-            console.log(`[Media] Voice saved successfully: ${result.cdnUrl}`);
+            logger.info({ context: 'Media' }, 'Voice saved successfully: ${result.cdnUrl}');
 
             return {
               success: true,

@@ -4,6 +4,7 @@
  */
 
 import EventEmitter from "events";
+import { logger } from '../utils/logger';
 import type { UserContextType } from "../models";
 import { AICreationService } from "./AICreationService";
 import { ImageHostingService } from "./ImageHostingService";
@@ -215,7 +216,9 @@ export class GenerationService extends EventEmitter {
   public aiService: AICreationService;
   private imageHostingService: ImageHostingService;
   private fetchFn: FetchFunction;
-  private pipelines: Map<string, Pipeline> = new Map();
+  // REMOVED: private pipelines: Map<string, Pipeline> = new Map();
+  // Now using database via repository
+  private pipelineRepo: any; // IGenerationPipelineRepository (placeholder)
   private aiGatewayApiKey: string;
   private openaiApiKey: string;
 
@@ -224,6 +227,7 @@ export class GenerationService extends EventEmitter {
     meshyApiKey?: string;
     aiGatewayApiKey?: string;
     elevenLabsApiKey?: string;
+    pipelineRepo?: any; // IGenerationPipelineRepository
   }) {
     super();
 
@@ -231,34 +235,43 @@ export class GenerationService extends EventEmitter {
 
     // Determine which API keys to use (user-provided or environment variables)
     const meshyApiKey = config?.meshyApiKey || process.env.MESHY_API_KEY || "";
-    this.aiGatewayApiKey = config?.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY || "";
+    this.aiGatewayApiKey =
+      config?.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY || "";
     this.openaiApiKey = process.env.OPENAI_API_KEY || "";
-    const elevenLabsApiKey = config?.elevenLabsApiKey || process.env.ELEVENLABS_API_KEY || "";
+    const elevenLabsApiKey =
+      config?.elevenLabsApiKey || process.env.ELEVENLABS_API_KEY || "";
 
     // Log which key sources are being used
-    console.log("[GenerationService] Initializing with API keys:");
-    console.log(`  - Meshy: ${config?.meshyApiKey ? "user-provided" : "environment variable"}`);
-    console.log(`  - AI Gateway: ${config?.aiGatewayApiKey ? "user-provided" : "environment variable"}`);
-    console.log(`  - OpenAI: environment variable`);
-    console.log(`  - ElevenLabs: ${config?.elevenLabsApiKey ? "user-provided" : "environment variable"}`);
+    logger.info({ }, '[GenerationService] Initializing with API keys:');
+    console.log(
+      `  - Meshy: ${config?.meshyApiKey ? "user-provided" : "environment variable"}`,
+    );
+    console.log(
+      `  - AI Gateway: ${config?.aiGatewayApiKey ? "user-provided" : "environment variable"}`,
+    );
+    logger.info({ }, '  - OpenAI: environment variable');
+    console.log(
+      `  - ElevenLabs: ${config?.elevenLabsApiKey ? "user-provided" : "environment variable"}`,
+    );
 
     // Check for required API keys
-    if (
-      (!this.aiGatewayApiKey && !this.openaiApiKey) ||
-      !meshyApiKey
-    ) {
+    if ((!this.aiGatewayApiKey && !this.openaiApiKey) || !meshyApiKey) {
       console.warn(
         "[GenerationService] Missing API keys - generation features will be limited",
       );
     }
 
     // Initialize AI service with backend environment variables
-    const imageServerBaseUrl = process.env.IMAGE_SERVER_URL || (() => {
-      if (process.env.NODE_ENV === 'production') {
-        throw new Error('IMAGE_SERVER_URL must be set in production for Meshy AI callbacks');
-      }
-      return "http://localhost:8080";
-    })();
+    const imageServerBaseUrl =
+      process.env.IMAGE_SERVER_URL ||
+      (() => {
+        if (process.env.NODE_ENV === "production") {
+          throw new Error(
+            "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
+          );
+        }
+        return "http://localhost:8080";
+      })();
 
     this.aiService = new AICreationService({
       openai: {
@@ -278,6 +291,20 @@ export class GenerationService extends EventEmitter {
 
     // Initialize image hosting service
     this.imageHostingService = new ImageHostingService();
+
+    // Initialize repository (use injected or create new placeholder)
+    // TODO: Replace with real database repository when database-specialist completes it
+    this.pipelineRepo = config?.pipelineRepo;
+    if (!this.pipelineRepo) {
+      console.warn(
+        "[GenerationService] No repository provided - using placeholder in-memory storage",
+      );
+      // Dynamic import to avoid circular dependency
+      const {
+        GenerationPipelineRepository,
+      } = require("../repositories/GenerationPipelineRepository");
+      this.pipelineRepo = new GenerationPipelineRepository();
+    }
   }
 
   /**
@@ -313,17 +340,30 @@ export class GenerationService extends EventEmitter {
       createdAt: new Date().toISOString(),
     };
 
-    // Store pipeline in memory
-    this.pipelines.set(pipelineId, pipeline);
+    // Store pipeline in database (via repository)
+    // NOTE: Repository uses placeholder in-memory Map until database-specialist implements real storage
+    await this.pipelineRepo.create({
+      id: pipelineId,
+      userId: config.user?.userId || "anonymous",
+      config: config as any,
+      status: "initializing",
+      progress: 0,
+      results: {},
+      createdAt: new Date(),
+    });
+    logger.info({ }, '📦 [Pipeline ${pipelineId}] Stored in database');
 
     // Start processing asynchronously
-    console.log(`🚀 [Pipeline ${pipelineId}] Starting async processing...`);
-    this.processPipeline(pipelineId).catch((error) => {
-      console.error(`❌ [Pipeline ${pipelineId}] Failed:`, error);
-      const pipeline = this.pipelines.get(pipelineId);
-      if (pipeline) {
-        pipeline.status = "failed";
-        pipeline.error = error.message;
+    logger.info({ }, '🚀 [Pipeline ${pipelineId}] Starting async processing...');
+    this.processPipeline(pipelineId).catch(async (error) => {
+      logger.error({, error }, '❌ [Pipeline ${pipelineId}] Failed:');
+      try {
+        await this.pipelineRepo.update(pipelineId, {
+          status: "failed",
+          error: error.message,
+        } as any);
+      } catch (updateError) {
+        logger.error({, updateError }, 'Failed to update pipeline error status:');
       }
     });
 
@@ -375,7 +415,7 @@ export class GenerationService extends EventEmitter {
    * Process a pipeline through all stages
    */
   private async processPipeline(pipelineId: string): Promise<void> {
-    console.log(`⚙️ [Pipeline ${pipelineId}] processPipeline() called`);
+    logger.info({ }, '⚙️ [Pipeline ${pipelineId}] processPipeline() called');
     const pipeline = this.pipelines.get(pipelineId);
     if (!pipeline) {
       console.error(
@@ -388,7 +428,7 @@ export class GenerationService extends EventEmitter {
     const config = pipeline.config as PipelineConfig;
 
     try {
-      console.log(`📝 [Pipeline ${pipelineId}] Setting status to 'processing'`);
+      logger.info({ }, '📝 [Pipeline ${pipelineId}] Setting status to 'processing'');
       pipeline.status = "processing";
 
       let enhancedPrompt = config.description;
@@ -397,10 +437,10 @@ export class GenerationService extends EventEmitter {
       let baseModelPath: string | null = null;
 
       // Stage 1: GPT-4 Prompt Enhancement (honor toggle; skip if explicitly disabled)
-      console.log(`📋 [Pipeline ${pipelineId}] Stage 1: Prompt Optimization`);
+      logger.info({ }, '📋 [Pipeline ${pipelineId}] Stage 1: Prompt Optimization');
       if (config.metadata?.useGPT4Enhancement !== false) {
         pipeline.stages.promptOptimization.status = "processing";
-        console.log(`🤖 [Pipeline ${pipelineId}] Running GPT-4 enhancement...`);
+        logger.info({ }, '🤖 [Pipeline ${pipelineId}] Running GPT-4 enhancement...');
 
         try {
           const optimizationResult = await this.enhancePromptWithGPT4(config);
@@ -432,20 +472,20 @@ export class GenerationService extends EventEmitter {
           `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
         );
       } else {
-        console.log(`⏭️ [Pipeline ${pipelineId}] GPT-4 enhancement skipped`);
+        logger.info({ }, '⏭️ [Pipeline ${pipelineId}] GPT-4 enhancement skipped');
         pipeline.stages.promptOptimization.status = "skipped";
         pipeline.progress = 10; // CRITICAL FIX: Update progress even when skipped
       }
 
       // Stage 2: Image Source (User-provided or AI-generated)
-      console.log(`📋 [Pipeline ${pipelineId}] Stage 2: Image Generation`);
+      logger.info({ }, '📋 [Pipeline ${pipelineId}] Stage 2: Image Generation');
       const hasUserRef = !!(
         config.referenceImage &&
         (config.referenceImage.url || config.referenceImage.dataUrl)
       );
       if (hasUserRef) {
         // Use user-provided reference image; skip auto image generation
-        console.log(`⏭️ [Pipeline ${pipelineId}] Using user-provided image`);
+        logger.info({ }, '⏭️ [Pipeline ${pipelineId}] Using user-provided image');
         imageUrl =
           config.referenceImage!.dataUrl || config.referenceImage!.url!;
         pipeline.stages.imageGeneration.status = "skipped";
@@ -458,7 +498,7 @@ export class GenerationService extends EventEmitter {
           `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
         );
       } else {
-        console.log(`🎨 [Pipeline ${pipelineId}] Generating concept art...`);
+        logger.info({ }, '🎨 [Pipeline ${pipelineId}] Generating concept art...');
         pipeline.stages.imageGeneration.status = "processing";
 
         try {
@@ -524,7 +564,7 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.imageGeneration.result = imageResult;
           pipeline.results.imageGeneration = imageResult;
           pipeline.progress = 25;
-          console.log(`✅ [Pipeline ${pipelineId}] Image generation completed`);
+          logger.info({ }, '✅ [Pipeline ${pipelineId}] Image generation completed');
           console.log(
             `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
           );
@@ -570,7 +610,7 @@ export class GenerationService extends EventEmitter {
         }
 
         // Ensure we have a publicly accessible URL for Meshy
-        console.log("📸 Initial image URL:", imageUrlForMeshy);
+        logger.info({, imageUrlForMeshy }, '📸 Initial image URL:');
 
         // Meshy can't access localhost, 127.0.0.1, or data URIs - rehost if needed
         if (
@@ -587,7 +627,7 @@ export class GenerationService extends EventEmitter {
             imageUrlForMeshy = await this.imageHostingService.uploadImage(
               imageUrl!,
             );
-            console.log("✅ Image uploaded to public URL:", imageUrlForMeshy);
+            logger.info({, imageUrlForMeshy }, '✅ Image uploaded to public URL:');
           } catch (uploadError) {
             console.error(
               "❌ Failed to upload image:",
@@ -739,7 +779,7 @@ export class GenerationService extends EventEmitter {
 
           if (config.type === "character") {
             // Normalize character height
-            console.log("🔧 Normalizing character model...");
+            logger.info({ }, '🔧 Normalizing character model...');
             try {
               const { AssetNormalizationService } = await import(
                 "../../src/services/processing/AssetNormalizationService"
@@ -758,7 +798,7 @@ export class GenerationService extends EventEmitter {
               normalizedBuffer = Buffer.from(normalized.glb);
               await fs.writeFile(normalizedModelPath, normalizedBuffer);
 
-              console.log(`✅ Character normalized to ${targetHeight}m height`);
+              logger.info({ }, '✅ Character normalized to ${targetHeight}m height');
 
               // Update with normalized dimensions
               (pipeline.stages.image3D as StageResult).normalized = true;
@@ -774,18 +814,19 @@ export class GenerationService extends EventEmitter {
             }
           } else if (config.type === "weapon") {
             // Normalize weapon with grip at origin
-            console.log("🔧 Normalizing weapon model...");
+            logger.info({ }, '🔧 Normalizing weapon model...');
             try {
               const { WeaponHandleDetector } = await import(
                 "../../src/services/processing/WeaponHandleDetector"
               );
               const detector = new WeaponHandleDetector();
 
-              const result = await detector.exportNormalizedWeapon(rawModelPath);
+              const result =
+                await detector.exportNormalizedWeapon(rawModelPath);
               normalizedBuffer = Buffer.from(result.normalizedGlb);
               await fs.writeFile(normalizedModelPath, normalizedBuffer);
 
-              console.log(`✅ Weapon normalized with grip at origin`);
+              logger.info({ }, '✅ Weapon normalized with grip at origin');
 
               // Update with normalized dimensions
               (pipeline.stages.image3D as StageResult).normalized = true;
@@ -809,20 +850,24 @@ export class GenerationService extends EventEmitter {
           }
 
           // Prepare files for CDN upload
-          const filesToUpload: Array<{ buffer: Buffer; name: string; type?: string }> = [];
+          const filesToUpload: Array<{
+            buffer: Buffer;
+            name: string;
+            type?: string;
+          }> = [];
 
           // Main normalized model
           filesToUpload.push({
             buffer: normalizedBuffer,
             name: `${config.assetId}.glb`,
-            type: 'model/gltf-binary'
+            type: "model/gltf-binary",
           });
 
           // Raw model
           filesToUpload.push({
             buffer: modelBuffer,
             name: `${config.assetId}_raw.glb`,
-            type: 'model/gltf-binary'
+            type: "model/gltf-binary",
           });
 
           // Concept art (if exists)
@@ -831,8 +876,8 @@ export class GenerationService extends EventEmitter {
             const conceptArtBuffer = Buffer.from(imageData, "base64");
             filesToUpload.push({
               buffer: conceptArtBuffer,
-              name: 'concept-art.png',
-              type: 'image/png'
+              name: "concept-art.png",
+              type: "image/png",
             });
           }
 
@@ -868,7 +913,8 @@ export class GenerationService extends EventEmitter {
             // Normalization info
             normalized:
               (pipeline.stages.image3D as StageResult).normalized || false,
-            normalizationDate: (pipeline.stages.image3D as StageResult).normalized
+            normalizationDate: (pipeline.stages.image3D as StageResult)
+              .normalized
               ? new Date().toISOString()
               : undefined,
             dimensions:
@@ -881,8 +927,8 @@ export class GenerationService extends EventEmitter {
 
           filesToUpload.push({
             buffer: Buffer.from(JSON.stringify(metadata, null, 2)),
-            name: 'metadata.json',
-            type: 'application/json'
+            name: "metadata.json",
+            type: "application/json",
           });
 
           // Upload to CDN (webhook will create database record)
@@ -891,9 +937,11 @@ export class GenerationService extends EventEmitter {
           baseModelPath = `models/${config.assetId}/${config.assetId}.glb`;
         } finally {
           // Clean up temp files
-          await fs.rm(tempDir, { recursive: true, force: true }).catch(err =>
-            console.warn(`Failed to cleanup temp dir ${tempDir}:`, err)
-          );
+          await fs
+            .rm(tempDir, { recursive: true, force: true })
+            .catch((err) =>
+              logger.warn({, err }, 'Failed to cleanup temp dir ${tempDir}:'),
+            );
         }
 
         pipeline.stages.image3D.status = "completed";
@@ -907,7 +955,7 @@ export class GenerationService extends EventEmitter {
         pipeline.results.image3D = pipeline.stages.image3D.result;
         pipeline.progress = 50;
       } catch (error) {
-        console.error("Image to 3D conversion failed:", error);
+        logger.error({ err: error }, 'Image to 3D conversion failed:');
         pipeline.stages.image3D.status = "failed";
         pipeline.stages.image3D.error = (error as Error).message;
         throw error;
@@ -980,13 +1028,17 @@ export class GenerationService extends EventEmitter {
             );
 
             // Prepare files for CDN upload
-            const variantFilesToUpload: Array<{ buffer: Buffer; name: string; type?: string }> = [];
+            const variantFilesToUpload: Array<{
+              buffer: Buffer;
+              name: string;
+              type?: string;
+            }> = [];
 
             // Variant model
             variantFilesToUpload.push({
               buffer: variantBuffer,
               name: `${variantId}.glb`,
-              type: 'model/gltf-binary'
+              type: "model/gltf-binary",
             });
 
             // Concept art (copy from base asset via CDN_URL)
@@ -1032,8 +1084,8 @@ export class GenerationService extends EventEmitter {
 
             variantFilesToUpload.push({
               buffer: Buffer.from(JSON.stringify(variantMetadata, null, 2)),
-              name: 'metadata.json',
-              type: 'application/json'
+              name: "metadata.json",
+              type: "application/json",
             });
 
             // Upload variant to CDN
@@ -1081,7 +1133,7 @@ export class GenerationService extends EventEmitter {
         pipeline.stages.rigging = { status: "processing", progress: 0 };
 
         try {
-          console.log("🦴 Starting auto-rigging for avatar...");
+          logger.info({ }, '🦴 Starting auto-rigging for avatar...');
 
           // Start rigging task
           const riggingTaskId = await this.aiService
@@ -1093,7 +1145,7 @@ export class GenerationService extends EventEmitter {
               },
             );
 
-          console.log(`Rigging task started: ${riggingTaskId}`);
+          logger.info({ }, 'Rigging task started: ${riggingTaskId}');
 
           // Poll for rigging completion
           let riggingResult: RiggingResult | null = null;
@@ -1125,12 +1177,16 @@ export class GenerationService extends EventEmitter {
 
           // Download rigged model and animations
           const riggedAssets: Record<string, string> = {};
-          const riggingFilesToUpload: Array<{ buffer: Buffer; name: string; type?: string }> = [];
+          const riggingFilesToUpload: Array<{
+            buffer: Buffer;
+            name: string;
+            type?: string;
+          }> = [];
 
           // IMPORTANT: For rigged avatars, we DON'T replace the main model
           // We keep the original T-pose model and save animations separately
           // This prevents the T-pose + animation layering issue
-          console.log("🦴 Processing rigged character assets...");
+          logger.info({ }, '🦴 Processing rigged character assets...');
 
           // Use temp directory for T-pose extraction
           const tempRiggingDir = path.join("/tmp", `rigging-${config.assetId}`);
@@ -1144,7 +1200,7 @@ export class GenerationService extends EventEmitter {
               // CRITICAL: First, get the rigged model from the walking animation
               // This contains the model with bones that we need for animations
               if (animations.walking_glb_url) {
-                console.log("🦴 Downloading rigged model and animations...");
+                logger.info({ }, '🦴 Downloading rigged model and animations...');
                 const walkingBuffer = await this.downloadFile(
                   animations.walking_glb_url,
                 );
@@ -1152,27 +1208,33 @@ export class GenerationService extends EventEmitter {
                 // Add walking animation to upload
                 riggingFilesToUpload.push({
                   buffer: walkingBuffer,
-                  name: 'animations/walking.glb',
-                  type: 'model/gltf-binary'
+                  name: "animations/walking.glb",
+                  type: "model/gltf-binary",
                 });
                 riggedAssets.walking = "animations/walking.glb";
 
                 // Extract T-pose from the walking animation
-                console.log("🎯 Extracting T-pose from walking animation...");
+                logger.info({ }, '🎯 Extracting T-pose from walking animation...');
                 try {
-                  const walkingTempPath = path.join(tempRiggingDir, "walking.glb");
+                  const walkingTempPath = path.join(
+                    tempRiggingDir,
+                    "walking.glb",
+                  );
                   const tposeTempPath = path.join(tempRiggingDir, "t-pose.glb");
                   await fs.writeFile(walkingTempPath, walkingBuffer);
-                  await this.extractTPoseFromAnimation(walkingTempPath, tposeTempPath);
+                  await this.extractTPoseFromAnimation(
+                    walkingTempPath,
+                    tposeTempPath,
+                  );
 
                   const tposeBuffer = await fs.readFile(tposeTempPath);
                   riggingFilesToUpload.push({
                     buffer: tposeBuffer,
-                    name: 't-pose.glb',
-                    type: 'model/gltf-binary'
+                    name: "t-pose.glb",
+                    type: "model/gltf-binary",
                   });
                   riggedAssets.tpose = "t-pose.glb";
-                  console.log("✅ T-pose extracted successfully");
+                  logger.info({ }, '✅ T-pose extracted successfully');
                 } catch (tposeError) {
                   console.error(
                     "⚠️ Failed to extract T-pose:",
@@ -1186,9 +1248,9 @@ export class GenerationService extends EventEmitter {
                 riggingFilesToUpload.push({
                   buffer: walkingBuffer,
                   name: `${config.assetId}_rigged.glb`,
-                  type: 'model/gltf-binary'
+                  type: "model/gltf-binary",
                 });
-                console.log("✅ Prepared rigged model for animation player");
+                logger.info({ }, '✅ Prepared rigged model for animation player');
               }
 
               // Download running animation GLB
@@ -1198,8 +1260,8 @@ export class GenerationService extends EventEmitter {
                 );
                 riggingFilesToUpload.push({
                   buffer: runningBuffer,
-                  name: 'animations/running.glb',
-                  type: 'model/gltf-binary'
+                  name: "animations/running.glb",
+                  type: "model/gltf-binary",
                 });
                 riggedAssets.running = "animations/running.glb";
               }
@@ -1225,17 +1287,22 @@ export class GenerationService extends EventEmitter {
 
             riggingFilesToUpload.push({
               buffer: Buffer.from(JSON.stringify(updatedMetadata, null, 2)),
-              name: 'rigging-metadata.json',
-              type: 'application/json'
+              name: "rigging-metadata.json",
+              type: "application/json",
             });
 
             // Upload rigging files to CDN
             await this.uploadToCDN(config.assetId, riggingFilesToUpload);
           } finally {
             // Clean up temp files
-            await fs.rm(tempRiggingDir, { recursive: true, force: true }).catch(err =>
-              console.warn(`Failed to cleanup temp rigging dir ${tempRiggingDir}:`, err)
-            );
+            await fs
+              .rm(tempRiggingDir, { recursive: true, force: true })
+              .catch((err) =>
+                console.warn(
+                  `Failed to cleanup temp rigging dir ${tempRiggingDir}:`,
+                  err,
+                ),
+              );
           }
 
           pipeline.stages.rigging!.status = "completed";
@@ -1247,8 +1314,8 @@ export class GenerationService extends EventEmitter {
           pipeline.results.rigging = pipeline.stages.rigging!.result;
           pipeline.progress = 85;
         } catch (error) {
-          console.error("❌ Rigging failed:", (error as Error).message);
-          console.error("Full error:", error);
+          logger.error({ err: (error as Error }, '❌ Rigging failed:').message);
+          logger.error({ err: error }, 'Full error:');
 
           // Upload failed rigging metadata to CDN
           try {
@@ -1260,11 +1327,13 @@ export class GenerationService extends EventEmitter {
               updatedAt: new Date().toISOString(),
             };
 
-            await this.uploadToCDN(config.assetId, [{
-              buffer: Buffer.from(JSON.stringify(failedMetadata, null, 2)),
-              name: 'rigging-metadata.json',
-              type: 'application/json'
-            }]);
+            await this.uploadToCDN(config.assetId, [
+              {
+                buffer: Buffer.from(JSON.stringify(failedMetadata, null, 2)),
+                name: "rigging-metadata.json",
+                type: "application/json",
+              },
+            ]);
           } catch (metadataError) {
             console.error(
               "Failed to upload metadata after rigging failure:",
@@ -1429,9 +1498,7 @@ Your task is to enhance the user's description to create better results with ima
         ? "https://ai-gateway.vercel.sh/v1/chat/completions"
         : "https://api.openai.com/v1/chat/completions";
 
-      const apiKey = useAIGateway
-        ? this.aiGatewayApiKey
-        : this.openaiApiKey;
+      const apiKey = useAIGateway ? this.aiGatewayApiKey : this.openaiApiKey;
 
       const modelName = useAIGateway
         ? "openai/gpt-4o" // AI Gateway uses provider/model format
@@ -1472,7 +1539,7 @@ Your task is to enhance the user's description to create better results with ima
         keywords: this.extractKeywords(optimizedPrompt),
       };
     } catch (error) {
-      console.error("GPT-4 enhancement failed:", error);
+      logger.error({ err: error }, 'GPT-4 enhancement failed:');
       // Load generation prompts for fallback
       const generationPrompts = await getGenerationPrompts();
       const fallbackTemplate =
@@ -1503,32 +1570,39 @@ Your task is to enhance the user's description to create better results with ima
    */
   private async uploadToCDN(
     assetId: string,
-    files: Array<{ buffer: ArrayBuffer | Buffer; name: string; type?: string }>
+    files: Array<{ buffer: ArrayBuffer | Buffer; name: string; type?: string }>,
   ): Promise<{ success: boolean; files: any[] }> {
     const CDN_URL = process.env.CDN_URL;
     const CDN_API_KEY = process.env.CDN_API_KEY;
 
     if (!CDN_URL || !CDN_API_KEY) {
-      throw new Error('CDN_URL and CDN_API_KEY must be configured');
+      throw new Error("CDN_URL and CDN_API_KEY must be configured");
     }
 
     const formData = new FormData();
 
     for (const file of files) {
       // Convert Buffer to Uint8Array for Blob compatibility
-      const buffer = file.buffer instanceof Buffer ? new Uint8Array(file.buffer) : new Uint8Array(file.buffer);
-      const blob = new Blob([buffer], { type: file.type || 'application/octet-stream' });
-      formData.append('files', blob, `${assetId}/${file.name}`);
+      const buffer =
+        file.buffer instanceof Buffer
+          ? new Uint8Array(file.buffer)
+          : new Uint8Array(file.buffer);
+      const blob = new Blob([buffer], {
+        type: file.type || "application/octet-stream",
+      });
+      formData.append("files", blob, `${assetId}/${file.name}`);
     }
 
-    formData.append('directory', 'models');
+    formData.append("directory", "models");
 
-    console.log(`[CDN Upload] Uploading ${files.length} files for asset ${assetId}`);
+    console.log(
+      `[CDN Upload] Uploading ${files.length} files for asset ${assetId}`,
+    );
 
     const response = await this.fetchFn(`${CDN_URL}/api/upload`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'X-API-Key': CDN_API_KEY,
+        "X-API-Key": CDN_API_KEY,
       },
       body: formData as any,
     });
@@ -1538,8 +1612,13 @@ Your task is to enhance the user's description to create better results with ima
       throw new Error(`CDN upload failed (${response.status}): ${errorText}`);
     }
 
-    const result = await response.json() as { success: boolean; files: any[] };
-    console.log(`[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`);
+    const result = (await response.json()) as {
+      success: boolean;
+      files: any[];
+    };
+    console.log(
+      `[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`,
+    );
 
     return result;
   }
@@ -1695,10 +1774,10 @@ Your task is to enhance the user's description to create better results with ima
 
       if (pipeline.status === "completed" && age > completedThreshold) {
         this.pipelines.delete(pipelineId);
-        console.log(`Cleaned up completed pipeline: ${pipelineId}`);
+        logger.info({ }, 'Cleaned up completed pipeline: ${pipelineId}');
       } else if (pipeline.status === "failed" && age > failedThreshold) {
         this.pipelines.delete(pipelineId);
-        console.log(`Cleaned up failed pipeline: ${pipelineId}`);
+        logger.info({ }, 'Cleaned up failed pipeline: ${pipelineId}');
       }
     }
   }

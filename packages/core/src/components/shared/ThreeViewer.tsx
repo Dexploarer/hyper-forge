@@ -33,6 +33,10 @@ import { ExtendedWindow } from "../../types";
 
 import { CustomSkeletonHelper } from "./CustomSkeletonHelper";
 
+// Enable THREE.js caching globally for better performance
+// This caches loaded models, textures, and other resources
+THREE.Cache.enabled = true;
+
 interface ThreeViewerProps {
   modelUrl?: string;
   isWireframe?: boolean;

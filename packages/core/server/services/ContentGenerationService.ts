@@ -4,6 +4,7 @@
  */
 
 import { generateText } from "ai";
+import { logger } from '../utils/logger';
 import { aiSDKService } from "./AISDKService";
 
 export interface DialogueNode {
@@ -83,7 +84,7 @@ export class ContentGenerationService {
       );
     }
 
-    console.log("[ContentGenerationService] Initialized with AI Gateway");
+    logger.info({ }, '[ContentGenerationService] Initialized with AI Gateway');
   }
 
   /**
@@ -172,7 +173,7 @@ export class ContentGenerationService {
 
     const nodes = this.parseDialogueResponse(result.text);
 
-    console.log(`[ContentGeneration] Generated ${nodes.length} dialogue nodes`);
+    logger.info({ context: 'ContentGeneration' }, 'Generated ${nodes.length} dialogue nodes');
 
     return {
       nodes,
@@ -231,7 +232,7 @@ export class ContentGenerationService {
       },
     };
 
-    console.log(`[ContentGeneration] Generated NPC: ${completeNPC.name}`);
+    logger.info({ context: 'ContentGeneration' }, 'Generated NPC: ${completeNPC.name}');
 
     return {
       npc: completeNPC,
@@ -307,7 +308,7 @@ export class ContentGenerationService {
       },
     };
 
-    console.log(`[ContentGeneration] Generated quest: ${completeQuest.title}`);
+    logger.info({ context: 'ContentGeneration' }, 'Generated quest: ${completeQuest.title}');
 
     return {
       quest: completeQuest,
@@ -372,7 +373,7 @@ export class ContentGenerationService {
       },
     };
 
-    console.log(`[ContentGeneration] Generated lore: ${completeLore.title}`);
+    logger.info({ context: 'ContentGeneration' }, 'Generated lore: ${completeLore.title}');
 
     return {
       lore: completeLore,
@@ -403,7 +404,7 @@ export class ContentGenerationService {
 
     const aiPrompt = this.buildWorldPrompt(theme, complexity, customPrompt);
 
-    console.log(`[ContentGeneration] Generating ${complexity} ${theme} world`);
+    logger.info({ context: 'ContentGeneration' }, 'Generating ${complexity} ${theme} world');
 
     const result = await generateText({
       model,
@@ -638,7 +639,7 @@ Return ONLY the JSON object, no explanation.`;
       const parsed = JSON.parse(cleaned);
       return Array.isArray(parsed) ? parsed : [parsed];
     } catch (error) {
-      console.error("[Parse Error] Failed to parse dialogue response:", error);
+      logger.error({ err: error }, '[Parse Error] Failed to parse dialogue response:');
       throw new Error("Invalid JSON response from AI");
     }
   }
@@ -648,7 +649,7 @@ Return ONLY the JSON object, no explanation.`;
       let cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      console.error("[Parse Error] Failed to parse NPC response:", error);
+      logger.error({ err: error }, '[Parse Error] Failed to parse NPC response:');
       throw new Error("Invalid JSON response from AI");
     }
   }
@@ -658,7 +659,7 @@ Return ONLY the JSON object, no explanation.`;
       let cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      console.error("[Parse Error] Failed to parse quest response:", error);
+      logger.error({ err: error }, '[Parse Error] Failed to parse quest response:');
       throw new Error("Invalid JSON response from AI");
     }
   }
@@ -668,7 +669,7 @@ Return ONLY the JSON object, no explanation.`;
       let cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      console.error("[Parse Error] Failed to parse lore response:", error);
+      logger.error({ err: error }, '[Parse Error] Failed to parse lore response:');
       throw new Error("Invalid JSON response from AI");
     }
   }
@@ -678,7 +679,7 @@ Return ONLY the JSON object, no explanation.`;
       let cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      console.error("[Parse Error] Failed to parse world response:", error);
+      logger.error({ err: error }, '[Parse Error] Failed to parse world response:');
       throw new Error("Invalid JSON response from AI");
     }
   }

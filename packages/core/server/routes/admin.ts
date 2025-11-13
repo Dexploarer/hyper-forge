@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { eq, desc, and } from "drizzle-orm";
 import { db, activityLog } from "../db";
 import { requireAdmin } from "../middleware/requireAdmin";
@@ -179,7 +180,7 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
           message: "User deleted successfully",
         };
       } catch (error) {
-        console.error("[AdminRoutes] Failed to delete user:", error);
+        logger.error({ err: error }, '[AdminRoutes] Failed to delete user:');
         return new Response(
           JSON.stringify({
             error: "Delete failed",

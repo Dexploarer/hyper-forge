@@ -10,6 +10,7 @@
  */
 
 import { db } from "../db/db";
+import { logger } from '../utils/logger';
 import {
   npcs,
   quests,
@@ -91,7 +92,7 @@ export class OptimizedContentDatabaseService {
 
       return Number(result.count);
     } catch (error) {
-      console.error("[ContentDatabaseService] Failed to count NPCs:", error);
+      logger.error({ err: error }, '[ContentDatabaseService] Failed to count NPCs:');
       return 0;
     }
   }
@@ -121,7 +122,7 @@ export class OptimizedContentDatabaseService {
 
       return Number(result.count);
     } catch (error) {
-      console.error("[ContentDatabaseService] Failed to count Quests:", error);
+      logger.error({ err: error }, '[ContentDatabaseService] Failed to count Quests:');
       return 0;
     }
   }

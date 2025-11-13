@@ -33,6 +33,7 @@
  */
 
 import CircuitBreaker from "opossum";
+import { logger } from '../utils/logger';
 
 /**
  * Retry configuration for exponential backoff
@@ -150,7 +151,7 @@ export class ResilientHttpClient {
     // Set up fallback if configured
     this.breaker.fallback(() => {
       if (this.fallbackFn) {
-        console.warn(`[${this.name}] Using fallback function`);
+        logger.warn({ }, '[${this.name}] Using fallback function');
         return this.fallbackFn();
       }
       throw new Error(

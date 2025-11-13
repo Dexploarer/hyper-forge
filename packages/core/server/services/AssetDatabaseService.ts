@@ -5,6 +5,7 @@
  */
 
 import { db } from "../db/db";
+import { logger } from '../utils/logger';
 import { assets, type Asset, type NewAsset } from "../db/schema";
 import { eq } from "drizzle-orm";
 import type { AssetMetadataType } from "../models";
@@ -177,7 +178,7 @@ export class AssetDatabaseService {
 
       return result[0] || null;
     } catch (error) {
-      console.error(`[AssetDatabaseService] Failed to get asset:`, error);
+      logger.error({, error }, '[AssetDatabaseService] Failed to get asset:');
       return null;
     }
   }
@@ -222,7 +223,7 @@ export class AssetDatabaseService {
       );
     } catch (error) {
       // Log but don't throw - embedding indexing is not critical
-      console.warn(`[AssetDatabaseService] Failed to index embedding:`, error);
+      logger.warn({, error }, '[AssetDatabaseService] Failed to index embedding:');
     }
   }
 }

@@ -5,6 +5,7 @@
  */
 
 import { db } from "../db";
+import { logger } from '../utils/logger';
 import { assets } from "../db/schema";
 import { eq } from "drizzle-orm";
 
@@ -44,14 +45,14 @@ export class CDNWebSocketService {
       this.isConnecting ||
       (this.ws && this.ws.readyState === WebSocket.OPEN)
     ) {
-      console.log("[CDN WebSocket] Already connected or connecting");
+      logger.info({ }, '[CDN WebSocket] Already connected or connecting');
       return;
     }
 
     this.isConnecting = true;
 
     try {
-      console.log(`[CDN WebSocket] Connecting to ${this.cdnWsUrl}...`);
+      logger.info({ context: 'CDN WebSocket' }, 'Connecting to ${this.cdnWsUrl}...');
 
       // Create WebSocket connection with API key in query params
       const wsUrl = `${this.cdnWsUrl}?api_key=${encodeURIComponent(this.apiKey)}`;
@@ -59,7 +60,7 @@ export class CDNWebSocketService {
 
       // Connection opened
       this.ws.onopen = () => {
-        console.log("[CDN WebSocket] Connected successfully");
+        logger.info({ }, '[CDN WebSocket] Connected successfully');
         this.reconnectAttempts = 0;
         this.isConnecting = false;
         this.startHeartbeat();
@@ -90,7 +91,7 @@ export class CDNWebSocketService {
 
       // Error occurred
       this.ws.onerror = (error) => {
-        console.error("[CDN WebSocket] Connection error:", error);
+        logger.error({ err: error }, '[CDN WebSocket] Connection error:');
         this.isConnecting = false;
       };
     } catch (error) {
@@ -107,10 +108,10 @@ export class CDNWebSocketService {
    * Handle incoming WebSocket messages
    */
   private async handleMessage(message: any): Promise<void> {
-    console.log("[CDN WebSocket] Received message:", message.type);
+    logger.info({, message.type }, '[CDN WebSocket] Received message:');
 
     if (message.type === "connection") {
-      console.log("[CDN WebSocket]", message.message);
+      logger.info({, message.message }, '[CDN WebSocket]');
       return;
     }
 
@@ -120,7 +121,7 @@ export class CDNWebSocketService {
     }
 
     // Handle other message types if needed
-    console.log("[CDN WebSocket] Unknown message type:", message.type);
+    logger.info({, message.type }, '[CDN WebSocket] Unknown message type:');
   }
 
   /**
@@ -237,7 +238,7 @@ export class CDNWebSocketService {
    * Disconnect from CDN WebSocket
    */
   disconnect(): void {
-    console.log("[CDN WebSocket] Disconnecting...");
+    logger.info({ }, '[CDN WebSocket] Disconnecting...');
     this.stopHeartbeat();
 
     if (this.ws) {

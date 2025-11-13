@@ -5,6 +5,7 @@
  */
 
 import { Elysia } from "elysia";
+import { logger } from '../utils/logger';
 import { db } from "../db";
 import { assets, mediaAssets } from "../db/schema";
 import { sql } from "drizzle-orm";
@@ -74,7 +75,7 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
         };
       }
     } catch (error) {
-      console.error("[Debug] Failed to get database stats:", error);
+      logger.error({ err: error }, '[Debug] Failed to get database stats:');
     }
 
     return {

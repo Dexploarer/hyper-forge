@@ -5,6 +5,7 @@
  */
 
 import { PrivyClient } from "@privy-io/server-auth";
+import { logger } from '../utils/logger';
 import { userService } from "../services/UserService";
 
 // Initialize Privy client
@@ -119,7 +120,7 @@ export async function optionalAuth(context: any): Promise<{ user?: AuthUser }> {
     };
   } catch (error) {
     // Invalid token or verification failed - continue without user
-    console.error("Auth middleware error:", error);
+    logger.error({ err: error }, 'Auth middleware error:');
     return {};
   }
 }

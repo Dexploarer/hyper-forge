@@ -340,5 +340,118 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                 },
               },
             },
+          )
+
+          // SSE endpoint for real-time pipeline status
+          .get(
+            "/:pipelineId/status/stream",
+            async ({ params: { pipelineId }, set }) => {
+              // Set SSE headers
+              set.headers["content-type"] = "text/event-stream";
+              set.headers["cache-control"] = "no-cache";
+              set.headers["connection"] = "keep-alive";
+
+              // Create a stream
+              const stream = new ReadableStream({
+                async start(controller) {
+                  const sendUpdate = async () => {
+                    try {
+                      const status =
+                        await generationService.getPipelineStatus(pipelineId);
+
+                      // Send update
+                      const message = `event: pipeline-update\ndata: ${JSON.stringify(status)}\nid: ${Date.now()}\n\n`;
+                      controller.enqueue(new TextEncoder().encode(message));
+
+                      // Close stream if completed or failed
+                      if (
+                        status.status === "completed" ||
+                        status.status === "failed"
+                      ) {
+                        controller.close();
+                        return true; // Stop polling
+                      }
+
+                      return false; // Continue polling
+                    } catch (error) {
+                      console.error(
+                        "[SSE] Error fetching pipeline status:",
+                        error,
+                      );
+                      const errorMessage = `event: error\ndata: ${JSON.stringify({ error: "Failed to fetch status" })}\n\n`;
+                      controller.enqueue(
+                        new TextEncoder().encode(errorMessage),
+                      );
+                      return false;
+                    }
+                  };
+
+                  // Send initial status
+                  const shouldStop = await sendUpdate();
+                  if (shouldStop) return;
+
+                  // Poll every 2 seconds
+                  const pollInterval = setInterval(async () => {
+                    const shouldStop = await sendUpdate();
+                    if (shouldStop) {
+                      clearInterval(pollInterval);
+                    }
+                  }, 2000);
+
+                  // Cleanup on client disconnect
+                  // Note: ReadableStream doesn't have a built-in cancel handler,
+                  // but the interval will be garbage collected when stream closes
+                },
+              });
+
+              return new Response(stream);
+            },
+            {
+              params: t.Object({
+                pipelineId: t.String({ minLength: 1 }),
+              }),
+              detail: {
+                tags: ["Generation"],
+                summary: "Stream pipeline status via Server-Sent Events",
+                description:
+                  "Real-time updates for generation pipeline progress using SSE. Automatically closes connection when pipeline completes or fails. Updates sent every 2 seconds. (Auth optional - accessible by anyone with pipeline ID)",
+                parameters: [
+                  {
+                    name: "pipelineId",
+                    in: "path",
+                    description: "Unique pipeline identifier",
+                    required: true,
+                    schema: {
+                      type: "string",
+                      example: "pipe_abc123xyz",
+                    },
+                  },
+                ],
+                responses: {
+                  200: {
+                    description: "SSE stream established",
+                    content: {
+                      "text/event-stream": {
+                        schema: {
+                          type: "string",
+                          description:
+                            "Server-sent events stream with pipeline-update events",
+                        },
+                        examples: {
+                          sseEvent: {
+                            summary: "SSE event format",
+                            value:
+                              'event: pipeline-update\ndata: {"id":"pipe_abc123xyz","status":"processing","progress":45}\nid: 1699564823000\n\n',
+                          },
+                        },
+                      },
+                    },
+                  },
+                  404: {
+                    description: "Pipeline not found",
+                  },
+                },
+              },
+            },
           ),
     );

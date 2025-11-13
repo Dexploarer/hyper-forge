@@ -5,6 +5,7 @@
  */
 
 import { db } from "../db";
+import { logger } from '../utils/logger';
 import { mediaAssets, type NewMediaAsset } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -108,7 +109,7 @@ export class MediaStorageService {
       };
       formData.append("metadata", JSON.stringify(uploadMetadata));
 
-      console.log(`[MediaStorage] Uploading ${type} to CDN: ${fullPath}`);
+      logger.info({ context: 'MediaStorage' }, 'Uploading ${type} to CDN: ${fullPath}');
 
       // Upload to CDN
       const response = await fetch(`${this.cdnUrl}/api/upload`, {
@@ -136,8 +137,8 @@ export class MediaStorageService {
       const uploadedFile = result.files[0];
       const cdnUrl = `${this.cdnUrl}/media/${fullPath}`;
 
-      console.log(`✅ [MediaStorage] Uploaded to CDN: ${cdnUrl}`);
-      console.log(`   CDN webhook will create database record automatically`);
+      logger.info({ }, '✅ [MediaStorage] Uploaded to CDN: ${cdnUrl}');
+      logger.info({ }, '   CDN webhook will create database record automatically');
 
       // Note: We generate a temporary ID here since the webhook will create the actual record
       // In a real implementation, you might want to poll the database or use a different approach
@@ -149,7 +150,7 @@ export class MediaStorageService {
         fileName,
       };
     } catch (error) {
-      console.error(`[MediaStorage] Failed to upload media:`, error);
+      logger.error({, error }, '[MediaStorage] Failed to upload media:');
       throw new Error(
         `Media upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -222,7 +223,7 @@ export class MediaStorageService {
       ? await baseQuery.limit(options.limit)
       : await baseQuery;
 
-    console.log(`[MediaStorage] Found ${assets.length} ${type} assets`);
+    logger.info({ context: 'MediaStorage' }, 'Found ${assets.length} ${type} assets');
 
     return assets;
   }
@@ -239,7 +240,7 @@ export class MediaStorageService {
       .limit(1);
 
     if (!asset) {
-      console.warn(`[MediaStorage] Media asset not found: ${mediaId}`);
+      logger.warn({ }, '[MediaStorage] Media asset not found: ${mediaId}');
       return false;
     }
 
@@ -264,10 +265,10 @@ export class MediaStorageService {
             `[MediaStorage] Failed to delete from CDN: ${response.statusText}`,
           );
         } else {
-          console.log(`[MediaStorage] Deleted from CDN: ${filePath}`);
+          logger.info({ context: 'MediaStorage' }, 'Deleted from CDN: ${filePath}');
         }
       } catch (error) {
-        console.warn(`[MediaStorage] Could not delete from CDN:`, error);
+        logger.warn({, error }, '[MediaStorage] Could not delete from CDN:');
         // Continue to delete database record even if CDN deletion fails
       }
     }
@@ -275,7 +276,7 @@ export class MediaStorageService {
     // Delete database record
     await db.delete(mediaAssets).where(eq(mediaAssets.id, mediaId));
 
-    console.log(`[MediaStorage] Deleted media asset: ${mediaId}`);
+    logger.info({ context: 'MediaStorage' }, 'Deleted media asset: ${mediaId}');
 
     return true;
   }

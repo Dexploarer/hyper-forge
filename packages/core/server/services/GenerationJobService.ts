@@ -4,6 +4,7 @@
  */
 
 import { db } from "../db";
+import { logger } from '../utils/logger';
 import {
   generationJobs,
   type GenerationJob,
@@ -127,7 +128,7 @@ export class GenerationJobService {
       const errorCode = error?.code || error?.errno || error?.sqlState;
       const errorDetail = error?.detail || error?.message;
 
-      console.error("[GenerationJobService] Failed to create job:", {
+      logger.error({ err: {
         pipelineId,
         assetId: config.assetId,
         userId: config.user.userId,
@@ -137,7 +138,7 @@ export class GenerationJobService {
         detail: errorDetail,
         hint: error?.hint,
         fullError: error,
-      });
+      } }, '[GenerationJobService] Failed to create job:');
 
       // Check for foreign key violation (user_id constraint)
       // PostgreSQL error code 23503 = foreign key violation

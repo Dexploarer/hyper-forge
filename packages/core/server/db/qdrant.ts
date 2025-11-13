@@ -4,6 +4,7 @@
  */
 
 import { qdrantService } from "../services/QdrantService";
+import { logger } from '../utils/logger';
 
 export async function initializeQdrantCollections(): Promise<void> {
   // Skip initialization if Qdrant is not configured
@@ -15,7 +16,7 @@ export async function initializeQdrantCollections(): Promise<void> {
   }
 
   try {
-    console.log("[Qdrant] Initializing vector search collections...");
+    logger.info({ }, '[Qdrant] Initializing vector search collections...');
 
     // Health check with timeout to prevent hanging
     const healthCheck = qdrantService.healthCheck();
@@ -51,9 +52,9 @@ export async function initializeQdrantCollections(): Promise<void> {
 
     await Promise.race([initialization, initTimeout]);
 
-    console.log("[Qdrant] Vector search initialized successfully");
+    logger.info({ }, '[Qdrant] Vector search initialized successfully');
   } catch (error) {
-    console.error("[Qdrant] Failed to initialize collections:", error);
+    logger.error({ err: error }, '[Qdrant] Failed to initialize collections:');
     console.warn(
       "[Qdrant] Vector search will not be available. Server will continue without it.",
     );

@@ -19,6 +19,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { randomUUID } from "crypto";
 import { PlaytesterSwarmOrchestrator } from "../services/PlaytesterSwarmOrchestrator";
 import type {
@@ -439,7 +440,7 @@ export const playtesterSwarmRoutes = new Elysia({
           orchestrator.destroy();
         }
       } catch (error) {
-        console.error("[Playtester Swarm] Generation error:", error);
+        logger.error({ err: error }, '[Playtester Swarm] Generation error:');
         set.status = 500;
         return {
           error: "Failed to run playtester swarm",

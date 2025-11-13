@@ -4,6 +4,7 @@
  */
 
 import fs from "fs/promises";
+import { logger } from '../utils/logger';
 import path from "path";
 import fetch from "node-fetch";
 import type { UserContextType, AssetMetadataType } from "../models";
@@ -391,7 +392,7 @@ export class RetextureService {
         // Image-based retexturing (takes precedence)
         imageStyleUrl = imageUrl;
         mode = "image reference";
-        console.log(`🎨 Starting image-based retexture for ${baseAssetId}`);
+        logger.info({ }, '🎨 Starting image-based retexture for ${baseAssetId}');
       } else if (customPrompt) {
         // Custom prompt retexturing
         textPrompt = customPrompt;
@@ -424,13 +425,13 @@ export class RetextureService {
         enableOriginalUV: true,
       });
 
-      console.log(`🎨 Retexture task started: ${taskId}`);
+      logger.info({ }, '🎨 Retexture task started: ${taskId}');
 
       // Wait for completion with progress updates
       const result = await this.meshyClient.waitForCompletion(
         taskId,
         (progress) => {
-          console.log(`⏳ Retexture Progress: ${progress}%`);
+          logger.info({ }, '⏳ Retexture Progress: ${progress}%');
         },
       );
 
@@ -473,7 +474,7 @@ export class RetextureService {
         asset: savedAsset,
       };
     } catch (error) {
-      console.error("Retexturing failed:", error);
+      logger.error({ err: error }, 'Retexturing failed:');
       const err = error as Error;
 
       // Provide more detailed error information
@@ -506,7 +507,7 @@ export class RetextureService {
     }
 
     // Download model using MeshyClient
-    console.log(`📥 Downloading retextured model...`);
+    logger.info({ }, '📥 Downloading retextured model...');
     const modelBuffer = await this.meshyClient!.downloadModel(
       result.model_urls.glb,
     );
@@ -593,7 +594,7 @@ export class RetextureService {
     // Upload to CDN (webhook will create database record and link to base)
     await this.uploadToCDN(variantName, filesToUpload);
 
-    console.log(`✅ Successfully retextured and uploaded: ${variantName}`);
+    logger.info({ }, '✅ Successfully retextured and uploaded: ${variantName}');
 
     return variantMetadata as AssetMetadataType;
   }
@@ -638,7 +639,7 @@ export class RetextureService {
 
     // For now, return a simulated success response
     // Full implementation would regenerate the base model from scratch
-    console.log(`🔄 Regenerating base model: ${baseAssetId}`);
+    logger.info({ }, '🔄 Regenerating base model: ${baseAssetId}');
 
     // Simulate processing time
     await new Promise((resolve) => setTimeout(resolve, 3000));

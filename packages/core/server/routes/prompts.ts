@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from 'elysia'
+import { logger } from '../utils/logger';
 import path from 'path'
 import { fileURLToPath } from 'url'
 

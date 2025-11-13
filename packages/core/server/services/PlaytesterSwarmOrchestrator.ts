@@ -19,6 +19,7 @@
  */
 
 import { generateText } from "ai";
+import { logger } from '../utils/logger';
 import { aiSDKService } from "./AISDKService";
 import type {
   PlaytesterConfig,
@@ -98,10 +99,10 @@ export class PlaytesterSwarmOrchestrator {
       requestTimeoutMs: config.requestTimeoutMs ?? 30000,
     };
 
-    console.log("[PlaytesterSwarmOrchestrator] Initialized", {
+    logger.info({, {
       maxTestResults: this.config.maxTestResults,
       maxBugReports: this.config.maxBugReports,
-    });
+    } }, '[PlaytesterSwarmOrchestrator] Initialized');
   }
 
   /**
@@ -189,7 +190,7 @@ export class PlaytesterSwarmOrchestrator {
     content: any,
     testConfig: Record<string, any>,
   ): Promise<TestResult> {
-    console.log(`[${tester.name}] Starting playtest...`);
+    logger.info({ context: '${tester.name}' }, 'Starting playtest...');
 
     const testPrompt = makePlaytestPrompt(tester, content, testConfig);
 
@@ -224,7 +225,7 @@ export class PlaytesterSwarmOrchestrator {
 
       return testResult;
     } catch (error) {
-      console.error(`[${tester.name}] Test failed:`, error);
+      logger.error({, error }, '[${tester.name}] Test failed:');
       return {
         testerId: tester.id,
         testerName: tester.name,

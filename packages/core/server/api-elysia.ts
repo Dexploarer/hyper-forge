@@ -22,6 +22,7 @@ import prometheus from "elysia-prometheus";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { logger } from "./utils/logger";
 
 // Services
 import { AssetService } from "./services/AssetService";
@@ -71,6 +72,7 @@ import { generationQueueRoutes } from "./routes/generation-queue";
 import { publicProfilesRoutes } from "./routes/public-profiles";
 import { debugStorageRoute } from "./routes/debug-storage";
 import { createCDNRoutes } from "./routes/cdn";
+import { errorMonitoringRoutes } from "./routes/error-monitoring";
 
 // Cron and job cleanup
 import { cron } from "@elysiajs/cron";
@@ -91,7 +93,10 @@ await fs.promises.mkdir(path.join(ROOT_DIR, "temp-images"), {
 // Initialize Qdrant vector database (async, non-blocking)
 import { initializeQdrantCollections } from "./db/qdrant";
 initializeQdrantCollections().catch((error) => {
-  console.error("[Startup] Qdrant initialization failed (non-fatal):", error);
+  logger.error(
+    { err: error },
+    "[Startup] Qdrant initialization failed (non-fatal):",
+  );
 });
 
 // Initialize services
@@ -139,11 +144,14 @@ const app = new Elysia()
   // Optional: Start workers in same process if ENABLE_EMBEDDED_WORKERS=true
   // For production, use separate worker service on Railway (better isolation & scaling)
   .onStart(async () => {
-    console.log(`[Startup] Elysia server started on port ${API_PORT}`);
+    logger.info(
+      { context: "Startup" },
+      "Elysia server started on port ${API_PORT}",
+    );
 
     // Initialize WebSocket client to CDN (if configured)
     if (process.env.CDN_WS_URL && process.env.CDN_API_KEY) {
-      console.log("[CDN WebSocket] Initializing connection to CDN...");
+      logger.info({}, "[CDN WebSocket] Initializing connection to CDN...");
       const cdnWebSocket = new CDNWebSocketService(
         process.env.CDN_WS_URL,
         process.env.CDN_API_KEY,
@@ -192,30 +200,36 @@ const app = new Elysia()
         `[Workers] ${WORKER_CONCURRENCY} workers started successfully`,
       );
     } else {
-      console.log("[Workers] Using separate worker service (production mode)");
+      logger.info(
+        {},
+        "[Workers] Using separate worker service (production mode)",
+      );
     }
   })
   .onStop(async (ctx) => {
-    console.log("[Shutdown] Stopping Elysia server...");
+    logger.info({}, "[Shutdown] Stopping Elysia server...");
 
     // Disconnect CDN WebSocket if it exists
     const cdnWebSocket = (ctx as any).cdnWebSocket as
       | CDNWebSocketService
       | undefined;
     if (cdnWebSocket) {
-      console.log("[CDN WebSocket] Disconnecting...");
+      logger.info({}, "[CDN WebSocket] Disconnecting...");
       cdnWebSocket.disconnect();
-      console.log("[CDN WebSocket] Disconnected");
+      logger.info({}, "[CDN WebSocket] Disconnected");
     }
 
     // Stop embedded workers if they exist
     const workers = (ctx as any).workers as GenerationWorker[] | undefined;
     if (workers && workers.length > 0) {
-      console.log(`[Workers] Stopping ${workers.length} embedded workers...`);
+      logger.info(
+        { context: "Workers" },
+        "Stopping ${workers.length} embedded workers...",
+      );
       for (const worker of workers) {
         worker.stop();
       }
-      console.log("[Workers] All workers stopped");
+      logger.info({}, "[Workers] All workers stopped");
     }
   })
 
@@ -291,6 +305,97 @@ const app = new Elysia()
       hasNext: t.Boolean(),
       hasPrev: t.Boolean(),
     }),
+  })
+
+  // Global error handler with structured logging and database tracking
+  .onError(async ({ code, error, set, request }) => {
+    const requestId = request.headers.get("x-request-id") || "unknown";
+    const { logger } = await import("./utils/logger");
+    const { apiErrorRepository } = await import(
+      "./repositories/ApiErrorRepository"
+    );
+    const { isApiError, determineErrorCategory } = await import("./errors");
+
+    // Extract user ID from authorization header if present
+    let userId: string | undefined;
+    const authHeader = request.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        // Simple JWT decode to get user ID (don't verify, just extract)
+        const token = authHeader.substring(7);
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        userId = payload.sub || payload.userId;
+      } catch {
+        // Ignore decode errors
+      }
+    }
+
+    const pathname = new URL(request.url).pathname;
+    const method = request.method;
+
+    // Log error with structured logging
+    logger.error(
+      {
+        err: error,
+        code,
+        requestId,
+        path: pathname,
+        method,
+        userId,
+      },
+      "Request error",
+    );
+
+    // Track error in database (non-blocking)
+    apiErrorRepository
+      .logError({
+        userId,
+        requestId,
+        endpoint: pathname,
+        method,
+        errorCode: isApiError(error) ? error.code : code,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        severity: code === "VALIDATION" ? "warning" : "error",
+        category: determineErrorCategory(error),
+        statusCode: set.status || 500,
+        context: isApiError(error) ? error.context || {} : {},
+        tags: [],
+      })
+      .catch((loggingError) => {
+        logger.error({ err: loggingError }, "Failed to log error to database");
+      });
+
+    // Return standardized error response
+    if (isApiError(error)) {
+      set.status = error.statusCode;
+      return {
+        error: error.code,
+        message: error.message,
+        requestId,
+        ...error.context,
+      };
+    }
+
+    // Handle Elysia built-in errors
+    if (code === "NOT_FOUND") {
+      set.status = 404;
+      return { error: "NOT_FOUND", message: "Resource not found", requestId };
+    }
+
+    if (code === "VALIDATION") {
+      set.status = 400;
+      return { error: "VALIDATION_ERROR", message: error.message, requestId };
+    }
+
+    // Default internal server error
+    set.status = 500;
+    return {
+      error: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred",
+      requestId,
+      ...(process.env.NODE_ENV !== "production" && { stack: error.stack }),
+    };
   })
 
   // Graceful shutdown handler
@@ -450,12 +555,61 @@ const app = new Elysia()
       name: "cleanup-expired-jobs",
       pattern: "0 * * * *", // Every hour
       async run() {
-        console.log("[Cron] Running job cleanup...");
+        logger.info({}, "[Cron] Running job cleanup...");
         const expiredCount = await generationJobService.cleanupExpiredJobs();
         const failedCount = await generationJobService.cleanupOldFailedJobs();
-        console.log(
-          `[Cron] Cleaned up ${expiredCount} expired and ${failedCount} old failed jobs`,
+        logger.info(
+          { expiredCount, failedCount },
+          "Cleaned up expired and old failed jobs",
         );
+      },
+    }),
+  )
+  .use(
+    cron({
+      name: "aggregate-errors",
+      pattern: "5 * * * *", // Every hour at :05 (offset to avoid collision)
+      async run() {
+        logger.info({}, "[Cron] Running error aggregation...");
+        const { aggregateErrors } = await import("./cron/error-aggregation");
+        try {
+          const result = await aggregateErrors();
+          logger.info(
+            {
+              totalAggregations: result.totalAggregations,
+              inserted: result.inserted,
+              updated: result.updated,
+            },
+            "Error aggregation completed",
+          );
+        } catch (error) {
+          logger.error({ err: error }, "Error aggregation failed");
+        }
+      },
+    }),
+  )
+  .use(
+    cron({
+      name: "cleanup-old-errors",
+      pattern: "0 2 * * *", // Daily at 2 AM
+      async run() {
+        logger.info({}, "[Cron] Running error cleanup...");
+        const { cleanupOldErrors, cleanupOldAggregations } = await import(
+          "./cron/error-aggregation"
+        );
+        try {
+          const errorsResult = await cleanupOldErrors();
+          const aggsResult = await cleanupOldAggregations();
+          logger.info(
+            {
+              errorsDeleted: errorsResult.deletedCount,
+              aggregationsDeleted: aggsResult.deletedCount,
+            },
+            "Error cleanup completed",
+          );
+        } catch (error) {
+          logger.error({ err: error }, "Error cleanup failed");
+        }
       },
     }),
   )
@@ -658,7 +812,7 @@ const app = new Elysia()
         },
       });
     } catch (error) {
-      console.error("Image proxy error:", error);
+      logger.error({ err: error }, "Image proxy error:");
       return new Response(
         `Invalid URL or fetch failed: ${error instanceof Error ? error.message : "Unknown error"}`,
         { status: 400 },
@@ -691,6 +845,7 @@ const app = new Elysia()
   .use(generationQueueRoutes)
   .use(debugStorageRoute)
   .use(createCDNRoutes(ASSETS_DIR, CDN_URL))
+  .use(errorMonitoringRoutes)
 
   // Prometheus metrics endpoint (after all routes)
   .use(
@@ -805,7 +960,7 @@ const app = new Elysia()
       const tarPath = path.join(ROOT_DIR, "gdd-assets.tar.gz");
       const assetsDir = ASSETS_DIR;
 
-      console.log(`📥 Downloading from ${url}...`);
+      logger.info({}, "📥 Downloading from ${url}...");
 
       // Download file
       const response = await fetch(url);
@@ -815,7 +970,7 @@ const app = new Elysia()
 
       const arrayBuffer = await response.arrayBuffer();
       await Bun.write(tarPath, arrayBuffer);
-      console.log(`📦 Saved tar file to ${tarPath}`);
+      logger.info({}, "📦 Saved tar file to ${tarPath}");
 
       // Extract tar file
       const proc = Bun.spawn(
@@ -825,7 +980,7 @@ const app = new Elysia()
         },
       );
       await proc.exited;
-      console.log(`✅ Extracted assets to ${assetsDir}`);
+      logger.info({}, "✅ Extracted assets to ${assetsDir}");
 
       // Clean up tar file
       await fs.promises.unlink(tarPath);
@@ -836,7 +991,7 @@ const app = new Elysia()
         path: assetsDir,
       };
     } catch (error) {
-      console.error("Download error:", error);
+      logger.error({ err: error }, "Download error:");
       return {
         error: "Download failed",
         details: error instanceof Error ? error.message : String(error),
@@ -877,9 +1032,9 @@ const app = new Elysia()
       const indexPath = path.join(ROOT_DIR, "dist", "index.html");
       const file = Bun.file(indexPath);
       if (!(await file.exists())) {
-        console.error(`❌ Frontend not found at: ${indexPath}`);
-        console.error(`   Current working directory: ${process.cwd()}`);
-        console.error(`   ROOT_DIR: ${ROOT_DIR}`);
+        logger.error({}, "❌ Frontend not found at: ${indexPath}");
+        logger.error({}, "   Current working directory: ${process.cwd()}");
+        logger.error({}, "   ROOT_DIR: ${ROOT_DIR}");
         set.status = 404;
         return new Response(
           "Frontend build not found. Please run 'bun run build'.",
@@ -891,7 +1046,7 @@ const app = new Elysia()
       // Wrap Bun.file() in Response for proper HEAD request handling
       return new Response(file);
     } catch (error) {
-      console.error("[GET /*] Error serving SPA:", error);
+      logger.error({ err: error }, "[GET /*] Error serving SPA:");
       set.status = 500;
       return new Response("Internal Server Error", { status: 500 });
     }
@@ -902,9 +1057,9 @@ const app = new Elysia()
       const file = Bun.file(indexPath);
 
       if (!(await file.exists())) {
-        console.warn(`[HEAD /*] Frontend not found at: ${indexPath}`);
-        console.warn(`   Current working directory: ${process.cwd()}`);
-        console.warn(`   ROOT_DIR: ${ROOT_DIR}`);
+        logger.warn({}, "[HEAD /*] Frontend not found at: ${indexPath}");
+        logger.warn({}, "   Current working directory: ${process.cwd()}");
+        logger.warn({}, "   ROOT_DIR: ${ROOT_DIR}");
         return new Response(null, { status: 404 });
       }
 
@@ -913,9 +1068,9 @@ const app = new Elysia()
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
     } catch (error) {
-      console.error("[HEAD /*] Error checking SPA:", error);
-      console.error(`   ROOT_DIR: ${ROOT_DIR}`);
-      console.error(`   cwd: ${process.cwd()}`);
+      logger.error({ err: error }, "[HEAD /*] Error checking SPA:");
+      logger.error({}, "   ROOT_DIR: ${ROOT_DIR}");
+      logger.error({}, "   cwd: ${process.cwd()}");
       console.error(
         `   Error details:`,
         error instanceof Error ? error.message : String(error),
@@ -940,10 +1095,10 @@ try {
   const env = process.env.NODE_ENV || "development";
 
   // Log startup
-  console.log(`\n[Server] Asset-Forge API started (${env})`);
-  console.log(`[Server] Port: ${API_PORT}`);
-  console.log(`[Server] URL: ${publicUrl}`);
-  console.log(`[Server] Docs: ${publicUrl}/swagger`);
+  logger.info({}, "\n[Server] Asset-Forge API started (${env})");
+  logger.info({ context: "Server" }, "Port: ${API_PORT}");
+  logger.info({ context: "Server" }, "URL: ${publicUrl}");
+  logger.info({ context: "Server" }, "Docs: ${publicUrl}/swagger");
 
   // Log configured services
   const services = [];
@@ -958,12 +1113,12 @@ try {
   if (process.env.REDIS_URL) services.push("Redis");
 
   if (services.length > 0) {
-    console.log(`[Server] Services: ${services.join(", ")}`);
+    logger.info({ context: "Server" }, 'Services: ${services.join(", ")}');
   }
 
-  console.log("");
+  logger.info({}, "");
 } catch (error) {
-  console.error("[Startup] FATAL: Failed to start server:", error);
+  logger.error({ err: error }, "[Startup] FATAL: Failed to start server:");
   console.error(
     "[Startup] Error details:",
     error instanceof Error ? error.stack : String(error),

@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { createHmac, timingSafeEqual } from "crypto";
 import { CDNPublishService } from "../services/CDNPublishService";
 import { requireAuth } from "../middleware/auth";
@@ -298,7 +299,7 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
               databaseId,
             };
           } catch (error) {
-            console.error("[CDN Webhook] Error processing webhook:", error);
+            logger.error({ err: error }, '[CDN Webhook] Error processing webhook:');
             set.status = 500;
             return {
               success: false,

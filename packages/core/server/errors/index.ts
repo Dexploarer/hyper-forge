@@ -172,6 +172,23 @@ export class InternalServerError extends ApiError {
 }
 
 /**
+ * 502 Bad Gateway - External service error
+ */
+export class ExternalServiceError extends ApiError {
+  statusCode = 502;
+  code = "EXTERNAL_SERVICE_ERROR";
+
+  constructor(
+    service: string,
+    message: string,
+    public originalError?: any,
+    context?: Record<string, any>,
+  ) {
+    super(`${service}: ${message}`, { ...context, service, originalError });
+  }
+}
+
+/**
  * 503 Service Unavailable - External service is down
  */
 export class ServiceUnavailableError extends ApiError {
@@ -239,4 +256,71 @@ export function getErrorContext(error: unknown): Record<string, any> {
   return {
     error: String(error),
   };
+}
+
+/**
+ * Determine error category for database logging
+ */
+export function determineErrorCategory(
+  error: unknown,
+):
+  | "validation"
+  | "authentication"
+  | "authorization"
+  | "external_api"
+  | "database"
+  | "file_system"
+  | "network"
+  | "application"
+  | "unknown" {
+  if (isApiError(error)) {
+    if (error instanceof ValidationError) return "validation";
+    if (error instanceof UnauthorizedError) return "authentication";
+    if (error instanceof ForbiddenError) return "authorization";
+    if (
+      error instanceof ExternalServiceError ||
+      error instanceof ServiceUnavailableError
+    )
+      return "external_api";
+    return "application";
+  }
+
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (
+      message.includes("database") ||
+      message.includes("sql") ||
+      message.includes("query")
+    ) {
+      return "database";
+    }
+    if (
+      message.includes("file") ||
+      message.includes("enoent") ||
+      message.includes("eacces")
+    ) {
+      return "file_system";
+    }
+    if (
+      message.includes("network") ||
+      message.includes("timeout") ||
+      message.includes("econnrefused")
+    ) {
+      return "network";
+    }
+    if (message.includes("validation") || message.includes("invalid")) {
+      return "validation";
+    }
+    if (
+      message.includes("unauthorized") ||
+      message.includes("authentication")
+    ) {
+      return "authentication";
+    }
+    if (message.includes("forbidden") || message.includes("permission")) {
+      return "authorization";
+    }
+  }
+
+  return "unknown";
 }

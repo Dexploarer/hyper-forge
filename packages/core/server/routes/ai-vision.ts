@@ -4,6 +4,7 @@
  */
 
 import { Elysia } from 'elysia'
+import { logger } from '../utils/logger';
 import fetch from 'node-fetch'
 import { getWeaponDetectionPrompts } from '../utils/promptLoader'
 import * as Models from '../models'

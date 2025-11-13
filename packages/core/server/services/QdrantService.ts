@@ -4,6 +4,7 @@
  */
 
 import { QdrantClient } from "@qdrant/js-client-rest";
+import { logger } from '../utils/logger';
 import type { QdrantFilter, QdrantPayload } from "./types/vector";
 import { EMBEDDING_CONFIG } from "./types/vector";
 
@@ -100,7 +101,7 @@ export class QdrantService {
       apiKey: qdrantApiKey, // Optional - Railway Qdrant may not require API key
     });
 
-    console.log(`[QdrantService] Initialized with URL: ${normalizedUrl}`);
+    logger.info({ context: 'QdrantService' }, 'Initialized with URL: ${normalizedUrl}');
   }
 
   /**
@@ -130,13 +131,13 @@ export class QdrantService {
       "dialogues",
     ];
 
-    console.log("[QdrantService] Initializing collections...");
+    logger.info({ }, '[QdrantService] Initializing collections...');
 
     for (const collection of collections) {
       await this.ensureCollection(collection);
     }
 
-    console.log("[QdrantService] All collections initialized");
+    logger.info({ }, '[QdrantService] All collections initialized');
   }
 
   /**
@@ -148,7 +149,7 @@ export class QdrantService {
       const exists = await this.collectionExists(name);
 
       if (exists) {
-        console.log(`[QdrantService] Collection '${name}' already exists`);
+        logger.info({ context: 'QdrantService' }, 'Collection '${name}' already exists');
         return;
       }
 
@@ -160,7 +161,7 @@ export class QdrantService {
         },
       });
 
-      console.log(`[QdrantService] Created collection '${name}'`);
+      logger.info({ context: 'QdrantService' }, 'Created collection '${name}'');
 
       // Create indexes for common payload fields
       await this.createPayloadIndexes(name);
@@ -258,7 +259,7 @@ export class QdrantService {
         ],
       });
 
-      console.log(`[QdrantService] Upserted point ${id} to '${collection}'`);
+      logger.info({ context: 'QdrantService' }, 'Upserted point ${id} to '${collection}'');
     } catch (error) {
       console.error(
         `[QdrantService] Error upserting to '${collection}':`,
@@ -328,7 +329,7 @@ export class QdrantService {
         payload: result.payload as Record<string, unknown>,
       }));
     } catch (error) {
-      console.error(`[QdrantService] Error searching '${collection}':`, error);
+      logger.error({, error }, '[QdrantService] Error searching '${collection}':');
       throw error;
     }
   }
@@ -394,7 +395,7 @@ export class QdrantService {
         points: [id],
       });
 
-      console.log(`[QdrantService] Deleted point ${id} from '${collection}'`);
+      logger.info({ context: 'QdrantService' }, 'Deleted point ${id} from '${collection}'');
     } catch (error) {
       console.error(
         `[QdrantService] Error deleting from '${collection}':`,
@@ -489,7 +490,7 @@ export class QdrantService {
       );
       return false;
     } catch (error) {
-      console.error("[QdrantService] Health check failed:", error);
+      logger.error({ err: error }, '[QdrantService] Health check failed:');
       return false;
     }
   }

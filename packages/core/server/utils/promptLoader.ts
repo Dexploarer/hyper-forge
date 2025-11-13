@@ -1,4 +1,5 @@
 import fs from 'fs/promises'
+import { logger } from '../utils/logger';
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -131,7 +132,7 @@ export async function loadPromptFile(promptType: PromptType): Promise<PromptData
     promptCache.set(promptType, data)
     return data
   } catch (error) {
-    console.error(`Failed to load prompt file ${promptType}:`, error instanceof Error ? error.message : String(error))
+    logger.error({, error instanceof Error ? error.message : String(error }, 'Failed to load prompt file ${promptType}:'))
     return null
   }
 }
@@ -145,7 +146,7 @@ export async function savePromptFile(promptType: PromptType, data: PromptData): 
     promptCache.set(promptType, data)
     return true
   } catch (error) {
-    console.error(`Failed to save prompt file ${promptType}:`, error instanceof Error ? error.message : String(error))
+    logger.error({, error instanceof Error ? error.message : String(error }, 'Failed to save prompt file ${promptType}:'))
     return false
   }
 }

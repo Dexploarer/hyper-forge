@@ -3,11 +3,12 @@
  */
 
 import { db } from "./index";
+import { logger } from '../utils/logger';
 import { sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 
 async function main() {
-  console.log("[Database Check] Checking for world_configurations table...");
+  logger.info({ }, '[Database Check] Checking for world_configurations table...');
 
   try {
     // Check if table exists
@@ -29,7 +30,7 @@ async function main() {
       console.log(
         "[Database Check] ✗ world_configurations table does not exist",
       );
-      console.log("[Database Check] Applying migration manually...");
+      logger.info({ }, '[Database Check] Applying migration manually...');
 
       // Read and execute the migration file
       const migrationSQL = await Bun.file(
@@ -45,18 +46,18 @@ async function main() {
       for (const statement of statements) {
         try {
           await db.execute(sql.raw(statement));
-          console.log("[Database Check] ✓ Executed statement");
+          logger.info({ }, '[Database Check] ✓ Executed statement');
         } catch (error: any) {
           // Skip if table/index already exists
           if (error.code === "42P07" || error.code === "42P06") {
-            console.log("[Database Check] ⚠️  Already exists, skipping");
+            logger.info({ }, '[Database Check] ⚠️  Already exists, skipping');
           } else {
             throw error;
           }
         }
       }
 
-      console.log("[Database Check] ✓ Migration applied successfully");
+      logger.info({ }, '[Database Check] ✓ Migration applied successfully');
     }
 
     // Verify table exists now
@@ -71,7 +72,7 @@ async function main() {
     const nowExists = verifyResult[0]?.exists;
 
     if (nowExists) {
-      console.log("[Database Check] ✓ Verification passed: Table exists");
+      logger.info({ }, '[Database Check] ✓ Verification passed: Table exists');
     } else {
       console.log(
         "[Database Check] ✗ Verification failed: Table still missing",
@@ -79,7 +80,7 @@ async function main() {
       process.exit(1);
     }
   } catch (error) {
-    console.error("[Database Check] Error:", error);
+    logger.error({ err: error }, '[Database Check] Error:');
     process.exit(1);
   }
 

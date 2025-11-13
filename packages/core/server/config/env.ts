@@ -7,6 +7,7 @@
  */
 
 import { z } from "zod";
+import { logger } from '../utils/logger';
 
 /**
  * Environment variable schema
@@ -279,12 +280,12 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  console.error("❌ Environment variable validation failed:");
+  logger.error('❌ Environment variable validation failed:');
   console.error(JSON.stringify(parsed.error.format(), null, 2));
   console.error(
     "\n💡 Please check your .env file and ensure all required variables are set.",
   );
-  console.error("📝 See .env.example for reference.");
+  logger.error('📝 See .env.example for reference.');
   process.exit(1);
 }
 

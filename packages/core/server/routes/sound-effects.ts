@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { ElevenLabsSoundEffectsService } from "../services/ElevenLabsSoundEffectsService";
 import * as Models from "../models";
 
@@ -13,7 +14,7 @@ export const soundEffectsRoutes = new Elysia({
 }).guard(
   {
     beforeHandle: ({ request }) => {
-      console.log(`[SFX] ${request.method} ${new URL(request.url).pathname}`);
+      logger.info({ context: 'SFX' }, '${request.method} ${new URL(request.url).pathname}');
     },
   },
   (app) =>
@@ -68,7 +69,7 @@ export const soundEffectsRoutes = new Elysia({
               },
             );
           } catch (err) {
-            console.error("[SFX] Generation failed:", err);
+            logger.error({ err: err }, '[SFX] Generation failed:');
             set.status = 500;
             return {
               error: "Generation Failed",
@@ -135,7 +136,7 @@ export const soundEffectsRoutes = new Elysia({
 
             return formattedResults;
           } catch (err) {
-            console.error("[SFX] Batch generation failed:", err);
+            logger.error({ err: err }, '[SFX] Batch generation failed:');
             set.status = 500;
             return {
               error: "Batch Generation Failed",

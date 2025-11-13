@@ -5,6 +5,7 @@
  */
 
 import { createOpenAI } from "@ai-sdk/openai";
+import { logger } from '../utils/logger';
 import type { LanguageModel } from "ai";
 
 type ModelQuality = "quality" | "speed" | "balanced";

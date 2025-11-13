@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import path from "path";
 import fs from "fs";
 import type { AssetService } from "../services/AssetService";
@@ -22,7 +23,7 @@ export const createAssetRoutes = (
   return new Elysia({ prefix: "/api/assets", name: "assets" }).guard(
     {
       beforeHandle: ({ request }) => {
-        console.log(`[Assets] ${request.method} request`);
+        logger.info({ context: 'Assets' }, '${request.method} request');
       },
     },
     (app) =>
@@ -314,7 +315,7 @@ export const createAssetRoutes = (
             }
 
             const result = await response.json();
-            console.log(`[Sprites] Successfully uploaded to CDN:`, result);
+            logger.info({ context: 'Sprites', result }, 'Successfully uploaded to CDN:');
 
             // Build CDN URLs for response
             const cdnUrls = sprites.map(
@@ -401,7 +402,7 @@ export const createAssetRoutes = (
             }
 
             const result = await response.json();
-            console.log(`[VRM Upload] Successfully uploaded to CDN:`, result);
+            logger.info({ context: 'VRM Upload', result }, 'Successfully uploaded to CDN:');
 
             // Return success with CDN URL
             const cdnUrl = `${CDN_URL}/models/${assetId}/${filename}`;

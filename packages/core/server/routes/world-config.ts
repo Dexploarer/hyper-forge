@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { WorldConfigService } from "../services/WorldConfigService";
 import * as Models from "../models";
 
@@ -47,7 +48,7 @@ export const worldConfigRoutes = new Elysia({
               count: configs.length,
             };
           } catch (error) {
-            console.error("[WorldConfig Route] Error listing configurations:", error);
+            logger.error({ err: error }, '[WorldConfig Route] Error listing configurations:');
             set.status = 500;
             return {
               success: false,
@@ -89,7 +90,7 @@ export const worldConfigRoutes = new Elysia({
               config,
             };
           } catch (error) {
-            console.error("[WorldConfig Route] Error getting active configuration:", error);
+            logger.error({ err: error }, '[WorldConfig Route] Error getting active configuration:');
             // Return success with null config - world config is optional
             return {
               success: true,

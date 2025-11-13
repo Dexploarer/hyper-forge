@@ -5,6 +5,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { requireAuth } from "../middleware/auth";
 import { getEncryptionService } from "../services/ApiKeyEncryptionService";
 import { db } from "../db";
@@ -71,7 +72,7 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           },
         };
       } catch (error) {
-        console.error("[UserApiKeys] Failed to save API keys:", error);
+        logger.error({ err: error }, '[UserApiKeys] Failed to save API keys:');
         return new Response(
           JSON.stringify({
             error: "Failed to save API keys",
@@ -144,7 +145,7 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           ),
         };
       } catch (error) {
-        console.error("[UserApiKeys] Failed to fetch API key status:", error);
+        logger.error({ err: error }, '[UserApiKeys] Failed to fetch API key status:');
         return new Response(
           JSON.stringify({
             error: "Failed to fetch API key status",
@@ -192,14 +193,14 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           })
           .where(eq(users.id, authUser.id));
 
-        console.log(`[UserApiKeys] User ${authUser.id} deleted all API keys`);
+        logger.info({ context: 'UserApiKeys' }, 'User ${authUser.id} deleted all API keys');
 
         return {
           success: true,
           message: "API keys deleted successfully",
         };
       } catch (error) {
-        console.error("[UserApiKeys] Failed to delete API keys:", error);
+        logger.error({ err: error }, '[UserApiKeys] Failed to delete API keys:');
         return new Response(
           JSON.stringify({
             error: "Failed to delete API keys",

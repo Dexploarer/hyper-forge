@@ -5,12 +5,13 @@
 
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/postgres-js";
+import { logger } from '../utils/logger';
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
 // Validate environment
 if (!process.env.DATABASE_URL) {
-  console.error("ERROR: DATABASE_URL environment variable is required");
+  logger.error('ERROR: DATABASE_URL environment variable is required');
   process.exit(1);
 }
 
@@ -20,11 +21,11 @@ const db = drizzle(migrationClient);
 
 // Run migrations
 async function main() {
-  console.log("[Migrations] Running migrations...");
+  logger.info({ }, '[Migrations] Running migrations...');
 
   try {
     await migrate(db, { migrationsFolder: "./server/db/migrations" });
-    console.log("[Migrations] ✓ Migrations completed successfully");
+    logger.info({ }, '[Migrations] ✓ Migrations completed successfully');
   } catch (error: any) {
     // Check if it's a "relation already exists" error (PostgreSQL code 42P07)
     // Drizzle wraps PostgreSQL errors, so check the cause as well
@@ -35,10 +36,10 @@ async function main() {
       errorCode === "42P07" || errorMessage.includes("already exists");
 
     if (isAlreadyExistsError) {
-      console.warn("[Migrations] ⚠️  Some tables already exist - skipping");
-      console.log("[Migrations] ✓ Database schema is up to date");
+      logger.warn({ }, '[Migrations] ⚠️  Some tables already exist - skipping');
+      logger.info({ }, '[Migrations] ✓ Database schema is up to date');
     } else {
-      console.error("[Migrations] ✗ Migration failed:", error);
+      logger.error({ err: error }, '[Migrations] ✗ Migration failed:');
       process.exit(1);
     }
   }

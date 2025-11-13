@@ -4,6 +4,7 @@
  */
 
 import { db } from "../db";
+import { logger } from '../utils/logger';
 import { eq, and, or } from "drizzle-orm";
 import type { NewEntityRelationship, EntityRelationship } from "../db/schema";
 import { entityRelationships } from "../db/schema";

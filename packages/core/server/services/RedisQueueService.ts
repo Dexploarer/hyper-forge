@@ -4,6 +4,7 @@
  */
 
 import { redis, type RedisClient } from "bun";
+import { logger } from '../utils/logger';
 
 export type QueuePriority = "high" | "normal" | "low";
 
@@ -46,7 +47,7 @@ export class RedisQueueService {
     const queueKey = this.queues[priority];
     await this.redis.lpush(queueKey, JSON.stringify(job));
 
-    console.log(`[Queue] Enqueued job ${jobId} to ${queueKey}`);
+    logger.info({ context: 'Queue' }, 'Enqueued job ${jobId} to ${queueKey}');
   }
 
   /**
@@ -68,10 +69,10 @@ export class RedisQueueService {
       const [_queueKey, jobData] = result;
       const job = JSON.parse(jobData) as QueueJob;
 
-      console.log(`[Queue] Dequeued job ${job.jobId}`);
+      logger.info({ context: 'Queue' }, 'Dequeued job ${job.jobId}');
       return job;
     } catch (error) {
-      console.error("[Queue] Dequeue error:", error);
+      logger.error({ err: error }, '[Queue] Dequeue error:');
       return null;
     }
   }
@@ -136,7 +137,7 @@ export class RedisQueueService {
           const data = JSON.parse(message);
           callback(data);
         } catch (error) {
-          console.error("[Queue] Failed to parse progress message:", error);
+          logger.error({ err: error }, '[Queue] Failed to parse progress message:');
         }
       },
     );
@@ -156,7 +157,7 @@ export class RedisQueueService {
         const data = JSON.parse(message);
         callback(data);
       } catch (error) {
-        console.error("[Queue] Failed to parse progress message:", error);
+        logger.error({ err: error }, '[Queue] Failed to parse progress message:');
       }
     });
   }
@@ -176,7 +177,7 @@ export class RedisQueueService {
         const job = JSON.parse(items[i]) as QueueJob;
         if (job.jobId === jobId) {
           await this.redis.send("LREM", [queueKey, "1", items[i]]);
-          console.log(`[Queue] Removed job ${jobId} from ${queueKey}`);
+          logger.info({ context: 'Queue' }, 'Removed job ${jobId} from ${queueKey}');
           return true;
         }
       }
@@ -214,7 +215,7 @@ export class RedisQueueService {
   async close(): Promise<void> {
     // Bun.redis doesn't have an explicit close method in the current API
     // The connection will be cleaned up automatically
-    console.log("[Queue] Redis connection closed");
+    logger.info({ }, '[Queue] Redis connection closed');
   }
 }
 

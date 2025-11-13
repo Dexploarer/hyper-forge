@@ -4,6 +4,7 @@
  */
 
 import { embed, embedMany } from "ai";
+import { logger } from '../utils/logger';
 import { createOpenAI } from "@ai-sdk/openai";
 import type { Asset } from "../db/schema/assets.schema";
 import type { NPC, Quest, Lore, Dialogue } from "../db/schema/content.schema";

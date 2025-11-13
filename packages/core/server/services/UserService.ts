@@ -4,6 +4,7 @@
  */
 
 import { db } from "../db/db";
+import { logger } from '../utils/logger';
 import { users, type User, type NewUser } from "../db/schema";
 import { eq, desc, and, count } from "drizzle-orm";
 
@@ -25,7 +26,7 @@ export class UserService {
 
       return user || null;
     } catch (error) {
-      console.error("[UserService] Failed to find user by privyUserId:", error);
+      logger.error({ err: error }, '[UserService] Failed to find user by privyUserId:');
       throw error;
     }
   }
@@ -41,7 +42,7 @@ export class UserService {
 
       return user || null;
     } catch (error) {
-      console.error("[UserService] Failed to find user by id:", error);
+      logger.error({ err: error }, '[UserService] Failed to find user by id:');
       throw error;
     }
   }
@@ -81,7 +82,7 @@ export class UserService {
 
       return user;
     } catch (error) {
-      console.error("[UserService] Failed to create user:", error);
+      logger.error({ err: error }, '[UserService] Failed to create user:');
       throw error;
     }
   }
@@ -96,9 +97,9 @@ export class UserService {
         .set({ lastLoginAt: new Date() })
         .where(eq(users.id, userId));
 
-      console.log(`[UserService] Updated last login for user: ${userId}`);
+      logger.info({ context: 'UserService' }, 'Updated last login for user: ${userId}');
     } catch (error) {
-      console.error("[UserService] Failed to update last login:", error);
+      logger.error({ err: error }, '[UserService] Failed to update last login:');
       // Don't throw - this is non-critical
     }
   }
@@ -132,10 +133,10 @@ export class UserService {
         throw new Error(`User not found: ${userId}`);
       }
 
-      console.log(`[UserService] Updated profile for user: ${userId}`);
+      logger.info({ context: 'UserService' }, 'Updated profile for user: ${userId}');
       return updatedUser;
     } catch (error) {
-      console.error("[UserService] Failed to update profile:", error);
+      logger.error({ err: error }, '[UserService] Failed to update profile:');
       throw error;
     }
   }
@@ -155,10 +156,10 @@ export class UserService {
         throw new Error(`User not found: ${userId}`);
       }
 
-      console.log(`[UserService] Updated role for user: ${userId} to ${role}`);
+      logger.info({ context: 'UserService' }, 'Updated role for user: ${userId} to ${role}');
       return updatedUser;
     } catch (error) {
-      console.error("[UserService] Failed to update role:", error);
+      logger.error({ err: error }, '[UserService] Failed to update role:');
       throw error;
     }
   }
@@ -221,7 +222,7 @@ export class UserService {
 
       return allUsers;
     } catch (error) {
-      console.error("[UserService] Failed to get all users:", error);
+      logger.error({ err: error }, '[UserService] Failed to get all users:');
       throw error;
     }
   }
@@ -258,10 +259,10 @@ export class UserService {
         throw new Error(`User not found: ${userId}`);
       }
 
-      console.log(`[UserService] Updated settings for user: ${userId}`);
+      logger.info({ context: 'UserService' }, 'Updated settings for user: ${userId}');
       return updatedUser;
     } catch (error) {
-      console.error("[UserService] Failed to update settings:", error);
+      logger.error({ err: error }, '[UserService] Failed to update settings:');
       throw error;
     }
   }
@@ -273,9 +274,9 @@ export class UserService {
     try {
       await db.delete(users).where(eq(users.id, userId));
 
-      console.log(`[UserService] Deleted user: ${userId}`);
+      logger.info({ context: 'UserService' }, 'Deleted user: ${userId}');
     } catch (error) {
-      console.error("[UserService] Failed to delete user:", error);
+      logger.error({ err: error }, '[UserService] Failed to delete user:');
       throw error;
     }
   }
@@ -306,7 +307,7 @@ export class UserService {
         createdAt: user.createdAt,
       };
     } catch (error) {
-      console.error("[UserService] Failed to get public profile:", error);
+      logger.error({ err: error }, '[UserService] Failed to get public profile:');
       throw error;
     }
   }
@@ -375,7 +376,7 @@ export class UserService {
         totalAchievements,
       };
     } catch (error) {
-      console.error("[UserService] Failed to get user stats:", error);
+      logger.error({ err: error }, '[UserService] Failed to get user stats:');
       throw error;
     }
   }

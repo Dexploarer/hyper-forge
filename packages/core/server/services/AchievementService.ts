@@ -4,6 +4,7 @@
  */
 
 import { db } from "../db/db";
+import { logger } from '../utils/logger';
 import {
   achievements,
   userAchievements,
@@ -617,7 +618,7 @@ export class AchievementService {
         }
       }
 
-      console.log("[AchievementService] Achievement initialization complete");
+      logger.info({ }, '[AchievementService] Achievement initialization complete');
     } catch (error) {
       console.error(
         "[AchievementService] Failed to initialize default achievements:",

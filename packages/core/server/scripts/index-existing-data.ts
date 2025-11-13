@@ -7,6 +7,7 @@
 
 import "dotenv/config";
 import { db } from "../db/db";
+import { logger } from '../utils/logger';
 import { assets } from "../db/schema/assets.schema";
 import { npcs, quests, lores, dialogues } from "../db/schema/content.schema";
 import { embeddingService } from "../services/EmbeddingService";
@@ -27,14 +28,14 @@ interface IndexingStats {
  * Index all assets
  */
 async function indexAssets(stats: IndexingStats): Promise<void> {
-  console.log("\n📦 Indexing Assets...");
+  logger.info({ }, '\n📦 Indexing Assets...');
 
   try {
     // Fetch all assets
     const allAssets = await db.select().from(assets);
     stats.assets.total = allAssets.length;
 
-    console.log(`Found ${allAssets.length} assets to index`);
+    logger.info({ }, 'Found ${allAssets.length} assets to index');
 
     // Process in batches
     for (let i = 0; i < allAssets.length; i += BATCH_SIZE) {
@@ -77,9 +78,9 @@ async function indexAssets(stats: IndexingStats): Promise<void> {
         await qdrantService.upsertBatch("assets", points);
 
         stats.assets.indexed += batch.length;
-        console.log(`✓ Indexed ${batch.length} assets`);
+        logger.info({ }, '✓ Indexed ${batch.length} assets');
       } catch (error) {
-        console.error(`✗ Failed to index batch:`, error);
+        logger.error({, error }, '✗ Failed to index batch:');
         stats.assets.failed += batch.length;
       }
     }
@@ -88,7 +89,7 @@ async function indexAssets(stats: IndexingStats): Promise<void> {
       `✓ Assets indexing complete: ${stats.assets.indexed}/${stats.assets.total} successful`,
     );
   } catch (error) {
-    console.error("Failed to index assets:", error);
+    logger.error({ err: error }, 'Failed to index assets:');
   }
 }
 
@@ -96,13 +97,13 @@ async function indexAssets(stats: IndexingStats): Promise<void> {
  * Index all NPCs
  */
 async function indexNPCs(stats: IndexingStats): Promise<void> {
-  console.log("\n👤 Indexing NPCs...");
+  logger.info({ }, '\n👤 Indexing NPCs...');
 
   try {
     const allNPCs = await db.select().from(npcs);
     stats.npcs.total = allNPCs.length;
 
-    console.log(`Found ${allNPCs.length} NPCs to index`);
+    logger.info({ }, 'Found ${allNPCs.length} NPCs to index');
 
     for (let i = 0; i < allNPCs.length; i += BATCH_SIZE) {
       const batch = allNPCs.slice(i, i + BATCH_SIZE);
@@ -136,9 +137,9 @@ async function indexNPCs(stats: IndexingStats): Promise<void> {
         await qdrantService.upsertBatch("npcs", points);
 
         stats.npcs.indexed += batch.length;
-        console.log(`✓ Indexed ${batch.length} NPCs`);
+        logger.info({ }, '✓ Indexed ${batch.length} NPCs');
       } catch (error) {
-        console.error(`✗ Failed to index batch:`, error);
+        logger.error({, error }, '✗ Failed to index batch:');
         stats.npcs.failed += batch.length;
       }
     }
@@ -147,7 +148,7 @@ async function indexNPCs(stats: IndexingStats): Promise<void> {
       `✓ NPCs indexing complete: ${stats.npcs.indexed}/${stats.npcs.total} successful`,
     );
   } catch (error) {
-    console.error("Failed to index NPCs:", error);
+    logger.error({ err: error }, 'Failed to index NPCs:');
   }
 }
 
@@ -155,13 +156,13 @@ async function indexNPCs(stats: IndexingStats): Promise<void> {
  * Index all Quests
  */
 async function indexQuests(stats: IndexingStats): Promise<void> {
-  console.log("\n⚔️  Indexing Quests...");
+  logger.info({ }, '\n⚔️  Indexing Quests...');
 
   try {
     const allQuests = await db.select().from(quests);
     stats.quests.total = allQuests.length;
 
-    console.log(`Found ${allQuests.length} quests to index`);
+    logger.info({ }, 'Found ${allQuests.length} quests to index');
 
     for (let i = 0; i < allQuests.length; i += BATCH_SIZE) {
       const batch = allQuests.slice(i, i + BATCH_SIZE);
@@ -198,9 +199,9 @@ async function indexQuests(stats: IndexingStats): Promise<void> {
         await qdrantService.upsertBatch("quests", points);
 
         stats.quests.indexed += batch.length;
-        console.log(`✓ Indexed ${batch.length} quests`);
+        logger.info({ }, '✓ Indexed ${batch.length} quests');
       } catch (error) {
-        console.error(`✗ Failed to index batch:`, error);
+        logger.error({, error }, '✗ Failed to index batch:');
         stats.quests.failed += batch.length;
       }
     }
@@ -209,7 +210,7 @@ async function indexQuests(stats: IndexingStats): Promise<void> {
       `✓ Quests indexing complete: ${stats.quests.indexed}/${stats.quests.total} successful`,
     );
   } catch (error) {
-    console.error("Failed to index quests:", error);
+    logger.error({ err: error }, 'Failed to index quests:');
   }
 }
 
@@ -217,13 +218,13 @@ async function indexQuests(stats: IndexingStats): Promise<void> {
  * Index all Lore
  */
 async function indexLore(stats: IndexingStats): Promise<void> {
-  console.log("\n📜 Indexing Lore...");
+  logger.info({ }, '\n📜 Indexing Lore...');
 
   try {
     const allLores = await db.select().from(lores);
     stats.lores.total = allLores.length;
 
-    console.log(`Found ${allLores.length} lore entries to index`);
+    logger.info({ }, 'Found ${allLores.length} lore entries to index');
 
     for (let i = 0; i < allLores.length; i += BATCH_SIZE) {
       const batch = allLores.slice(i, i + BATCH_SIZE);
@@ -258,9 +259,9 @@ async function indexLore(stats: IndexingStats): Promise<void> {
         await qdrantService.upsertBatch("lore", points);
 
         stats.lores.indexed += batch.length;
-        console.log(`✓ Indexed ${batch.length} lore entries`);
+        logger.info({ }, '✓ Indexed ${batch.length} lore entries');
       } catch (error) {
-        console.error(`✗ Failed to index batch:`, error);
+        logger.error({, error }, '✗ Failed to index batch:');
         stats.lores.failed += batch.length;
       }
     }
@@ -269,7 +270,7 @@ async function indexLore(stats: IndexingStats): Promise<void> {
       `✓ Lore indexing complete: ${stats.lores.indexed}/${stats.lores.total} successful`,
     );
   } catch (error) {
-    console.error("Failed to index lore:", error);
+    logger.error({ err: error }, 'Failed to index lore:');
   }
 }
 
@@ -277,13 +278,13 @@ async function indexLore(stats: IndexingStats): Promise<void> {
  * Index all Dialogues
  */
 async function indexDialogues(stats: IndexingStats): Promise<void> {
-  console.log("\n💬 Indexing Dialogues...");
+  logger.info({ }, '\n💬 Indexing Dialogues...');
 
   try {
     const allDialogues = await db.select().from(dialogues);
     stats.dialogues.total = allDialogues.length;
 
-    console.log(`Found ${allDialogues.length} dialogues to index`);
+    logger.info({ }, 'Found ${allDialogues.length} dialogues to index');
 
     for (let i = 0; i < allDialogues.length; i += BATCH_SIZE) {
       const batch = allDialogues.slice(i, i + BATCH_SIZE);
@@ -318,9 +319,9 @@ async function indexDialogues(stats: IndexingStats): Promise<void> {
         await qdrantService.upsertBatch("dialogues", points);
 
         stats.dialogues.indexed += batch.length;
-        console.log(`✓ Indexed ${batch.length} dialogues`);
+        logger.info({ }, '✓ Indexed ${batch.length} dialogues');
       } catch (error) {
-        console.error(`✗ Failed to index batch:`, error);
+        logger.error({, error }, '✗ Failed to index batch:');
         stats.dialogues.failed += batch.length;
       }
     }
@@ -329,7 +330,7 @@ async function indexDialogues(stats: IndexingStats): Promise<void> {
       `✓ Dialogues indexing complete: ${stats.dialogues.indexed}/${stats.dialogues.total} successful`,
     );
   } catch (error) {
-    console.error("Failed to index dialogues:", error);
+    logger.error({ err: error }, 'Failed to index dialogues:');
   }
 }
 
@@ -337,11 +338,11 @@ async function indexDialogues(stats: IndexingStats): Promise<void> {
  * Main migration function
  */
 async function main() {
-  console.log("🚀 Starting Qdrant indexing migration...\n");
+  logger.info({ }, '🚀 Starting Qdrant indexing migration...\n');
 
   // Check configuration
   if (!process.env.QDRANT_URL) {
-    console.error("❌ QDRANT_URL not configured. Aborting.");
+    logger.error('❌ QDRANT_URL not configured. Aborting.');
     process.exit(1);
   }
 
@@ -362,9 +363,9 @@ async function main() {
 
   try {
     // Initialize Qdrant collections
-    console.log("Initializing Qdrant collections...");
+    logger.info({ }, 'Initializing Qdrant collections...');
     await initializeQdrantCollections();
-    console.log("✓ Collections initialized\n");
+    logger.info({ }, '✓ Collections initialized\n');
 
     // Index all data
     await indexAssets(stats);
@@ -374,9 +375,9 @@ async function main() {
     await indexDialogues(stats);
 
     // Print final summary
-    console.log("\n" + "=".repeat(60));
-    console.log("📊 INDEXING SUMMARY");
-    console.log("=".repeat(60));
+    logger.info({ + "=".repeat(60 }, '\n'));
+    logger.info({ }, '📊 INDEXING SUMMARY');
+    logger.info({.repeat(60 }, '='));
     console.log(
       `Assets:    ${stats.assets.indexed}/${stats.assets.total} (${stats.assets.failed} failed)`,
     );
@@ -392,7 +393,7 @@ async function main() {
     console.log(
       `Dialogues: ${stats.dialogues.indexed}/${stats.dialogues.total} (${stats.dialogues.failed} failed)`,
     );
-    console.log("=".repeat(60));
+    logger.info({.repeat(60 }, '='));
 
     const totalIndexed =
       stats.assets.indexed +
@@ -407,17 +408,17 @@ async function main() {
       stats.lores.failed +
       stats.dialogues.failed;
 
-    console.log(`\nTotal: ${totalIndexed} indexed, ${totalFailed} failed`);
+    logger.info({ }, '\nTotal: ${totalIndexed} indexed, ${totalFailed} failed');
 
     if (totalFailed === 0) {
-      console.log("\n✅ Migration completed successfully!");
+      logger.info({ }, '\n✅ Migration completed successfully!');
     } else {
       console.log(
         `\n⚠️  Migration completed with ${totalFailed} failures. Check logs above.`,
       );
     }
   } catch (error) {
-    console.error("\n❌ Migration failed:", error);
+    logger.error({ err: error }, '\n❌ Migration failed:');
     process.exit(1);
   }
 

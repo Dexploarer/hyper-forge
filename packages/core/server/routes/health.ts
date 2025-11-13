@@ -10,6 +10,7 @@
  */
 
 import { Elysia } from "elysia";
+import { logger } from '../utils/logger';
 import * as Models from "../models";
 import { db, queryClient } from "../db/db";
 import { qdrantService } from "../services/QdrantService";
@@ -300,7 +301,7 @@ export const healthRoutes = new Elysia({ prefix: "/api", name: "health" })
         await db.execute(sql`SELECT 1`);
         checks.database = true;
       } catch (e) {
-        console.error("[Health] Database check failed:", e);
+        logger.error({ err: e }, '[Health] Database check failed:');
       }
 
       try {

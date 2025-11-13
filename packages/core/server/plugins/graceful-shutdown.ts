@@ -9,21 +9,22 @@
  */
 
 import { Elysia } from "elysia";
+import { logger } from '../utils/logger';
 
 export const gracefulShutdown = new Elysia({
   name: "graceful-shutdown",
 }).onStop(async () => {
-  console.log("\n[Shutdown] Graceful shutdown initiated...");
+  logger.info({ }, '\n[Shutdown] Graceful shutdown initiated...');
 
   // Database is already handled by db.ts SIGINT/SIGTERM handlers
   // No need to duplicate that logic here
 
   // Clean up generation service (if we added cleanup method)
-  console.log("[Shutdown] Cleaning up generation pipelines...");
+  logger.info({ }, '[Shutdown] Cleaning up generation pipelines...');
 
   // Wait brief moment for in-flight requests to finish
   // Elysia handles closing active connections via closeActiveConnections
   await new Promise((resolve) => setTimeout(resolve, 5000)); // 5s grace period
 
-  console.log("[Shutdown] Graceful shutdown complete");
+  logger.info({ }, '[Shutdown] Graceful shutdown complete');
 });

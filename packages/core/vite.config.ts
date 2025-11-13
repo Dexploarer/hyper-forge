@@ -50,4 +50,75 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React
+          "react-core": ["react", "react-dom", "react/jsx-runtime"],
+
+          // Three.js core library
+          "three-core": ["three"],
+
+          // Three.js addons and React integration
+          "three-addons": [
+            "@react-three/fiber",
+            "@react-three/drei",
+            "three/examples/jsm/controls/OrbitControls.js",
+            "three/examples/jsm/loaders/GLTFLoader.js",
+            "three/examples/jsm/controls/TransformControls.js",
+            "three/examples/jsm/exporters/GLTFExporter.js",
+            "three/examples/jsm/postprocessing/EffectComposer.js",
+            "three/examples/jsm/postprocessing/RenderPass.js",
+            "three/examples/jsm/postprocessing/SSAOPass.js",
+            "three/examples/jsm/postprocessing/UnrealBloomPass.js",
+          ],
+
+          // VRM character support
+          "three-vrm": ["@pixiv/three-vrm"],
+
+          // TensorFlow.js and MediaPipe (heavy libs)
+          tensorflow: [
+            "@tensorflow/tfjs",
+            "@tensorflow/tfjs-backend-webgl",
+            "@tensorflow-models/hand-pose-detection",
+            "@mediapipe/hands",
+          ],
+
+          // UI libraries
+          "ui-libs": [
+            "lucide-react",
+            "recharts",
+            "react-joyride",
+            "@xyflow/react",
+          ],
+
+          // State management and data fetching
+          "state-management": [
+            "zustand",
+            "@tanstack/react-query",
+            "@tanstack/react-query-devtools",
+          ],
+
+          // Auth
+          auth: ["@privy-io/react-auth"],
+
+          // AI SDK
+          "ai-sdk": [
+            "ai",
+            "@ai-sdk/openai",
+            "@ai-sdk/anthropic",
+            "@ai-sdk/google",
+          ],
+
+          // Utilities
+          utils: ["clsx", "immer", "tailwind-merge", "zod"],
+        },
+      },
+    },
+    // Increase chunk size warning limit for Three.js bundles
+    chunkSizeWarningLimit: 1000,
+    // Source maps for production debugging
+    sourcemap: true,
+  },
 });

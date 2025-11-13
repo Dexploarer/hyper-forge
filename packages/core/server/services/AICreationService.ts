@@ -4,6 +4,7 @@
  */
 
 import { getGenerationPrompts } from "../utils/promptLoader";
+import { logger } from '../utils/logger';
 
 // Type for fetch function (compatible with both global fetch and node-fetch)
 type FetchFunction = typeof fetch;
@@ -247,14 +248,14 @@ class ImageGenerationService {
 
     if (useAIGateway) {
       // Log the full response to debug
-      console.log("AI Gateway response:", JSON.stringify(data, null, 2));
+      logger.info({, JSON.stringify(data, null, 2 }, 'AI Gateway response:'));
 
       // AI Gateway returns images in choices[0].message.images array
       const images = data.choices?.[0]?.message?.images;
       if (images && images.length > 0) {
         imageUrl = images[0].image_url.url;
       } else {
-        console.error("No images found in response. Full data:", data);
+        logger.error({ err: data }, 'No images found in response. Full data:');
         throw new Error("No image data returned from AI Gateway");
       }
     } else {

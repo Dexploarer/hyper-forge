@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { embeddingService } from "../services/EmbeddingService";
 import { qdrantService } from "../services/QdrantService";
 import { db } from "../db/db";
@@ -83,7 +84,7 @@ export const vectorSearchRoutes = new Elysia({ prefix: "/api/search", name: "vec
 
         return { results: enrichedResults };
       } catch (error) {
-        console.error("[VectorSearch] Asset search error:", error);
+        logger.error({ err: error }, '[VectorSearch] Asset search error:');
         set.status = 500;
         return {
           error: "Search failed",
@@ -145,7 +146,7 @@ export const vectorSearchRoutes = new Elysia({ prefix: "/api/search", name: "vec
 
         return { results: enrichedResults };
       } catch (error) {
-        console.error("[VectorSearch] Similar assets error:", error);
+        logger.error({ err: error }, '[VectorSearch] Similar assets error:');
         set.status = 500;
         return {
           error: "Search failed",
@@ -207,7 +208,7 @@ export const vectorSearchRoutes = new Elysia({ prefix: "/api/search", name: "vec
           }))
         };
       } catch (error) {
-        console.error("[VectorSearch] NPC search error:", error);
+        logger.error({ err: error }, '[VectorSearch] NPC search error:');
         set.status = 500;
         return { error: "Search failed" };
       }
@@ -264,7 +265,7 @@ export const vectorSearchRoutes = new Elysia({ prefix: "/api/search", name: "vec
           }))
         };
       } catch (error) {
-        console.error("[VectorSearch] Quest search error:", error);
+        logger.error({ err: error }, '[VectorSearch] Quest search error:');
         set.status = 500;
         return { error: "Search failed" };
       }
@@ -321,7 +322,7 @@ export const vectorSearchRoutes = new Elysia({ prefix: "/api/search", name: "vec
           }))
         };
       } catch (error) {
-        console.error("[VectorSearch] Lore search error:", error);
+        logger.error({ err: error }, '[VectorSearch] Lore search error:');
         set.status = 500;
         return { error: "Search failed" };
       }

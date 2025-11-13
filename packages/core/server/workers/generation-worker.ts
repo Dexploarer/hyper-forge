@@ -4,6 +4,7 @@
  */
 
 import { RedisQueueService } from "../services/RedisQueueService";
+import { logger } from '../utils/logger';
 import { GenerationJobService } from "../services/GenerationJobService";
 import { GenerationService } from "../services/GenerationService";
 
@@ -23,7 +24,7 @@ export class GenerationWorker {
     this.jobService = new GenerationJobService();
     this.generationService = new GenerationService();
 
-    console.log(`[Worker ${this.workerId}] Initialized`);
+    logger.info({ context: 'Worker ${this.workerId}' }, 'Initialized');
   }
 
   /**
@@ -31,26 +32,26 @@ export class GenerationWorker {
    */
   async start(): Promise<void> {
     this.isRunning = true;
-    console.log(`[Worker ${this.workerId}] Starting...`);
+    logger.info({ context: 'Worker ${this.workerId}' }, 'Starting...');
 
     while (this.isRunning) {
       try {
         await this.processNextJob();
       } catch (error) {
-        console.error(`[Worker ${this.workerId}] Unexpected error:`, error);
+        logger.error({, error }, '[Worker ${this.workerId}] Unexpected error:');
         // Wait before retrying to avoid tight loop on persistent errors
         await new Promise((resolve) => setTimeout(resolve, 5000));
       }
     }
 
-    console.log(`[Worker ${this.workerId}] Stopped`);
+    logger.info({ context: 'Worker ${this.workerId}' }, 'Stopped');
   }
 
   /**
    * Stop the worker
    */
   stop(): void {
-    console.log(`[Worker ${this.workerId}] Stopping...`);
+    logger.info({ context: 'Worker ${this.workerId}' }, 'Stopping...');
     this.isRunning = false;
   }
 
@@ -221,17 +222,17 @@ if (import.meta.main) {
 
   // Graceful shutdown
   process.on("SIGTERM", () => {
-    console.log(`[Worker ${workerId}] Received SIGTERM`);
+    logger.info({ context: 'Worker ${workerId}' }, 'Received SIGTERM');
     worker.stop();
   });
 
   process.on("SIGINT", () => {
-    console.log(`[Worker ${workerId}] Received SIGINT`);
+    logger.info({ context: 'Worker ${workerId}' }, 'Received SIGINT');
     worker.stop();
   });
 
   worker.start().catch((error) => {
-    console.error(`[Worker ${workerId}] Fatal error:`, error);
+    logger.error({, error }, '[Worker ${workerId}] Fatal error:');
     process.exit(1);
   });
 }

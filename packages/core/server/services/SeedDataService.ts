@@ -4,6 +4,7 @@
  */
 
 import { generateText } from "ai";
+import { logger } from '../utils/logger';
 
 export interface SeedWorldData {
   world: {
@@ -117,7 +118,7 @@ export class SeedDataService {
     if (!process.env.AI_GATEWAY_API_KEY) {
       throw new Error("AI_GATEWAY_API_KEY required for Seed Data Service");
     }
-    console.log("[SeedDataService] Initialized with AI Gateway");
+    logger.info({ }, '[SeedDataService] Initialized with AI Gateway');
   }
 
   /**
@@ -400,7 +401,7 @@ Return JSON: {"music": {...Music data...}, "relationshipType": "plays_in|theme_f
       const cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      console.error("[Parse Error] Failed to parse seed world response:", error);
+      logger.error({ err: error }, '[Parse Error] Failed to parse seed world response:');
       throw new Error("Invalid JSON response from AI");
     }
   }

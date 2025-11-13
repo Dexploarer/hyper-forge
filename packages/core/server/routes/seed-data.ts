@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { SeedDataService } from "../services/SeedDataService";
 import { RelationshipService } from "../services/RelationshipService";
 import { db } from "../db";
@@ -58,7 +59,7 @@ export const createSeedDataRoutes = () => {
           } as NewWorld)
           .returning();
 
-        console.log(`[SeedData] Created world: ${createdWorld.name}`);
+        logger.info({ context: 'SeedData' }, 'Created world: ${createdWorld.name}');
 
         // Save locations
         const locationMap = new Map<string, string>(); // name -> id
@@ -128,7 +129,7 @@ export const createSeedDataRoutes = () => {
           }
         }
 
-        console.log(`[SeedData] Created ${npcMap.size} NPCs`);
+        logger.info({ context: 'SeedData' }, 'Created ${npcMap.size} NPCs');
 
         // Save quests
         const questMap = new Map<string, string>(); // title -> id
@@ -182,7 +183,7 @@ export const createSeedDataRoutes = () => {
           }
         }
 
-        console.log(`[SeedData] Created ${questMap.size} quests`);
+        logger.info({ context: 'SeedData' }, 'Created ${questMap.size} quests');
 
         // Save lore
         const loreMap = new Map<string, string>(); // title -> id
@@ -237,7 +238,7 @@ export const createSeedDataRoutes = () => {
           }
         }
 
-        console.log(`[SeedData] Created ${loreMap.size} lore entries`);
+        logger.info({ context: 'SeedData' }, 'Created ${loreMap.size} lore entries');
 
         // Save music
         const musicMap = new Map<string, string>(); // title -> id
@@ -283,7 +284,7 @@ export const createSeedDataRoutes = () => {
           }
         }
 
-        console.log(`[SeedData] Created ${musicMap.size} music tracks`);
+        logger.info({ context: 'SeedData' }, 'Created ${musicMap.size} music tracks');
 
         // Create additional relationships from the relationships array
         for (const rel of seedData.relationships) {

@@ -4,10 +4,11 @@
  */
 
 import { GenerationWorker } from "./generation-worker";
+import { logger } from '../utils/logger';
 
 const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "3", 10);
 
-console.log(`[WorkerPool] Starting ${WORKER_CONCURRENCY} workers...`);
+logger.info({ context: 'WorkerPool' }, 'Starting ${WORKER_CONCURRENCY} workers...');
 
 const workers: GenerationWorker[] = [];
 
@@ -19,19 +20,19 @@ for (let i = 0; i < WORKER_CONCURRENCY; i++) {
 
   // Start worker in background
   worker.start().catch((error) => {
-    console.error(`[WorkerPool] Worker ${workerId} crashed:`, error);
+    logger.error({, error }, '[WorkerPool] Worker ${workerId} crashed:');
     // TODO: Implement automatic restart logic
   });
 }
 
 // Graceful shutdown
 const shutdown = () => {
-  console.log("[WorkerPool] Shutting down workers...");
+  logger.info({ }, '[WorkerPool] Shutting down workers...');
   workers.forEach((worker) => worker.stop());
 
   // Give workers time to finish current jobs
   setTimeout(() => {
-    console.log("[WorkerPool] Shutdown complete");
+    logger.info({ }, '[WorkerPool] Shutdown complete');
     process.exit(0);
   }, 5000);
 };
@@ -39,4 +40,4 @@ const shutdown = () => {
 process.on("SIGTERM", shutdown);
 process.on("SIGINT", shutdown);
 
-console.log(`[WorkerPool] ${WORKER_CONCURRENCY} workers started and ready`);
+logger.info({ context: 'WorkerPool' }, '${WORKER_CONCURRENCY} workers started and ready');

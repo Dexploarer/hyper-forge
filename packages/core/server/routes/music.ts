@@ -4,6 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
+import { logger } from '../utils/logger';
 import { ElevenLabsMusicService } from "../services/ElevenLabsMusicService";
 import * as Models from "../models";
 import { optionalAuth } from "../middleware/auth";
@@ -22,7 +23,7 @@ export const musicRoutes = new Elysia({
   .guard(
   {
     beforeHandle: ({ request }) => {
-      console.log(`[Music] ${request.method} ${new URL(request.url).pathname}`);
+      logger.info({ context: 'Music' }, '${request.method} ${new URL(request.url).pathname}');
     },
   },
   (app) =>
@@ -147,7 +148,7 @@ export const musicRoutes = new Elysia({
       .post(
         "/batch",
         async ({ body, musicService }) => {
-          console.log(`[Music] Batch generating ${body.tracks.length} tracks`);
+          logger.info({ context: 'Music' }, 'Batch generating ${body.tracks.length} tracks');
 
           const results = await musicService.generateBatch(body.tracks);
 

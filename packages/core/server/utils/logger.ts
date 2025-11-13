@@ -15,8 +15,8 @@
  * Migrate console.log/error/warn to structured Pino logging:
  *
  * BEFORE:
- * console.log(`[Upload] Saved file: ${filename}`);
- * console.error("Upload failed:", error);
+ * logger.info({ context: 'Upload' }, 'Saved file: ${filename}');
+ * logger.error({ err: error }, 'Upload failed:');
  *
  * AFTER:
  * const logger = createChildLogger('Upload');

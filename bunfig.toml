@@ -1,0 +1,41 @@
+# Bun Configuration
+# https://bun.sh/docs/runtime/bunfig
+
+[install]
+# Configure package installation
+optional = true
+dev = true
+peer = true
+production = false
+
+[install.cache]
+# Cache directory for faster installs
+dir = ".bun-cache"
+
+[test]
+# Test runner configuration
+preload = ["./packages/core/__tests__/setup-dom.ts"]
+coverage = true
+coverageThreshold = 0.80  # Require 80% coverage
+coverageReporter = ["text", "lcov", "html"]
+coveragePathIgnorePatterns = [
+  "node_modules/",
+  "dist/",
+  "__tests__/",
+  "*.test.ts",
+  "*.test.tsx",
+  "*.spec.ts",
+  "*.spec.tsx",
+  ".claude/",
+  "dev-book/",
+  "scripts/"
+]
+coverageSkipTestFiles = true
+timeout = 10000  # 10 second default timeout
+bail = false  # Continue running tests after failures
+
+# Enable quiet mode for AI agents (CLAUDECODE, AGENT)
+# Shows only failures in detail, hides verbose passing test output
+[test.env]
+CLAUDECODE = "1"
+AGENT = "1"

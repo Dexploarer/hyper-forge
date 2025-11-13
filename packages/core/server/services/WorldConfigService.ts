@@ -4,6 +4,7 @@
  */
 
 import { db } from "../db";
+import { logger } from '../utils/logger';
 import {
   worldConfigurations,
   configurationHistory,
@@ -234,7 +235,7 @@ export class WorldConfigService {
         changedFields,
       );
 
-      console.log(`[WorldConfigService] Updated configuration: ${id}`);
+      logger.info({ context: 'WorldConfigService' }, 'Updated configuration: ${id}');
       return updated;
     } catch (error) {
       console.error(
@@ -321,7 +322,7 @@ export class WorldConfigService {
         .delete(worldConfigurations)
         .where(eq(worldConfigurations.id, id));
 
-      console.log(`[WorldConfigService] Deleted configuration: ${id}`);
+      logger.info({ context: 'WorldConfigService' }, 'Deleted configuration: ${id}');
     } catch (error) {
       console.error(
         `[WorldConfigService] Error deleting configuration ${id}:`,
@@ -445,10 +446,10 @@ export class WorldConfigService {
         `Cloned from: ${source.name}`,
       );
 
-      console.log(`[WorldConfigService] Cloned configuration: ${newName}`);
+      logger.info({ context: 'WorldConfigService' }, 'Cloned configuration: ${newName}');
       return cloned;
     } catch (error) {
-      console.error(`[WorldConfigService] Error cloning configuration:`, error);
+      logger.error({, error }, '[WorldConfigService] Error cloning configuration:');
       throw new Error("Failed to clone configuration");
     }
   }
@@ -466,7 +467,7 @@ export class WorldConfigService {
 
       return results;
     } catch (error) {
-      console.error("[WorldConfigService] Error getting templates:", error);
+      logger.error({ err: error }, '[WorldConfigService] Error getting templates:');
       throw new Error("Failed to get templates");
     }
   }
@@ -602,7 +603,7 @@ export class WorldConfigService {
         "Configuration imported from JSON",
       );
 
-      console.log(`[WorldConfigService] Imported configuration: ${name}`);
+      logger.info({ context: 'WorldConfigService' }, 'Imported configuration: ${name}');
       return imported;
     } catch (error) {
       console.error(
@@ -971,7 +972,7 @@ Use this world configuration as the foundation for all generated content. Ensure
         changedFields: changedFields || [],
       });
     } catch (error) {
-      console.error("[WorldConfigService] Error recording change:", error);
+      logger.error({ err: error }, '[WorldConfigService] Error recording change:');
       // Don't throw - history recording is non-critical
     }
   }
