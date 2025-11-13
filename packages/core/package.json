@@ -94,7 +94,6 @@
     "elysia": "^1.4.15",
     "elysia-prometheus": "^1.0.0",
     "elysia-rate-limit": "^4.4.2",
-    "elysia-requestid": "^1.0.9",
     "elysiajs-cdn-cache": "^0.0.13",
     "express": "^5.1.0",
     "immer": "^10.2.0",

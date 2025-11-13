@@ -17,7 +17,7 @@ import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { serverTiming } from "@elysiajs/server-timing";
 import { rateLimit } from "elysia-rate-limit";
-import { requestID } from "elysia-requestid";
+import { requestID } from "./plugins/request-id";
 import prometheus from "elysia-prometheus";
 import path from "path";
 import fs from "fs";

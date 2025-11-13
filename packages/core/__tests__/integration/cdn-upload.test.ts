@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
-import { db } from "@/server/db/db";
-import { assets } from "@/server/db/schema";
+import { db } from "../../server/db/db.js";
+import { assets } from "../../server/db/schema/index.js";
 import { eq } from "drizzle-orm";
 
 describe("CDN Upload Integration", () => {

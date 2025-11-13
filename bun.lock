@@ -55,7 +55,6 @@
         "elysia": "^1.4.15",
         "elysia-prometheus": "^1.0.0",
         "elysia-rate-limit": "^4.4.2",
-        "elysia-requestid": "^1.0.9",
         "elysiajs-cdn-cache": "^0.0.13",
         "express": "^5.1.0",
         "immer": "^10.2.0",
@@ -1393,8 +1392,6 @@
     "elysia-prometheus": ["elysia-prometheus@1.0.0", "", { "dependencies": { "prom-client": "^15.1.3" }, "peerDependencies": { "elysia": ">= 1.2.0" } }, "sha512-imyEWHOXfkhBBTedSp1uM6W7BylkkUE0g7hCWBgpCDE99z7Y3l5MIOPFkqcAloIC2tCgx4dKRkkEfvCL4nhlYg=="],
 
     "elysia-rate-limit": ["elysia-rate-limit@4.4.2", "", { "dependencies": { "@alloc/quick-lru": "5.2.0", "debug": "4.3.4" }, "peerDependencies": { "elysia": ">= 1.0.0" } }, "sha512-zrtqk3BDsCZ6VhJDJMmpkGsSqs6ZFaYNU+wTHqqEprUxVa3wA5/QV9N/y1V0f34n9gz3Gpd8vlVe2CbKOWHCQA=="],
-
-    "elysia-requestid": ["elysia-requestid@1.0.9", "", { "peerDependencies": { "elysia": "^0.7.30", "typescript": "^5.2.2" } }, "sha512-8/7kt/y5Sa16e6XS0+UtPVN7gBCHLp7k7z7j3OsqjsoUv3ofUutwV+yrHNayBsrYULVEoBMKBfqw5X/fT9zx3A=="],
 
     "elysiajs-cdn-cache": ["elysiajs-cdn-cache@0.0.13", "", { "dependencies": { "elysia": "^1.3.1" } }, "sha512-0VIRVzTZnwRBjCw1o8qSLUEgMbSBum5VNCmE8GgH7ziLNKkXsvgh0O5BaHkNs1XMmz612AVXrZRfuNiS6yOHFQ=="],
 

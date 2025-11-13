@@ -1,0 +1,45 @@
+{
+  "$schema": "https://railpack.com/schema.json",
+  "packages": {
+    "node": "22.12.0",
+    "bun": "latest"
+  },
+  "provider": "default",
+  "caches": {
+    "node_modules": {
+      "key": "node_modules",
+      "paths": ["node_modules"]
+    }
+  },
+  "build": {
+    "inputs": [
+      {
+        "step": "packages"
+      },
+      {
+        "step": "copy",
+        "paths": [
+          "package.json",
+          "bun.lock"
+        ]
+      },
+      {
+        "step": "install",
+        "cmd": "bun install --frozen-lockfile"
+      },
+      {
+        "step": "copy",
+        "paths": ["**"]
+      }
+    ]
+  },
+  "deploy": {
+    "inputs": [
+      {
+        "step": "mise",
+        "comment": "Ensures bun and node are available at runtime"
+      }
+    ],
+    "cmd": "bun run start:workers"
+  }
+}
