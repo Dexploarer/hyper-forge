@@ -4,21 +4,21 @@
 # Uses Railpack (Nixpacks is deprecated as of 2025)
 
 [build]
-# Build command - install dependencies (no frontend build needed for workers)
-buildCommand = "bun install"
+# Build command - install dependencies in the packages/core directory
+buildCommand = "cd packages/core && bun install"
 
 # Watch paths for automatic rebuilds
 watchPatterns = [
-  "server/workers/**",
-  "server/services/**",
-  "server/db/**",
-  "package.json",
-  "bun.lock"
+  "packages/core/server/workers/**",
+  "packages/core/server/services/**",
+  "packages/core/server/db/**",
+  "packages/core/package.json",
+  "packages/core/bun.lock"
 ]
 
 [deploy]
-# Start command - run worker pool for background job processing
-startCommand = "bun run start:workers"
+# Start command - run worker pool for background job processing (from packages/core)
+startCommand = "cd packages/core && bun run start:workers"
 
 # Restart policy - restart on failure with more retries for workers
 restartPolicyType = "ON_FAILURE"
