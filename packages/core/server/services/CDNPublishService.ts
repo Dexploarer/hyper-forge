@@ -268,8 +268,6 @@ export class CDNPublishService {
           cdnConceptArtUrl: publishResult.conceptArtCdnUrl,
           cdnRiggedModelUrl: publishResult.riggedModelCdnUrl,
           cdnFiles: publishResult.cdnUrls || [],
-          publishedToCdn: true,
-          cdnPublishedAt: new Date(),
           updatedAt: new Date(),
         })
         .where(eq(assets.id, assetId));

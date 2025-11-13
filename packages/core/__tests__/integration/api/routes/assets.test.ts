@@ -739,7 +739,6 @@ describe("Asset Routes", () => {
         filePath: "cdn-asset/cdn-asset.glb",
         status: "completed",
         visibility: "public",
-        publishedToCdn: true,
         cdnUrl: "https://cdn.example.com/models/cdn-asset/model.glb",
         cdnThumbnailUrl:
           "https://cdn.example.com/models/cdn-asset/thumbnail.png",
@@ -778,7 +777,6 @@ describe("Asset Routes", () => {
 
       // Should include CDN URL fields merged from database
       expect(returnedAsset).toBeDefined();
-      expect(returnedAsset.publishedToCdn).toBe(true);
       expect(returnedAsset.cdnUrl).toBe(
         "https://cdn.example.com/models/cdn-asset/model.glb",
       );
@@ -792,7 +790,7 @@ describe("Asset Routes", () => {
       expect(returnedAsset.cdnFiles.length).toBe(3);
     });
 
-    it("should set publishedToCdn to false when asset not on CDN", async () => {
+    it("should not include CDN URL when asset not on CDN", async () => {
       // Create database asset without CDN fields
       const { user } = await createTestUser({
         privyUserId: "local-user",
@@ -806,7 +804,6 @@ describe("Asset Routes", () => {
         filePath: "local-asset/local-asset.glb",
         status: "completed",
         visibility: "public",
-        publishedToCdn: false,
       });
 
       // Add filesystem mock asset
@@ -833,7 +830,6 @@ describe("Asset Routes", () => {
       const returnedAsset = data.find((a: any) => a.id === "local-asset");
 
       expect(returnedAsset).toBeDefined();
-      expect(returnedAsset.publishedToCdn).toBe(false);
       expect(returnedAsset.cdnUrl).toBeUndefined();
     });
 
@@ -851,7 +847,6 @@ describe("Asset Routes", () => {
         filePath: "mixed-cdn/mixed-cdn.glb",
         status: "completed",
         visibility: "public",
-        publishedToCdn: true,
         cdnUrl: "https://cdn.example.com/models/mixed-cdn/model.glb",
       });
 
@@ -862,7 +857,6 @@ describe("Asset Routes", () => {
         filePath: "mixed-local/mixed-local.glb",
         status: "completed",
         visibility: "public",
-        publishedToCdn: false,
       });
 
       // Add filesystem mock assets
@@ -898,10 +892,7 @@ describe("Asset Routes", () => {
       const cdnReturned = data.find((a: any) => a.id === "mixed-cdn");
       const localReturned = data.find((a: any) => a.id === "mixed-local");
 
-      expect(cdnReturned.publishedToCdn).toBe(true);
       expect(cdnReturned.cdnUrl).toBeDefined();
-
-      expect(localReturned.publishedToCdn).toBe(false);
       expect(localReturned.cdnUrl).toBeUndefined();
     });
 
@@ -923,7 +914,6 @@ describe("Asset Routes", () => {
         filePath: "full-asset/full-asset.glb",
         status: "completed",
         visibility: "public",
-        publishedToCdn: true,
         cdnUrl: "https://cdn.example.com/models/full-asset/model.glb",
       });
 
@@ -963,7 +953,6 @@ describe("Asset Routes", () => {
       expect(returnedAsset.modelUrl).toBe("/gdd-assets/full-asset/model.glb");
 
       // Plus CDN fields merged from database
-      expect(returnedAsset.publishedToCdn).toBe(true);
       expect(returnedAsset.cdnUrl).toBe(
         "https://cdn.example.com/models/full-asset/model.glb",
       );

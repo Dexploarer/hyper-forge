@@ -17,7 +17,14 @@ interface AssetUpdate {
   category?: string;
   metadata?: Record<string, unknown>;
   isFavorite?: boolean;
-  status?: 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived';
+  status?:
+    | "draft"
+    | "processing"
+    | "completed"
+    | "failed"
+    | "approved"
+    | "published"
+    | "archived";
   notes?: string;
 }
 
@@ -59,14 +66,12 @@ export class AssetService {
         cdnUrl: asset.cdnUrl,
         cdnThumbnailUrl: asset.cdnThumbnailUrl,
         cdnConceptArtUrl: asset.cdnConceptArtUrl,
-        publishedToCdn: asset.publishedToCdn,
       }));
     } catch (error) {
       console.error("Failed to list assets:", error);
       return [];
     }
   }
-
 
   async getAssetMetadata(assetId: string): Promise<AssetMetadataType> {
     // Get metadata from database
@@ -80,7 +85,6 @@ export class AssetService {
 
     return asset.metadata as AssetMetadataType;
   }
-
 
   async deleteAsset(
     assetId: string,
@@ -101,7 +105,7 @@ export class AssetService {
     if (includeVariants && metadata?.isBaseModel) {
       // Query all assets and filter variants in application code
       const allAssets = await db.select().from(assets);
-      const variants = allAssets.filter(a => {
+      const variants = allAssets.filter((a) => {
         const assetMetadata = a.metadata as AssetMetadataType;
         return assetMetadata?.parentBaseModel === assetId;
       });
@@ -119,7 +123,6 @@ export class AssetService {
     );
     return true;
   }
-
 
   async updateAsset(
     assetId: string,
@@ -240,5 +243,4 @@ export class AssetService {
       throw error;
     }
   }
-
 }

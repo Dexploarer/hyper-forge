@@ -31,14 +31,14 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
     // Get database statistics
     let assetStats = {
       total: 0,
-      publishedToCdn: 0,
-      notPublished: 0,
+      withCdnUrl: 0,
+      withoutCdnUrl: 0,
     };
 
     let mediaStats = {
       total: 0,
-      publishedToCdn: 0,
-      notPublished: 0,
+      withCdnUrl: 0,
+      withoutCdnUrl: 0,
     };
 
     try {
@@ -46,15 +46,15 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
       const assetCounts = await db
         .select({
           total: sql<number>`count(*)::int`,
-          publishedToCdn: sql<number>`count(*) FILTER (WHERE published_to_cdn = true)::int`,
+          withCdnUrl: sql<number>`count(*) FILTER (WHERE cdn_url IS NOT NULL)::int`,
         })
         .from(assets);
 
       if (assetCounts[0]) {
         assetStats = {
           total: assetCounts[0].total,
-          publishedToCdn: assetCounts[0].publishedToCdn,
-          notPublished: assetCounts[0].total - assetCounts[0].publishedToCdn,
+          withCdnUrl: assetCounts[0].withCdnUrl,
+          withoutCdnUrl: assetCounts[0].total - assetCounts[0].withCdnUrl,
         };
       }
 
@@ -62,15 +62,15 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
       const mediaCounts = await db
         .select({
           total: sql<number>`count(*)::int`,
-          publishedToCdn: sql<number>`count(*) FILTER (WHERE published_to_cdn = true)::int`,
+          withCdnUrl: sql<number>`count(*) FILTER (WHERE cdn_url IS NOT NULL)::int`,
         })
         .from(mediaAssets);
 
       if (mediaCounts[0]) {
         mediaStats = {
           total: mediaCounts[0].total,
-          publishedToCdn: mediaCounts[0].publishedToCdn,
-          notPublished: mediaCounts[0].total - mediaCounts[0].publishedToCdn,
+          withCdnUrl: mediaCounts[0].withCdnUrl,
+          withoutCdnUrl: mediaCounts[0].total - mediaCounts[0].withCdnUrl,
         };
       }
     } catch (error) {
@@ -102,8 +102,8 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
         media: mediaStats,
         total: {
           all: assetStats.total + mediaStats.total,
-          publishedToCdn: assetStats.publishedToCdn + mediaStats.publishedToCdn,
-          notPublished: assetStats.notPublished + mediaStats.notPublished,
+          withCdnUrl: assetStats.withCdnUrl + mediaStats.withCdnUrl,
+          withoutCdnUrl: assetStats.withoutCdnUrl + mediaStats.withoutCdnUrl,
         },
       },
       webhook: {

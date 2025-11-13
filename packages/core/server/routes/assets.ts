@@ -59,7 +59,6 @@ export const createAssetRoutes = (
                 // Merge CDN URLs from database into asset response
                 const assetWithCDN = {
                   ...asset,
-                  publishedToCdn: dbAsset.publishedToCdn ?? false,
                   cdnUrl: dbAsset.cdnUrl,
                   cdnThumbnailUrl: dbAsset.cdnThumbnailUrl,
                   cdnConceptArtUrl: dbAsset.cdnConceptArtUrl,

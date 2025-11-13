@@ -37,10 +37,8 @@ export const mediaAssets = pgTable(
     fileUrl: text("file_url").notNull(), // DEPRECATED: Use cdnUrl instead
     fileName: varchar("file_name", { length: 255 }),
 
-    // CDN Publishing (preferred over fileUrl)
+    // CDN storage (CDN-first architecture)
     cdnUrl: varchar("cdn_url", { length: 1024 }), // Full CDN URL for the media file
-    publishedToCdn: boolean("published_to_cdn").default(false), // Whether media is on CDN
-    cdnPublishedAt: timestamp("cdn_published_at", { withTimezone: true }), // When published to CDN
 
     // Generation metadata
     metadata: jsonb("metadata")
@@ -74,9 +72,6 @@ export const mediaAssets = pgTable(
       table.entityId,
     ),
     createdByIdx: index("idx_media_assets_created_by").on(table.createdBy),
-    publishedToCdnIdx: index("idx_media_assets_published_to_cdn").on(
-      table.publishedToCdn,
-    ),
     // Composite indexes for query optimization
     entityTypeMediaTypeIdx: index("idx_media_entity_type_media_type").on(
       table.entityType,

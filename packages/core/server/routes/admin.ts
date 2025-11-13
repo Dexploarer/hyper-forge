@@ -304,18 +304,18 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
         },
         statistics: {
           totalRecords: stats.totalRecords,
-          publishedToCdn: stats.publishedToCdn,
-          notPublished: stats.notPublished,
+          withCdnUrl: stats.withCdnUrl,
+          withoutCdnUrl: stats.withoutCdnUrl,
           healthPercentage:
             stats.totalRecords > 0
-              ? Math.round((stats.publishedToCdn / stats.totalRecords) * 100)
+              ? Math.round((stats.withCdnUrl / stats.totalRecords) * 100)
               : 100,
         },
         warning:
-          stats.notPublished > 0
-            ? `${stats.notPublished} media assets not yet published to CDN`
+          stats.withoutCdnUrl > 0
+            ? `${stats.withoutCdnUrl} media assets without CDN URL`
             : null,
-        note: "CDN-first architecture - all media uploaded directly to CDN with webhook database sync",
+        note: "CDN-first architecture - all media uploaded directly to CDN",
       };
     },
     {

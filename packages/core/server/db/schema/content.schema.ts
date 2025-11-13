@@ -600,10 +600,8 @@ export const musicTracks = pgTable(
     // Use cdnUrl instead for production assets
     fileUrl: text("file_url"), // DEPRECATED: Use cdnUrl instead
 
-    // CDN Publishing (preferred over fileUrl)
+    // CDN storage (CDN-first architecture)
     cdnUrl: varchar("cdn_url", { length: 1024 }), // Full CDN URL for the music file
-    publishedToCdn: boolean("published_to_cdn").default(false), // Whether music is on CDN
-    cdnPublishedAt: timestamp("cdn_published_at", { withTimezone: true }), // When published to CDN
 
     // Music metadata
     data: jsonb("data").notNull(),
@@ -623,9 +621,6 @@ export const musicTracks = pgTable(
     projectIdIdx: index("idx_music_project_id").on(table.projectId),
     isPublicIdx: index("idx_music_is_public").on(table.isPublic),
     viewCountIdx: index("idx_music_view_count").on(table.viewCount),
-    publishedToCdnIdx: index("idx_music_tracks_published_to_cdn").on(
-      table.publishedToCdn,
-    ),
     // Composite indexes for query optimization
     moodPublicIdx: index("idx_music_mood_public").on(
       table.mood,

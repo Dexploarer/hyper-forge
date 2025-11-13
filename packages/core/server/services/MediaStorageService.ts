@@ -328,17 +328,17 @@ export class MediaStorageService {
    */
   async getStorageStats(): Promise<{
     totalRecords: number;
-    publishedToCdn: number;
-    notPublished: number;
+    withCdnUrl: number;
+    withoutCdnUrl: number;
   }> {
     const allAssets = await db.select().from(mediaAssets);
 
-    const publishedToCdn = allAssets.filter((a) => a.publishedToCdn).length;
+    const withCdnUrl = allAssets.filter((a) => a.cdnUrl).length;
 
     return {
       totalRecords: allAssets.length,
-      publishedToCdn,
-      notPublished: allAssets.length - publishedToCdn,
+      withCdnUrl,
+      withoutCdnUrl: allAssets.length - withCdnUrl,
     };
   }
 }

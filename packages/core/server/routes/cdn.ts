@@ -265,8 +265,6 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
                   cdnThumbnailUrl: metadata.cdnThumbnailUrl,
                   cdnConceptArtUrl: metadata.cdnConceptArtUrl,
                   cdnFiles: metadata.cdnFiles,
-                  publishedToCdn: true,
-                  cdnPublishedAt: new Date(),
                   updatedAt: new Date(),
                 })
                 .where(eq(assets.id, existing.id));

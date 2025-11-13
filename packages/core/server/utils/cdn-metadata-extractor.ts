@@ -15,7 +15,7 @@ export interface WebhookFile {
 
 export interface WebhookPayload {
   assetId: string;
-  directory: string;  // "models" | "emotes" | "music"
+  directory: string; // "models" | "emotes" | "music"
   files: WebhookFile[];
   uploadedAt: string;
   uploadedBy: string | null;
@@ -35,7 +35,6 @@ export interface ExtractedMetadata {
   cdnUrl: string | null;
   cdnThumbnailUrl: string | null;
   cdnConceptArtUrl: string | null;
-  publishedToCdn: boolean;
   cdnFiles: string[];
   visibility: "public" | "private";
   status: "completed" | "draft";
@@ -46,7 +45,10 @@ export interface ExtractedMetadata {
  * Infer asset type from CDN directory
  * Maps CDN directory structure to asset types
  */
-export function inferAssetType(directory: string): { type: string; subtype: string } {
+export function inferAssetType(directory: string): {
+  type: string;
+  subtype: string;
+} {
   switch (directory) {
     case "models":
       return { type: "item", subtype: "unknown" };
@@ -63,7 +65,9 @@ export function inferAssetType(directory: string): { type: string; subtype: stri
  * Extract asset metadata from CDN webhook payload
  * Infers metadata from file structure and names
  */
-export function extractAssetMetadata(payload: WebhookPayload): ExtractedMetadata {
+export function extractAssetMetadata(
+  payload: WebhookPayload,
+): ExtractedMetadata {
   const { assetId, directory, files } = payload;
 
   // Infer type from directory
@@ -79,7 +83,9 @@ export function extractAssetMetadata(payload: WebhookPayload): ExtractedMetadata
       f.name.endsWith(".jpeg"),
   );
   const conceptArtFile = files.find(
-    (f) => f.name.includes("concept") && (f.name.endsWith(".png") || f.name.endsWith(".jpg")),
+    (f) =>
+      f.name.includes("concept") &&
+      (f.name.endsWith(".png") || f.name.endsWith(".jpg")),
   );
   const metadataFile = files.find((f) => f.name === "metadata.json");
 
@@ -108,7 +114,6 @@ export function extractAssetMetadata(payload: WebhookPayload): ExtractedMetadata
     cdnUrl: primaryFile.cdnUrl,
     cdnThumbnailUrl: thumbnailFile?.cdnUrl || null,
     cdnConceptArtUrl: conceptArtFile?.cdnUrl || null,
-    publishedToCdn: true,
     cdnFiles: files.map((f) => f.cdnUrl),
     visibility: "public", // Default to public for CDN uploads
     status: "completed",
@@ -122,7 +127,10 @@ export function extractAssetMetadata(payload: WebhookPayload): ExtractedMetadata
  * @param ownerId - User ID to assign ownership to (system user)
  * @returns NewAsset object ready for database insertion
  */
-export function toNewAsset(metadata: ExtractedMetadata, ownerId: string): NewAsset {
+export function toNewAsset(
+  metadata: ExtractedMetadata,
+  ownerId: string,
+): NewAsset {
   return {
     name: metadata.name,
     description: metadata.description,
@@ -168,8 +176,6 @@ export function toNewAsset(metadata: ExtractedMetadata, ownerId: string): NewAss
     cdnUrl: metadata.cdnUrl,
     cdnThumbnailUrl: metadata.cdnThumbnailUrl,
     cdnConceptArtUrl: metadata.cdnConceptArtUrl,
-    publishedToCdn: metadata.publishedToCdn,
-    cdnPublishedAt: new Date(),
     cdnFiles: metadata.cdnFiles,
     createdAt: new Date(),
     updatedAt: new Date(),

@@ -64,11 +64,11 @@ describe("Debug CDN Routes", () => {
       expect(data.statistics).toHaveProperty("total");
 
       expect(data.statistics.assets).toHaveProperty("total");
-      expect(data.statistics.assets).toHaveProperty("publishedToCdn");
-      expect(data.statistics.assets).toHaveProperty("notPublished");
+      expect(data.statistics.assets).toHaveProperty("withCdnUrl");
+      expect(data.statistics.assets).toHaveProperty("withoutCdnUrl");
 
       expect(data.statistics.total).toHaveProperty("all");
-      expect(data.statistics.total).toHaveProperty("publishedToCdn");
+      expect(data.statistics.total).toHaveProperty("withCdnUrl");
     });
 
     it("should return webhook configuration", async () => {
