@@ -68,6 +68,10 @@ export class QdrantService {
       // Default to http:// for Railway internal URLs or localhost
       normalizedUrl = `http://${normalizedUrl}`;
       console.log(`[QdrantService] Added http:// protocol to URL: ${normalizedUrl}`);
+    } else if (normalizedUrl.startsWith('https://') && normalizedUrl.includes('.railway.internal')) {
+      // Railway internal networking doesn't support HTTPS - convert to HTTP
+      normalizedUrl = normalizedUrl.replace('https://', 'http://');
+      console.log(`[QdrantService] Converted HTTPS to HTTP for Railway internal URL: ${normalizedUrl}`);
     }
 
     // Initialize Qdrant client
