@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, mock } from "bun:test";
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react";
 import { useProjects, useProject } from "@/hooks/useProjects";
 import { createTestQueryClient, createWrapper } from "../../helpers/react-query";
 import { ProjectService } from "@/services/api/ProjectService";
@@ -273,11 +273,15 @@ describe("useProject", () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    // Call refetch
-    await result.current.refetch();
+    // Call refetch and wait for completion
+    await act(async () => {
+      await result.current.refetch();
+    });
 
-    // Should still have project data
-    expect(result.current.project).toBeDefined();
-    expect(result.current.project?.id).toBe("project-1");
+    // Wait for the refetch to complete and data to be available
+    await waitFor(() => {
+      expect(result.current.project).toBeDefined();
+      expect(result.current.project?.id).toBe("project-1");
+    });
   });
 });

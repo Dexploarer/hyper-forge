@@ -7,6 +7,9 @@ import fs from "fs/promises";
 import path from "path";
 import type { UserContextType, AssetMetadataType } from "../models";
 import { assetDatabaseService } from "./AssetDatabaseService";
+import { db } from "../db/db";
+import { assets } from "../db/schema";
+import { desc, eq } from "drizzle-orm";
 
 interface AssetUpdate {
   name?: string;
@@ -45,145 +48,32 @@ export class AssetService {
 
   async listAssets(): Promise<Asset[]> {
     try {
-      const assetDirs = await fs.readdir(this.assetsDir);
-      const assets: Asset[] = [];
+      // Query database for all assets
+      const dbAssets = await db
+        .select()
+        .from(assets)
+        .orderBy(desc(assets.createdAt));
 
-      for (const assetDir of assetDirs) {
-        // Skip hidden files, JSON files, and system directories
-        if (assetDir.startsWith(".") || assetDir.endsWith(".json") || assetDir === "lost+found") {
-          continue;
-        }
-
-        const assetPath = path.join(this.assetsDir, assetDir);
-
-        try {
-          const stats = await fs.stat(assetPath);
-          if (!stats.isDirectory()) continue;
-
-          const metadataPath = path.join(assetPath, "metadata.json");
-
-          // Check if metadata.json exists before trying to read it
-          try {
-            await fs.access(metadataPath);
-          } catch {
-            // Skip directories without metadata.json (not assets)
-            continue;
-          }
-
-          const metadata = JSON.parse(
-            await fs.readFile(metadataPath, "utf-8"),
-          ) as AssetMetadataType;
-
-          // Ensure required fields for schema validation
-          if (!metadata.id) {
-            metadata.id = assetDir;
-          }
-          if (!metadata.name) {
-            metadata.name = assetDir;
-          }
-
-          // Normalize empty tier to undefined for schema validation
-          if (metadata.tier === "" || metadata.tier === null) {
-            delete metadata.tier;
-          }
-
-          // Normalize tier property for frontend compatibility
-          // For variants: extract tier from materialPreset.id or materialPreset.tier
-          // For base models: tier is optional
-          if (
-            !metadata.tier &&
-            metadata.isVariant &&
-            "materialPreset" in metadata &&
-            metadata.materialPreset
-          ) {
-            const preset = metadata.materialPreset;
-            // Use the material ID as the tier name (e.g., "steel", "bronze", "dragon")
-            metadata.tier = preset.id || preset.tier;
-          }
-
-          const files = await fs.readdir(assetPath);
-          const glbFile = files.find((f) => f.endsWith(".glb"));
-
-          assets.push({
-            id: assetDir,
-            name: metadata.name || assetDir,
-            description: metadata.description || "",
-            type: metadata.type || "unknown",
-            metadata: metadata,
-            hasModel: !!glbFile,
-            modelFile: glbFile,
-            generatedAt: metadata.generatedAt,
-          });
-        } catch (error) {
-          // Skip assets that can't be loaded due to malformed metadata or other errors
-          const err = error as Error;
-          // Only log if it's not a simple "file not found" error (those are now handled above)
-          if (!err.message.includes("ENOENT") && !err.message.includes("no such file")) {
-            console.error(`Error loading asset ${assetDir}:`, err.message);
-          }
-        }
-      }
-
-      // Sort by generation date, newest first
-      return assets.sort(
-        (a, b) =>
-          new Date(b.generatedAt || 0).getTime() -
-          new Date(a.generatedAt || 0).getTime(),
-      );
+      return dbAssets.map((asset) => ({
+        id: asset.id,
+        name: asset.name,
+        description: asset.description || "",
+        type: asset.type,
+        metadata: asset.metadata as AssetMetadataType,
+        hasModel: !!asset.cdnUrl,
+        modelFile: asset.cdnUrl ? path.basename(asset.cdnUrl) : undefined,
+        generatedAt: asset.createdAt.toISOString(),
+        cdnUrl: asset.cdnUrl,
+        cdnThumbnailUrl: asset.cdnThumbnailUrl,
+        cdnConceptArtUrl: asset.cdnConceptArtUrl,
+        publishedToCdn: asset.publishedToCdn,
+      }));
     } catch (error) {
       console.error("Failed to list assets:", error);
       return [];
     }
   }
 
-  async getModelPath(assetId: string): Promise<string> {
-    const assetPath = path.join(this.assetsDir, assetId);
-
-    // Check if asset directory exists
-    try {
-      await fs.access(assetPath);
-    } catch (error) {
-      throw new Error(`Asset ${assetId} not found`);
-    }
-
-    // Read metadata to check if it's a character with a rigged model
-    try {
-      const metadata = await this.getAssetMetadata(assetId);
-
-      // For characters, prefer the rigged model if available
-      if (metadata.type === "character" && metadata.riggedModelPath) {
-        const riggedPath = path.join(
-          assetPath,
-          path.basename(metadata.riggedModelPath),
-        );
-        try {
-          await fs.access(riggedPath);
-          console.log(
-            `Returning rigged model for character ${assetId}: ${metadata.riggedModelPath}`,
-          );
-          return riggedPath;
-        } catch {
-          console.warn(
-            `Rigged model not found for character ${assetId}, falling back to regular model`,
-          );
-        }
-      }
-    } catch (error) {
-      console.log(
-        `Could not read metadata for ${assetId}, using default model selection`,
-      );
-    }
-
-    // Default behavior: find the first .glb file
-    const files = await fs.readdir(assetPath);
-    const glbFile = files.find((f) => f.endsWith(".glb"));
-
-    if (!glbFile) {
-      throw new Error("Model file not found");
-    }
-
-    return path.join(assetPath, glbFile);
-  }
 
   async getAssetMetadata(assetId: string): Promise<AssetMetadataType> {
     const metadataPath = path.join(this.assetsDir, assetId, "metadata.json");
@@ -192,129 +82,42 @@ export class AssetService {
     ) as AssetMetadataType;
   }
 
-  async loadAsset(assetId: string): Promise<Asset | null> {
-    try {
-      const assetPath = path.join(this.assetsDir, assetId);
-      const stats = await fs.stat(assetPath);
-
-      if (!stats.isDirectory()) {
-        return null;
-      }
-
-      const metadataPath = path.join(assetPath, "metadata.json");
-      const metadata = JSON.parse(
-        await fs.readFile(metadataPath, "utf-8"),
-      ) as AssetMetadataType;
-
-      const files = await fs.readdir(assetPath);
-      const glbFile = files.find((f) => f.endsWith(".glb"));
-
-      return {
-        id: assetId,
-        name: metadata.name || assetId,
-        description: metadata.description || "",
-        type: metadata.type || "unknown",
-        metadata: metadata,
-        hasModel: !!glbFile,
-        modelFile: glbFile,
-        generatedAt: metadata.generatedAt,
-      };
-    } catch (error) {
-      console.error(`Failed to load asset ${assetId}:`, error);
-      return null;
-    }
-  }
 
   async deleteAsset(
     assetId: string,
     includeVariants = false,
     userId?: string,
   ): Promise<boolean> {
-    const assetPath = path.join(this.assetsDir, assetId);
+    // Get asset from database
+    const asset = await db.query.assets.findFirst({
+      where: eq(assets.id, assetId),
+    });
 
-    // Check if asset exists
-    try {
-      await fs.access(assetPath);
-    } catch {
+    if (!asset) {
       throw new Error(`Asset ${assetId} not found`);
     }
 
-    // Get metadata to check if it's a base asset
-    const metadata = await this.getAssetMetadata(assetId);
-
     // If it's a base asset and includeVariants is true, delete all variants
-    if (metadata.isBaseModel && includeVariants) {
-      const allAssets = await this.listAssets();
-      const variants = allAssets.filter(
-        (asset) => asset.metadata.parentBaseModel === assetId,
-      );
+    if (includeVariants && asset.metadata?.isBaseModel) {
+      const variants = await db
+        .select()
+        .from(assets)
+        .where(eq(assets.metadata.parentBaseModel, assetId));
 
-      // Delete all variants
       for (const variant of variants) {
-        await this.deleteAssetDirectory(variant.id);
+        await db.delete(assets).where(eq(assets.id, variant.id));
       }
     }
 
-    // Delete the main asset
-    await this.deleteAssetDirectory(assetId);
+    // Delete the main asset from database
+    await db.delete(assets).where(eq(assets.id, assetId));
 
-    // Update dependencies file if it exists
-    await this.updateDependenciesAfterDelete(assetId);
-
+    console.log(
+      `[AssetService] Deleted asset ${assetId} from database (CDN files persist)`,
+    );
     return true;
   }
 
-  async deleteAssetDirectory(assetId: string): Promise<void> {
-    const assetPath = path.join(this.assetsDir, assetId);
-
-    try {
-      // Recursively delete the directory
-      await fs.rm(assetPath, { recursive: true, force: true });
-      console.log(`Deleted asset directory: ${assetId}`);
-
-      // Delete from database
-      try {
-        await assetDatabaseService.deleteAssetRecord(assetId);
-      } catch (error) {
-        console.error(
-          "[AssetService] Failed to delete asset from database:",
-          error,
-        );
-        // Continue - file deletion succeeded
-      }
-    } catch (error) {
-      console.error(`Failed to delete asset ${assetId}:`, error);
-      throw new Error(`Failed to delete asset ${assetId}`);
-    }
-  }
-
-  async updateDependenciesAfterDelete(deletedAssetId: string): Promise<void> {
-    const dependenciesPath = path.join(this.assetsDir, ".dependencies.json");
-
-    try {
-      const dependencies = JSON.parse(
-        await fs.readFile(dependenciesPath, "utf-8"),
-      ) as Dependencies;
-
-      // Remove the deleted asset from dependencies
-      delete dependencies[deletedAssetId];
-
-      // Remove the deleted asset from other assets' variants lists
-      for (const [baseId, deps] of Object.entries(dependencies)) {
-        if (deps.variants && deps.variants.includes(deletedAssetId)) {
-          deps.variants = deps.variants.filter((id) => id !== deletedAssetId);
-        }
-      }
-
-      await fs.writeFile(
-        dependenciesPath,
-        JSON.stringify(dependencies, null, 2),
-      );
-    } catch (error) {
-      // Dependencies file might not exist, which is okay
-      console.log("No dependencies file to update");
-    }
-  }
 
   async updateAsset(
     assetId: string,

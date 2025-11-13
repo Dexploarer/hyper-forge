@@ -75,6 +75,9 @@ import { createCDNRoutes } from "./routes/cdn";
 import { cron } from "@elysiajs/cron";
 import { generationJobService } from "./services/GenerationJobService";
 
+// Worker system for background job processing
+import { GenerationWorker } from "./workers/generation-worker";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.join(__dirname, "..");
@@ -102,7 +105,12 @@ achievementService.initializeDefaultAchievements().catch((error) => {
 // Initialize services
 // Railway uses PORT, but we fallback to API_PORT for local dev
 const API_PORT = process.env.PORT || process.env.API_PORT || 3004;
-const ASSETS_DIR = process.env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
+
+// Railway volume path takes priority, then ASSETS_DIR env var, then local default
+const ASSETS_DIR =
+  process.env.RAILWAY_VOLUME_MOUNT_PATH
+    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
+    : process.env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
 
 // CDN_URL and IMAGE_SERVER_URL must be set in production
 const CDN_URL =
@@ -137,6 +145,46 @@ const generationService = new GenerationService();
 // Create Elysia app with full type inference for Eden Treaty
 // @ts-ignore TS2742 - croner module reference from cron plugin is non-portable (doesn't affect runtime)
 const app = new Elysia()
+  // ==================== LIFECYCLE HOOKS ====================
+  // Optional: Start workers in same process if ENABLE_EMBEDDED_WORKERS=true
+  // For production, use separate worker service on Railway (better isolation & scaling)
+  .onStart(async () => {
+    console.log(`[Startup] Elysia server started on port ${API_PORT}`);
+
+    // Check if we should run workers embedded in API process (dev mode)
+    if (process.env.ENABLE_EMBEDDED_WORKERS === "true" && process.env.REDIS_URL) {
+      const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "2", 10);
+      console.log(`[Workers] Starting ${WORKER_CONCURRENCY} embedded workers...`);
+
+      // Store worker references for cleanup
+      const workers: GenerationWorker[] = [];
+      for (let i = 0; i < WORKER_CONCURRENCY; i++) {
+        const worker = new GenerationWorker(`embedded-${i + 1}`);
+        worker.start();
+        workers.push(worker);
+      }
+
+      // Store in app context for shutdown
+      (app as any).workers = workers;
+      console.log(`[Workers] ${WORKER_CONCURRENCY} workers started successfully`);
+    } else {
+      console.log("[Workers] Using separate worker service (production mode)");
+    }
+  })
+  .onStop(async (ctx) => {
+    console.log("[Shutdown] Stopping Elysia server...");
+
+    // Stop embedded workers if they exist
+    const workers = (ctx as any).workers as GenerationWorker[] | undefined;
+    if (workers && workers.length > 0) {
+      console.log(`[Workers] Stopping ${workers.length} embedded workers...`);
+      for (const worker of workers) {
+        worker.stop();
+      }
+      console.log("[Workers] All workers stopped");
+    }
+  })
+
   // ==================== SHARED RESPONSE MODELS ====================
   // Define common response schemas for reusability across all routes
   // Use t.Ref('model.name') in route handlers to reference these schemas
@@ -378,99 +426,10 @@ const app = new Elysia()
     }),
   )
 
-  // Static file serving using native Bun.file() for reliability
-  // Bun.file() works better than @elysiajs/static on Railway
-  // SECURED: Checks asset visibility and ownership before serving
-  .get("/gdd-assets/*", async (context) => {
-    const { params, set } = context;
-    const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ASSETS_DIR, relativePath);
+  // NOTE: /gdd-assets/* is NOT served from main app
+  // Assets are published to and served from the CDN service
+  // Database stores CDN URLs: asset.cdnUrl = https://cdn.../models/{id}/{file}
 
-    // Extract asset ID from path
-    const assetId = extractAssetIdFromPath(relativePath);
-    if (!assetId) {
-      set.status = 400;
-      return new Response("Invalid asset path", { status: 400 });
-    }
-
-    // Check authentication
-    const authResult = await optionalAuth(context);
-    const user = authResult.user;
-
-    // Get asset from database to check visibility
-    const asset = await getAssetFromPath(assetId);
-
-    if (!asset) {
-      // Asset not in database - allow for backward compatibility
-      // (some assets may not have been indexed yet)
-      console.warn(
-        `[Static Files] Asset ${assetId} not found in database, serving without auth check`,
-      );
-    } else if (!canViewAsset(asset, user)) {
-      // User not authorized to view this private asset
-      set.status = 403;
-      return new Response(
-        JSON.stringify({
-          error: "Forbidden",
-          message: "You do not have permission to access this asset",
-        }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        },
-      );
-    }
-
-    // Check if file exists
-    const file = Bun.file(filePath);
-    if (!(await file.exists())) {
-      set.status = 404;
-      return new Response("File not found", { status: 404 });
-    }
-
-    // Wrap Bun.file() in Response for proper HEAD request handling
-    return new Response(file);
-  })
-  .head("/gdd-assets/*", async (context) => {
-    const { params, set } = context;
-    const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ASSETS_DIR, relativePath);
-
-    // Extract asset ID from path
-    const assetId = extractAssetIdFromPath(relativePath);
-    if (!assetId) {
-      set.status = 400;
-      return new Response(null, { status: 400 });
-    }
-
-    // Check authentication
-    const authResult = await optionalAuth(context);
-    const user = authResult.user;
-
-    // Get asset from database to check visibility
-    const asset = await getAssetFromPath(assetId);
-
-    if (!asset) {
-      // Asset not in database - allow for backward compatibility
-      console.warn(
-        `[Static Files HEAD] Asset ${assetId} not found in database, serving without auth check`,
-      );
-    } else if (!canViewAsset(asset, user)) {
-      // User not authorized to view this private asset
-      return new Response(null, { status: 403 });
-    }
-
-    // Check if file exists
-    const file = Bun.file(filePath);
-    if (!(await file.exists())) {
-      return new Response(null, { status: 404 });
-    }
-
-    return new Response(null, {
-      status: 200,
-      headers: { "Content-Type": "application/octet-stream" },
-    });
-  })
   .get("/temp-images/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
@@ -969,7 +928,8 @@ console.log(`   🌐 Server:      ${publicUrl}`);
 console.log(`   🎨 Frontend:    ${publicUrl}/`);
 console.log(`   📊 Health:      ${publicUrl}/api/health`);
 console.log(`   📚 API Docs:    ${publicUrl}/swagger`);
-console.log(`   🖼️  Assets:      ${publicUrl}/gdd-assets/`);
+console.log(`   🖼️  CDN Assets:  ${CDN_URL}/models/`);
+console.log(`   📁 Local Store: ${ASSETS_DIR}`);
 console.log(`   🔄 Proxy:       ${publicUrl}/api/proxy/image`);
 console.log(`   ✨ Performance: 22x faster than Express (2.4M req/s)`);
 

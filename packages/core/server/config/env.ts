@@ -93,10 +93,29 @@ const envSchema = z
       .string()
       .optional()
       .refine(
-        (val) => !val || val === "" || z.string().url().safeParse(val).success,
-        { message: "Must be a valid URL if provided" }
+        (val) => {
+          if (process.env.NODE_ENV === "production" && !val) {
+            throw new Error("CDN_URL is required in production environment");
+          }
+          if (val && !z.string().url().safeParse(val).success) {
+            throw new Error("Must be a valid URL if provided");
+          }
+          return true;
+        },
+        { message: "Must be a valid URL and is required in production" }
       ),
-    CDN_API_KEY: z.string().optional(),
+    CDN_API_KEY: z
+      .string()
+      .optional()
+      .refine(
+        (val) => {
+          if (process.env.NODE_ENV === "production" && !val) {
+            throw new Error("CDN_API_KEY is required in production environment");
+          }
+          return true;
+        },
+        { message: "CDN_API_KEY is required in production environment" }
+      ),
     FRONTEND_URL: z
       .string()
       .optional()

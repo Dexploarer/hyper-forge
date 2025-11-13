@@ -9,6 +9,8 @@ import { optionalAuth } from "../middleware/auth";
 import * as Models from "../models";
 import { UnauthorizedError, InternalServerError } from "../errors";
 import { createChildLogger } from "../utils/logger";
+import { generationJobService } from "../services/GenerationJobService";
+import { redisQueueService } from "../services/RedisQueueService";
 
 const logger = createChildLogger("GenerationRoutes");
 
@@ -60,6 +62,9 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                 "Starting pipeline for authenticated user",
               );
 
+              // Generate unique pipeline ID
+              const pipelineId = `pipeline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
               // Update body with verified userId
               const configWithUser = {
                 ...body,
@@ -69,24 +74,33 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                 },
               };
 
-              // Cast to GenerationService's PipelineConfig type which has slightly different user field typing
-              const result = await generationService.startPipeline(
-                configWithUser as Parameters<
-                  typeof generationService.startPipeline
-                >[0],
+              // Create job in database
+              await generationJobService.createJob(
+                pipelineId,
+                configWithUser as any,
               );
 
-              if (!result || !result.pipelineId) {
-                throw new InternalServerError(
-                  "Failed to start pipeline - no pipeline ID returned",
-                );
-              }
+              // Enqueue job for worker processing
+              // Use high priority for paid tiers, normal for default
+              const priority = body.tier && body.tier >= 4 ? "high" : "normal";
+              await redisQueueService.enqueue(pipelineId, pipelineId, priority);
 
               logger.info(
-                { pipelineId: result.pipelineId, userId },
-                "Pipeline started successfully",
+                { pipelineId, userId, priority },
+                "Pipeline job queued successfully",
               );
-              return result;
+
+              // Return immediately with queued status
+              return {
+                pipelineId,
+                status: "queued",
+                message: "Generation pipeline queued successfully",
+                stages: {
+                  conceptArt: "pending",
+                  model3D: "pending",
+                  processing: "pending",
+                },
+              };
             },
             {
               body: Models.PipelineConfig,
@@ -150,12 +164,12 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                       "application/json": {
                         examples: {
                           success: {
-                            summary: "Pipeline created",
+                            summary: "Pipeline queued",
                             value: {
                               pipelineId: "pipe_abc123xyz",
-                              status: "started",
+                              status: "queued",
                               message:
-                                "Generation pipeline started successfully",
+                                "Generation pipeline queued successfully",
                               stages: {
                                 conceptArt: "pending",
                                 model3D: "pending",

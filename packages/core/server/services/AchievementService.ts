@@ -572,25 +572,41 @@ export class AchievementService {
             );
           } else {
             // Update existing achievement to match current definition
-            await db
-              .update(achievements)
-              .set({
-                name: achievement.name,
-                description: achievement.description,
-                icon: achievement.icon,
-                type: achievement.type,
-                category: achievement.category,
-                rarity: achievement.rarity,
-                points: achievement.points,
-                maxProgress: achievement.maxProgress,
-                progressType: achievement.progressType,
-                isActive: achievement.isActive ?? true,
-                updatedAt: new Date(),
-              })
-              .where(eq(achievements.code, achievement.code));
-            console.log(
-              `[AchievementService] Updated default achievement: ${achievement.code}`,
-            );
+            // Only update if values have actually changed to reduce database writes
+            const hasChanges =
+              existing.name !== achievement.name ||
+              existing.description !== achievement.description ||
+              existing.icon !== achievement.icon ||
+              existing.type !== achievement.type ||
+              existing.category !== achievement.category ||
+              existing.rarity !== achievement.rarity ||
+              existing.points !== achievement.points ||
+              existing.maxProgress !== achievement.maxProgress ||
+              existing.progressType !== achievement.progressType ||
+              (achievement.isActive !== undefined &&
+                existing.isActive !== achievement.isActive);
+
+            if (hasChanges) {
+              await db
+                .update(achievements)
+                .set({
+                  name: achievement.name,
+                  description: achievement.description,
+                  icon: achievement.icon,
+                  type: achievement.type,
+                  category: achievement.category,
+                  rarity: achievement.rarity,
+                  points: achievement.points,
+                  maxProgress: achievement.maxProgress,
+                  progressType: achievement.progressType,
+                  isActive: achievement.isActive ?? true,
+                  updatedAt: new Date(),
+                })
+                .where(eq(achievements.code, achievement.code));
+              console.log(
+                `[AchievementService] Updated achievement definition: ${achievement.code}`,
+              );
+            }
           }
         } catch (innerError) {
           console.warn(

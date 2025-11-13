@@ -153,6 +153,10 @@ export class GenerationWorker {
       });
 
       console.log(
+        `[Worker ${this.workerId}] Asset uploaded to CDN, webhook will create database record`,
+      );
+
+      console.log(
         `[Worker ${this.workerId}] Job ${queueJob.pipelineId} completed successfully`,
       );
     } catch (error) {

@@ -199,7 +199,8 @@ describe("Asset Optimistic Updates", () => {
         });
       });
 
-      expect(result.current.isSuccess).toBe(true);
+      // Wait for mutation state to update
+      await waitFor(() => expect(result.current.isSuccess).toBe(true));
     });
   });
 

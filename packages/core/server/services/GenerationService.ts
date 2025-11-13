@@ -720,167 +720,179 @@ export class GenerationService extends EventEmitter {
           );
         }
 
-        // Download and save the model
+        // Download the model
         const modelBuffer = await this.downloadFile(meshyResult.model_urls.glb);
-        const outputDir = path.join("gdd-assets", config.assetId);
-        await fs.mkdir(outputDir, { recursive: true });
 
-        // Save raw model first
-        const rawModelPath = path.join(outputDir, `${config.assetId}_raw.glb`);
-        await fs.writeFile(rawModelPath, modelBuffer);
+        // Use temp directory for normalization processing
+        const tempDir = path.join("/tmp", `asset-${config.assetId}`);
+        await fs.mkdir(tempDir, { recursive: true });
 
-        // Normalize the model based on type
-        let normalizedModelPath = path.join(outputDir, `${config.assetId}.glb`);
+        try {
+          // Save raw model to temp
+          const rawModelPath = path.join(tempDir, `${config.assetId}_raw.glb`);
+          await fs.writeFile(rawModelPath, modelBuffer);
 
-        if (config.type === "character") {
-          // Normalize character height
-          console.log("🔧 Normalizing character model...");
-          try {
-            const { AssetNormalizationService } = await import(
-              "../../src/services/processing/AssetNormalizationService"
-            );
-            const normalizer = new AssetNormalizationService();
+          // Normalize the model based on type
+          let normalizedBuffer: Buffer;
+          let normalizedModelPath = path.join(tempDir, `${config.assetId}.glb`);
 
-            const targetHeight =
-              config.metadata?.characterHeight ||
-              config.riggingOptions?.heightMeters ||
-              1.83;
+          if (config.type === "character") {
+            // Normalize character height
+            console.log("🔧 Normalizing character model...");
+            try {
+              const { AssetNormalizationService } = await import(
+                "../../src/services/processing/AssetNormalizationService"
+              );
+              const normalizer = new AssetNormalizationService();
 
-            const normalized = await normalizer.normalizeCharacter(
-              rawModelPath,
-              targetHeight,
-            );
-            await fs.writeFile(
-              normalizedModelPath,
-              Buffer.from(normalized.glb),
-            );
+              const targetHeight =
+                config.metadata?.characterHeight ||
+                config.riggingOptions?.heightMeters ||
+                1.83;
 
-            console.log(`✅ Character normalized to ${targetHeight}m height`);
+              const normalized = await normalizer.normalizeCharacter(
+                rawModelPath,
+                targetHeight,
+              );
+              normalizedBuffer = Buffer.from(normalized.glb);
+              await fs.writeFile(normalizedModelPath, normalizedBuffer);
 
-            // Update with normalized dimensions
-            (pipeline.stages.image3D as StageResult).normalized = true;
-            (pipeline.stages.image3D as StageResult).dimensions =
-              normalized.metadata.dimensions;
-          } catch (error) {
-            console.warn(
-              "⚠️ Normalization failed, using raw model:",
-              (error as Error).message,
-            );
-            await fs.copyFile(rawModelPath, normalizedModelPath);
+              console.log(`✅ Character normalized to ${targetHeight}m height`);
+
+              // Update with normalized dimensions
+              (pipeline.stages.image3D as StageResult).normalized = true;
+              (pipeline.stages.image3D as StageResult).dimensions =
+                normalized.metadata.dimensions;
+            } catch (error) {
+              console.warn(
+                "⚠️ Normalization failed, using raw model:",
+                (error as Error).message,
+              );
+              normalizedBuffer = modelBuffer;
+              await fs.writeFile(normalizedModelPath, normalizedBuffer);
+            }
+          } else if (config.type === "weapon") {
+            // Normalize weapon with grip at origin
+            console.log("🔧 Normalizing weapon model...");
+            try {
+              const { WeaponHandleDetector } = await import(
+                "../../src/services/processing/WeaponHandleDetector"
+              );
+              const detector = new WeaponHandleDetector();
+
+              const result = await detector.exportNormalizedWeapon(rawModelPath);
+              normalizedBuffer = Buffer.from(result.normalizedGlb);
+              await fs.writeFile(normalizedModelPath, normalizedBuffer);
+
+              console.log(`✅ Weapon normalized with grip at origin`);
+
+              // Update with normalized dimensions
+              (pipeline.stages.image3D as StageResult).normalized = true;
+              (pipeline.stages.image3D as StageResult).dimensions = {
+                width: result.dimensions.width,
+                height: result.dimensions.height,
+                depth: result.dimensions.length,
+              };
+            } catch (error) {
+              console.warn(
+                "⚠️ Weapon normalization failed, using raw model:",
+                (error as Error).message,
+              );
+              normalizedBuffer = modelBuffer;
+              await fs.writeFile(normalizedModelPath, normalizedBuffer);
+            }
+          } else {
+            // For other types, use raw model
+            normalizedBuffer = modelBuffer;
+            await fs.writeFile(normalizedModelPath, normalizedBuffer);
           }
-        } else if (config.type === "weapon") {
-          // Normalize weapon with grip at origin
-          console.log("🔧 Normalizing weapon model...");
-          try {
-            const { WeaponHandleDetector } = await import(
-              "../../src/services/processing/WeaponHandleDetector"
-            );
-            const detector = new WeaponHandleDetector();
 
-            const result = await detector.exportNormalizedWeapon(rawModelPath);
+          // Prepare files for CDN upload
+          const filesToUpload: Array<{ buffer: Buffer; name: string; type?: string }> = [];
 
-            // Write the normalized model to disk
-            const buffer = Buffer.from(result.normalizedGlb);
-            await fs.writeFile(normalizedModelPath, buffer);
+          // Main normalized model
+          filesToUpload.push({
+            buffer: normalizedBuffer,
+            name: `${config.assetId}.glb`,
+            type: 'model/gltf-binary'
+          });
 
-            console.log(`✅ Weapon normalized with grip at origin`);
+          // Raw model
+          filesToUpload.push({
+            buffer: modelBuffer,
+            name: `${config.assetId}_raw.glb`,
+            type: 'model/gltf-binary'
+          });
 
-            // Update with normalized dimensions
-            // Map weapon dimensions (length, width, height) to pipeline format (width, height, depth)
-            (pipeline.stages.image3D as StageResult).normalized = true;
-            (pipeline.stages.image3D as StageResult).dimensions = {
-              width: result.dimensions.width,
-              height: result.dimensions.height,
-              depth: result.dimensions.length, // blade length maps to depth
-            };
-          } catch (error) {
-            console.warn(
-              "⚠️ Weapon normalization failed, using raw model:",
-              (error as Error).message,
-            );
-            await fs.copyFile(rawModelPath, normalizedModelPath);
+          // Concept art (if exists)
+          if (imageUrl!.startsWith("data:")) {
+            const imageData = imageUrl!.split(",")[1];
+            const conceptArtBuffer = Buffer.from(imageData, "base64");
+            filesToUpload.push({
+              buffer: conceptArtBuffer,
+              name: 'concept-art.png',
+              type: 'image/png'
+            });
           }
-        } else {
-          // For other types, just copy for now
-          await fs.copyFile(rawModelPath, normalizedModelPath);
-        }
 
-        baseModelPath = normalizedModelPath;
+          // Metadata - EXACT structure from arrows-base reference
+          const metadata = {
+            id: config.assetId,
+            name: config.assetId,
+            gameId: config.assetId,
+            type: config.type,
+            subtype: config.subtype,
+            description: config.description,
+            detailedPrompt: enhancedPrompt,
+            generatedAt: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+            isBaseModel: true,
+            materialVariants: config.materialPresets
+              ? config.materialPresets.map((preset) => preset.id)
+              : [],
+            isPlaceholder: false,
+            hasModel: true,
+            hasConceptArt: true,
+            modelPath: `${config.assetId}.glb`,
+            conceptArtUrl: "./concept-art.png",
+            conceptArtPath: "concept-art.png",
+            gddCompliant: true,
+            workflow: "GPT-4 → GPT-Image-1 → Meshy Image-to-3D (Base Model)",
+            meshyTaskId: meshyTaskId,
+            meshyStatus: "completed",
+            variants: [],
+            variantCount: 0,
+            lastVariantGenerated: undefined,
+            updatedAt: new Date().toISOString(),
+            // Normalization info
+            normalized:
+              (pipeline.stages.image3D as StageResult).normalized || false,
+            normalizationDate: (pipeline.stages.image3D as StageResult).normalized
+              ? new Date().toISOString()
+              : undefined,
+            dimensions:
+              (pipeline.stages.image3D as StageResult).dimensions || undefined,
+            // Ownership tracking (Phase 1)
+            createdBy: config.user?.userId || null,
+            walletAddress: config.user?.walletAddress || null,
+            isPublic: config.visibility === "public",
+          };
 
-        // Save concept art
-        if (imageUrl!.startsWith("data:")) {
-          const imageData = imageUrl!.split(",")[1];
-          const imageBuffer = Buffer.from(imageData, "base64");
-          await fs.writeFile(
-            path.join(outputDir, "concept-art.png"),
-            imageBuffer,
+          filesToUpload.push({
+            buffer: Buffer.from(JSON.stringify(metadata, null, 2)),
+            name: 'metadata.json',
+            type: 'application/json'
+          });
+
+          // Upload to CDN (webhook will create database record)
+          await this.uploadToCDN(config.assetId, filesToUpload);
+
+          baseModelPath = `models/${config.assetId}/${config.assetId}.glb`;
+        } finally {
+          // Clean up temp files
+          await fs.rm(tempDir, { recursive: true, force: true }).catch(err =>
+            console.warn(`Failed to cleanup temp dir ${tempDir}:`, err)
           );
-        }
-
-        // Save metadata - EXACT structure from arrows-base reference
-        const metadata = {
-          id: config.assetId,
-          name: config.assetId,
-          gameId: config.assetId,
-          type: config.type,
-          subtype: config.subtype,
-          description: config.description,
-          detailedPrompt: enhancedPrompt,
-          generatedAt: new Date().toISOString(),
-          completedAt: new Date().toISOString(),
-          isBaseModel: true,
-          materialVariants: config.materialPresets
-            ? config.materialPresets.map((preset) => preset.id)
-            : [],
-          isPlaceholder: false,
-          hasModel: true,
-          hasConceptArt: true,
-          modelPath: baseModelPath,
-          conceptArtUrl: "./concept-art.png",
-          conceptArtPath: "concept-art.png", // Used for preview thumbnails
-          gddCompliant: true,
-          workflow: "GPT-4 → GPT-Image-1 → Meshy Image-to-3D (Base Model)",
-          meshyTaskId: meshyTaskId,
-          meshyStatus: "completed",
-          variants: [], // Will be populated as variants are generated
-          variantCount: 0,
-          lastVariantGenerated: undefined,
-          updatedAt: new Date().toISOString(),
-          // Normalization info
-          normalized:
-            (pipeline.stages.image3D as StageResult).normalized || false,
-          normalizationDate: (pipeline.stages.image3D as StageResult).normalized
-            ? new Date().toISOString()
-            : undefined,
-          dimensions:
-            (pipeline.stages.image3D as StageResult).dimensions || undefined,
-          // Ownership tracking (Phase 1)
-          createdBy: config.user?.userId || null,
-          walletAddress: config.user?.walletAddress || null,
-          isPublic: config.visibility === "public", // Use visibility from config
-        };
-
-        await fs.writeFile(
-          path.join(outputDir, "metadata.json"),
-          JSON.stringify(metadata, null, 2),
-        );
-
-        // Create database record for the asset
-        if (config.user?.userId) {
-          try {
-            await assetDatabaseService.createAssetRecord(
-              config.assetId,
-              metadata as import("../models").AssetMetadataType,
-              config.user.userId,
-              `${config.assetId}/${config.assetId}.glb`,
-            );
-          } catch (error) {
-            console.error(
-              "[GenerationService] Failed to create database record for asset:",
-              error,
-            );
-            // Continue - don't fail pipeline if DB creation fails
-          }
         }
 
         pipeline.stages.image3D.status = "completed";
@@ -961,34 +973,24 @@ export class GenerationService extends EventEmitter {
 
             // Save variant
             const variantId = `${config.assetId}-${preset.id}`;
-            const variantDir = path.join("gdd-assets", variantId);
-            await fs.mkdir(variantDir, { recursive: true });
 
             const variantBuffer = await this.downloadFile(
               retextureResult.model_urls.glb,
             );
-            await fs.writeFile(
-              path.join(variantDir, `${variantId}.glb`),
-              variantBuffer,
-            );
 
-            // Copy concept art
-            const conceptArtPath = path.join(
-              "gdd-assets",
-              config.assetId,
-              "concept-art.png",
-            );
-            if (
-              await fs
-                .access(conceptArtPath)
-                .then(() => true)
-                .catch(() => false)
-            ) {
-              await fs.copyFile(
-                conceptArtPath,
-                path.join(variantDir, "concept-art.png"),
-              );
-            }
+            // Prepare files for CDN upload
+            const variantFilesToUpload: Array<{ buffer: Buffer; name: string; type?: string }> = [];
+
+            // Variant model
+            variantFilesToUpload.push({
+              buffer: variantBuffer,
+              name: `${variantId}.glb`,
+              type: 'model/gltf-binary'
+            });
+
+            // Concept art (copy from base asset via CDN_URL)
+            // Note: We'll include concept-art reference in metadata but not re-upload
+            // The webhook handler can fetch it from the base asset if needed
 
             // Save variant metadata - EXACT structure from arrows-bronze reference
             const variantMetadata = {
@@ -1024,13 +1026,17 @@ export class GenerationService extends EventEmitter {
               // Ownership tracking (Phase 1) - inherit from parent
               createdBy: config.user?.userId || null,
               walletAddress: config.user?.walletAddress || null,
-              isPublic: config.visibility === "public", // Use visibility from config
+              isPublic: config.visibility === "public",
             };
 
-            await fs.writeFile(
-              path.join(variantDir, "metadata.json"),
-              JSON.stringify(variantMetadata, null, 2),
-            );
+            variantFilesToUpload.push({
+              buffer: Buffer.from(JSON.stringify(variantMetadata, null, 2)),
+              name: 'metadata.json',
+              type: 'application/json'
+            });
+
+            // Upload variant to CDN
+            await this.uploadToCDN(variantId, variantFilesToUpload);
 
             variants.push({
               id: variantId,
@@ -1059,29 +1065,8 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.textureGeneration.result;
         pipeline.progress = 75;
 
-        // Update base model metadata with variant information
-        const successfulVariants = variants.filter((v) => v.success);
-        if (successfulVariants.length > 0) {
-          const baseMetadataPath = path.join(
-            "gdd-assets",
-            config.assetId,
-            "metadata.json",
-          );
-          const baseMetadata = JSON.parse(
-            await fs.readFile(baseMetadataPath, "utf-8"),
-          );
-
-          baseMetadata.variants = successfulVariants.map((v) => v.id);
-          baseMetadata.variantCount = successfulVariants.length;
-          baseMetadata.lastVariantGenerated =
-            successfulVariants[successfulVariants.length - 1].id;
-          baseMetadata.updatedAt = new Date().toISOString();
-
-          await fs.writeFile(
-            baseMetadataPath,
-            JSON.stringify(baseMetadata, null, 2),
-          );
-        }
+        // Note: Base model metadata will be updated by the CDN webhook handler
+        // when it receives the variant upload notifications
       } else {
         pipeline.stages.textureGeneration.status = "skipped";
       }
@@ -1138,100 +1123,119 @@ export class GenerationService extends EventEmitter {
           }
 
           // Download rigged model and animations
-          const outputDir = path.join("gdd-assets", config.assetId);
           const riggedAssets: Record<string, string> = {};
+          const riggingFilesToUpload: Array<{ buffer: Buffer; name: string; type?: string }> = [];
 
           // IMPORTANT: For rigged avatars, we DON'T replace the main model
           // We keep the original T-pose model and save animations separately
           // This prevents the T-pose + animation layering issue
           console.log("🦴 Processing rigged character assets...");
 
-          // Download animations if available
-          if (riggingResult.result && riggingResult.result.basic_animations) {
-            const animations = riggingResult.result.basic_animations;
+          // Use temp directory for T-pose extraction
+          const tempRiggingDir = path.join("/tmp", `rigging-${config.assetId}`);
+          await fs.mkdir(tempRiggingDir, { recursive: true });
 
-            // CRITICAL: First, get the rigged model from the walking animation
-            // This contains the model with bones that we need for animations
-            if (animations.walking_glb_url) {
-              console.log("🦴 Downloading rigged model and animations...");
-              const walkingBuffer = await this.downloadFile(
-                animations.walking_glb_url,
-              );
+          try {
+            // Download animations if available
+            if (riggingResult.result && riggingResult.result.basic_animations) {
+              const animations = riggingResult.result.basic_animations;
 
-              // Save the walking animation
-              const walkingPath = path.join(
-                outputDir,
-                "animations",
-                "walking.glb",
-              );
-              await fs.mkdir(path.dirname(walkingPath), { recursive: true });
-              await fs.writeFile(walkingPath, walkingBuffer);
-              riggedAssets.walking = "animations/walking.glb";
-
-              // Extract T-pose from the walking animation
-              console.log("🎯 Extracting T-pose from walking animation...");
-              try {
-                const tposePath = path.join(outputDir, "t-pose.glb");
-                await this.extractTPoseFromAnimation(walkingPath, tposePath);
-                riggedAssets.tpose = "t-pose.glb";
-                console.log("✅ T-pose extracted successfully");
-              } catch (tposeError) {
-                console.error(
-                  "⚠️ Failed to extract T-pose:",
-                  (tposeError as Error).message,
+              // CRITICAL: First, get the rigged model from the walking animation
+              // This contains the model with bones that we need for animations
+              if (animations.walking_glb_url) {
+                console.log("🦴 Downloading rigged model and animations...");
+                const walkingBuffer = await this.downloadFile(
+                  animations.walking_glb_url,
                 );
-                // Continue anyway - not critical for the pipeline
+
+                // Add walking animation to upload
+                riggingFilesToUpload.push({
+                  buffer: walkingBuffer,
+                  name: 'animations/walking.glb',
+                  type: 'model/gltf-binary'
+                });
+                riggedAssets.walking = "animations/walking.glb";
+
+                // Extract T-pose from the walking animation
+                console.log("🎯 Extracting T-pose from walking animation...");
+                try {
+                  const walkingTempPath = path.join(tempRiggingDir, "walking.glb");
+                  const tposeTempPath = path.join(tempRiggingDir, "t-pose.glb");
+                  await fs.writeFile(walkingTempPath, walkingBuffer);
+                  await this.extractTPoseFromAnimation(walkingTempPath, tposeTempPath);
+
+                  const tposeBuffer = await fs.readFile(tposeTempPath);
+                  riggingFilesToUpload.push({
+                    buffer: tposeBuffer,
+                    name: 't-pose.glb',
+                    type: 'model/gltf-binary'
+                  });
+                  riggedAssets.tpose = "t-pose.glb";
+                  console.log("✅ T-pose extracted successfully");
+                } catch (tposeError) {
+                  console.error(
+                    "⚠️ Failed to extract T-pose:",
+                    (tposeError as Error).message,
+                  );
+                  // Continue anyway - not critical for the pipeline
+                }
+
+                // IMPORTANT: Save rigged T-pose model for animation player
+                // The walking GLB contains a rigged model in T-pose on frame 0, followed by walking animation
+                riggingFilesToUpload.push({
+                  buffer: walkingBuffer,
+                  name: `${config.assetId}_rigged.glb`,
+                  type: 'model/gltf-binary'
+                });
+                console.log("✅ Prepared rigged model for animation player");
               }
 
-              // IMPORTANT: Save rigged T-pose model for animation player
-              // The walking GLB contains a rigged model in T-pose on frame 0, followed by walking animation
-              // The animation player will:
-              // - Use the unrigged model for asset viewer (clean T-pose, no bones)
-              // - Use this rigged model for animation player with:
-              //   - Resting: Show frame 0 (T-pose) with no animation
-              //   - Walking: Play the walking animation
-              //   - Running: Play the running animation
-              const riggedModelPath = path.join(
-                outputDir,
-                `${config.assetId}_rigged.glb`,
-              );
-              await fs.writeFile(riggedModelPath, walkingBuffer);
-              console.log("✅ Saved rigged model for animation player");
+              // Download running animation GLB
+              if (animations.running_glb_url) {
+                const runningBuffer = await this.downloadFile(
+                  animations.running_glb_url,
+                );
+                riggingFilesToUpload.push({
+                  buffer: runningBuffer,
+                  name: 'animations/running.glb',
+                  type: 'model/gltf-binary'
+                });
+                riggedAssets.running = "animations/running.glb";
+              }
             }
 
-            // Download running animation GLB
-            if (animations.running_glb_url) {
-              const runningBuffer = await this.downloadFile(
-                animations.running_glb_url,
-              );
-              const runningPath = path.join(
-                outputDir,
-                "animations",
-                "running.glb",
-              );
-              await fs.writeFile(runningPath, runningBuffer);
-              riggedAssets.running = "animations/running.glb";
-            }
+            // Prepare updated metadata with rigging information
+            // Note: We need to fetch the current metadata, update it, and re-upload
+            const updatedMetadata = {
+              isRigged: true,
+              riggingTaskId: riggingTaskId,
+              riggingStatus: "completed",
+              rigType: "humanoid-standard",
+              characterHeight: config.riggingOptions?.heightMeters || 1.7,
+              animations: {
+                basic: riggedAssets,
+              },
+              riggedModelPath: `${config.assetId}_rigged.glb`,
+              tposeModelPath: riggedAssets.tpose || null,
+              supportsAnimation: true,
+              animationCompatibility: ["mixamo", "unity", "unreal"],
+              updatedAt: new Date().toISOString(),
+            };
+
+            riggingFilesToUpload.push({
+              buffer: Buffer.from(JSON.stringify(updatedMetadata, null, 2)),
+              name: 'rigging-metadata.json',
+              type: 'application/json'
+            });
+
+            // Upload rigging files to CDN
+            await this.uploadToCDN(config.assetId, riggingFilesToUpload);
+          } finally {
+            // Clean up temp files
+            await fs.rm(tempRiggingDir, { recursive: true, force: true }).catch(err =>
+              console.warn(`Failed to cleanup temp rigging dir ${tempRiggingDir}:`, err)
+            );
           }
-
-          // Update metadata with rigging information
-          const metadataPath = path.join(outputDir, "metadata.json");
-          const metadata = JSON.parse(await fs.readFile(metadataPath, "utf-8"));
-
-          metadata.isRigged = true;
-          metadata.riggingTaskId = riggingTaskId;
-          metadata.riggingStatus = "completed";
-          metadata.rigType = "humanoid-standard";
-          metadata.characterHeight = config.riggingOptions?.heightMeters || 1.7;
-          metadata.animations = {
-            basic: riggedAssets,
-          };
-          metadata.riggedModelPath = `${config.assetId}_rigged.glb`;
-          metadata.tposeModelPath = riggedAssets.tpose || null;
-          metadata.supportsAnimation = true;
-          metadata.animationCompatibility = ["mixamo", "unity", "unreal"];
-
-          await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
 
           pipeline.stages.rigging!.status = "completed";
           pipeline.stages.rigging!.progress = 100;
@@ -1245,23 +1249,24 @@ export class GenerationService extends EventEmitter {
           console.error("❌ Rigging failed:", (error as Error).message);
           console.error("Full error:", error);
 
-          // Update metadata to indicate rigging failed
+          // Upload failed rigging metadata to CDN
           try {
-            const outputDir = path.join("gdd-assets", config.assetId);
-            const metadataPath = path.join(outputDir, "metadata.json");
-            const metadata = JSON.parse(
-              await fs.readFile(metadataPath, "utf-8"),
-            );
+            const failedMetadata = {
+              isRigged: false,
+              riggingStatus: "failed",
+              riggingError: (error as Error).message,
+              riggingAttempted: true,
+              updatedAt: new Date().toISOString(),
+            };
 
-            metadata.isRigged = false;
-            metadata.riggingStatus = "failed";
-            metadata.riggingError = (error as Error).message;
-            metadata.riggingAttempted = true;
-
-            await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+            await this.uploadToCDN(config.assetId, [{
+              buffer: Buffer.from(JSON.stringify(failedMetadata, null, 2)),
+              name: 'rigging-metadata.json',
+              type: 'application/json'
+            }]);
           } catch (metadataError) {
             console.error(
-              "Failed to update metadata after rigging failure:",
+              "Failed to upload metadata after rigging failure:",
               metadataError,
             );
           }
@@ -1277,43 +1282,11 @@ export class GenerationService extends EventEmitter {
         }
       }
 
-      // Stage 6: Auto-publish to CDN (mirrors ImageHostingService pattern)
-      // This ensures assets are immediately available via permanent CDN URLs
-      if (process.env.CDN_URL && process.env.CDN_API_KEY) {
-        try {
-          console.log(
-            `📦 [Pipeline ${pipelineId}] Publishing asset ${config.assetId} to CDN...`,
-          );
-          const { CDNPublishService } = await import("./CDNPublishService");
-          const cdnService = CDNPublishService.fromEnv(
-            path.join(process.cwd(), "gdd-assets"),
-          );
-          const result = await cdnService.publishAndUpdateAsset(config.assetId);
-
-          if (result.success) {
-            console.log(
-              `✅ [Pipeline ${pipelineId}] Asset published to CDN: ${result.mainCdnUrl}`,
-            );
-            console.log(
-              `   Files published: ${result.filesPublished.join(", ")}`,
-            );
-          } else {
-            console.warn(
-              `⚠️ [Pipeline ${pipelineId}] CDN publish failed: ${result.error}`,
-            );
-          }
-        } catch (error) {
-          console.error(
-            `⚠️ [Pipeline ${pipelineId}] CDN publish error:`,
-            error,
-          );
-          // Don't fail pipeline if CDN publish fails - asset is still usable locally
-        }
-      } else {
-        console.log(
-          `⏭️ [Pipeline ${pipelineId}] CDN publishing skipped (CDN_URL or CDN_API_KEY not configured)`,
-        );
-      }
+      // Note: CDN upload is now handled inline during each stage
+      // The webhook handler will create/update database records automatically
+      console.log(
+        `✅ [Pipeline ${pipelineId}] All files uploaded to CDN, webhook notifications sent`,
+      );
 
       // Complete
       pipeline.status = "completed";
@@ -1519,6 +1492,53 @@ Your task is to enhance the user's description to create better results with ima
         error: (error as Error).message,
       };
     }
+  }
+
+  /**
+   * Upload files directly to CDN
+   * @param assetId - Asset ID for directory structure
+   * @param files - Array of files to upload
+   * @returns CDN upload response
+   */
+  private async uploadToCDN(
+    assetId: string,
+    files: Array<{ buffer: ArrayBuffer | Buffer; name: string; type?: string }>
+  ): Promise<{ success: boolean; files: any[] }> {
+    const CDN_URL = process.env.CDN_URL;
+    const CDN_API_KEY = process.env.CDN_API_KEY;
+
+    if (!CDN_URL || !CDN_API_KEY) {
+      throw new Error('CDN_URL and CDN_API_KEY must be configured');
+    }
+
+    const formData = new FormData();
+
+    for (const file of files) {
+      const blob = new Blob([file.buffer], { type: file.type || 'application/octet-stream' });
+      formData.append('files', blob, `${assetId}/${file.name}`);
+    }
+
+    formData.append('directory', 'models');
+
+    console.log(`[CDN Upload] Uploading ${files.length} files for asset ${assetId}`);
+
+    const response = await this.fetchFn(`${CDN_URL}/api/upload`, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': CDN_API_KEY,
+      },
+      body: formData as any,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`CDN upload failed (${response.status}): ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`);
+
+    return result as { success: boolean; files: any[] };
   }
 
   /**

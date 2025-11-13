@@ -268,6 +268,7 @@ class MeshyClient {
 export class RetextureService {
   private meshyApiKey: string | undefined;
   private meshyClient: MeshyClient | null;
+  private fetchFn: FetchFunction;
 
   constructor(config?: {
     meshyApiKey?: string;
@@ -275,6 +276,7 @@ export class RetextureService {
     fetchFn?: FetchFunction;
   }) {
     this.meshyApiKey = config?.meshyApiKey || process.env.MESHY_API_KEY;
+    this.fetchFn = config?.fetchFn || fetch;
 
     if (!this.meshyApiKey) {
       console.warn(
@@ -291,9 +293,56 @@ export class RetextureService {
         retryDelayMs: 2000,
         keepAlive: true,
         maxSockets: 10,
-        fetchFn: config?.fetchFn || fetch,
+        fetchFn: this.fetchFn,
       });
     }
+  }
+
+  /**
+   * Upload files directly to CDN
+   * @param assetId - Asset ID for directory structure
+   * @param files - Array of files to upload
+   * @returns CDN upload response
+   */
+  private async uploadToCDN(
+    assetId: string,
+    files: Array<{ buffer: ArrayBuffer | Buffer; name: string; type?: string }>
+  ): Promise<{ success: boolean; files: any[] }> {
+    const CDN_URL = process.env.CDN_URL;
+    const CDN_API_KEY = process.env.CDN_API_KEY;
+
+    if (!CDN_URL || !CDN_API_KEY) {
+      throw new Error('CDN_URL and CDN_API_KEY must be configured');
+    }
+
+    const formData = new FormData();
+
+    for (const file of files) {
+      const blob = new Blob([file.buffer], { type: file.type || 'application/octet-stream' });
+      formData.append('files', blob, `${assetId}/${file.name}`);
+    }
+
+    formData.append('directory', 'models');
+
+    console.log(`[CDN Upload] Uploading ${files.length} files for asset ${assetId}`);
+
+    const response = await this.fetchFn(`${CDN_URL}/api/upload`, {
+      method: 'POST',
+      headers: {
+        'X-API-Key': CDN_API_KEY,
+      },
+      body: formData as any,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`CDN upload failed (${response.status}): ${errorText}`);
+    }
+
+    const result = (await response.json()) as { success: boolean; files: any[] };
+    console.log(`[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`);
+
+    return result;
   }
 
   async retexture({
@@ -428,29 +477,23 @@ export class RetextureService {
       throw new Error("No model URL in result");
     }
 
-    const outputDir = path.join(assetsDir, variantName);
-    await fs.mkdir(outputDir, { recursive: true });
-
     // Download model using MeshyClient
     console.log(`📥 Downloading retextured model...`);
     const modelBuffer = await this.meshyClient!.downloadModel(
       result.model_urls.glb,
     );
-    const modelPath = path.join(outputDir, `${variantName}.glb`);
-    await fs.writeFile(modelPath, modelBuffer);
 
-    // Copy concept art if it exists
-    try {
-      const baseConceptPath = path.join(
-        assetsDir,
-        baseAssetId,
-        "concept-art.png",
-      );
-      const variantConceptPath = path.join(outputDir, "concept-art.png");
-      await fs.copyFile(baseConceptPath, variantConceptPath);
-    } catch (e) {
-      // Ignore if concept art doesn't exist
-    }
+    // Prepare files for CDN upload
+    const filesToUpload: Array<{ buffer: Buffer; name: string; type?: string }> = [];
+
+    // Variant model
+    filesToUpload.push({
+      buffer: modelBuffer,
+      name: `${variantName}.glb`,
+      type: 'model/gltf-binary'
+    });
+
+    // Note: Concept art is inherited from base asset, webhook handler can link it
 
     // Create standardized metadata
     // Note: Using 'any' type here because we're adding extra fields (like materialPreset)
@@ -509,52 +552,43 @@ export class RetextureService {
         baseMetadata.isPublic !== undefined ? baseMetadata.isPublic : true,
     };
 
-    await fs.writeFile(
-      path.join(outputDir, "metadata.json"),
-      JSON.stringify(variantMetadata, null, 2),
-    );
+    filesToUpload.push({
+      buffer: Buffer.from(JSON.stringify(variantMetadata, null, 2)),
+      name: 'metadata.json',
+      type: 'application/json'
+    });
 
-    // Update base asset metadata to track this variant
-    await this.updateBaseAssetVariants(baseAssetId, variantName, assetsDir);
+    // Upload to CDN (webhook will create database record and link to base)
+    await this.uploadToCDN(variantName, filesToUpload);
 
-    console.log(`✅ Successfully retextured: ${variantName}`);
+    console.log(`✅ Successfully retextured and uploaded: ${variantName}`);
 
     return variantMetadata as AssetMetadataType;
   }
 
-  async updateBaseAssetVariants(
-    baseAssetId: string,
-    variantId: string,
-    assetsDir: string,
-  ): Promise<void> {
-    try {
-      const metadataPath = path.join(assetsDir, baseAssetId, "metadata.json");
-      const metadata = await this.getAssetMetadata(baseAssetId, assetsDir);
-
-      // Initialize variants array if it doesn't exist
-      if (!metadata.variants) {
-        metadata.variants = [];
-      }
-
-      // Add variant if not already tracked
-      if (!metadata.variants.includes(variantId)) {
-        metadata.variants.push(variantId);
-        metadata.variantCount = metadata.variants.length;
-        metadata.lastVariantGenerated = variantId;
-        metadata.updatedAt = new Date().toISOString();
-
-        await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-      }
-    } catch (error) {
-      const err = error as Error;
-      console.warn(`Failed to update base asset variants: ${err.message}`);
-    }
-  }
-
+  /**
+   * Get asset metadata from CDN or fallback to local filesystem
+   * Note: In CDN-first mode, this should query the database instead
+   */
   async getAssetMetadata(
     assetId: string,
     assetsDir: string,
   ): Promise<AssetMetadataType> {
+    // Try CDN first if configured
+    const CDN_URL = process.env.CDN_URL;
+    if (CDN_URL) {
+      try {
+        const metadataUrl = `${CDN_URL}/models/${assetId}/metadata.json`;
+        const response = await this.fetchFn(metadataUrl);
+        if (response.ok) {
+          return (await response.json()) as AssetMetadataType;
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch metadata from CDN, falling back to local: ${error}`);
+      }
+    }
+
+    // Fallback to local filesystem (for backwards compatibility)
     const metadataPath = path.join(assetsDir, assetId, "metadata.json");
     return JSON.parse(
       await fs.readFile(metadataPath, "utf-8"),

@@ -108,7 +108,8 @@ describe("useRetextureMutation Hook", () => {
       });
     });
 
-    expect(result.current.isSuccess).toBe(true);
+    // Wait for mutation state to update
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.success).toBe(true);
   });
 
@@ -169,7 +170,8 @@ describe("useRetextureMutation Hook", () => {
       expect(err).toBeDefined();
     }
 
-    expect(result.current.isError).toBe(true);
+    // Wait for mutation error state to update
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
 
@@ -302,7 +304,8 @@ describe("useBulkUpdateAssetsMutation Hook", () => {
       });
     });
 
-    expect(result.current.isSuccess).toBe(true);
+    // Wait for mutation state to update
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.updated).toBe(2);
   });
 
@@ -421,7 +424,8 @@ describe("useUpdateAssetStatusMutation Hook", () => {
       });
     });
 
-    expect(result.current.isSuccess).toBe(true);
+    // Wait for mutation state to update
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data?.updated).toBe(1);
   });
 
@@ -437,7 +441,8 @@ describe("useUpdateAssetStatusMutation Hook", () => {
       });
     });
 
-    expect(result.current.isSuccess).toBe(true);
+    // Wait for mutation state to update
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 
   it("should handle status update errors", async () => {
@@ -470,7 +475,8 @@ describe("useUpdateAssetStatusMutation Hook", () => {
       expect(err).toBeDefined();
     }
 
-    expect(result.current.isError).toBe(true);
+    // Wait for mutation error state to update
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
 
@@ -507,7 +513,8 @@ describe("useFavoriteAsset Hook", () => {
       });
     });
 
-    expect(result.current.isSuccess).toBe(true);
+    // Wait for mutation state to update
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
   });
 
   it("should use bulk update internally", async () => {
