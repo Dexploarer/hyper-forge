@@ -25,7 +25,7 @@ def is_server_ready(port, timeout=30):
     start_time = time.time()
     while time.time() - start_time < timeout:
         try:
-            with socket.create_connection(('localhost', port), timeout=1):
+            with socket.create_connection(('test-server', port), timeout=1):
                 return True
         except (socket.error, ConnectionRefusedError):
             time.sleep(0.5)

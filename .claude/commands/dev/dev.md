@@ -18,32 +18,32 @@ Start development servers for Hyperscape packages with hot module replacement (H
 ## Start All Packages (Default)
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== Starting Hyperscape Development ===" && echo "Client: http://localhost:3333" && echo "Server: http://localhost:5555" && echo && bun run dev`
+!`cd ${WORKSPACE_DIR} && echo "=== Starting Hyperscape Development ===" && echo "Client: http://test-client:3333" && echo "Server: http://test-server:5555" && echo && bun run dev`
 ```
 
 ## Client Only (Vite)
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/client && echo "=== Starting Client Dev Server ===" && echo "URL: http://localhost:3333" && echo "Hot reload enabled" && echo && bun run dev`
+!`cd ${WORKSPACE_DIR}/packages/client && echo "=== Starting Client Dev Server ===" && echo "URL: http://test-client:3333" && echo "Hot reload enabled" && echo && bun run dev`
 ```
 
 ## Server Only (Game Server)
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== Starting Game Server ===" && echo "Server: http://localhost:5555" && echo "WebSocket: ws://localhost:5555/ws" && echo && bun run dev`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== Starting Game Server ===" && echo "Server: http://test-server:5555" && echo "WebSocket: ws://test-server:5555/ws" && echo && bun run dev`
 ```
 
 ## Shared Package (Watch Mode)
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/shared && echo "=== Starting Shared Package (Watch Mode) ===" && echo "Building Hyperscape engine..." && echo && bun run dev`
+!`cd ${WORKSPACE_DIR}/packages/shared && echo "=== Starting Shared Package (Watch Mode) ===" && echo "Building Hyperscape engine..." && echo && bun run dev`
 ```
 
 ## Server Endpoints
 
-- **Client**: http://localhost:3333
-- **Game Server**: http://localhost:5555
-- **WebSocket**: ws://localhost:5555/ws
+- **Client**: http://test-client:3333
+- **Game Server**: http://test-server:5555
+- **WebSocket**: ws://test-server:5555/ws
 
 ## Prerequisites
 
@@ -68,7 +68,7 @@ Before starting:
 **Shared package not built:**
 
 ```bash
-!`cd /Users/home/hyperscape-5 && bun run build:shared && echo "✓ Shared package built"`
+!`cd ${WORKSPACE_DIR} && bun run build:shared && echo "✓ Shared package built"`
 ```
 
 ## See Also

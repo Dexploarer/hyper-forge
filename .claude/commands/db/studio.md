@@ -10,12 +10,12 @@ Launch Drizzle Studio to visually inspect and edit the SQLite database.
 ## Start Studio
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Starting Drizzle Studio..." && echo "Access at: http://localhost:4983" && echo "Press Ctrl+C to stop" && bun run db:studio`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Starting Drizzle Studio..." && echo "Access at: http://test-db-studio:4983" && echo "Press Ctrl+C to stop" && bun run db:studio`
 ```
 
 ## Access
 
-- **URL**: http://localhost:4983
+- **URL**: http://test-db-studio:4983
 - **Default Port**: 4983
 
 ## Features
@@ -51,7 +51,7 @@ Drizzle Studio provides:
 
 ### View Teams Table
 
-1. Open http://localhost:4983
+1. Open http://test-db-studio:4983
 2. Click "teams" table
 3. View all team records
 
@@ -71,7 +71,7 @@ Drizzle Studio provides:
 ## Database Location
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Database file:" && ls -lh server/db/asset-forge.db 2>/dev/null || echo "Database not created yet - run migrations first"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Database file:" && ls -lh server/db/asset-forge.db 2>/dev/null || echo "Database not created yet - run migrations first"`
 ```
 
 ## Troubleshooting
@@ -89,7 +89,7 @@ If port 4983 is in use:
 If database doesn't exist:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Creating database with migrations..." && bun run db:migrate`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Creating database with migrations..." && bun run db:migrate`
 ```
 
 ### Studio Won't Start
@@ -97,7 +97,7 @@ If database doesn't exist:
 Check Drizzle Kit installation:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && bun x drizzle-kit --version`
+!`cd ${WORKSPACE_DIR}/packages/server && bun x drizzle-kit --version`
 ```
 
 ## Configuration

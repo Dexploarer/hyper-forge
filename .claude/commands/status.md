@@ -10,31 +10,31 @@ Get a complete picture of the current repository state with context, recent comm
 ## Full Status Report
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== Git Repository Status ===" && echo && echo "📍 Current Branch:" && git branch --show-current && echo && echo "📊 Branch Status:" && git status -sb && echo && echo "📝 Recent Commits (last 5):" && git log --oneline --graph --decorate --color=always -5 && echo && echo "📄 Unstaged Changes:" && (git diff --stat --color=always || echo "None") && echo && echo "✓ Staged Changes:" && (git diff --staged --stat --color=always || echo "None") && echo && echo "❓ Untracked Files (showing first 10):" && (git ls-files --others --exclude-standard | head -10 || echo "None") && echo && echo "✎ Modified Files:" && (git ls-files -m | head -10 || echo "None")`
+!`cd ${WORKSPACE_DIR} && echo "=== Git Repository Status ===" && echo && echo "📍 Current Branch:" && git branch --show-current && echo && echo "📊 Branch Status:" && git status -sb && echo && echo "📝 Recent Commits (last 5):" && git log --oneline --graph --decorate --color=always -5 && echo && echo "📄 Unstaged Changes:" && (git diff --stat --color=always || echo "None") && echo && echo "✓ Staged Changes:" && (git diff --staged --stat --color=always || echo "None") && echo && echo "❓ Untracked Files (showing first 10):" && (git ls-files --others --exclude-standard | head -10 || echo "None") && echo && echo "✎ Modified Files:" && (git ls-files -m | head -10 || echo "None")`
 ```
 
 ## Branch Information
 
 ```bash
-!`cd /Users/home/hyperscape-5 && git branch -vv && echo && echo "Remote tracking:" && git remote -v`
+!`cd ${WORKSPACE_DIR} && git branch -vv && echo && echo "Remote tracking:" && git remote -v`
 ```
 
 ## Recent Activity
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== Recent Activity ===" && git log --oneline --graph --all --decorate -10`
+!`cd ${WORKSPACE_DIR} && echo "=== Recent Activity ===" && git log --oneline --graph --all --decorate -10`
 ```
 
 ## Detailed Diff Stats
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== Detailed Change Statistics ===" && echo && echo "Unstaged changes:" && git diff --stat --color && echo && echo "Staged changes:" && git diff --staged --stat --color`
+!`cd ${WORKSPACE_DIR} && echo "=== Detailed Change Statistics ===" && echo && echo "Unstaged changes:" && git diff --stat --color && echo && echo "Staged changes:" && git diff --staged --stat --color`
 ```
 
 ## Quick Status (Short Form)
 
 ```bash
-!`cd /Users/home/hyperscape-5 && git status -s`
+!`cd ${WORKSPACE_DIR} && git status -s`
 ```
 
 ## Use Cases

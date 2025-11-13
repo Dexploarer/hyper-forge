@@ -132,7 +132,7 @@
 8. **Test Manually** (optional)
    ```bash
    # Use curl, Postman, or Swagger UI
-   curl http://localhost:5555/api/your-endpoint
+   curl http://test-server:5555/api/your-endpoint
    ```
 
 ## 3. Adding a New 3D Component
@@ -188,7 +188,7 @@
    bun run dev
 
    # Navigate to your component
-   # Check in browser at localhost:3333
+   # Check in browser at test-client:3333
 
    # Optional: Use Playwright for screenshots
    bun test visual-regression.test.ts

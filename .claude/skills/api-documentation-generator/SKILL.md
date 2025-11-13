@@ -49,7 +49,7 @@ servers:
     description: Production server
   - url: https://staging-api.example.com/v1
     description: Staging server
-  - url: http://localhost:3000/v1
+  - url: http://test-frontend:3000/v1
     description: Development server
 
 tags:

@@ -31,7 +31,7 @@ This guide explains how to deploy Asset-Forge to Railway staging environment usi
 railway login
 
 # Link your project (from packages/core directory)
-cd /Users/home/asset-forge/packages/core
+cd ${HOME}/asset-forge/packages/core
 railway link
 
 # Or create a new project

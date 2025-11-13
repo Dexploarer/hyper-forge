@@ -304,13 +304,13 @@ TWITTER_ACCESS_TOKEN=
 TWITTER_ACCESS_SECRET=
 
 # === DATABASE ===
-DATABASE_URL=postgresql://user:pass@localhost:5432/eliza
+DATABASE_URL=postgresql://user:pass@db-host:5432/eliza
 # Or use PGLite for local development
 # DATABASE_URL=pglite://./data/db
 
 # === OPTIONAL SERVICES ===
 # Redis (caching)
-REDIS_URL=redis://localhost:6379
+REDIS_URL=redis://redis-host:6379
 # Vector Database (for embeddings)
 PINECONE_API_KEY=
 PINECONE_ENVIRONMENT=

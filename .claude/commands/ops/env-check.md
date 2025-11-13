@@ -9,12 +9,12 @@ Verify all required environment variables are set.
 
 **Check .env file exists:**
 ```bash
-!`test -f /Users/home/hyperscape-5/packages/server/.env && echo "✓ .env file exists" || echo "✗ .env file missing"`
+!`test -f ${WORKSPACE_DIR}/packages/server/.env && echo "✓ .env file exists" || echo "✗ .env file missing"`
 ```
 
 **Required variables:**
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && (
+!`cd ${WORKSPACE_DIR}/packages/server && (
   echo "Checking required environment variables..."
   test -n "$DATABASE_URL" && echo "✓ DATABASE_URL" || echo "✗ DATABASE_URL missing"
   test -n "$PRIVY_APP_ID" && echo "✓ PRIVY_APP_ID" || echo "✗ PRIVY_APP_ID missing"
@@ -32,5 +32,5 @@ Verify all required environment variables are set.
 
 **Create .env from template:**
 ```bash
-!`test -f /Users/home/hyperscape-5/packages/server/.env.example && cp /Users/home/hyperscape-5/packages/server/.env.example /Users/home/hyperscape-5/packages/server/.env && echo "✓ Created .env from template" || echo "ℹ No .env.example found"`
+!`test -f ${WORKSPACE_DIR}/packages/server/.env.example && cp ${WORKSPACE_DIR}/packages/server/.env.example ${WORKSPACE_DIR}/packages/server/.env && echo "✓ Created .env from template" || echo "ℹ No .env.example found"`
 ```

@@ -2,7 +2,7 @@ from playwright.sync_api import sync_playwright
 
 # Example: Capturing console logs during browser automation
 
-url = 'http://localhost:5173'  # Replace with your URL
+url = 'http://test-dev:5173'  # Replace with your URL
 
 console_logs = []
 

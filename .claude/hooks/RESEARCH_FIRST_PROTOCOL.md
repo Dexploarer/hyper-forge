@@ -6,14 +6,14 @@ The Claude Code hooks system has been enhanced with a **research-first protocol*
 
 ## Files Modified
 
-### 1. `/Users/home/hyperscape-5/.claude/hooks/scripts/pre-tool-write.ts`
+### 1. `${WORKSPACE_DIR}/.claude/hooks/scripts/pre-tool-write.ts`
 Enhanced with research-first checks:
 - Detects new file creation without prior research (Glob/Grep)
 - Detects external library usage without deepwiki research
 - Logs all Write operations to tool usage log
 - Maintains existing sensitive file warnings
 
-### 2. `/Users/home/hyperscape-5/.claude/hooks/scripts/pre-tool-edit.ts`
+### 2. `${WORKSPACE_DIR}/.claude/hooks/scripts/pre-tool-edit.ts`
 Enhanced with research-first checks:
 - Warns when editing files that haven't been read (30-minute window)
 - Detects external library additions without deepwiki research
@@ -22,19 +22,19 @@ Enhanced with research-first checks:
 
 ## Files Created
 
-### 3. `/Users/home/hyperscape-5/.claude/hooks/scripts/post-tool-read.ts`
+### 3. `${WORKSPACE_DIR}/.claude/hooks/scripts/post-tool-read.ts`
 Tracks Read tool usage:
 - Logs which files were read
 - Timestamps for 30-minute tracking window
 - Non-blocking (exit 0 on errors)
 
-### 4. `/Users/home/hyperscape-5/.claude/hooks/scripts/post-tool-grep.ts`
+### 4. `${WORKSPACE_DIR}/.claude/hooks/scripts/post-tool-grep.ts`
 Tracks Grep searches:
 - Logs search patterns and paths
 - Used to determine if research was performed
 - Non-blocking
 
-### 5. `/Users/home/hyperscape-5/.claude/hooks/scripts/post-tool-glob.ts`
+### 5. `${WORKSPACE_DIR}/.claude/hooks/scripts/post-tool-glob.ts`
 Tracks Glob searches:
 - Logs file pattern searches
 - Used to verify file research before creation
@@ -42,7 +42,7 @@ Tracks Glob searches:
 
 ## Configuration Changes
 
-### 6. `/Users/home/hyperscape-5/.claude/settings.json`
+### 6. `${WORKSPACE_DIR}/.claude/settings.json`
 Added PostToolUse hooks for Read, Grep, and Glob:
 ```json
 {
@@ -63,7 +63,7 @@ Added PostToolUse hooks for Read, Grep, and Glob:
 }
 ```
 
-### 7. `/Users/home/hyperscape-5/.gitignore`
+### 7. `${WORKSPACE_DIR}/.gitignore`
 Added log directory to gitignore:
 ```
 # Claude hooks logs

@@ -119,7 +119,7 @@ const CDN_URL =
     if (process.env.NODE_ENV === "production") {
       throw new Error("CDN_URL must be set in production environment");
     }
-    return "http://localhost:3005";
+    throw new Error("CDN_URL must be set in development environment");
   })();
 
 const IMAGE_SERVER_URL =
@@ -130,7 +130,7 @@ const IMAGE_SERVER_URL =
         "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
       );
     }
-    return `http://localhost:${API_PORT}`;
+    throw new Error("IMAGE_SERVER_URL must be set in development environment");
   })();
 
 const assetService = new AssetService(ASSETS_DIR);
@@ -917,11 +917,12 @@ console.log("🚀 ASSET-FORGE API SERVER - ELYSIA + BUN");
 console.log("=".repeat(60));
 
 // Server info
-// Get Railway public URL or fallback to localhost for dev
+// Get public URL from environment
 const publicUrl =
   process.env.RAILWAY_STATIC_URL ||
   process.env.RAILWAY_PUBLIC_DOMAIN ||
-  `http://localhost:${API_PORT}`;
+  process.env.PUBLIC_URL ||
+  `http://0.0.0.0:${API_PORT}`;
 
 console.log("\n📍 SERVER ENDPOINTS:");
 console.log(`   🌐 Server:      ${publicUrl}`);

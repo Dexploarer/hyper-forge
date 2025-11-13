@@ -36,9 +36,9 @@ module.exports = {
     collect: {
       // URLs to test
       url: [
-        'http://localhost:3000/',
-        'http://localhost:3000/about',
-        'http://localhost:3000/products',
+        'http://test-frontend:3000/',
+        'http://test-frontend:3000/about',
+        'http://test-frontend:3000/products',
       ],
       // Number of runs per URL
       numberOfRuns: 3,
@@ -123,7 +123,7 @@ module.exports = {
 module.exports = {
   ci: {
     collect: {
-      url: ['http://localhost:3000/'],
+      url: ['http://test-frontend:3000/'],
       numberOfRuns: 3,
       settings: {
         preset: 'mobile',

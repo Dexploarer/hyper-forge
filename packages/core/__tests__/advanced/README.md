@@ -65,7 +65,7 @@ bun test __tests__/advanced/contract-testing/openai-image-api.pact.test.ts
 
 ### Generated Pacts
 
-Contract files are generated in `/Users/home/asset-forge/packages/core/pacts/`:
+Contract files are generated in `${HOME}/asset-forge/packages/core/pacts/`:
 
 - `asset-forge-core-openai-image-api.json`
 - `asset-forge-core-meshy-ai-api.json`
@@ -201,7 +201,7 @@ open reports/mutation/index.html
 
 ### Configuration
 
-See `/Users/home/asset-forge/packages/core/stryker.config.json`
+See `${HOME}/asset-forge/packages/core/stryker.config.json`
 
 Key settings:
 
@@ -282,8 +282,8 @@ bun test __tests__/advanced/performance --verbose
 
 Results are saved to:
 
-- `/Users/home/asset-forge/packages/core/reports/performance/benchmarks.json` (historical)
-- `/Users/home/asset-forge/packages/core/reports/performance/baselines.json` (current baselines)
+- `${HOME}/asset-forge/packages/core/reports/performance/benchmarks.json` (historical)
+- `${HOME}/asset-forge/packages/core/reports/performance/baselines.json` (current baselines)
 
 Example output:
 

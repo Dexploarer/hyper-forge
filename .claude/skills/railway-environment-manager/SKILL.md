@@ -258,8 +258,8 @@ export const config = {
   // API
   api: {
     port: parseInt(process.env.PORT || '3000'),
-    url: process.env.API_URL || 'http://localhost:3000',
-    corsOrigins: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:3000'],
+    url: process.env.API_URL || 'http://test-frontend:3000',
+    corsOrigins: process.env.CORS_ORIGINS?.split(',') || ['http://test-frontend:3000'],
   },
 
   // Services

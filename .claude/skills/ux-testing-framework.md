@@ -422,7 +422,7 @@ export default defineConfig({
   retries: 0, // No retries - tests must be reliable
   workers: 1, // Serial execution for database isolation
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://test-frontend:3000",
     trace: "on-first-retry",
     video: "retain-on-failure",
     screenshot: "only-on-failure",
@@ -439,7 +439,7 @@ export default defineConfig({
 createdb asset_forge_test
 
 # Run migrations
-DATABASE_URL=postgresql://localhost/asset_forge_test bun run db:migrate
+DATABASE_URL=postgresql://db-host/asset_forge_test bun run db:migrate
 ```
 
 ### Test User Creation

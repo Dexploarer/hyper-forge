@@ -23,7 +23,7 @@ Use this skill when:
 After making changes to TypeScript schema files in `packages/asset-forge/server/db/schema/`, generate a migration:
 
 ```bash
-cd /Users/home/hyperscape-5/packages/asset-forge
+cd ${WORKSPACE_DIR}/packages/asset-forge
 bun run db:generate
 ```
 
@@ -44,7 +44,7 @@ bun run db:generate
 
 ```bash
 # Find latest migration
-cd /Users/home/hyperscape-5/packages/asset-forge
+cd ${WORKSPACE_DIR}/packages/asset-forge
 ls -t server/db/migrations/*.sql | head -1
 ```
 
@@ -60,7 +60,7 @@ ls -t server/db/migrations/*.sql | head -1
 After reviewing, apply the migration:
 
 ```bash
-cd /Users/home/hyperscape-5/packages/asset-forge
+cd ${WORKSPACE_DIR}/packages/asset-forge
 bun run db:migrate
 ```
 
@@ -80,11 +80,11 @@ bun run db:migrate
 After successful migration, verify with Drizzle Studio:
 
 ```bash
-cd /Users/home/hyperscape-5/packages/asset-forge
+cd ${WORKSPACE_DIR}/packages/asset-forge
 bun run db:studio
 ```
 
-Opens web UI at http://localhost:4983 to inspect:
+Opens web UI at http://test-db-studio:4983 to inspect:
 - Tables created/modified correctly
 - Data integrity maintained
 - Indexes created

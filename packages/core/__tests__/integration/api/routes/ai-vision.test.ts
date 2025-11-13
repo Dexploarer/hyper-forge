@@ -581,7 +581,7 @@ describe("AI Vision Routes", () => {
         // Should not contain sensitive internal paths or keys
         expect(text).not.toContain("OPENAI_API_KEY");
         expect(text).not.toContain("/home/");
-        expect(text).not.toContain("/Users/");
+        expect(text).not.toContain("${HOME}
       }
     });
   });

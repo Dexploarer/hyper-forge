@@ -14,7 +14,7 @@ This directory contains hooks that customize Claude Code's behavior during vario
 
 ```
 📍 Session started at 2024-11-07T22:15:30.000Z
-💼 Working directory: /Users/home/hyperscape-5/packages/asset-forge
+💼 Working directory: ${WORKSPACE_DIR}/packages/asset-forge
 🎯 Project: asset-forge
 ```
 

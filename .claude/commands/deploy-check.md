@@ -12,7 +12,7 @@ Comprehensive validation before deploying asset-forge to production. **All check
 Run all quality checks sequentially (recommended before deployment):
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== PRE-DEPLOYMENT CHECKLIST ===" && echo "Running all validation checks..." && echo && FAILED=0 && echo "[1/6] TypeScript Type Check..." && bun tsc --noEmit 2>&1 >/dev/null && echo "✅ Types OK" || (echo "❌ Type errors found" && FAILED=1) && echo && echo "[2/6] Test Suite..." && bun test 2>&1 >/dev/null && echo "✅ Tests OK" || (echo "❌ Tests failed" && FAILED=1) && echo && echo "[3/6] Linting..." && bun run lint 2>&1 >/dev/null && echo "✅ Lint OK" || (echo "❌ Lint errors" && FAILED=1) && echo && echo "[4/6] Production Build..." && bun run build 2>&1 >/dev/null && echo "✅ Build OK" || (echo "❌ Build failed" && FAILED=1) && echo && echo "[5/6] Environment Variables..." && test -f .env && echo "✅ .env exists" || echo "⚠️  .env missing" && echo && echo "[6/6] Git Status..." && cd /Users/home/hyperscape-5 && git status -s && echo && if [ $FAILED -eq 0 ]; then echo "=== ✅ ALL CHECKS PASSED - READY TO DEPLOY ==="; else echo "=== ❌ DEPLOYMENT BLOCKED - FIX ERRORS ABOVE ==="; exit 1; fi`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== PRE-DEPLOYMENT CHECKLIST ===" && echo "Running all validation checks..." && echo && FAILED=0 && echo "[1/6] TypeScript Type Check..." && bun tsc --noEmit 2>&1 >/dev/null && echo "✅ Types OK" || (echo "❌ Type errors found" && FAILED=1) && echo && echo "[2/6] Test Suite..." && bun test 2>&1 >/dev/null && echo "✅ Tests OK" || (echo "❌ Tests failed" && FAILED=1) && echo && echo "[3/6] Linting..." && bun run lint 2>&1 >/dev/null && echo "✅ Lint OK" || (echo "❌ Lint errors" && FAILED=1) && echo && echo "[4/6] Production Build..." && bun run build 2>&1 >/dev/null && echo "✅ Build OK" || (echo "❌ Build failed" && FAILED=1) && echo && echo "[5/6] Environment Variables..." && test -f .env && echo "✅ .env exists" || echo "⚠️  .env missing" && echo && echo "[6/6] Git Status..." && cd ${WORKSPACE_DIR} && git status -s && echo && if [ $FAILED -eq 0 ]; then echo "=== ✅ ALL CHECKS PASSED - READY TO DEPLOY ==="; else echo "=== ❌ DEPLOYMENT BLOCKED - FIX ERRORS ABOVE ==="; exit 1; fi`
 ```
 
 ## Individual Checks
@@ -24,7 +24,7 @@ Run each check separately for detailed analysis.
 Verify no type errors:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Checking TypeScript types..." && bun tsc --noEmit 2>&1 && echo "✅ No type errors" || echo "❌ Fix type errors before deployment"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Checking TypeScript types..." && bun tsc --noEmit 2>&1 && echo "✅ No type errors" || echo "❌ Fix type errors before deployment"`
 ```
 
 **Requirements**:
@@ -37,7 +37,7 @@ Verify no type errors:
 All tests must pass:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Running test suite..." && bun test 2>&1 | tee /tmp/deploy-test.log && (grep -q "FAIL" /tmp/deploy-test.log && echo "❌ Tests failed" && exit 1 || echo "✅ All tests passed")`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Running test suite..." && bun test 2>&1 | tee /tmp/deploy-test.log && (grep -q "FAIL" /tmp/deploy-test.log && echo "❌ Tests failed" && exit 1 || echo "✅ All tests passed")`
 ```
 
 **Requirements**:
@@ -50,7 +50,7 @@ All tests must pass:
 Check code style and quality:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Linting code..." && bun run lint 2>&1 && echo "✅ No lint errors" || echo "❌ Fix lint errors before deployment"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Linting code..." && bun run lint 2>&1 && echo "✅ No lint errors" || echo "❌ Fix lint errors before deployment"`
 ```
 
 **Requirements**:
@@ -63,7 +63,7 @@ Check code style and quality:
 Verify build succeeds:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Building for production..." && bun run build 2>&1 && test -d dist && echo "✅ Build successful - dist/ created" || echo "❌ Build failed"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Building for production..." && bun run build 2>&1 && test -d dist && echo "✅ Build successful - dist/ created" || echo "❌ Build failed"`
 ```
 
 **Requirements**:
@@ -76,7 +76,7 @@ Verify build succeeds:
 Check required environment variables:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Checking environment variables..." && test -f .env && echo "✅ .env file exists" || echo "❌ .env missing" && echo && echo "Required variables:" && (test -n "$DATABASE_URL" && echo "✅ DATABASE_URL" || echo "❌ DATABASE_URL missing") && (test -n "$PRIVY_APP_ID" && echo "✅ PRIVY_APP_ID" || echo "❌ PRIVY_APP_ID missing") && (test -n "$PRIVY_APP_SECRET" && echo "✅ PRIVY_APP_SECRET" || echo "❌ PRIVY_APP_SECRET missing") && (test -n "$MESHY_API_KEY" && echo "✅ MESHY_API_KEY" || echo "❌ MESHY_API_KEY missing")`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Checking environment variables..." && test -f .env && echo "✅ .env file exists" || echo "❌ .env missing" && echo && echo "Required variables:" && (test -n "$DATABASE_URL" && echo "✅ DATABASE_URL" || echo "❌ DATABASE_URL missing") && (test -n "$PRIVY_APP_ID" && echo "✅ PRIVY_APP_ID" || echo "❌ PRIVY_APP_ID missing") && (test -n "$PRIVY_APP_SECRET" && echo "✅ PRIVY_APP_SECRET" || echo "❌ PRIVY_APP_SECRET missing") && (test -n "$MESHY_API_KEY" && echo "✅ MESHY_API_KEY" || echo "❌ MESHY_API_KEY missing")`
 ```
 
 **Required Variables**:
@@ -91,7 +91,7 @@ Check required environment variables:
 Verify repository state:
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "Git status:" && git status && echo && echo "Uncommitted changes:" && git diff --stat && echo && echo "Branch:" && git branch --show-current`
+!`cd ${WORKSPACE_DIR} && echo "Git status:" && git status && echo && echo "Uncommitted changes:" && git diff --stat && echo && echo "Branch:" && git branch --show-current`
 ```
 
 **Requirements**:
@@ -104,7 +104,7 @@ Verify repository state:
 Check migration status:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Checking migrations..." && ls -la server/db/migrations/*.sql 2>/dev/null | tail -5 && echo && echo "Latest migration:" && ls -t server/db/migrations/*.sql 2>/dev/null | head -1 | xargs basename`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Checking migrations..." && ls -la server/db/migrations/*.sql 2>/dev/null | tail -5 && echo && echo "Latest migration:" && ls -t server/db/migrations/*.sql 2>/dev/null | head -1 | xargs basename`
 ```
 
 **Requirements**:
@@ -117,7 +117,7 @@ Check migration status:
 Check for security issues:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Security checklist:" && echo && echo "Checking for secrets in code..." && (grep -r "sk_.*" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null && echo "⚠️  Possible secrets found" || echo "✅ No secrets in code") && echo && echo "Checking for console.log..." && (grep -r "console\.log" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "Found {} console.log statements") && echo && echo "Checking .gitignore..." && (test -f /Users/home/hyperscape-5/.gitignore && grep -q ".env" /Users/home/hyperscape-5/.gitignore && echo "✅ .env in .gitignore" || echo "⚠️  Add .env to .gitignore")`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Security checklist:" && echo && echo "Checking for secrets in code..." && (grep -r "sk_.*" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null && echo "⚠️  Possible secrets found" || echo "✅ No secrets in code") && echo && echo "Checking for console.log..." && (grep -r "console\.log" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "Found {} console.log statements") && echo && echo "Checking .gitignore..." && (test -f ${WORKSPACE_DIR}/.gitignore && grep -q ".env" ${WORKSPACE_DIR}/.gitignore && echo "✅ .env in .gitignore" || echo "⚠️  Add .env to .gitignore")`
 ```
 
 **Security Requirements**:
@@ -133,7 +133,7 @@ Check for security issues:
 Verify bundle size and performance:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Checking bundle size..." && if [ -d dist ]; then du -sh dist/ && echo && echo "Largest files:" && find dist -type f -exec du -h {} + | sort -rh | head -10; else echo "Build dist/ first"; fi`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Checking bundle size..." && if [ -d dist ]; then du -sh dist/ && echo && echo "Largest files:" && find dist -type f -exec du -h {} + | sort -rh | head -10; else echo "Build dist/ first"; fi`
 ```
 
 **Performance Requirements**:
@@ -166,14 +166,14 @@ After all checks pass:
 
 ```bash
 # Deploy to Railway
-!`cd /Users/home/hyperscape-5/packages/server && railway up`
+!`cd ${WORKSPACE_DIR}/packages/server && railway up`
 ```
 
 ### Manual Deployment
 
 ```bash
 # Build and prepare for deployment
-!`cd /Users/home/hyperscape-5/packages/server && bun run build && echo "Ready to deploy"`
+!`cd ${WORKSPACE_DIR}/packages/server && bun run build && echo "Ready to deploy"`
 ```
 
 ## Rollback Plan

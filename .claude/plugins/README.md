@@ -266,9 +266,9 @@ Individual developers can override in `.claude/settings.local.json` (not committ
 
 ## 📚 Related Documentation
 
-- [ADR Directory](/Users/home/hyperscape-5/adr/) - Architecture Decision Records
-- [CLAUDE.md](/Users/home/hyperscape-5/CLAUDE.md) - Project development guidelines
-- [README.md](/Users/home/hyperscape-5/README.md) - Main project documentation
+- [ADR Directory](${WORKSPACE_DIR}/adr/) - Architecture Decision Records
+- [CLAUDE.md](${WORKSPACE_DIR}/CLAUDE.md) - Project development guidelines
+- [README.md](${WORKSPACE_DIR}/README.md) - Main project documentation
 
 ## 🤝 Contributing
 

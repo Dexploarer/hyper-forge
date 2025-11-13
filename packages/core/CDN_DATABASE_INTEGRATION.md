@@ -307,7 +307,7 @@ To apply it:
 
 ```bash
 # Development
-cd /Users/home/asset-forge
+cd ${HOME}/asset-forge
 bunx drizzle-kit push
 
 # Or use the migration script

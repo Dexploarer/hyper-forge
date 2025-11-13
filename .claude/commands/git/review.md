@@ -12,7 +12,7 @@ Comprehensive code review checklist before committing changes.
 Run all automated quality checks:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== AUTOMATED CODE REVIEW ===" && echo && echo "[1/5] TypeScript Type Check..." && bun tsc --noEmit 2>&1 && echo "✅ Types OK" || echo "❌ Type errors found" && echo && echo "[2/5] ESLint..." && bun run lint 2>&1 && echo "✅ Lint OK" || echo "❌ Lint errors found" && echo && echo "[3/5] Tests..." && bun test 2>&1 && echo "✅ Tests OK" || echo "❌ Tests failed" && echo && echo "[4/5] Build..." && bun run build 2>&1 && echo "✅ Build OK" || echo "❌ Build failed" && echo && echo "[5/5] Git Status..." && cd /Users/home/hyperscape-5 && git status -s`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== AUTOMATED CODE REVIEW ===" && echo && echo "[1/5] TypeScript Type Check..." && bun tsc --noEmit 2>&1 && echo "✅ Types OK" || echo "❌ Type errors found" && echo && echo "[2/5] ESLint..." && bun run lint 2>&1 && echo "✅ Lint OK" || echo "❌ Lint errors found" && echo && echo "[3/5] Tests..." && bun test 2>&1 && echo "✅ Tests OK" || echo "❌ Tests failed" && echo && echo "[4/5] Build..." && bun run build 2>&1 && echo "✅ Build OK" || echo "❌ Build failed" && echo && echo "[5/5] Git Status..." && cd ${WORKSPACE_DIR} && git status -s`
 ```
 
 ## Manual Review Checklist
@@ -22,25 +22,25 @@ Review these items manually:
 ### Code Quality
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== CODE QUALITY REVIEW ===" && echo && echo "Checking for anti-patterns..." && echo && echo "1. Any types (FORBIDDEN):" && (grep -r ": any" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances") && echo && echo "2. Console.log statements:" && (grep -r "console\.log" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances") && echo && echo "3. TODO comments:" && (grep -r "TODO" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances") && echo && echo "4. Commented code:" && (grep -r "^[[:space:]]*//.*(" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances") && echo && echo "5. Debugger statements:" && (grep -r "debugger" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances")`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== CODE QUALITY REVIEW ===" && echo && echo "Checking for anti-patterns..." && echo && echo "1. Any types (FORBIDDEN):" && (grep -r ": any" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances") && echo && echo "2. Console.log statements:" && (grep -r "console\.log" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances") && echo && echo "3. TODO comments:" && (grep -r "TODO" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances") && echo && echo "4. Commented code:" && (grep -r "^[[:space:]]*//.*(" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances") && echo && echo "5. Debugger statements:" && (grep -r "debugger" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} instances")`
 ```
 
 ### Security Review
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== SECURITY REVIEW ===" && echo && echo "1. Hardcoded secrets:" && (grep -rE "(sk_|pk_|api_key|password|secret)" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "process.env" | grep -v "// " | wc -l | xargs -I {} echo "  Found {} potential secrets") && echo && echo "2. Unsafe eval:" && (grep -r "eval(" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} eval statements") && echo && echo "3. SQL injection risks:" && (grep -r "query.*\$\{" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} template string queries")`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== SECURITY REVIEW ===" && echo && echo "1. Hardcoded secrets:" && (grep -rE "(sk_|pk_|api_key|password|secret)" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | grep -v "process.env" | grep -v "// " | wc -l | xargs -I {} echo "  Found {} potential secrets") && echo && echo "2. Unsafe eval:" && (grep -r "eval(" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} eval statements") && echo && echo "3. SQL injection risks:" && (grep -r "query.*\$\{" src/ server/ --include="*.ts" --include="*.tsx" 2>/dev/null | wc -l | xargs -I {} echo "  Found {} template string queries")`
 ```
 
 ### Test Coverage
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== TEST COVERAGE REVIEW ===" && echo && echo "Test files:" && find . -name "*.test.ts" -o -name "*.test.tsx" | wc -l | xargs -I {} echo "  {} test files found" && echo && echo "Modified files needing tests:" && cd /Users/home/hyperscape-5 && git diff --name-only --cached | grep -E "\.(ts|tsx)$" | grep -v ".test.ts"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== TEST COVERAGE REVIEW ===" && echo && echo "Test files:" && find . -name "*.test.ts" -o -name "*.test.tsx" | wc -l | xargs -I {} echo "  {} test files found" && echo && echo "Modified files needing tests:" && cd ${WORKSPACE_DIR} && git diff --name-only --cached | grep -E "\.(ts|tsx)$" | grep -v ".test.ts"`
 ```
 
 ### Git Changes
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== GIT CHANGES REVIEW ===" && echo && echo "Files changed:" && git diff --cached --stat && echo && echo "Lines changed:" && git diff --cached --numstat | awk '{added+=$1; removed+=$2} END {print "  +" added " -" removed}'`
+!`cd ${WORKSPACE_DIR} && echo "=== GIT CHANGES REVIEW ===" && echo && echo "Files changed:" && git diff --cached --stat && echo && echo "Lines changed:" && git diff --cached --numstat | awk '{added+=$1; removed+=$2} END {print "  +" added " -" removed}'`
 ```
 
 ## Review Checklist
@@ -139,7 +139,7 @@ db.query("SELECT * FROM users WHERE id = ?", [userId]);
 After review passes:
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== FINAL VALIDATION ===" && echo "✅ All automated checks passed" && echo "✅ Manual review completed" && echo "✅ Ready to commit" && echo && git status -s`
+!`cd ${WORKSPACE_DIR} && echo "=== FINAL VALIDATION ===" && echo "✅ All automated checks passed" && echo "✅ Manual review completed" && echo "✅ Ready to commit" && echo && git status -s`
 ```
 
 ## See Also

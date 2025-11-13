@@ -11,7 +11,7 @@ Run ESLint to check code quality, style, and best practices.
 ## Check Only (No Changes)
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== ESLint Code Quality Check ===" && bun run lint 2>&1 && echo -e "\n✅ No lint errors" || (echo -e "\n❌ Lint errors found" && echo "Auto-fix with: /dev/lint --fix" && exit 1)`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== ESLint Code Quality Check ===" && bun run lint 2>&1 && echo -e "\n✅ No lint errors" || (echo -e "\n❌ Lint errors found" && echo "Auto-fix with: /dev/lint --fix" && exit 1)`
 ```
 
 ## Auto-Fix Issues
@@ -19,7 +19,7 @@ Run ESLint to check code quality, style, and best practices.
 Automatically fix fixable lint errors:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== ESLint Auto-Fix ===" && bun run lint -- --fix 2>&1 && echo -e "\n✅ Linting complete - check git diff for changes" || (echo -e "\n❌ Some errors require manual fixes" && exit 1)`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== ESLint Auto-Fix ===" && bun run lint -- --fix 2>&1 && echo -e "\n✅ Linting complete - check git diff for changes" || (echo -e "\n❌ Some errors require manual fixes" && exit 1)`
 ```
 
 ## Rules Enforced
@@ -54,10 +54,10 @@ ESLint enforces these rules:
 
 ```bash
 # Fix import ordering
-!`cd /Users/home/hyperscape-5/packages/server && bun run lint -- --fix --rule 'import/order'`
+!`cd ${WORKSPACE_DIR}/packages/server && bun run lint -- --fix --rule 'import/order'`
 
 # Fix React hooks
-!`cd /Users/home/hyperscape-5/packages/server && bun run lint -- --fix --rule 'react-hooks/exhaustive-deps'`
+!`cd ${WORKSPACE_DIR}/packages/server && bun run lint -- --fix --rule 'react-hooks/exhaustive-deps'`
 ```
 
 ## Integration

@@ -16,13 +16,13 @@ Format code using Prettier for consistent code style across the project.
 ## Check Formatting (No Changes)
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== Prettier Format Check ===" && bun x prettier --check "packages/asset-forge/**/*.{ts,tsx,js,jsx,json,css}" 2>&1 && echo -e "\n✅ All files properly formatted" || (echo -e "\n❌ Some files need formatting" && echo "Run: /dev/format write" && exit 1)`
+!`cd ${WORKSPACE_DIR} && echo "=== Prettier Format Check ===" && bun x prettier --check "packages/asset-forge/**/*.{ts,tsx,js,jsx,json,css}" 2>&1 && echo -e "\n✅ All files properly formatted" || (echo -e "\n❌ Some files need formatting" && echo "Run: /dev/format write" && exit 1)`
 ```
 
 ## Format Code (Write Changes)
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== Formatting Code with Prettier ===" && bun x prettier --write "packages/asset-forge/**/*.{ts,tsx,js,jsx,json,css}" 2>&1 && echo -e "\n✅ Code formatted successfully" && echo "Review changes with: git diff"`
+!`cd ${WORKSPACE_DIR} && echo "=== Formatting Code with Prettier ===" && bun x prettier --write "packages/asset-forge/**/*.{ts,tsx,js,jsx,json,css}" 2>&1 && echo -e "\n✅ Code formatted successfully" && echo "Review changes with: git diff"`
 ```
 
 ## File Types Formatted

@@ -12,7 +12,7 @@ import path from "path";
 
 // Configuration
 const ASSETS_REPO_PATH =
-  process.env.ASSETS_REPO_PATH || "/Users/home/Downloads/assets-main";
+  process.env.ASSETS_REPO_PATH || "${HOME}/Downloads/assets-main";
 const GDD_ASSETS_PATH = path.join(process.cwd(), "gdd-assets");
 
 interface ManifestEntry {

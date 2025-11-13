@@ -180,7 +180,7 @@
       "Bash(psql:*)",
       "Bash(bun test:*)",
       "Bash(bun run:*)",
-      "Read(//Users/home/Downloads/assets-main/**)",
+      "Read(/${HOME}/Downloads/assets-main/**)",
       "Bash(echo:*)",
       "Bash(lsof:*)",
       "Bash(curl:*)",

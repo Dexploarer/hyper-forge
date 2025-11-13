@@ -11,13 +11,13 @@ Run TypeScript compiler to verify type safety. **ZERO `any` types policy** enfor
 ## Standard Check
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== TypeScript Type Check ===" && bun run typecheck 2>&1 && echo -e "\n✅ No type errors" || (echo -e "\n❌ Type errors found - run /fix-types to resolve" && exit 1)`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== TypeScript Type Check ===" && bun run typecheck 2>&1 && echo -e "\n✅ No type errors" || (echo -e "\n❌ Type errors found - run /fix-types to resolve" && exit 1)`
 ```
 
 ## Watch Mode
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== TypeScript Watch Mode ===" && echo "Watching... (Press Ctrl+C to stop)" && bun tsc --noEmit --watch`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== TypeScript Watch Mode ===" && echo "Watching... (Press Ctrl+C to stop)" && bun tsc --noEmit --watch`
 ```
 
 ## Strict Mode Rules

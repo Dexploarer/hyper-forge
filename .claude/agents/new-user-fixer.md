@@ -14,7 +14,7 @@ Specialist in improving first-time user experience, onboarding, and documentatio
 ### CRITICAL - Security Issues
 
 1. **Remove hardcoded password** - LandingPage.tsx lines 51, 234
-   - Location: `/Users/home/asset-forge/packages/core/src/pages/LandingPage.tsx`
+   - Location: `${HOME}/asset-forge/packages/core/src/pages/LandingPage.tsx`
    - Issue: `const success = await login('admin123')` exposes credentials
    - Fix: Remove fake auth, show Privy login modal directly
    - Add proper "Sign In to Generate" CTA button

@@ -12,7 +12,7 @@ Only use in development when you need a completely clean slate.
 ## Reset Database
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "⚠️  WARNING: This will DELETE ALL DATA!" && echo "Deleting database files..." && rm -f server/db/asset-forge.db server/db/asset-forge.db-shm server/db/asset-forge.db-wal && echo "✓ Database deleted" && echo "Creating fresh database from migrations..." && bun run db:migrate && echo -e "\n✅ Fresh database created" && echo && echo "Database reset complete - all data lost"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "⚠️  WARNING: This will DELETE ALL DATA!" && echo "Deleting database files..." && rm -f server/db/asset-forge.db server/db/asset-forge.db-shm server/db/asset-forge.db-wal && echo "✓ Database deleted" && echo "Creating fresh database from migrations..." && bun run db:migrate && echo -e "\n✅ Fresh database created" && echo && echo "Database reset complete - all data lost"`
 ```
 
 ## What This Does

@@ -46,24 +46,24 @@ import percySnapshot from '@percy/playwright';
 
 test.describe('Homepage Visual Tests', () => {
   test('homepage desktop', async ({ page }) => {
-    await page.goto('http://localhost:3000');
+    await page.goto('http://test-frontend:3000');
     await percySnapshot(page, 'Homepage - Desktop');
   });
 
   test('homepage mobile', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('http://localhost:3000');
+    await page.goto('http://test-frontend:3000');
     await percySnapshot(page, 'Homepage - Mobile');
   });
 
   test('homepage tablet', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
-    await page.goto('http://localhost:3000');
+    await page.goto('http://test-frontend:3000');
     await percySnapshot(page, 'Homepage - Tablet');
   });
 
   test('dark mode', async ({ page }) => {
-    await page.goto('http://localhost:3000');
+    await page.goto('http://test-frontend:3000');
     await page.click('[data-testid="theme-toggle"]');
     await page.waitForTimeout(500); // Wait for transition
     await percySnapshot(page, 'Homepage - Dark Mode');
@@ -259,7 +259,7 @@ export default defineConfig({
 
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
+    url: 'http://test-frontend:3000',
     reuseExistingServer: !process.env.CI,
   },
 });
@@ -272,7 +272,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Visual Regression Tests', () => {
   test('homepage looks correct', async ({ page }) => {
-    await page.goto('http://localhost:3000');
+    await page.goto('http://test-frontend:3000');
 
     // Wait for page to be fully loaded
     await page.waitForLoadState('networkidle');
@@ -287,7 +287,7 @@ test.describe('Visual Regression Tests', () => {
   });
 
   test('button states', async ({ page }) => {
-    await page.goto('http://localhost:3000/components');
+    await page.goto('http://test-frontend:3000/components');
 
     const button = page.locator('[data-testid="primary-button"]');
 
@@ -304,7 +304,7 @@ test.describe('Visual Regression Tests', () => {
   });
 
   test('responsive design', async ({ page }) => {
-    await page.goto('http://localhost:3000');
+    await page.goto('http://test-frontend:3000');
 
     // Desktop
     await page.setViewportSize({ width: 1920, height: 1080 });
@@ -362,26 +362,26 @@ npx backstop init
   "scenarios": [
     {
       "label": "Homepage",
-      "url": "http://localhost:3000",
+      "url": "http://test-frontend:3000",
       "delay": 500,
       "misMatchThreshold": 0.1,
       "requireSameDimensions": true
     },
     {
       "label": "About Page",
-      "url": "http://localhost:3000/about",
+      "url": "http://test-frontend:3000/about",
       "delay": 500
     },
     {
       "label": "Dark Mode",
-      "url": "http://localhost:3000",
+      "url": "http://test-frontend:3000",
       "clickSelector": "[data-testid='theme-toggle']",
       "postInteractionWait": 1000,
       "delay": 500
     },
     {
       "label": "Form States",
-      "url": "http://localhost:3000/contact",
+      "url": "http://test-frontend:3000/contact",
       "selectors": ["form"],
       "hoverSelector": "button[type='submit']",
       "delay": 200
@@ -466,7 +466,7 @@ await page.addStyleTag({
 **Testing Component States:**
 ```typescript
 test('button all states', async ({ page }) => {
-  await page.goto('http://localhost:3000/components');
+  await page.goto('http://test-frontend:3000/components');
 
   // Create a grid of all states
   await page.evaluate(() => {

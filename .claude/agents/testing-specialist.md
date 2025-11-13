@@ -153,7 +153,7 @@ describe('TeamService', () => {
 ### E2E Testing
 ```typescript
 test('loads 3D model', async ({ page }) => {
-  await page.goto('http://localhost:5173');
+  await page.goto('http://test-dev:5173');
   await page.waitForSelector('canvas');
   await page.screenshot({ path: 'model.png' });
 });

@@ -10,7 +10,7 @@ Test Three.js and React Three Fiber components with visual verification.
 ## Run 3D Viewer Tests
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== 3D Component Tests ===" && echo "Testing: VRM viewer, Three.js scene, animations" && echo && bun test --grep "3D|viewer|three|VRM" 2>&1 && echo -e "\n✅ 3D tests passed" || (echo -e "\n❌ 3D tests failed - check error screenshots in /logs" && exit 1)`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== 3D Component Tests ===" && echo "Testing: VRM viewer, Three.js scene, animations" && echo && bun test --grep "3D|viewer|three|VRM" 2>&1 && echo -e "\n✅ 3D tests passed" || (echo -e "\n❌ 3D tests failed - check error screenshots in /logs" && exit 1)`
 ```
 
 ## Test Categories
@@ -55,7 +55,7 @@ Use colored cube proxies for visual testing:
 For visual regression testing:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Visual regression tests not yet implemented" && echo "Use Playwright + Percy for visual diffs"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Visual regression tests not yet implemented" && echo "Use Playwright + Percy for visual diffs"`
 ```
 
 ## See Also

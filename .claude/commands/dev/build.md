@@ -14,7 +14,7 @@ Build asset-forge for production deployment with optimizations.
 3. Optimize assets and bundle
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== Production Build ===" && echo "Cleaning previous build..." && bun run clean && echo "Building with Vite..." && bun run build 2>&1 && echo -e "\n✅ Build complete!" && echo && echo "Output directory: dist/" && du -sh dist/ && echo && echo "Next steps:" && echo "  - Run /deploy-check to verify readiness" && echo "  - Test with 'bun run preview'" || (echo -e "\n❌ Build failed" && echo "Common issues:" && echo "  - Type errors: run /check-types" && echo "  - Missing dependencies: run bun install" && echo "  - Environment vars: check .env" && exit 1)`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== Production Build ===" && echo "Cleaning previous build..." && bun run clean && echo "Building with Vite..." && bun run build 2>&1 && echo -e "\n✅ Build complete!" && echo && echo "Output directory: dist/" && du -sh dist/ && echo && echo "Next steps:" && echo "  - Run /deploy-check to verify readiness" && echo "  - Test with 'bun run preview'" || (echo -e "\n❌ Build failed" && echo "Common issues:" && echo "  - Type errors: run /check-types" && echo "  - Missing dependencies: run bun install" && echo "  - Environment vars: check .env" && exit 1)`
 ```
 
 ## Preview Build
@@ -22,7 +22,7 @@ Build asset-forge for production deployment with optimizations.
 Test the production build locally:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== Preview Production Build ===" && echo "Starting preview server..." && echo "URL: http://localhost:4173" && bun run preview`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== Preview Production Build ===" && echo "Starting preview server..." && echo "URL: http://test-preview:4173" && bun run preview`
 ```
 
 ## Build Output
@@ -35,7 +35,7 @@ Test the production build locally:
 ## Build Verification
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && if [ -d dist ]; then echo "=== Build Output ===" && echo "Total size: $(du -sh dist | cut -f1)" && echo && echo "Largest files:" && find dist -type f -exec du -h {} + | sort -rh | head -10 && echo && echo "✅ Build verified"; else echo "❌ No build output - run /dev/build first"; fi`
+!`cd ${WORKSPACE_DIR}/packages/server && if [ -d dist ]; then echo "=== Build Output ===" && echo "Total size: $(du -sh dist | cut -f1)" && echo && echo "Largest files:" && find dist -type f -exec du -h {} + | sort -rh | head -10 && echo && echo "✅ Build verified"; else echo "❌ No build output - run /dev/build first"; fi`
 ```
 
 ## Post-Build

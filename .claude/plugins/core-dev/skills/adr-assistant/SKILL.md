@@ -20,7 +20,7 @@ I trigger when you're:
 ## What I Provide
 
 ### 1. ADR Analysis
-- Review existing ADRs in `/Users/home/hyperscape-5/adr/`
+- Review existing ADRs in `${WORKSPACE_DIR}/adr/`
 - Identify related decisions
 - Check for conflicts or dependencies
 - Suggest improvements

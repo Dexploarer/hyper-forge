@@ -11,25 +11,25 @@ Run tests using Bun test runner. Follows **NO mocks** policy - real instances on
 ## Run All Tests
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== Test Suite ===" && bun test 2>&1 && echo -e "\n✅ All tests passed" || (echo -e "\n❌ Tests failed" && exit 1)`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== Test Suite ===" && bun test 2>&1 && echo -e "\n✅ All tests passed" || (echo -e "\n❌ Tests failed" && exit 1)`
 ```
 
 ## Watch Mode
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== Test Watch Mode ===" && bun test --watch`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== Test Watch Mode ===" && bun test --watch`
 ```
 
 ## Coverage Report
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== Test Coverage ===" && bun test --coverage`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== Test Coverage ===" && bun test --coverage`
 ```
 
 ## Specific Pattern
 
 ```bash
-!`if [ -n "$ARGUMENTS" ]; then cd /Users/home/hyperscape-5/packages/server && echo "=== Tests: $ARGUMENTS ===" && bun test $ARGUMENTS; else echo "Provide pattern: /test/test <pattern>"; fi`
+!`if [ -n "$ARGUMENTS" ]; then cd ${WORKSPACE_DIR}/packages/server && echo "=== Tests: $ARGUMENTS ===" && bun test $ARGUMENTS; else echo "Provide pattern: /test/test <pattern>"; fi`
 ```
 
 ## Testing Standards

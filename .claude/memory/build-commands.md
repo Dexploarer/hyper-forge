@@ -42,7 +42,7 @@ bun run db:generate          # Creates SQL in server/db/migrations/
 bun run db:migrate           # Runs pending migrations
 
 # Launch Drizzle Studio (visual DB editor)
-bun run db:studio            # Opens at http://localhost:4983
+bun run db:studio            # Opens at http://test-db-studio:4983
 
 # Push schema directly (dev only, no migrations)
 bun run db:push              # Dangerous: use only in development

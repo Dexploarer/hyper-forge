@@ -62,7 +62,7 @@ Complete checklist for deploying Asset-Forge Elysia API server to production.
 
 ```bash
 # Check all required environment variables are set
-bun run /Users/home/asset-forge/packages/core/scripts/check-env.sh
+bun run ${HOME}/asset-forge/packages/core/scripts/check-env.sh
 ```
 
 ---

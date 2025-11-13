@@ -13,7 +13,7 @@ Guided workflow for creating well-formed git commits with validation.
 If you provide a message argument, commit directly:
 
 ```bash
-!`if [ -n "$ARGUMENTS" ]; then cd /Users/home/hyperscape-5 && echo "Pre-commit validation..." && cd packages/asset-forge && bun tsc --noEmit 2>&1 && cd /Users/home/hyperscape-5 && git add -A && git commit -m "$ARGUMENTS" && echo "✅ Committed: $ARGUMENTS"; else echo "Provide commit message: /git/commit <message>"; fi`
+!`if [ -n "$ARGUMENTS" ]; then cd ${WORKSPACE_DIR} && echo "Pre-commit validation..." && cd packages/asset-forge && bun tsc --noEmit 2>&1 && cd ${WORKSPACE_DIR} && git add -A && git commit -m "$ARGUMENTS" && echo "✅ Committed: $ARGUMENTS"; else echo "Provide commit message: /git/commit <message>"; fi`
 ```
 
 ## Guided Commit Workflow
@@ -23,25 +23,25 @@ Full workflow with validation and review:
 ### Step 1: Pre-Commit Validation
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== Pre-Commit Validation ===" && echo && echo "[1/3] Type Check..." && cd packages/asset-forge && bun tsc --noEmit 2>&1 && echo "✅ Types OK" || echo "⚠️  Type errors - fix before committing" && echo && echo "[2/3] Lint Check..." && bun run lint 2>&1 && echo "✅ Lint OK" || echo "⚠️  Lint errors - fix before committing" && echo && echo "[3/3] Tests..." && bun test 2>&1 && echo "✅ Tests OK" || echo "⚠️  Tests failed"`
+!`cd ${WORKSPACE_DIR} && echo "=== Pre-Commit Validation ===" && echo && echo "[1/3] Type Check..." && cd packages/asset-forge && bun tsc --noEmit 2>&1 && echo "✅ Types OK" || echo "⚠️  Type errors - fix before committing" && echo && echo "[2/3] Lint Check..." && bun run lint 2>&1 && echo "✅ Lint OK" || echo "⚠️  Lint errors - fix before committing" && echo && echo "[3/3] Tests..." && bun test 2>&1 && echo "✅ Tests OK" || echo "⚠️  Tests failed"`
 ```
 
 ### Step 2: Review Changes
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "=== Changes to be Committed ===" && echo && git status && echo && echo "=== Diff Summary ===" && git diff --stat && echo && echo "=== Recent Commits (for reference) ===" && git log --oneline -5`
+!`cd ${WORKSPACE_DIR} && echo "=== Changes to be Committed ===" && echo && git status && echo && echo "=== Diff Summary ===" && git diff --stat && echo && echo "=== Recent Commits (for reference) ===" && git log --oneline -5`
 ```
 
 ### Step 3: Stage All Changes
 
 ```bash
-!`cd /Users/home/hyperscape-5 && git add -A && echo "✅ All changes staged" && git status -s`
+!`cd ${WORKSPACE_DIR} && git add -A && echo "✅ All changes staged" && git status -s`
 ```
 
 ### Step 4: Create Commit
 
 ```bash
-!`cd /Users/home/hyperscape-5 && if [ -n "$ARGUMENTS" ]; then git commit -m "$ARGUMENTS" && echo "✅ Commit created"; else echo "ERROR: Provide commit message as argument"; fi`
+!`cd ${WORKSPACE_DIR} && if [ -n "$ARGUMENTS" ]; then git commit -m "$ARGUMENTS" && echo "✅ Commit created"; else echo "ERROR: Provide commit message as argument"; fi`
 ```
 
 ## Commit Message Guidelines
@@ -106,25 +106,25 @@ Before committing, ensure:
 If you need to modify the last commit:
 
 ```bash
-!`cd /Users/home/hyperscape-5 && git add -A && git commit --amend --no-edit && echo "✅ Last commit amended"`
+!`cd ${WORKSPACE_DIR} && git add -A && git commit --amend --no-edit && echo "✅ Last commit amended"`
 ```
 
 With new message:
 
 ```bash
-!`cd /Users/home/hyperscape-5 && git add -A && git commit --amend -m "$ARGUMENTS" && echo "✅ Commit amended with new message"`
+!`cd ${WORKSPACE_DIR} && git add -A && git commit --amend -m "$ARGUMENTS" && echo "✅ Commit amended with new message"`
 ```
 
 ## Undo Last Commit (Keep Changes)
 
 ```bash
-!`cd /Users/home/hyperscape-5 && git reset --soft HEAD~1 && echo "✅ Last commit undone - changes still staged"`
+!`cd ${WORKSPACE_DIR} && git reset --soft HEAD~1 && echo "✅ Last commit undone - changes still staged"`
 ```
 
 ## Sign Commit with GPG
 
 ```bash
-!`cd /Users/home/hyperscape-5 && git commit -S -m "$ARGUMENTS" && echo "✅ Signed commit created"`
+!`cd ${WORKSPACE_DIR} && git commit -S -m "$ARGUMENTS" && echo "✅ Signed commit created"`
 ```
 
 ## Common Workflows
@@ -132,13 +132,13 @@ With new message:
 ### Quick Fix Commit
 
 ```bash
-!`cd /Users/home/hyperscape-5 && git add -A && git commit -m "fix: $ARGUMENTS" && echo "✅ Fix committed"`
+!`cd ${WORKSPACE_DIR} && git add -A && git commit -m "fix: $ARGUMENTS" && echo "✅ Fix committed"`
 ```
 
 ### Feature Commit with Validation
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "Validating..." && cd packages/asset-forge && bun tsc --noEmit && bun test && cd /Users/home/hyperscape-5 && git add -A && git commit -m "feat: $ARGUMENTS" && echo "✅ Feature committed"`
+!`cd ${WORKSPACE_DIR} && echo "Validating..." && cd packages/asset-forge && bun tsc --noEmit && bun test && cd ${WORKSPACE_DIR} && git add -A && git commit -m "feat: $ARGUMENTS" && echo "✅ Feature committed"`
 ```
 
 ## See Also

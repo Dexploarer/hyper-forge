@@ -18,37 +18,37 @@ Remove build artifacts, dependencies, and temporary files.
 ## Clean All (Full Clean)
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== Full Clean ===" && echo "Removing dist..." && rm -rf dist && echo "Removing node_modules..." && rm -rf node_modules && echo "Removing caches..." && rm -rf .vite node_modules/.cache && echo "Removing temp files..." && rm -rf tmp temp .tmp && echo "✅ Full clean complete"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== Full Clean ===" && echo "Removing dist..." && rm -rf dist && echo "Removing node_modules..." && rm -rf node_modules && echo "Removing caches..." && rm -rf .vite node_modules/.cache && echo "Removing temp files..." && rm -rf tmp temp .tmp && echo "✅ Full clean complete"`
 ```
 
 ## Clean Build Output Only
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Cleaning build output..." && rm -rf dist && echo "✅ dist/ removed" && ls -la | grep -E "^d" | grep -v node_modules`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Cleaning build output..." && rm -rf dist && echo "✅ dist/ removed" && ls -la | grep -E "^d" | grep -v node_modules`
 ```
 
 ## Clean Dependencies
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "⚠️  Removing node_modules..." && rm -rf node_modules && echo "✅ node_modules removed" && echo "Run 'bun install' to reinstall"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "⚠️  Removing node_modules..." && rm -rf node_modules && echo "✅ node_modules removed" && echo "Run 'bun install' to reinstall"`
 ```
 
 ## Clean Caches
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "Cleaning caches..." && rm -rf .vite node_modules/.cache .turbo .parcel-cache && echo "✅ Caches cleared"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "Cleaning caches..." && rm -rf .vite node_modules/.cache .turbo .parcel-cache && echo "✅ Caches cleared"`
 ```
 
 ## Clean Database (DESTRUCTIVE)
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "⚠️  This will delete the database!" && echo "Use /db/reset --confirm instead for safer database reset"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "⚠️  This will delete the database!" && echo "Use /db/reset --confirm instead for safer database reset"`
 ```
 
 ## Clean Logs
 
 ```bash
-!`cd /Users/home/hyperscape-5 && echo "Cleaning old logs..." && find logs -type f -name "*.log" -mtime +7 -delete 2>/dev/null && echo "✅ Old logs removed"`
+!`cd ${WORKSPACE_DIR} && echo "Cleaning old logs..." && find logs -type f -name "*.log" -mtime +7 -delete 2>/dev/null && echo "✅ Old logs removed"`
 ```
 
 ## What Gets Cleaned
@@ -85,19 +85,19 @@ Clean specific file types:
 
 ```bash
 # Clean TypeScript build info
-!`cd /Users/home/hyperscape-5/packages/server && find . -name "*.tsbuildinfo" -delete && echo "✅ TypeScript build info cleared"`
+!`cd ${WORKSPACE_DIR}/packages/server && find . -name "*.tsbuildinfo" -delete && echo "✅ TypeScript build info cleared"`
 
 # Clean source maps
-!`cd /Users/home/hyperscape-5/packages/server && find dist -name "*.map" -delete 2>/dev/null && echo "✅ Source maps removed"`
+!`cd ${WORKSPACE_DIR}/packages/server && find dist -name "*.map" -delete 2>/dev/null && echo "✅ Source maps removed"`
 
 # Clean test coverage
-!`cd /Users/home/hyperscape-5/packages/server && rm -rf coverage .nyc_output && echo "✅ Coverage reports cleared"`
+!`cd ${WORKSPACE_DIR}/packages/server && rm -rf coverage .nyc_output && echo "✅ Coverage reports cleared"`
 ```
 
 ## Disk Space Before/After
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== Disk Space ===" && echo "Before:" && du -sh . && echo "node_modules:" && du -sh node_modules 2>/dev/null || echo "No node_modules" && echo "dist:" && du -sh dist 2>/dev/null || echo "No dist"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== Disk Space ===" && echo "Before:" && du -sh . && echo "node_modules:" && du -sh node_modules 2>/dev/null || echo "No node_modules" && echo "dist:" && du -sh dist 2>/dev/null || echo "No dist"`
 ```
 
 ## Full Reset Workflow
@@ -105,7 +105,7 @@ Clean specific file types:
 Complete reset including reinstall:
 
 ```bash
-!`cd /Users/home/hyperscape-5/packages/server && echo "=== Full Reset Workflow ===" && echo "[1/4] Cleaning..." && rm -rf dist node_modules .vite node_modules/.cache && echo "[2/4] Reinstalling dependencies..." && bun install && echo "[3/4] Running migrations..." && bun run db:migrate && echo "[4/4] Building..." && bun run build && echo "✅ Full reset complete"`
+!`cd ${WORKSPACE_DIR}/packages/server && echo "=== Full Reset Workflow ===" && echo "[1/4] Cleaning..." && rm -rf dist node_modules .vite node_modules/.cache && echo "[2/4] Reinstalling dependencies..." && bun install && echo "[3/4] Running migrations..." && bun run db:migrate && echo "[4/4] Building..." && bun run build && echo "✅ Full reset complete"`
 ```
 
 ## When to Clean
