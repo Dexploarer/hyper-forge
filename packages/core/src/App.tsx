@@ -1,5 +1,7 @@
 import { lazy, Suspense } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { PageSkeleton, KeyboardShortcutsModal } from "./components/common";
 import NotificationBar from "./components/shared/NotificationBar";
@@ -15,6 +17,7 @@ import {
 import { useNavigation } from "./hooks/useNavigation";
 import { useGlobalShortcuts } from "./hooks/useGlobalShortcuts";
 import { LandingPage } from "./pages/LandingPage";
+import { queryClient } from "./lib/query-client";
 
 // Lazy load routes for code splitting
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
@@ -246,17 +249,20 @@ function App() {
         // Only affects external wallets like Phantom, not embedded wallets
       }}
     >
-      <AppProvider>
-        <AuthProvider>
-          <NavigationProvider>
-            <CommandPaletteProvider>
-              <ErrorBoundary>
-                <AppContent />
-              </ErrorBoundary>
-            </CommandPaletteProvider>
-          </NavigationProvider>
-        </AuthProvider>
-      </AppProvider>
+      <QueryClientProvider client={queryClient}>
+        <AppProvider>
+          <AuthProvider>
+            <NavigationProvider>
+              <CommandPaletteProvider>
+                <ErrorBoundary>
+                  <AppContent />
+                </ErrorBoundary>
+              </CommandPaletteProvider>
+            </NavigationProvider>
+          </AuthProvider>
+        </AppProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
     </PrivyProvider>
   );
 }

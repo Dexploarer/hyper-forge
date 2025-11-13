@@ -5,12 +5,17 @@
 # Root directory for test discovery
 root = "."
 
+# DOM environment for React testing
+environment = "happydom"
+
 # Patterns to match test files (Bun tests ONLY - NOT Playwright)
 # Only matches .test.ts and .test.tsx files
 # This excludes .spec.ts/.spec.tsx which are used by Playwright
 testMatch = [
   "**/__tests__/integration/**/*.test.ts",
+  "**/__tests__/integration/**/*.test.tsx",
   "**/__tests__/unit/**/*.test.ts",
+  "**/__tests__/unit/**/*.test.tsx",
   "**/__tests__/helpers/**/*.test.ts"
 ]
 

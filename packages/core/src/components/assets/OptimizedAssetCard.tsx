@@ -17,10 +17,12 @@ import {
   Package,
   Image as ImageIcon,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { getTierColor } from "@/constants";
 import { Asset } from "@/types";
 import { AssetService } from "@/services/api/AssetService";
+import { assetsQueries } from "@/queries/assets.queries";
 
 interface OptimizedAssetCardProps {
   asset: Asset;
@@ -43,6 +45,7 @@ export const OptimizedAssetCard: React.FC<OptimizedAssetCardProps> = ({
   onDelete,
   isFavoriteUpdating = false,
 }) => {
+  const queryClient = useQueryClient();
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({
@@ -54,6 +57,11 @@ export const OptimizedAssetCard: React.FC<OptimizedAssetCardProps> = ({
 
   const previewUrl = AssetService.getPreviewImageUrl(asset);
   const hasPreview = previewUrl && !imageError;
+
+  // Prefetch asset details on hover for instant loading
+  const prefetchAssetDetails = () => {
+    queryClient.prefetchQuery(assetsQueries.detail(asset.id));
+  };
 
   const handleCardClick = () => {
     onSelect(asset);
@@ -93,6 +101,7 @@ export const OptimizedAssetCard: React.FC<OptimizedAssetCardProps> = ({
       }`}
       onClick={handleCardClick}
       onContextMenu={handleContextMenu}
+      onMouseEnter={prefetchAssetDetails}
     >
       {/* Preview Image */}
       <div className="relative w-full h-48 bg-bg-tertiary rounded-t-xl overflow-hidden">

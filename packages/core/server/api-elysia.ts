@@ -131,6 +131,8 @@ const retextureService = new RetextureService({
   imageServerBaseUrl: IMAGE_SERVER_URL,
 });
 const generationService = new GenerationService();
+// Note: GenerationService uses env vars for now - refactoring to user keys requires
+// architectural changes due to stateful pipeline storage in memory
 
 // Create Elysia app with full type inference for Eden Treaty
 // @ts-ignore TS2742 - croner module reference from cron plugin is non-portable (doesn't affect runtime)

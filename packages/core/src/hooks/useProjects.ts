@@ -1,79 +1,76 @@
 /**
- * Project Hooks
- * Fetch and manage user's projects
+ * Project Hooks - Powered by TanStack Query
+ *
+ * Modernized project data fetching with automatic caching
+ * and background refetching.
+ *
+ * Migration Notes:
+ * - Removed manual useState/useEffect patterns
+ * - Automatic request deduplication via React Query
+ * - Maintained backward-compatible API for existing components
  */
 
-import { useState, useEffect, useCallback } from "react";
-import { useApp } from "../contexts/AppContext";
-import { ProjectService, Project } from "@/services/api/ProjectService";
+import { useQuery } from "@tanstack/react-query";
+import { projectsQueries } from "@/queries/projects.queries";
 
+/**
+ * Fetch all projects for the current user
+ *
+ * Modern API:
+ * ```typescript
+ * const { data: projects, isLoading, error } = useProjects()
+ * ```
+ *
+ * Backward-compatible API:
+ * ```typescript
+ * const { projects, loading, reloadProjects } = useProjects()
+ * ```
+ *
+ * @param includeArchived - Whether to include archived projects (default: false)
+ */
 export const useProjects = (includeArchived: boolean = false) => {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { showNotification } = useApp();
-
-  const fetchProjects = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await ProjectService.getProjects(includeArchived);
-      setProjects(data);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load projects";
-      showNotification(errorMessage, "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [includeArchived, showNotification]);
-
-  const forceReload = useCallback(async () => {
-    setProjects([]);
-    await fetchProjects();
-  }, [fetchProjects]);
-
-  useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+  const query = useQuery(projectsQueries.list(includeArchived));
 
   return {
-    projects,
-    loading,
-    reloadProjects: fetchProjects,
-    forceReload,
+    // Modern React Query API
+    ...query,
+
+    // Backward-compatible properties
+    projects: query.data ?? [],
+    loading: query.isLoading,
+    reloadProjects: query.refetch,
+    forceReload: query.refetch,
   };
 };
 
+/**
+ * Fetch a single project by ID
+ *
+ * Modern API:
+ * ```typescript
+ * const { data: project, isLoading } = useProject('project-uuid')
+ * ```
+ *
+ * Backward-compatible API:
+ * ```typescript
+ * const { project, loading, refetch } = useProject('project-uuid')
+ * ```
+ *
+ * @param projectId - UUID of the project to fetch (nullable for conditional fetching)
+ */
 export const useProject = (projectId: string | null) => {
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(false);
-  const { showNotification } = useApp();
-
-  const fetchProject = useCallback(async () => {
-    if (!projectId) {
-      setProject(null);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const data = await ProjectService.getProjectById(projectId);
-      setProject(data);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to load project";
-      showNotification(errorMessage, "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [projectId, showNotification]);
-
-  useEffect(() => {
-    fetchProject();
-  }, [fetchProject]);
+  const query = useQuery({
+    ...projectsQueries.detail(projectId!),
+    enabled: !!projectId, // Only fetch if projectId is provided
+  });
 
   return {
-    project,
-    loading,
-    refetch: fetchProject,
+    // Modern React Query API
+    ...query,
+
+    // Backward-compatible properties
+    project: query.data ?? null,
+    loading: query.isLoading,
+    refetch: query.refetch,
   };
 };

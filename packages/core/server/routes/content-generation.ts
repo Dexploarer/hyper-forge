@@ -13,6 +13,7 @@ import * as Models from "../models";
 import { optionalAuth } from "../middleware/auth";
 import { NotFoundError, InternalServerError, ForbiddenError } from "../errors";
 import { createChildLogger } from "../utils/logger";
+import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
 
 const logger = createChildLogger("ContentGenerationRoutes");
 
@@ -280,12 +281,27 @@ export const contentGenerationRoutes = new Elysia({
         // POST /api/content/generate-npc-portrait
         .post(
           "/generate-npc-portrait",
-          async ({ body }) => {
+          async ({ body, user }) => {
             console.log(
               `[ContentGeneration] Generating portrait for NPC: ${body.npcName}`,
             );
 
-            // Initialize AI service
+            // Fetch user's API keys with env fallback
+            const userApiKeys = user?.id
+              ? await getUserApiKeysWithFallback(user.id)
+              : {
+                  aiGatewayApiKey: process.env.AI_GATEWAY_API_KEY,
+                  meshyApiKey: process.env.MESHY_API_KEY
+                };
+
+            // Check if AI Gateway key is configured
+            if (!userApiKeys.aiGatewayApiKey && !process.env.OPENAI_API_KEY) {
+              throw new InternalServerError(
+                "AI Gateway API key not configured. Please add your API key in Settings → API Keys.",
+              );
+            }
+
+            // Initialize AI service with user's API keys
             const imageServerBaseUrl = process.env.IMAGE_SERVER_URL || (() => {
               if (process.env.NODE_ENV === 'production') {
                 throw new Error('IMAGE_SERVER_URL must be set in production for Meshy AI callbacks');
@@ -296,11 +312,12 @@ export const contentGenerationRoutes = new Elysia({
             const aiService = new AICreationService({
               openai: {
                 apiKey: process.env.OPENAI_API_KEY || "",
+                aiGatewayApiKey: userApiKeys.aiGatewayApiKey,
                 model: "gpt-image-1",
                 imageServerBaseUrl,
               },
               meshy: {
-                apiKey: process.env.MESHY_API_KEY || "",
+                apiKey: userApiKeys.meshyApiKey || process.env.MESHY_API_KEY || "",
                 baseUrl: "https://api.meshy.ai",
               },
             });
@@ -356,12 +373,27 @@ export const contentGenerationRoutes = new Elysia({
         // POST /api/content/generate-quest-banner
         .post(
           "/generate-quest-banner",
-          async ({ body }) => {
+          async ({ body, user }) => {
             console.log(
               `[ContentGeneration] Generating banner for quest: ${body.questTitle}`,
             );
 
-            // Initialize AI service
+            // Fetch user's API keys with env fallback
+            const userApiKeys = user?.id
+              ? await getUserApiKeysWithFallback(user.id)
+              : {
+                  aiGatewayApiKey: process.env.AI_GATEWAY_API_KEY,
+                  meshyApiKey: process.env.MESHY_API_KEY
+                };
+
+            // Check if AI Gateway key is configured
+            if (!userApiKeys.aiGatewayApiKey && !process.env.OPENAI_API_KEY) {
+              throw new InternalServerError(
+                "AI Gateway API key not configured. Please add your API key in Settings → API Keys.",
+              );
+            }
+
+            // Initialize AI service with user's API keys
             const imageServerBaseUrl = process.env.IMAGE_SERVER_URL || (() => {
               if (process.env.NODE_ENV === 'production') {
                 throw new Error('IMAGE_SERVER_URL must be set in production for Meshy AI callbacks');
@@ -372,11 +404,12 @@ export const contentGenerationRoutes = new Elysia({
             const aiService = new AICreationService({
               openai: {
                 apiKey: process.env.OPENAI_API_KEY || "",
+                aiGatewayApiKey: userApiKeys.aiGatewayApiKey,
                 model: "gpt-image-1",
                 imageServerBaseUrl,
               },
               meshy: {
-                apiKey: process.env.MESHY_API_KEY || "",
+                apiKey: userApiKeys.meshyApiKey || process.env.MESHY_API_KEY || "",
                 baseUrl: "https://api.meshy.ai",
               },
             });

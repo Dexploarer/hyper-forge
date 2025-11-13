@@ -8,6 +8,8 @@ import { ElevenLabsVoiceService } from "../services/ElevenLabsVoiceService";
 import { MediaStorageService } from "../services/MediaStorageService";
 import * as Models from "../models";
 import { optionalAuth } from "../middleware/auth";
+import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
+import { InternalServerError } from "../errors";
 
 const mediaStorageService = new MediaStorageService();
 
@@ -30,14 +32,25 @@ export const voiceGenerationRoutes = new Elysia({
     },
     (app) =>
       app
-        // Helper to get API key from env or request
-        .derive(({ request }) => {
-          const apiKey = process.env.ELEVENLABS_API_KEY;
-          const voiceService = new ElevenLabsVoiceService(apiKey);
+        // Helper to initialize voice service with user's API key
+        .derive(async ({ user }) => {
+          // Fetch user's API keys with env fallback
+          const userApiKeys = user?.id
+            ? await getUserApiKeysWithFallback(user.id)
+            : { elevenLabsApiKey: process.env.ELEVENLABS_API_KEY };
+
+          // Check if ElevenLabs key is configured
+          if (!userApiKeys.elevenLabsApiKey) {
+            throw new InternalServerError(
+              "ElevenLabs API key not configured. Please add your API key in Settings → API Keys.",
+            );
+          }
+
+          const voiceService = new ElevenLabsVoiceService(userApiKeys.elevenLabsApiKey);
 
           if (!voiceService.isAvailable()) {
-            throw new Error(
-              "Voice generation service not available - ELEVENLABS_API_KEY not configured",
+            throw new InternalServerError(
+              "Voice generation service not available - ElevenLabs API key invalid",
             );
           }
 

@@ -6,11 +6,20 @@
 import { Elysia, t } from "elysia";
 import { ElevenLabsMusicService } from "../services/ElevenLabsMusicService";
 import * as Models from "../models";
+import { optionalAuth } from "../middleware/auth";
+import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
+import { InternalServerError } from "../errors";
 
 export const musicRoutes = new Elysia({
   prefix: "/api/music",
   name: "music-generation",
-}).guard(
+})
+  .derive(async (context) => {
+    // Extract user from auth token if present (optional)
+    const authResult = await optionalAuth(context as any);
+    return { user: authResult.user };
+  })
+  .guard(
   {
     beforeHandle: ({ request }) => {
       console.log(`[Music] ${request.method} ${new URL(request.url).pathname}`);
@@ -18,14 +27,25 @@ export const musicRoutes = new Elysia({
   },
   (app) =>
     app
-      // Helper to initialize music service
-      .derive(() => {
-        const apiKey = process.env.ELEVENLABS_API_KEY;
-        const musicService = new ElevenLabsMusicService(apiKey);
+      // Helper to initialize music service with user's API key
+      .derive(async ({ user }) => {
+        // Fetch user's API keys with env fallback
+        const userApiKeys = user?.id
+          ? await getUserApiKeysWithFallback(user.id)
+          : { elevenLabsApiKey: process.env.ELEVENLABS_API_KEY };
+
+        // Check if ElevenLabs key is configured
+        if (!userApiKeys.elevenLabsApiKey) {
+          throw new InternalServerError(
+            "ElevenLabs API key not configured. Please add your API key in Settings → API Keys.",
+          );
+        }
+
+        const musicService = new ElevenLabsMusicService(userApiKeys.elevenLabsApiKey);
 
         if (!musicService.isAvailable()) {
-          throw new Error(
-            "Music generation service not available - ELEVENLABS_API_KEY not configured",
+          throw new InternalServerError(
+            "Music generation service not available - ElevenLabs API key invalid",
           );
         }
 

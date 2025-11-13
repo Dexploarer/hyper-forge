@@ -215,16 +215,36 @@ export class GenerationService extends EventEmitter {
   private imageHostingService: ImageHostingService;
   private fetchFn: FetchFunction;
   private pipelines: Map<string, Pipeline> = new Map();
+  private aiGatewayApiKey: string;
+  private openaiApiKey: string;
 
-  constructor(config?: { fetchFn?: FetchFunction }) {
+  constructor(config?: {
+    fetchFn?: FetchFunction;
+    meshyApiKey?: string;
+    aiGatewayApiKey?: string;
+    elevenLabsApiKey?: string;
+  }) {
     super();
 
     this.fetchFn = (config?.fetchFn || fetch) as FetchFunction;
 
+    // Determine which API keys to use (user-provided or environment variables)
+    const meshyApiKey = config?.meshyApiKey || process.env.MESHY_API_KEY || "";
+    this.aiGatewayApiKey = config?.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY || "";
+    this.openaiApiKey = process.env.OPENAI_API_KEY || "";
+    const elevenLabsApiKey = config?.elevenLabsApiKey || process.env.ELEVENLABS_API_KEY || "";
+
+    // Log which key sources are being used
+    console.log("[GenerationService] Initializing with API keys:");
+    console.log(`  - Meshy: ${config?.meshyApiKey ? "user-provided" : "environment variable"}`);
+    console.log(`  - AI Gateway: ${config?.aiGatewayApiKey ? "user-provided" : "environment variable"}`);
+    console.log(`  - OpenAI: environment variable`);
+    console.log(`  - ElevenLabs: ${config?.elevenLabsApiKey ? "user-provided" : "environment variable"}`);
+
     // Check for required API keys
     if (
-      (!process.env.AI_GATEWAY_API_KEY && !process.env.OPENAI_API_KEY) ||
-      !process.env.MESHY_API_KEY
+      (!this.aiGatewayApiKey && !this.openaiApiKey) ||
+      !meshyApiKey
     ) {
       console.warn(
         "[GenerationService] Missing API keys - generation features will be limited",
@@ -241,12 +261,13 @@ export class GenerationService extends EventEmitter {
 
     this.aiService = new AICreationService({
       openai: {
-        apiKey: process.env.OPENAI_API_KEY || "",
+        apiKey: this.openaiApiKey,
+        aiGatewayApiKey: this.aiGatewayApiKey,
         model: "gpt-image-1",
         imageServerBaseUrl,
       },
       meshy: {
-        apiKey: process.env.MESHY_API_KEY || "",
+        apiKey: meshyApiKey,
         baseUrl: "https://api.meshy.ai",
       },
       // node-fetch is compatible with our FetchFunction type but lacks preconnect property
@@ -1325,8 +1346,8 @@ export class GenerationService extends EventEmitter {
     config: PipelineConfig,
   ): Promise<PromptEnhancementResult> {
     // Check for AI Gateway or direct OpenAI API key
-    const useAIGateway = !!process.env.AI_GATEWAY_API_KEY;
-    const useDirectOpenAI = !!process.env.OPENAI_API_KEY;
+    const useAIGateway = !!this.aiGatewayApiKey;
+    const useDirectOpenAI = !!this.openaiApiKey;
 
     if (!useAIGateway && !useDirectOpenAI) {
       throw new Error(
@@ -1435,8 +1456,8 @@ Your task is to enhance the user's description to create better results with ima
         : "https://api.openai.com/v1/chat/completions";
 
       const apiKey = useAIGateway
-        ? process.env.AI_GATEWAY_API_KEY!
-        : process.env.OPENAI_API_KEY!;
+        ? this.aiGatewayApiKey
+        : this.openaiApiKey;
 
       const modelName = useAIGateway
         ? "openai/gpt-4o" // AI Gateway uses provider/model format

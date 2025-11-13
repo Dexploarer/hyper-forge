@@ -12,6 +12,7 @@ type FetchFunction = typeof fetch;
 
 interface OpenAIConfig {
   apiKey: string;
+  aiGatewayApiKey?: string;
   model?: string;
   imageServerBaseUrl?: string;
   fetchFn?: FetchFunction;
@@ -146,12 +147,14 @@ export class AICreationService {
 
 class ImageGenerationService {
   private apiKey: string;
+  private aiGatewayApiKey?: string;
   private model: string;
   private imageServerBaseUrl?: string;
   private fetchFn: FetchFunction;
 
   constructor(config: OpenAIConfig) {
     this.apiKey = config.apiKey;
+    this.aiGatewayApiKey = config.aiGatewayApiKey;
     this.model = config.model || "gpt-image-1";
     this.imageServerBaseUrl = config.imageServerBaseUrl;
     this.fetchFn = config.fetchFn || fetch;
@@ -163,8 +166,9 @@ class ImageGenerationService {
     style?: string,
   ): Promise<ImageGenerationResult> {
     // Check for Vercel AI Gateway or direct OpenAI API
-    const useAIGateway = !!process.env.AI_GATEWAY_API_KEY;
-    const useDirectOpenAI = !!process.env.OPENAI_API_KEY;
+    // Use instance variable if available, otherwise fall back to environment variable
+    const useAIGateway = !!(this.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY);
+    const useDirectOpenAI = !!(this.apiKey || process.env.OPENAI_API_KEY);
 
     if (!useAIGateway && !useDirectOpenAI) {
       throw new Error(
@@ -192,8 +196,8 @@ class ImageGenerationService {
       : "https://api.openai.com/v1/images/generations";
 
     const apiKey = useAIGateway
-      ? process.env.AI_GATEWAY_API_KEY!
-      : process.env.OPENAI_API_KEY!;
+      ? (this.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY!)
+      : (this.apiKey || process.env.OPENAI_API_KEY!);
 
     // Use google/gemini-2.5-flash-image for AI Gateway, gpt-image-1 for direct OpenAI
     const modelName = useAIGateway

@@ -13,8 +13,10 @@ import {
   Trash2,
   Package,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Project } from "@/services/api/ProjectService";
 import { Badge } from "@/components/common";
+import { projectsQueries } from "@/queries/projects.queries";
 
 export interface ProjectCardProps {
   project: Project;
@@ -33,6 +35,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
   onDelete,
   assetCount = 0,
 }) => {
+  const queryClient = useQueryClient();
   const isArchived = project.status === "archived";
 
   const formatDate = (dateString: string) => {
@@ -43,8 +46,16 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
     });
   };
 
+  // Prefetch project details on hover for instant loading
+  const prefetchProjectDetails = () => {
+    queryClient.prefetchQuery(projectsQueries.detail(project.id));
+  };
+
   return (
-    <div className="card p-4 hover:border-primary/30 transition-all duration-200 group">
+    <div
+      className="card p-4 hover:border-primary/30 transition-all duration-200 group"
+      onMouseEnter={prefetchProjectDetails}
+    >
       <div className="flex items-start gap-4">
         {/* Project Icon */}
         <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center flex-shrink-0">

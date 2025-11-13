@@ -14,9 +14,6 @@ export {
   type RetextureResponse,
 } from './AssetService'
 
-// Cached Asset Service
-export { CachedAssetService } from './CachedAssetService'
-
 // Generation API Client
 export {
   GenerationAPIClient,

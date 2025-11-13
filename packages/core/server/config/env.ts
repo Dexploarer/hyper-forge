@@ -58,7 +58,13 @@ const envSchema = z
     // =========================================
     // Vector Database (Optional)
     // =========================================
-    QDRANT_URL: z.string().url().optional().or(z.literal("")),
+    QDRANT_URL: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL if provided" }
+      ),
     QDRANT_API_KEY: z.string().optional(),
 
     // =========================================
@@ -83,11 +89,35 @@ const envSchema = z
     // =========================================
     // URLs
     // =========================================
-    CDN_URL: z.string().url().optional().or(z.literal("")),
+    CDN_URL: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL if provided" }
+      ),
     CDN_API_KEY: z.string().optional(),
-    FRONTEND_URL: z.string().url().optional().or(z.literal("")),
-    IMAGE_SERVER_URL: z.string().url().optional().or(z.literal("")),
-    API_URL: z.string().url().optional().or(z.literal("")),
+    FRONTEND_URL: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL if provided" }
+      ),
+    IMAGE_SERVER_URL: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL if provided" }
+      ),
+    API_URL: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL if provided" }
+      ),
 
     // =========================================
     // Webhook Configuration
@@ -134,7 +164,13 @@ const envSchema = z
     // =========================================
     // Redis Queue
     // =========================================
-    REDIS_URL: z.string().url().optional().or(z.literal("")),
+    REDIS_URL: z
+      .string()
+      .optional()
+      .refine(
+        (val) => !val || val === "" || z.string().url().safeParse(val).success,
+        { message: "Must be a valid URL if provided" }
+      ),
 
     // =========================================
     // Worker Configuration

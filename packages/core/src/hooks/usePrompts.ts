@@ -1,282 +1,349 @@
-import { useState, useEffect, useCallback } from 'react'
+/**
+ * Prompts Hooks - Powered by TanStack Query
+ *
+ * Modernized prompt data fetching with automatic caching,
+ * background refetching, and optimistic updates.
+ *
+ * Migration Notes:
+ * - Removed manual useState/useEffect patterns
+ * - Removed PromptService instantiation (now in queries)
+ * - Maintained backward-compatible API for existing components
+ * - Maintained Zustand integration for store updates
+ * - Added optimistic updates for all mutations
+ */
 
-import { useGenerationStore } from '../store'
+import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
+import { useGenerationStore } from "../store";
+import {
+  promptsQueries,
+  useSaveGameStylePromptsMutation,
+  useDeleteGameStyleMutation,
+  useSaveAssetTypePromptsMutation,
+  useDeleteAssetTypeMutation,
+  useSaveMaterialPromptsMutation,
+} from "@/queries/prompts.queries";
+import {
+  PromptService,
+  type GameStylePrompt,
+  type AssetTypePrompt,
+  type AssetTypePromptsByCategory,
+  type PromptsResponse,
+} from "@/services/api/PromptService";
 
-import { PromptService, GameStylePrompt, AssetTypePrompt, AssetTypePromptsByCategory, PromptsResponse } from '@/services/api/PromptService'
-
+/**
+ * Game Style Prompts Hook
+ *
+ * Fetches and manages game style prompts (default + custom).
+ * Integrates with Zustand store for custom game prompt state.
+ *
+ * Modern API:
+ * ```typescript
+ * const { data: prompts, isLoading, error } = useGameStylePrompts()
+ * ```
+ *
+ * Backward-compatible API:
+ * ```typescript
+ * const { prompts, loading, error, saveCustomGameStyle, deleteCustomGameStyle } = useGameStylePrompts()
+ * ```
+ */
 export function useGameStylePrompts() {
-  const [prompts, setPrompts] = useState<PromptsResponse<Record<string, GameStylePrompt>>>({
-    version: '1.0.0',
-    default: {},
-    custom: {}
-  })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const query = useQuery(promptsQueries.gameStyles());
+  const savePromptsMutation = useSaveGameStylePromptsMutation();
+  const deleteStyleMutation = useDeleteGameStyleMutation();
 
-  const { customGamePrompt: _customGamePrompt, setCustomGamePrompt: _setCustomGamePrompt } = useGenerationStore()
+  const {
+    customGamePrompt: _customGamePrompt,
+    setCustomGamePrompt: _setCustomGamePrompt,
+  } = useGenerationStore();
 
-  useEffect(() => {
-    const loadPrompts = async () => {
+  const saveCustomGameStyle = useCallback(
+    async (
+      styleId: string,
+      style: { name: string; base: string; enhanced?: string },
+    ) => {
       try {
-        setLoading(true)
-        const data = await PromptService.getGameStylePrompts()
-        setPrompts(data)
-        setError(null)
-      } catch (err) {
-        console.error('Failed to load game style prompts:', err)
-        setError('Failed to load game style prompts')
-        // Fallback to hardcoded defaults if loading fails
-        setPrompts({
-          version: '1.0.0',
-          default: {
-            runescape: {
-              name: 'RuneScape 2007',
-              base: 'Low-poly RuneScape 2007',
-              enhanced: 'low-poly RuneScape style',
-              generation: 'runescape2007'
-            },
-            generic: {
-              name: 'Generic Low-Poly',
-              base: 'low-poly 3D game asset style',
-              fallback: 'Low-poly game asset'
-            }
-          },
-          custom: {}
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadPrompts()
-  }, [])
+        const currentPrompts = query.data || {
+          version: "1.0.0",
+          default: {},
+          custom: {},
+        };
 
-  const saveCustomGameStyle = useCallback(async (styleId: string, style: { name: string; base: string; enhanced?: string }) => {
-    try {
-      const updatedPrompts = {
-        ...prompts,
-        custom: {
-          ...prompts.custom,
-          [styleId]: style
-        }
-      }
-      await PromptService.saveGameStylePrompts(updatedPrompts)
-      setPrompts(updatedPrompts)
-      return true
-    } catch (err) {
-      console.error('Failed to save custom game style:', err)
-      return false
-    }
-  }, [prompts])
-
-  const deleteCustomGameStyle = useCallback(async (styleId: string) => {
-    try {
-      const success = await PromptService.deleteGameStyle(styleId)
-      if (success) {
-        const { [styleId]: _, ...remainingCustom } = prompts.custom
         const updatedPrompts = {
-          ...prompts,
-          custom: remainingCustom
-        }
-        setPrompts(updatedPrompts)
-        return true
+          ...currentPrompts,
+          custom: {
+            ...currentPrompts.custom,
+            [styleId]: style,
+          },
+        };
+
+        await savePromptsMutation.mutateAsync(updatedPrompts);
+        return true;
+      } catch (err) {
+        console.error("Failed to save custom game style:", err);
+        return false;
       }
-      return false
-    } catch (err) {
-      console.error('Failed to delete custom game style:', err)
-      return false
-    }
-  }, [prompts])
+    },
+    [query.data, savePromptsMutation],
+  );
+
+  const deleteCustomGameStyle = useCallback(
+    async (styleId: string) => {
+      try {
+        const success = await deleteStyleMutation.mutateAsync(styleId);
+        return success;
+      } catch (err) {
+        console.error("Failed to delete custom game style:", err);
+        return false;
+      }
+    },
+    [deleteStyleMutation],
+  );
 
   // Get all available styles (default + custom)
   const getAllStyles = useCallback(() => {
-    return PromptService.mergePrompts(prompts.default, prompts.custom)
-  }, [prompts])
+    if (!query.data) return {};
+    return PromptService.mergePrompts(query.data.default, query.data.custom);
+  }, [query.data]);
 
   return {
-    prompts,
-    loading,
-    error,
+    // Modern React Query API
+    ...query,
+
+    // Backward-compatible properties
+    prompts:
+      query.data || {
+        version: "1.0.0",
+        default: {},
+        custom: {},
+      },
+    loading: query.isLoading,
+    error: query.error ? "Failed to load game style prompts" : null,
+
+    // Backward-compatible methods
     saveCustomGameStyle,
     deleteCustomGameStyle,
-    getAllStyles
-  }
+    getAllStyles,
+  };
 }
 
+/**
+ * Asset Type Prompts Hook
+ *
+ * Fetches and manages asset type prompts by category (avatar, item).
+ * Integrates with Zustand store for asset type prompts state.
+ *
+ * Modern API:
+ * ```typescript
+ * const { data: prompts, isLoading, error } = useAssetTypePrompts()
+ * ```
+ *
+ * Backward-compatible API:
+ * ```typescript
+ * const { prompts, loading, error, saveCustomAssetType, deleteCustomAssetType } = useAssetTypePrompts()
+ * ```
+ */
 export function useAssetTypePrompts() {
-  const [prompts, setPrompts] = useState<AssetTypePromptsByCategory>({
-    avatar: { default: {}, custom: {} },
-    item: { default: {}, custom: {} }
-  })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const query = useQuery(promptsQueries.assetTypes());
+  const savePromptsMutation = useSaveAssetTypePromptsMutation();
+  const deleteTypeMutation = useDeleteAssetTypeMutation();
 
-  const { assetTypePrompts, setAssetTypePrompts } = useGenerationStore()
+  const { assetTypePrompts, setAssetTypePrompts } = useGenerationStore();
 
-  useEffect(() => {
-    const loadPrompts = async () => {
+  const saveCustomAssetType = useCallback(
+    async (
+      typeId: string,
+      prompt: AssetTypePrompt,
+      generationType: "avatar" | "item" | "building" | "environment" | "prop" = "item",
+    ) => {
       try {
-        setLoading(true)
-        const data = await PromptService.getAssetTypePrompts()
-        setPrompts(data)
-        
-        // Update store with loaded prompts - combine both avatar and item types
-        const avatarMerged = PromptService.mergePrompts(data.avatar.default, data.avatar.custom)
-        const itemMerged = PromptService.mergePrompts(data.item.default, data.item.custom)
-        const allMerged = { ...avatarMerged, ...itemMerged }
-        
-        const promptsMap = Object.entries(allMerged).reduce((acc, [key, value]) => ({
-          ...acc,
-          [key]: value.prompt
-        }), {})
-        setAssetTypePrompts(promptsMap)
-        
-        setError(null)
-      } catch (err) {
-        console.error('Failed to load asset type prompts:', err)
-        setError('Failed to load asset type prompts')
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadPrompts()
-  }, [setAssetTypePrompts])
-
-  const saveCustomAssetType = useCallback(async (typeId: string, prompt: AssetTypePrompt, generationType: 'avatar' | 'item' | 'building' | 'environment' | 'prop' = 'item') => {
-    try {
-      // Only avatar and item are supported currently, ignore others
-      if (generationType !== 'avatar' && generationType !== 'item') {
-        console.warn(`[usePrompts] Generation type "${generationType}" is not supported for custom asset types yet`)
-        return false
-      }
-
-      const updatedPrompts = {
-        ...prompts,
-        [generationType]: {
-          ...prompts[generationType],
-          custom: {
-            ...prompts[generationType].custom,
-            [typeId]: prompt
-          }
+        // Only avatar and item are supported currently, ignore others
+        if (generationType !== "avatar" && generationType !== "item") {
+          console.warn(
+            `[usePrompts] Generation type "${generationType}" is not supported for custom asset types yet`,
+          );
+          return false;
         }
-      }
-      await PromptService.saveAssetTypePrompts(updatedPrompts)
-      setPrompts(updatedPrompts)
 
-      // Update store
-      setAssetTypePrompts({
-        ...assetTypePrompts,
-        [typeId]: prompt.prompt
-      })
+        const currentPrompts = query.data || {
+          avatar: { default: {}, custom: {} },
+          item: { default: {}, custom: {} },
+        };
 
-      return true
-    } catch (err) {
-      console.error('Failed to save custom asset type:', err)
-      return false
-    }
-  }, [prompts, assetTypePrompts, setAssetTypePrompts])
-
-  const deleteCustomAssetType = useCallback(async (typeId: string, generationType: 'avatar' | 'item' = 'item') => {
-    try {
-      const success = await PromptService.deleteAssetType(typeId, generationType)
-      if (success) {
-        const { [typeId]: _, ...remainingCustom } = prompts[generationType].custom
         const updatedPrompts = {
-          ...prompts,
+          ...currentPrompts,
           [generationType]: {
-            ...prompts[generationType],
-            custom: remainingCustom
-          }
-        }
-        setPrompts(updatedPrompts)
-        
-        // Update store
-        const { [typeId]: __, ...remainingPrompts } = assetTypePrompts
-        setAssetTypePrompts(remainingPrompts)
-        
-        return true
+            ...currentPrompts[generationType],
+            custom: {
+              ...currentPrompts[generationType].custom,
+              [typeId]: prompt,
+            },
+          },
+        };
+
+        await savePromptsMutation.mutateAsync(updatedPrompts);
+
+        // Update Zustand store
+        setAssetTypePrompts({
+          ...assetTypePrompts,
+          [typeId]: prompt.prompt,
+        });
+
+        return true;
+      } catch (err) {
+        console.error("Failed to save custom asset type:", err);
+        return false;
       }
-      return false
-    } catch (err) {
-      console.error('Failed to delete custom asset type:', err)
-      return false
-    }
-  }, [prompts, assetTypePrompts, setAssetTypePrompts])
+    },
+    [query.data, savePromptsMutation, assetTypePrompts, setAssetTypePrompts],
+  );
+
+  const deleteCustomAssetType = useCallback(
+    async (typeId: string, generationType: "avatar" | "item" = "item") => {
+      try {
+        const success = await deleteTypeMutation.mutateAsync({
+          typeId,
+          category: generationType,
+        });
+
+        if (success) {
+          // Update Zustand store
+          const { [typeId]: _, ...remainingPrompts } = assetTypePrompts;
+          setAssetTypePrompts(remainingPrompts);
+        }
+
+        return success;
+      } catch (err) {
+        console.error("Failed to delete custom asset type:", err);
+        return false;
+      }
+    },
+    [deleteTypeMutation, assetTypePrompts, setAssetTypePrompts],
+  );
 
   // Get all available types (default + custom) for both categories
   const getAllTypes = useCallback(() => {
-    const avatarMerged = PromptService.mergePrompts(prompts.avatar.default, prompts.avatar.custom)
-    const itemMerged = PromptService.mergePrompts(prompts.item.default, prompts.item.custom)
-    return { ...avatarMerged, ...itemMerged }
-  }, [prompts])
-  
+    if (!query.data) return {};
+    const avatarMerged = PromptService.mergePrompts(
+      query.data.avatar.default,
+      query.data.avatar.custom,
+    );
+    const itemMerged = PromptService.mergePrompts(
+      query.data.item.default,
+      query.data.item.custom,
+    );
+    return { ...avatarMerged, ...itemMerged };
+  }, [query.data]);
+
   // Get types by generation type
-  const getTypesByGeneration = useCallback((generationType: 'avatar' | 'item' | 'building' | 'environment' | 'prop') => {
-    // Only avatar and item have prompt configurations currently
-    if (generationType === 'avatar' || generationType === 'item') {
-      return PromptService.mergePrompts(prompts[generationType].default, prompts[generationType].custom)
-    }
-    // Return empty object for unsupported types
-    return {}
-  }, [prompts])
+  const getTypesByGeneration = useCallback(
+    (
+      generationType:
+        | "avatar"
+        | "item"
+        | "building"
+        | "environment"
+        | "prop",
+    ) => {
+      if (!query.data) return {};
+      // Only avatar and item have prompt configurations currently
+      if (generationType === "avatar" || generationType === "item") {
+        return PromptService.mergePrompts(
+          query.data[generationType].default,
+          query.data[generationType].custom,
+        );
+      }
+      // Return empty object for unsupported types
+      return {};
+    },
+    [query.data],
+  );
 
   return {
-    prompts,
-    loading,
-    error,
+    // Modern React Query API
+    ...query,
+
+    // Backward-compatible properties
+    prompts:
+      query.data || {
+        avatar: { default: {}, custom: {} },
+        item: { default: {}, custom: {} },
+      },
+    loading: query.isLoading,
+    error: query.error ? "Failed to load asset type prompts" : null,
+
+    // Backward-compatible methods
     saveCustomAssetType,
     deleteCustomAssetType,
     getAllTypes,
-    getTypesByGeneration
-  }
+    getTypesByGeneration,
+  };
 }
 
-// Hook for material prompt templates
+/**
+ * Material Prompt Templates Hook
+ *
+ * Fetches and manages material prompt templates.
+ *
+ * Modern API:
+ * ```typescript
+ * const { data: templates, isLoading } = useMaterialPromptTemplates()
+ * ```
+ *
+ * Backward-compatible API:
+ * ```typescript
+ * const { templates, loading, saveCustomOverride } = useMaterialPromptTemplates()
+ * ```
+ */
 export function useMaterialPromptTemplates() {
-  const [templates, setTemplates] = useState<{ templates: { runescape: string; generic: string } & Record<string, string>; customOverrides: Record<string, string>}>({
-    templates: {
-      runescape: '${materialId} texture, low-poly RuneScape style',
-      generic: '${materialId} texture'
-    },
-    customOverrides: {}
-  })
-  const [loading, setLoading] = useState(true)
+  const query = useQuery(promptsQueries.materials());
+  const savePromptsMutation = useSaveMaterialPromptsMutation();
 
-  useEffect(() => {
-    const loadTemplates = async () => {
+  const saveCustomOverride = useCallback(
+    async (materialId: string, override: string) => {
       try {
-        setLoading(true)
-        const data = await PromptService.getMaterialPrompts()
-        setTemplates(data)
-      } catch (err) {
-        console.error('Failed to load material prompt templates:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadTemplates()
-  }, [])
+        const currentTemplates = query.data || {
+          templates: {
+            runescape: "${materialId} texture, low-poly RuneScape style",
+            generic: "${materialId} texture",
+          },
+          customOverrides: {},
+        };
 
-  const saveCustomOverride = useCallback(async (materialId: string, override: string) => {
-    try {
-      const updated = {
-        ...templates,
-        customOverrides: {
-          ...templates.customOverrides,
-          [materialId]: override
-        }
+        const updated = {
+          ...currentTemplates,
+          customOverrides: {
+            ...currentTemplates.customOverrides,
+            [materialId]: override,
+          },
+        };
+
+        await savePromptsMutation.mutateAsync(updated);
+        return true;
+      } catch (err) {
+        console.error("Failed to save material prompt override:", err);
+        return false;
       }
-      await PromptService.saveMaterialPrompts(updated)
-      setTemplates(updated)
-      return true
-    } catch (err) {
-      console.error('Failed to save material prompt override:', err)
-      return false
-    }
-  }, [templates])
+    },
+    [query.data, savePromptsMutation],
+  );
 
   return {
-    templates,
-    loading,
-    saveCustomOverride
-  }
+    // Modern React Query API
+    ...query,
+
+    // Backward-compatible properties
+    templates:
+      query.data || {
+        templates: {
+          runescape: "${materialId} texture, low-poly RuneScape style",
+          generic: "${materialId} texture",
+        },
+        customOverrides: {},
+      },
+    loading: query.isLoading,
+
+    // Backward-compatible methods
+    saveCustomOverride,
+  };
 }
