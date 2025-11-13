@@ -291,7 +291,7 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                               },
                               assetId: "dragon-blade-tier3",
                               assetUrl:
-                                "/gdd-assets/dragon-blade-tier3/model.glb",
+                                "https://cdn.asset-forge.com/models/dragon-blade-tier3/dragon-blade-tier3.glb",
                               createdAt: "2025-11-12T10:30:00.000Z",
                               updatedAt: "2025-11-12T10:35:42.000Z",
                               completedAt: "2025-11-12T10:35:42.000Z",

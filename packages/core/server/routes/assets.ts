@@ -224,17 +224,26 @@ export const createAssetRoutes = (
             const { sprites, config } = body;
 
             console.log(
-              `[Sprites] Saving ${sprites.length} sprites for asset: ${id}`,
+              `[Sprites] Uploading ${sprites.length} sprites to CDN for asset: ${id}`,
             );
 
-            // Create sprites directory
-            const assetDir = path.join(rootDir, "gdd-assets", id);
-            const spritesDir = path.join(assetDir, "sprites");
+            const CDN_URL = process.env.CDN_URL || "http://localhost:3005";
+            const CDN_API_KEY = process.env.CDN_API_KEY;
 
-            console.log(`[Sprites] Creating directory: ${spritesDir}`);
-            await fs.promises.mkdir(spritesDir, { recursive: true });
+            if (!CDN_API_KEY) {
+              throw new Error(
+                "CDN_API_KEY must be configured for sprite uploads",
+              );
+            }
 
-            // Save each sprite image
+            // Prepare files for CDN upload
+            const filesToUpload: Array<{
+              buffer: Buffer;
+              name: string;
+              type: string;
+            }> = [];
+
+            // Add each sprite image
             for (const sprite of sprites) {
               const { angle, imageData } = sprite;
 
@@ -244,17 +253,20 @@ export const createAssetRoutes = (
                 "",
               );
               const buffer = Buffer.from(base64Data, "base64");
-
-              // Save as PNG file using Bun.write
               const filename = `${angle}deg.png`;
-              const filepath = path.join(spritesDir, filename);
-              await Bun.write(filepath, buffer);
+
+              filesToUpload.push({
+                buffer,
+                name: filename,
+                type: "image/png",
+              });
+
               console.log(
-                `[Sprites] Saved: ${filename} (${(buffer.length / 1024).toFixed(2)} KB)`,
+                `[Sprites] Prepared: ${filename} (${(buffer.length / 1024).toFixed(2)} KB)`,
               );
             }
 
-            // Save sprite metadata
+            // Add sprite metadata
             const spriteMetadata = {
               assetId: id,
               config: config || {},
@@ -264,41 +276,56 @@ export const createAssetRoutes = (
               generatedAt: new Date().toISOString(),
             };
 
-            const metadataPath = path.join(assetDir, "sprite-metadata.json");
-            await Bun.write(
-              metadataPath,
-              JSON.stringify(spriteMetadata, null, 2),
-            );
-            console.log(`[Sprites] Saved sprite-metadata.json`);
+            filesToUpload.push({
+              buffer: Buffer.from(JSON.stringify(spriteMetadata, null, 2)),
+              name: "sprite-metadata.json",
+              type: "application/json",
+            });
 
-            // Update asset metadata to indicate sprites are available
-            const assetMetadataPath = path.join(assetDir, "metadata.json");
-            const currentMetadata = JSON.parse(
-              await fs.promises.readFile(assetMetadataPath, "utf-8"),
+            // Upload to CDN
+            const formData = new FormData();
+
+            for (const file of filesToUpload) {
+              const blob = new Blob([file.buffer], { type: file.type });
+              // Store sprites in sprites/{assetId}/ directory
+              formData.append("files", blob, `${id}/sprites/${file.name}`);
+            }
+
+            formData.append("directory", "sprites");
+
+            console.log(
+              `[Sprites] Uploading ${filesToUpload.length} files to CDN`,
             );
 
-            // Update with sprite info
-            const updatedMetadata = {
-              ...currentMetadata,
-              hasSpriteSheet: true,
-              spriteCount: sprites.length,
-              spriteConfig: config,
-              lastSpriteGeneration: new Date().toISOString(),
-              thumbnailPath: "sprites/0deg.png", // Use the first sprite (0 degrees) as thumbnail
-              updatedAt: new Date().toISOString(),
-            };
+            const response = await fetch(`${CDN_URL}/api/upload`, {
+              method: "POST",
+              headers: {
+                "X-API-Key": CDN_API_KEY,
+              },
+              body: formData,
+            });
 
-            await Bun.write(
-              assetMetadataPath,
-              JSON.stringify(updatedMetadata, null, 2),
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(
+                `CDN upload failed (${response.status}): ${errorText}`,
+              );
+            }
+
+            const result = await response.json();
+            console.log(`[Sprites] Successfully uploaded to CDN:`, result);
+
+            // Build CDN URLs for response
+            const cdnUrls = sprites.map(
+              (s) => `${CDN_URL}/sprites/${id}/sprites/${s.angle}deg.png`,
             );
-            console.log(`[Sprites] Updated asset metadata with sprite info`);
 
             return {
               success: true,
-              message: `${sprites.length} sprites saved successfully`,
-              spritesDir: `gdd-assets/${id}/sprites`,
+              message: `${sprites.length} sprites uploaded to CDN successfully`,
+              cdnSpritesDir: `${CDN_URL}/sprites/${id}/sprites`,
               spriteFiles: sprites.map((s) => `${s.angle}deg.png`),
+              cdnUrls,
             };
           },
           {
@@ -326,30 +353,60 @@ export const createAssetRoutes = (
             const filename = file.name;
 
             console.log(
-              `[VRM Upload] Uploading ${filename} for asset: ${assetId}`,
+              `[VRM Upload] Uploading ${filename} for asset: ${assetId} to CDN`,
             );
             console.log(
               `[VRM Upload] File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`,
             );
 
-            // Save VRM to asset directory
-            const assetDir = path.join(rootDir, "gdd-assets", assetId);
+            const CDN_URL = process.env.CDN_URL || "http://localhost:3005";
+            const CDN_API_KEY = process.env.CDN_API_KEY;
 
-            // Create directory if it doesn't exist
-            await fs.promises.mkdir(assetDir, { recursive: true });
+            if (!CDN_API_KEY) {
+              throw new Error("CDN_API_KEY must be configured for VRM uploads");
+            }
 
-            // Save VRM file
-            const vrmPath = path.join(assetDir, filename);
-            await Bun.write(vrmPath, file);
+            // Upload VRM to CDN
+            const cdnFormData = new FormData();
 
-            console.log(`[VRM Upload] Saved to: ${vrmPath}`);
+            // Read file as buffer
+            const fileBuffer = await file.arrayBuffer();
+            const blob = new Blob([fileBuffer], {
+              type: "application/octet-stream",
+            });
 
-            // Return success with URL
-            const url = `/gdd-assets/${assetId}/${filename}`;
+            // Store VRM in models/{assetId}/ directory alongside GLB
+            cdnFormData.append("files", blob, `${assetId}/${filename}`);
+            cdnFormData.append("directory", "models");
+
+            console.log(
+              `[VRM Upload] Uploading to CDN: models/${assetId}/${filename}`,
+            );
+
+            const response = await fetch(`${CDN_URL}/api/upload`, {
+              method: "POST",
+              headers: {
+                "X-API-Key": CDN_API_KEY,
+              },
+              body: cdnFormData,
+            });
+
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(
+                `CDN upload failed (${response.status}): ${errorText}`,
+              );
+            }
+
+            const result = await response.json();
+            console.log(`[VRM Upload] Successfully uploaded to CDN:`, result);
+
+            // Return success with CDN URL
+            const cdnUrl = `${CDN_URL}/models/${assetId}/${filename}`;
             return {
               success: true,
-              url,
-              message: `VRM uploaded successfully to ${url}`,
+              url: cdnUrl,
+              message: `VRM uploaded successfully to CDN`,
             };
           },
           {

@@ -165,6 +165,69 @@ The GenerationService was already uploading directly to CDN:
 
 CDN webhook handler automatically creates database records with all CDN URLs.
 
+### 6. Assets Routes - Sprite and VRM Endpoints
+
+**Location**: `packages/core/server/routes/assets.ts`
+
+**Sprite Endpoint** (`POST /:id/sprites` - lines 220-320):
+
+**Before**:
+
+- Saved sprites to local `gdd-assets/{id}/sprites` directory
+- Returned local path: `gdd-assets/{id}/sprites`
+
+**After**:
+
+- Uploads sprites directly to CDN via `/api/upload`
+- Stores in CDN directory: `sprites/{assetId}/sprites/`
+- Includes sprite-metadata.json in upload
+- Returns CDN URLs for all sprite images
+
+**VRM Upload Endpoint** (`POST /upload-vrm` - lines 346-405):
+
+**Before**:
+
+- Saved VRM to local `gdd-assets/{assetId}` directory
+- Returned local URL: `/gdd-assets/{assetId}/{filename}`
+
+**After**:
+
+- Uploads VRM directly to CDN via `/api/upload`
+- Stores in `models/{assetId}/` directory alongside GLB files
+- Returns CDN URL: `${CDN_URL}/models/{assetId}/{filename}`
+
+### 7. Generation Routes - Example Responses
+
+**Location**: `packages/core/server/routes/generation.ts`
+
+**Changes Made**:
+
+- Updated completed pipeline example response (line 294)
+- Changed from: `/gdd-assets/dragon-blade-tier3/model.glb`
+- To: `https://cdn.asset-forge.com/models/dragon-blade-tier3/dragon-blade-tier3.glb`
+
+### 8. Debug Storage Route - CDN Health Check
+
+**Location**: `packages/core/server/routes/debug-storage.ts`
+
+**Before**:
+
+- Checked local `gdd-assets/media` directory
+- Counted files on filesystem
+- Tested write permissions
+
+**After**:
+
+- **NEW**: `GET /api/debug/cdn-health` - CDN health check with database statistics
+  - Checks CDN availability via `/api/health`
+  - Shows asset/media CDN publish statistics from database
+  - Shows webhook configuration status
+  - Displays environment and architecture mode
+
+- **UPDATED**: `GET /api/debug/storage-info` - Returns deprecation notice
+  - Informs about CDN-first architecture
+  - Redirects to `/api/debug/cdn-health`
+
 ## Architecture Flow
 
 ### 3D Asset Generation Flow
@@ -315,13 +378,14 @@ ASSETS_DIR=/path/to/gdd-assets  # DEPRECATED - Don't set this
 - [x] Update RetextureService to return CDN URLs
 - [x] Mark ASSETS_DIR as deprecated in env.ts
 - [x] Document CDN-first architecture
-- [ ] Update sprite endpoints to use CDN
-- [ ] Update VRM upload endpoint to use CDN
-- [ ] Update frontend AssetService to use CDN URLs
-- [ ] Update all documentation
+- [x] Update sprite endpoints to use CDN
+- [x] Update VRM upload endpoint to use CDN
+- [x] Update generation.ts example responses
+- [x] Replace debug-storage.ts with CDN health check
+- [x] Frontend AssetService already uses CDN URLs (no changes needed)
+- [ ] Update all documentation (in progress)
 - [ ] Update tests to expect CDN URLs
 - [ ] Update .env.example
-- [ ] Remove or update debug endpoints
 - [ ] Test complete end-to-end workflow
 
 ## Testing CDN-First Architecture

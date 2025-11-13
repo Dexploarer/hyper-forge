@@ -14,14 +14,16 @@ builder = "RAILPACK"
 # Workers don't need a frontend build, just install dependencies
 # Must cd into packages/core since Railway runs from repo root
 buildCommand = "cd packages/core && bun install --frozen-lockfile"
-# Watch paths for automatic rebuilds
+# Watch paths for automatic rebuilds - absolute from repo root
+# These paths trigger redeployments when changed
 watchPatterns = [
-  "server/workers/**",
-  "server/services/**",
-  "server/db/**",
-  "package.json",
-  "bun.lock",
-  "railpack.json"
+  "packages/core/server/workers/**",
+  "packages/core/server/services/**",
+  "packages/core/server/db/**",
+  "packages/core/package.json",
+  "packages/core/bun.lock",
+  "packages/core/railpack.json",
+  "packages/core/railway.toml"
 ]
 
 [deploy]
