@@ -19,6 +19,7 @@ export interface PublishResult {
   mainCdnUrl?: string; // Primary asset URL (e.g., the .glb file)
   thumbnailCdnUrl?: string;
   conceptArtCdnUrl?: string;
+  riggedModelCdnUrl?: string; // Rigged/animated model URL
 }
 
 export interface CDNPublishConfig {
@@ -48,12 +49,14 @@ export class CDNPublishService {
    * Create from environment variables
    */
   static fromEnv(assetsDir: string): CDNPublishService {
-    const cdnUrl = process.env.CDN_URL || (() => {
-      if (process.env.NODE_ENV === 'production') {
-        throw new Error('CDN_URL must be set in production environment');
-      }
-      return "http://localhost:3005";
-    })();
+    const cdnUrl =
+      process.env.CDN_URL ||
+      (() => {
+        if (process.env.NODE_ENV === "production") {
+          throw new Error("CDN_URL must be set in production environment");
+        }
+        return "http://localhost:3005";
+      })();
 
     const apiKey = process.env.CDN_API_KEY || "";
 
@@ -141,7 +144,9 @@ export class CDNPublishService {
 
       // Identify specific file types
       const mainCdnUrl =
-        cdnUrls.find((url) => url.endsWith(".glb")) || cdnUrls[0];
+        cdnUrls.find(
+          (url) => url.endsWith(".glb") && !url.includes("rigged"),
+        ) || cdnUrls[0];
       const thumbnailCdnUrl = cdnUrls.find(
         (url) =>
           url.includes("thumbnail") ||
@@ -149,11 +154,20 @@ export class CDNPublishService {
           url.endsWith(".jpg"),
       );
       const conceptArtCdnUrl = cdnUrls.find((url) => url.includes("concept"));
+      const riggedModelCdnUrl = cdnUrls.find(
+        (url) =>
+          url.includes("rigged") ||
+          url.includes("animated") ||
+          url.includes("_rigged"),
+      );
 
       console.log(
         `✅ Published ${assetId} to CDN: ${filesPublished.length} files`,
       );
       console.log(`   Main URL: ${mainCdnUrl}`);
+      if (riggedModelCdnUrl) {
+        console.log(`   Rigged Model URL: ${riggedModelCdnUrl}`);
+      }
       console.log(`   All URLs: ${cdnUrls.join(", ")}`);
 
       return {
@@ -164,6 +178,7 @@ export class CDNPublishService {
         mainCdnUrl,
         thumbnailCdnUrl,
         conceptArtCdnUrl,
+        riggedModelCdnUrl,
       };
     } catch (error) {
       console.error(`Failed to publish ${assetId} to CDN:`, error);
@@ -251,6 +266,7 @@ export class CDNPublishService {
           cdnUrl: publishResult.mainCdnUrl,
           cdnThumbnailUrl: publishResult.thumbnailCdnUrl,
           cdnConceptArtUrl: publishResult.conceptArtCdnUrl,
+          cdnRiggedModelUrl: publishResult.riggedModelCdnUrl,
           cdnFiles: publishResult.cdnUrls || [],
           publishedToCdn: true,
           cdnPublishedAt: new Date(),
