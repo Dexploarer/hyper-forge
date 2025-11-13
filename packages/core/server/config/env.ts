@@ -77,6 +77,7 @@ const envSchema = z
     // URLs
     // =========================================
     CDN_URL: z.string().url().optional().or(z.literal("")),
+    CDN_API_KEY: z.string().optional(),
     FRONTEND_URL: z.string().url().optional().or(z.literal("")),
     IMAGE_SERVER_URL: z.string().url().optional().or(z.literal("")),
     API_URL: z.string().url().optional().or(z.literal("")),
