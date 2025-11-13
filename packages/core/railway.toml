@@ -2,8 +2,14 @@
 # This configuration file deploys a separate worker service for background job processing
 # Workers process generation jobs from Redis queues independently from the API service
 # Uses Railpack with railpack.json for build configuration
+#
+# PORT CONFIGURATION (November 2025):
+# Workers DO NOT need PORT environment variable - they are HTTP-free
+# Workers only process Redis queue jobs with no HTTP endpoints
+# Railway monitors the process directly without health checks
 
 [build]
+builder = "RAILPACK"
 # Watch paths for automatic rebuilds
 watchPatterns = [
   "server/workers/**",

@@ -1,5 +1,48 @@
 # Railway Deployment Guide
 
+## Port Configuration (November 2025 Standards)
+
+### Main API Service
+
+Railway automatically provides a `PORT` environment variable that your application MUST listen on:
+
+```typescript
+// ✅ CORRECT - Our implementation (api-elysia.ts:97)
+const API_PORT = process.env.PORT || process.env.API_PORT || 3004;
+
+app.listen({
+  port: Number(API_PORT),
+  hostname: "0.0.0.0", // ✅ Must bind to all interfaces for Railway
+});
+```
+
+**Key Rules:**
+- ✅ Always use `process.env.PORT` as the primary port source
+- ✅ Bind to `0.0.0.0` (not `localhost` or `127.0.0.1`)
+- ✅ Never hardcode ports in production
+- ✅ Railway assigns the port dynamically
+
+### Worker Service
+
+Workers that only process Redis queue jobs **DO NOT need a PORT**:
+
+```typescript
+// ✅ CORRECT - Workers are HTTP-free (generation-worker.ts)
+// Workers poll Redis queue and process jobs in background
+// No HTTP server needed
+```
+
+**Worker Architecture:**
+- Workers process jobs from Redis queue (no HTTP endpoints)
+- No health checks exposed (Railway monitors process directly)
+- Graceful shutdown via SIGTERM/SIGINT signals
+- Status updates via Redis pub/sub, not HTTP
+
+**When would workers need PORT?**
+- If exposing health check HTTP endpoints
+- If exposing metrics HTTP endpoints
+- Currently: ❌ Not needed - pure queue processing
+
 ## Required Environment Variables
 
 These environment variables **MUST** be set in Railway for production deployment:
@@ -51,7 +94,8 @@ IMGUR_CLIENT_ID=your-imgur-client-id
 ASSETS_DIR=/path/to/assets
 
 # API Port (Railway sets PORT automatically)
-PORT=3004  # Set by Railway automatically
+# NOTE: Do NOT set this manually - Railway auto-assigns it
+# PORT=<auto-assigned-by-railway>
 ```
 
 ## Deployment Checklist
@@ -129,3 +173,123 @@ Expected performance with Elysia + Bun:
 - 22x faster than Express
 - 2.4M requests/second throughput
 - Sub-millisecond response times for static files
+
+## Railway Best Practices (November 2025)
+
+### Using Railpack (Not Nixpacks)
+
+✅ **We're using Railpack** (the modern builder that replaced deprecated Nixpacks)
+
+Configuration: `packages/core/railpack.json`
+
+```json
+{
+  "packages": {
+    "node": "22.12.0",
+    "bun": "latest"
+  },
+  "deploy": {
+    "cmd": "bun run start:workers"
+  }
+}
+```
+
+### Port Binding Summary
+
+| Service | Needs PORT? | Binding | Config File |
+|---------|-------------|---------|-------------|
+| **Main API** | ✅ Yes | `0.0.0.0:$PORT` | `api-elysia.ts:97` |
+| **Workers** | ❌ No | N/A (no HTTP) | `generation-worker.ts` |
+| **CDN** | ✅ Yes | `0.0.0.0:$PORT` | `asset-forge-cdn` repo |
+
+### Environment Variables Railway Auto-Provides
+
+These are automatically set by Railway (don't set them manually):
+
+```bash
+PORT                        # Dynamically assigned port (main API only)
+RAILWAY_ENVIRONMENT         # production/staging/development
+RAILWAY_SERVICE_NAME        # Service name
+RAILWAY_PUBLIC_DOMAIN       # Public domain (if custom domain)
+RAILWAY_STATIC_URL          # Generated Railway URL
+RAILWAY_VOLUME_MOUNT_PATH   # Volume mount point (if volume attached)
+```
+
+### Service Architecture
+
+**Main API Service** (`railway.toml` at project root):
+- Exposes HTTP API endpoints
+- Listens on Railway-assigned `PORT`
+- Health check at `/api/health`
+- Serves frontend SPA
+
+**Worker Service** (`railway.toml` in `packages/core`):
+- No HTTP endpoints
+- Processes Redis queue jobs
+- No health checks (Railway monitors process)
+- Communicates via Redis pub/sub
+
+### Troubleshooting Port Issues
+
+**Problem:** Application not receiving traffic
+
+**Solution:**
+1. ✅ Verify using `process.env.PORT` (not hardcoded)
+2. ✅ Verify binding to `0.0.0.0` (not `localhost`)
+3. ✅ Check Railway logs for port assignment
+4. ✅ Verify health check path is correct
+
+**Problem:** Workers failing to start
+
+**Solution:**
+1. ✅ Workers don't need PORT - check if accidentally trying to bind
+2. ✅ Verify Redis connection via `REDIS_URL`
+3. ✅ Check Railway logs for connection errors
+4. ✅ Verify `WORKER_CONCURRENCY` is set appropriately
+
+### Troubleshooting Qdrant Connection Issues
+
+**Problem:** `Failed to obtain server version` or `Unable to connect` to Qdrant
+
+**Common Causes:**
+1. **Wrong URL protocol**:
+   - ❌ Bad: `https://qdrant.railway.internal:6333`
+   - ✅ Good: `http://qdrant.railway.internal:6333` (internal)
+   - ✅ Good: `https://qdrant-production-xxx.up.railway.app` (external)
+
+2. **Using internal URL from workers**:
+   - Workers might not have access to Railway internal networking
+   - Use external (public) URL for worker services
+
+3. **Qdrant not deployed**:
+   - Qdrant is optional - services gracefully degrade if unavailable
+   - Vector search features will be disabled
+
+**Solutions:**
+
+**For Main API Service** (railway.toml at project root):
+```bash
+# Use internal URL for lower latency (if working)
+QDRANT_URL=http://qdrant.railway.internal:6333
+# OR use external URL
+QDRANT_URL=https://qdrant-production-xxx.up.railway.app
+```
+
+**For Worker Service** (packages/core/railway.toml):
+```bash
+# Workers should use external URL
+QDRANT_URL=https://qdrant-production-xxx.up.railway.app
+```
+
+**To verify Qdrant is working:**
+```bash
+# From Railway shell
+railway run curl http://qdrant.railway.internal:6333/collections
+# OR
+curl https://qdrant-production-xxx.up.railway.app/collections
+```
+
+**Graceful Degradation:**
+- If `QDRANT_URL` is not set, services start without vector search
+- Warnings appear in logs but services remain functional
+- Vector search endpoints return 503 Service Unavailable

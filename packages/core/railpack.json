@@ -4,7 +4,6 @@
     "node": "22.12.0",
     "bun": "latest"
   },
-  "provider": "default",
   "caches": {
     "node_modules": {
       "key": "node_modules",
