@@ -4,13 +4,15 @@
  */
 
 import { QdrantClient } from "@qdrant/js-client-rest";
-import type {
-  QdrantFilter,
-  QdrantPayload,
-} from './types/vector';
-import { EMBEDDING_CONFIG } from './types/vector';
+import type { QdrantFilter, QdrantPayload } from "./types/vector";
+import { EMBEDDING_CONFIG } from "./types/vector";
 
-export type CollectionName = "assets" | "npcs" | "quests" | "lore" | "dialogues";
+export type CollectionName =
+  | "assets"
+  | "npcs"
+  | "quests"
+  | "lore"
+  | "dialogues";
 
 export interface VectorSearchParams {
   collection: CollectionName;
@@ -47,8 +49,10 @@ export interface SearchResultItem {
  */
 export class QdrantService {
   private client: QdrantClient;
-  private readonly VECTOR_SIZE = (EMBEDDING_CONFIG as typeof EMBEDDING_CONFIG).DIMENSIONS;
-  private readonly DISTANCE = (EMBEDDING_CONFIG as typeof EMBEDDING_CONFIG).DISTANCE_METRIC;
+  private readonly VECTOR_SIZE = (EMBEDDING_CONFIG as typeof EMBEDDING_CONFIG)
+    .DIMENSIONS;
+  private readonly DISTANCE = (EMBEDDING_CONFIG as typeof EMBEDDING_CONFIG)
+    .DISTANCE_METRIC;
 
   constructor() {
     const qdrantUrl = process.env.QDRANT_URL;
@@ -57,21 +61,33 @@ export class QdrantService {
     if (!qdrantUrl) {
       // Don't throw - just create a null client
       // This allows the server to start even if Qdrant is not configured
-      console.warn("[QdrantService] QDRANT_URL not configured - vector search will not be available");
+      console.warn(
+        "[QdrantService] QDRANT_URL not configured - vector search will not be available",
+      );
       this.client = null as any; // Will be checked before use
       return;
     }
 
     // Normalize URL - ensure it has a protocol
     let normalizedUrl = qdrantUrl.trim();
-    if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+    if (
+      !normalizedUrl.startsWith("http://") &&
+      !normalizedUrl.startsWith("https://")
+    ) {
       // Default to http:// for Railway internal URLs or localhost
       normalizedUrl = `http://${normalizedUrl}`;
-      console.log(`[QdrantService] Added http:// protocol to URL: ${normalizedUrl}`);
-    } else if (normalizedUrl.startsWith('https://') && normalizedUrl.includes('.railway.internal')) {
+      console.log(
+        `[QdrantService] Added http:// protocol to URL: ${normalizedUrl}`,
+      );
+    } else if (
+      normalizedUrl.startsWith("https://") &&
+      normalizedUrl.includes(".railway.internal")
+    ) {
       // Railway internal networking doesn't support HTTPS - convert to HTTP
-      normalizedUrl = normalizedUrl.replace('https://', 'http://');
-      console.log(`[QdrantService] Converted HTTPS to HTTP for Railway internal URL: ${normalizedUrl}`);
+      normalizedUrl = normalizedUrl.replace("https://", "http://");
+      console.log(
+        `[QdrantService] Converted HTTPS to HTTP for Railway internal URL: ${normalizedUrl}`,
+      );
     }
 
     // Initialize Qdrant client
@@ -96,7 +112,9 @@ export class QdrantService {
    */
   async initializeCollections(): Promise<void> {
     if (!this.isAvailable()) {
-      console.warn("[QdrantService] Client not available - skipping initialization");
+      console.warn(
+        "[QdrantService] Client not available - skipping initialization",
+      );
       return;
     }
 
@@ -143,7 +161,10 @@ export class QdrantService {
       // Create indexes for common payload fields
       await this.createPayloadIndexes(name);
     } catch (error) {
-      console.error(`[QdrantService] Error ensuring collection '${name}':`, error);
+      console.error(
+        `[QdrantService] Error ensuring collection '${name}':`,
+        error,
+      );
       throw error;
     }
   }
@@ -151,7 +172,9 @@ export class QdrantService {
   /**
    * Create payload indexes for filtering
    */
-  private async createPayloadIndexes(collection: CollectionName): Promise<void> {
+  private async createPayloadIndexes(
+    collection: CollectionName,
+  ): Promise<void> {
     try {
       // Common indexes for all collections
       await this.client.createPayloadIndex(collection, {
@@ -190,10 +213,14 @@ export class QdrantService {
         });
       }
 
-      console.log(`[QdrantService] Created payload indexes for '${collection}'`);
+      console.log(
+        `[QdrantService] Created payload indexes for '${collection}'`,
+      );
     } catch (error) {
       // Indexes might already exist, log but don't fail
-      console.warn(`[QdrantService] Could not create some indexes for '${collection}'`);
+      console.warn(
+        `[QdrantService] Could not create some indexes for '${collection}'`,
+      );
     }
   }
 
@@ -242,7 +269,11 @@ export class QdrantService {
    */
   async upsertBatch(
     collection: CollectionName,
-    points: Array<{ id: string; vector: number[]; payload: Record<string, unknown> }>,
+    points: Array<{
+      id: string;
+      vector: number[];
+      payload: Record<string, unknown>;
+    }>,
   ): Promise<void> {
     try {
       await this.client.upsert(collection, {
@@ -301,7 +332,9 @@ export class QdrantService {
   /**
    * Find similar items to a given item by ID
    */
-  async findSimilar(params: SimilaritySearchParams): Promise<SearchResultItem[]> {
+  async findSimilar(
+    params: SimilaritySearchParams,
+  ): Promise<SearchResultItem[]> {
     const { collection, id, limit = 10, scoreThreshold = 0.7, filter } = params;
 
     try {
@@ -313,7 +346,9 @@ export class QdrantService {
       });
 
       if (!point || point.length === 0) {
-        throw new Error(`Point with ID ${id} not found in collection ${collection}`);
+        throw new Error(
+          `Point with ID ${id} not found in collection ${collection}`,
+        );
       }
 
       const vector = point[0].vector as number[];
@@ -421,6 +456,7 @@ export class QdrantService {
 
   /**
    * Health check - verify connection to Qdrant
+   * Uses the /healthz endpoint (Kubernetes-compatible health check)
    */
   async healthCheck(): Promise<boolean> {
     if (!this.isAvailable()) {
@@ -428,9 +464,24 @@ export class QdrantService {
     }
 
     try {
-      // Try to list collections as a health check
-      await this.client.getCollections();
-      return true;
+      // Use the dedicated health check endpoint
+      // Qdrant's /healthz endpoint returns 200 OK with "healthz check passed"
+      const url = this.client["url"]; // Access the URL from client config
+      const healthUrl = `${url}/healthz`;
+
+      const response = await fetch(healthUrl, {
+        method: "GET",
+        signal: AbortSignal.timeout(5000), // 5 second timeout
+      });
+
+      if (response.ok) {
+        return true;
+      }
+
+      console.error(
+        `[QdrantService] Health check returned status ${response.status}`,
+      );
+      return false;
     } catch (error) {
       console.error("[QdrantService] Health check failed:", error);
       return false;
