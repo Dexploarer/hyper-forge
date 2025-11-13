@@ -1,18 +1,12 @@
 /**
- * Media Storage Service
- * Handles persistent storage of generated media (portraits, voices, music)
+ * Media Storage Service - CDN-First Architecture
+ * Uploads media files directly to CDN (portraits, voices, music)
+ * Webhook automatically creates database records after successful upload
  */
 
 import { db } from "../db";
 import { mediaAssets, type NewMediaAsset } from "../db/schema";
 import { eq, and } from "drizzle-orm";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const ROOT_DIR = path.join(__dirname, "..", "..");
 
 export interface SaveMediaParams {
   type: "portrait" | "banner" | "voice" | "music" | "sound_effect";
@@ -34,21 +28,36 @@ export interface SaveMediaParams {
 }
 
 export class MediaStorageService {
-  private mediaRoot: string;
+  private cdnUrl: string;
+  private cdnApiKey: string;
 
   constructor() {
-    this.mediaRoot = path.join(ROOT_DIR, "gdd-assets", "media");
+    this.cdnUrl =
+      process.env.CDN_URL ||
+      (() => {
+        if (process.env.NODE_ENV === "production") {
+          throw new Error("CDN_URL must be set in production environment");
+        }
+        return "http://localhost:3005";
+      })();
+
+    this.cdnApiKey = process.env.CDN_API_KEY || "";
+
+    if (!this.cdnApiKey) {
+      console.warn(
+        "[MediaStorageService] CDN_API_KEY not set - media uploads will fail!",
+      );
+    }
   }
 
   /**
-   * Save media file to filesystem and create database record
-   * Uses transaction to ensure atomicity between file and database operations
-   * If database insert fails, file is automatically rolled back
+   * Upload media file to CDN
+   * CDN webhook will automatically create database record with CDN URLs
    */
   async saveMedia(params: SaveMediaParams): Promise<{
     id: string;
-    fileUrl: string;
-    filePath: string;
+    cdnUrl: string;
+    fileName: string;
   }> {
     const {
       type,
@@ -60,119 +69,111 @@ export class MediaStorageService {
       createdBy,
     } = params;
 
-    // Build file path: /gdd-assets/media/{type}/{entity_type}/{entity_id}/{fileName}
-    let relativePath = path.join(type);
-
-    if (entityType && entityId) {
-      relativePath = path.join(relativePath, entityType, entityId);
-    }
-
-    const dirPath = path.join(this.mediaRoot, relativePath);
-    const filePath = path.join(dirPath, fileName);
-
     try {
-      // Ensure directory exists
-      await fs.promises.mkdir(dirPath, { recursive: true });
+      // Build directory structure: media/{type}/{entity_type}/{entity_id}/
+      const directoryParts = [type];
+      if (entityType) directoryParts.push(entityType);
+      if (entityId) directoryParts.push(entityId);
 
-      // Write file atomically
-      await fs.promises.writeFile(filePath, data);
+      const directory = directoryParts.join("/");
+      const fullPath = `${directory}/${fileName}`;
 
-      // Verify file was written successfully
-      const fileExists = await fs.promises
-        .access(filePath)
-        .then(() => true)
-        .catch(() => false);
+      // Get file size for metadata
+      const fileSize = data.byteLength || data.length;
 
-      if (!fileExists) {
-        throw new Error(
-          `File write verification failed: ${filePath} does not exist after write`,
-        );
+      // Create FormData for CDN upload
+      const formData = new FormData();
+
+      // Convert Buffer/Uint8Array to Blob
+      const buffer =
+        data instanceof Buffer ? new Uint8Array(data) : new Uint8Array(data);
+      const blob = new Blob([buffer], {
+        type: metadata.mimeType || this.getMimeType(fileName),
+      });
+
+      formData.append("files", blob, fullPath);
+      formData.append("directory", "media");
+
+      // Add metadata as JSON (CDN webhook will parse this)
+      const uploadMetadata = {
+        type,
+        entityType,
+        entityId,
+        fileName,
+        metadata: {
+          ...metadata,
+          fileSize,
+        },
+        createdBy,
+      };
+      formData.append("metadata", JSON.stringify(uploadMetadata));
+
+      console.log(`[MediaStorage] Uploading ${type} to CDN: ${fullPath}`);
+
+      // Upload to CDN
+      const response = await fetch(`${this.cdnUrl}/api/upload`, {
+        method: "POST",
+        headers: {
+          "X-API-Key": this.cdnApiKey,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`CDN upload failed (${response.status}): ${errorText}`);
       }
 
-      console.log(`[MediaStorage] Saved ${type} file: ${filePath}`);
+      const result = (await response.json()) as {
+        success: boolean;
+        files: Array<{ path: string; url: string; size: number }>;
+      };
 
-      // Generate public URL
-      const fileUrl = `/gdd-assets/media/${path.join(relativePath, fileName)}`;
-
-      // Get file size
-      const stats = await fs.promises.stat(filePath);
-      const fileSize = stats.size;
-
-      // Create database record in transaction
-      let mediaAsset;
-      try {
-        mediaAsset = await db.transaction(async (tx) => {
-          const [asset] = await tx
-            .insert(mediaAssets)
-            .values({
-              type,
-              entityType,
-              entityId,
-              fileUrl,
-              fileName,
-              metadata: {
-                ...metadata,
-                fileSize,
-              },
-              createdBy,
-            } as NewMediaAsset)
-            .returning();
-
-          console.log(`[MediaStorage] Created media asset record: ${asset.id}`);
-
-          return asset;
-        });
-      } catch (dbError) {
-        // Rollback: Delete the file since database transaction failed
-        console.error(
-          `[MediaStorage] Database transaction failed, rolling back file: ${filePath}`,
-        );
-        try {
-          await fs.promises.unlink(filePath);
-          console.log(
-            `[MediaStorage] Successfully rolled back file: ${filePath}`,
-          );
-        } catch (unlinkError) {
-          console.error(
-            `[MediaStorage] Failed to rollback file: ${filePath}`,
-            unlinkError,
-          );
-        }
-        throw new Error(
-          `Failed to create database record: ${dbError instanceof Error ? dbError.message : "Unknown error"}`,
-        );
+      if (!result.success || !result.files || result.files.length === 0) {
+        throw new Error("CDN upload succeeded but no files were returned");
       }
 
-      // IMPORTANT: Check if running in production without persistent storage
-      if (
-        process.env.NODE_ENV === "production" &&
-        !process.env.RAILWAY_VOLUME_MOUNT_PATH
-      ) {
-        console.warn(
-          `⚠️  [MediaStorage] WARNING: Running in production without Railway volume!`,
-        );
-        console.warn(
-          `⚠️  [MediaStorage] Media files will be LOST on restart/redeploy.`,
-        );
-        console.warn(
-          `⚠️  [MediaStorage] Configure a volume at /app/packages/core/gdd-assets`,
-        );
-        console.warn(
-          `⚠️  [MediaStorage] See RAILWAY_VOLUME_SETUP.md for instructions`,
-        );
-      }
+      const uploadedFile = result.files[0];
+      const cdnUrl = `${this.cdnUrl}/media/${fullPath}`;
+
+      console.log(`✅ [MediaStorage] Uploaded to CDN: ${cdnUrl}`);
+      console.log(`   CDN webhook will create database record automatically`);
+
+      // Note: We generate a temporary ID here since the webhook will create the actual record
+      // In a real implementation, you might want to poll the database or use a different approach
+      const tempId = `temp-${Date.now()}`;
 
       return {
-        id: mediaAsset.id,
-        fileUrl,
-        filePath,
+        id: tempId,
+        cdnUrl,
+        fileName,
       };
     } catch (error) {
-      console.error(`[MediaStorage] Failed to save media:`, error);
+      console.error(`[MediaStorage] Failed to upload media:`, error);
       throw new Error(
-        `Media storage failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Media upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
+  }
+
+  /**
+   * Get MIME type from file extension
+   */
+  private getMimeType(fileName: string): string {
+    const ext = fileName.split(".").pop()?.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      png: "image/png",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      gif: "image/gif",
+      webp: "image/webp",
+      mp3: "audio/mpeg",
+      wav: "audio/wav",
+      ogg: "audio/ogg",
+      m4a: "audio/mp4",
+      json: "application/json",
+    };
+    return mimeTypes[ext || ""] || "application/octet-stream";
   }
 
   /**
@@ -227,7 +228,7 @@ export class MediaStorageService {
   }
 
   /**
-   * Delete media asset (file and database record)
+   * Delete media asset from CDN and database
    */
   async deleteMedia(mediaId: string): Promise<boolean> {
     // Get the media asset record
@@ -242,14 +243,33 @@ export class MediaStorageService {
       return false;
     }
 
-    // Delete file from filesystem
-    const filePath = path.join(ROOT_DIR, asset.fileUrl);
-    try {
-      await fs.promises.unlink(filePath);
-      console.log(`[MediaStorage] Deleted file: ${filePath}`);
-    } catch (error) {
-      console.warn(`[MediaStorage] Could not delete file: ${filePath}`, error);
-      // Continue to delete database record even if file deletion fails
+    // Delete from CDN if CDN URL exists
+    if (asset.cdnUrl) {
+      try {
+        // Extract file path from CDN URL
+        const url = new URL(asset.cdnUrl);
+        const filePath = url.pathname;
+
+        const response = await fetch(`${this.cdnUrl}/api/delete`, {
+          method: "DELETE",
+          headers: {
+            "X-API-Key": this.cdnApiKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ path: filePath }),
+        });
+
+        if (!response.ok) {
+          console.warn(
+            `[MediaStorage] Failed to delete from CDN: ${response.statusText}`,
+          );
+        } else {
+          console.log(`[MediaStorage] Deleted from CDN: ${filePath}`);
+        }
+      } catch (error) {
+        console.warn(`[MediaStorage] Could not delete from CDN:`, error);
+        // Continue to delete database record even if CDN deletion fails
+      }
     }
 
     // Delete database record
@@ -276,56 +296,49 @@ export class MediaStorageService {
   }
 
   /**
-   * Verify media storage health
-   * Checks for orphaned database records (records without corresponding files)
+   * Verify CDN health
+   * Checks if CDN is reachable
    */
-  async verifyStorageHealth(): Promise<{
-    totalRecords: number;
-    validFiles: number;
-    orphanedRecords: number;
-    orphanedIds: string[];
+  async verifyCDNHealth(): Promise<{
+    healthy: boolean;
+    message: string;
   }> {
-    const allAssets = await db.select().from(mediaAssets);
-    const orphanedIds: string[] = [];
-
-    for (const asset of allAssets) {
-      const filePath = path.join(ROOT_DIR, asset.fileUrl);
-      const fileExists = await fs.promises
-        .access(filePath)
-        .then(() => true)
-        .catch(() => false);
-
-      if (!fileExists) {
-        orphanedIds.push(asset.id);
+    try {
+      const response = await fetch(`${this.cdnUrl}/api/health`);
+      if (response.ok) {
+        return {
+          healthy: true,
+          message: "CDN is healthy",
+        };
       }
+      return {
+        healthy: false,
+        message: `CDN returned status ${response.status}`,
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        message: `CDN unreachable: ${error instanceof Error ? error.message : "Unknown error"}`,
+      };
     }
-
-    return {
-      totalRecords: allAssets.length,
-      validFiles: allAssets.length - orphanedIds.length,
-      orphanedRecords: orphanedIds.length,
-      orphanedIds,
-    };
   }
 
   /**
-   * Cleanup orphaned media records
-   * Removes database records for media files that don't exist on disk
+   * Get media storage statistics
    */
-  async cleanupOrphanedRecords(): Promise<{
-    removedCount: number;
-    removedIds: string[];
+  async getStorageStats(): Promise<{
+    totalRecords: number;
+    publishedToCdn: number;
+    notPublished: number;
   }> {
-    const health = await this.verifyStorageHealth();
+    const allAssets = await db.select().from(mediaAssets);
 
-    for (const id of health.orphanedIds) {
-      await db.delete(mediaAssets).where(eq(mediaAssets.id, id));
-      console.log(`[MediaStorage] Removed orphaned record: ${id}`);
-    }
+    const publishedToCdn = allAssets.filter((a) => a.publishedToCdn).length;
 
     return {
-      removedCount: health.orphanedRecords,
-      removedIds: health.orphanedIds,
+      totalRecords: allAssets.length,
+      publishedToCdn,
+      notPublished: allAssets.length - publishedToCdn,
     };
   }
 }

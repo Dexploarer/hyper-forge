@@ -72,7 +72,7 @@ interface RetextureParams {
   materialPreset?: MaterialPreset;
   customPrompt?: string;
   imageUrl?: string;
-  artStyle?: 'realistic' | 'cartoon';
+  artStyle?: "realistic" | "cartoon";
   outputName?: string;
   assetsDir: string;
   user?: UserContextType | null;
@@ -306,32 +306,39 @@ export class RetextureService {
    */
   private async uploadToCDN(
     assetId: string,
-    files: Array<{ buffer: ArrayBuffer | Buffer; name: string; type?: string }>
+    files: Array<{ buffer: ArrayBuffer | Buffer; name: string; type?: string }>,
   ): Promise<{ success: boolean; files: any[] }> {
     const CDN_URL = process.env.CDN_URL;
     const CDN_API_KEY = process.env.CDN_API_KEY;
 
     if (!CDN_URL || !CDN_API_KEY) {
-      throw new Error('CDN_URL and CDN_API_KEY must be configured');
+      throw new Error("CDN_URL and CDN_API_KEY must be configured");
     }
 
     const formData = new FormData();
 
     for (const file of files) {
       // Convert Buffer to Uint8Array for Blob compatibility
-      const buffer = file.buffer instanceof Buffer ? new Uint8Array(file.buffer) : new Uint8Array(file.buffer);
-      const blob = new Blob([buffer], { type: file.type || 'application/octet-stream' });
-      formData.append('files', blob, `${assetId}/${file.name}`);
+      const buffer =
+        file.buffer instanceof Buffer
+          ? new Uint8Array(file.buffer)
+          : new Uint8Array(file.buffer);
+      const blob = new Blob([buffer], {
+        type: file.type || "application/octet-stream",
+      });
+      formData.append("files", blob, `${assetId}/${file.name}`);
     }
 
-    formData.append('directory', 'models');
+    formData.append("directory", "models");
 
-    console.log(`[CDN Upload] Uploading ${files.length} files for asset ${assetId}`);
+    console.log(
+      `[CDN Upload] Uploading ${files.length} files for asset ${assetId}`,
+    );
 
     const response = await this.fetchFn(`${CDN_URL}/api/upload`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'X-API-Key': CDN_API_KEY,
+        "X-API-Key": CDN_API_KEY,
       },
       body: formData as any,
     });
@@ -341,8 +348,13 @@ export class RetextureService {
       throw new Error(`CDN upload failed (${response.status}): ${errorText}`);
     }
 
-    const result = (await response.json()) as { success: boolean; files: any[] };
-    console.log(`[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`);
+    const result = (await response.json()) as {
+      success: boolean;
+      files: any[];
+    };
+    console.log(
+      `[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`,
+    );
 
     return result;
   }
@@ -384,14 +396,22 @@ export class RetextureService {
         // Custom prompt retexturing
         textPrompt = customPrompt;
         mode = "custom prompt";
-        console.log(`🎨 Starting custom prompt retexture for ${baseAssetId}: "${customPrompt.substring(0, 50)}..."`);
+        console.log(
+          `🎨 Starting custom prompt retexture for ${baseAssetId}: "${customPrompt.substring(0, 50)}..."`,
+        );
       } else if (materialPreset) {
         // Preset-based retexturing (legacy mode)
-        textPrompt = materialPreset.stylePrompt || `Apply ${materialPreset.displayName} material texture`;
+        textPrompt =
+          materialPreset.stylePrompt ||
+          `Apply ${materialPreset.displayName} material texture`;
         mode = `preset: ${materialPreset.displayName}`;
-        console.log(`🎨 Starting preset retexture for ${baseAssetId} with material: ${materialPreset.displayName}`);
+        console.log(
+          `🎨 Starting preset retexture for ${baseAssetId} with material: ${materialPreset.displayName}`,
+        );
       } else {
-        throw new Error("Either materialPreset, customPrompt, or imageUrl must be provided");
+        throw new Error(
+          "Either materialPreset, customPrompt, or imageUrl must be provided",
+        );
       }
 
       // Start retexture task using the new MeshyClient
@@ -426,23 +446,29 @@ export class RetextureService {
         variantName,
         baseAssetId,
         baseMetadata,
-        materialPreset: materialPreset || {
-          id: "custom",
-          displayName: customPrompt ? "Custom Prompt" : "Image Reference",
-          stylePrompt: customPrompt || imageUrl || "",
-          category: "custom",
-          tier: 1,
-          color: "#666666",
-        } as MaterialPreset,
+        materialPreset:
+          materialPreset ||
+          ({
+            id: "custom",
+            displayName: customPrompt ? "Custom Prompt" : "Image Reference",
+            stylePrompt: customPrompt || imageUrl || "",
+            category: "custom",
+            tier: 1,
+            color: "#666666",
+          } as MaterialPreset),
         taskId,
         assetsDir,
         user,
       });
 
+      // Get CDN URL from environment or construct it
+      const CDN_URL = process.env.CDN_URL || "http://localhost:3005";
+      const cdnUrl = `${CDN_URL}/models/${variantName}/${variantName}.glb`;
+
       return {
         success: true,
         assetId: variantName,
-        url: `/gdd-assets/${variantName}/${variantName}.glb`,
+        url: cdnUrl,
         message: `Asset retextured successfully using ${mode}`,
         asset: savedAsset,
       };
@@ -486,13 +512,17 @@ export class RetextureService {
     );
 
     // Prepare files for CDN upload
-    const filesToUpload: Array<{ buffer: Buffer; name: string; type?: string }> = [];
+    const filesToUpload: Array<{
+      buffer: Buffer;
+      name: string;
+      type?: string;
+    }> = [];
 
     // Variant model
     filesToUpload.push({
       buffer: modelBuffer,
       name: `${variantName}.glb`,
-      type: 'model/gltf-binary'
+      type: "model/gltf-binary",
     });
 
     // Note: Concept art is inherited from base asset, webhook handler can link it
@@ -556,8 +586,8 @@ export class RetextureService {
 
     filesToUpload.push({
       buffer: Buffer.from(JSON.stringify(variantMetadata, null, 2)),
-      name: 'metadata.json',
-      type: 'application/json'
+      name: "metadata.json",
+      type: "application/json",
     });
 
     // Upload to CDN (webhook will create database record and link to base)
@@ -586,7 +616,9 @@ export class RetextureService {
           return (await response.json()) as AssetMetadataType;
         }
       } catch (error) {
-        console.warn(`Failed to fetch metadata from CDN, falling back to local: ${error}`);
+        console.warn(
+          `Failed to fetch metadata from CDN, falling back to local: ${error}`,
+        );
       }
     }
 
@@ -611,10 +643,14 @@ export class RetextureService {
     // Simulate processing time
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
+    // Get CDN URL from environment or construct it
+    const CDN_URL = process.env.CDN_URL || "http://localhost:3005";
+    const cdnUrl = `${CDN_URL}/models/${baseAssetId}/${baseAssetId}.glb`;
+
     return {
       success: true,
       assetId: baseAssetId,
-      url: `/gdd-assets/${baseAssetId}/${baseAssetId}.glb`,
+      url: cdnUrl,
       message: `Base model ${baseAssetId} has been queued for regeneration. This feature is coming soon!`,
       asset: await this.getAssetMetadata(baseAssetId, assetsDir),
     };
