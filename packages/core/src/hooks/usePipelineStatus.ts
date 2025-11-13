@@ -13,6 +13,7 @@ import { GenerationAPIClient } from "@/services/api/GenerationAPIClient";
 interface UsePipelineStatusOptions {
   apiClient: GenerationAPIClient;
   onComplete?: (asset: GeneratedAsset) => void;
+  onAssetListInvalidate?: () => void;
 }
 
 /**
@@ -42,6 +43,7 @@ const getPollingInterval = (elapsedTime: number): number => {
 export function usePipelineStatus({
   apiClient,
   onComplete,
+  onAssetListInvalidate,
 }: UsePipelineStatusOptions) {
   const intervalRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimeRef = useRef<number | null>(null);
@@ -212,6 +214,11 @@ export function usePipelineStatus({
               onComplete(finalAsset);
             }
 
+            // Invalidate asset list cache for instant visibility with CDN URLs
+            if (onAssetListInvalidate) {
+              onAssetListInvalidate();
+            }
+
             // Clear the interval
             if (intervalRef.current) {
               clearInterval(intervalRef.current);
@@ -288,6 +295,7 @@ export function usePipelineStatus({
     setSelectedAsset,
     setActiveView,
     onComplete,
+    onAssetListInvalidate,
   ]);
 
   return { intervalRef, pollingError };

@@ -10,7 +10,7 @@ import {
   User,
   Settings,
 } from "lucide-react";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 
 import { useGenerationStore } from "../store";
 import type { PipelineStage } from "../store";
@@ -522,8 +522,49 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeView, generatedAssets.length]);
 
+  // Create asset list refresh callback for instant visibility with CDN URLs
+  const refreshAssetList = useCallback(async () => {
+    try {
+      const assets = await AssetService.listAssets();
+
+      // Transform API assets to match the expected format
+      const transformedAssets = assets.map((asset: Asset) => ({
+        id: asset.id,
+        name: asset.name,
+        description: asset.description,
+        type: asset.type,
+        status: "completed",
+        hasModel: asset.hasModel,
+        modelUrl: asset.hasModel ? `/api/assets/${asset.id}/model` : undefined,
+        conceptArtUrl: `/api/assets/${asset.id}/concept-art.png`,
+        variants: Array.isArray((asset as any).metadata?.variants)
+          ? ((asset.metadata as any).variants as {
+              name: string;
+              modelUrl: string;
+            }[])
+          : undefined,
+        metadata: asset.metadata || {},
+        createdAt:
+          asset.generatedAt ||
+          asset.metadata?.generatedAt ||
+          new Date().toISOString(),
+        generatedAt:
+          asset.generatedAt ||
+          asset.metadata?.generatedAt ||
+          new Date().toISOString(),
+      }));
+
+      setGeneratedAssets(transformedAssets);
+    } catch (error) {
+      console.error("Failed to refresh assets:", error);
+    }
+  }, [setGeneratedAssets]);
+
   // Use the pipeline status hook
-  usePipelineStatus({ apiClient });
+  usePipelineStatus({
+    apiClient,
+    onAssetListInvalidate: refreshAssetList,
+  });
 
   // Use the material presets hook
   const { handleSaveCustomMaterials, handleUpdatePreset, handleDeletePreset } =
