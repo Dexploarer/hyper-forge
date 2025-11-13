@@ -66,4 +66,4 @@ coveragePathIgnorePatterns = [
 timeout = 120000
 
 # Preload scripts (if needed for database setup, etc.)
-# preload = ["./test-setup.ts"]
+preload = ["./__tests__/setup-dom.ts"]
