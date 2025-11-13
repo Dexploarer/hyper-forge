@@ -3,7 +3,6 @@
  * Handles asset listing and retrieval
  */
 
-import fs from "fs/promises";
 import path from "path";
 import type { UserContextType, AssetMetadataType } from "../models";
 import { assetDatabaseService } from "./AssetDatabaseService";
@@ -31,12 +30,6 @@ interface Asset {
   hasModel: boolean;
   modelFile?: string;
   generatedAt?: string;
-}
-
-interface Dependencies {
-  [key: string]: {
-    variants?: string[];
-  };
 }
 
 export class AssetService {
@@ -76,10 +69,16 @@ export class AssetService {
 
 
   async getAssetMetadata(assetId: string): Promise<AssetMetadataType> {
-    const metadataPath = path.join(this.assetsDir, assetId, "metadata.json");
-    return JSON.parse(
-      await fs.readFile(metadataPath, "utf-8"),
-    ) as AssetMetadataType;
+    // Get metadata from database
+    const asset = await db.query.assets.findFirst({
+      where: eq(assets.id, assetId),
+    });
+
+    if (!asset) {
+      throw new Error(`Asset ${assetId} not found`);
+    }
+
+    return asset.metadata as AssetMetadataType;
   }
 
 
@@ -98,11 +97,14 @@ export class AssetService {
     }
 
     // If it's a base asset and includeVariants is true, delete all variants
-    if (includeVariants && asset.metadata?.isBaseModel) {
-      const variants = await db
-        .select()
-        .from(assets)
-        .where(eq(assets.metadata.parentBaseModel, assetId));
+    const metadata = asset.metadata as AssetMetadataType;
+    if (includeVariants && metadata?.isBaseModel) {
+      // Query all assets and filter variants in application code
+      const allAssets = await db.select().from(assets);
+      const variants = allAssets.filter(a => {
+        const assetMetadata = a.metadata as AssetMetadataType;
+        return assetMetadata?.parentBaseModel === assetId;
+      });
 
       for (const variant of variants) {
         await db.delete(assets).where(eq(assets.id, variant.id));
@@ -125,20 +127,16 @@ export class AssetService {
     userId?: string,
   ): Promise<Asset | null> {
     try {
-      const assetPath = path.join(this.assetsDir, assetId);
-      const metadataPath = path.join(assetPath, "metadata.json");
+      // Get asset from database
+      const asset = await db.query.assets.findFirst({
+        where: eq(assets.id, assetId),
+      });
 
-      // Check if asset exists
-      try {
-        await fs.access(assetPath);
-      } catch {
+      if (!asset) {
         return null;
       }
 
-      // Read current metadata
-      const currentMetadata = JSON.parse(
-        await fs.readFile(metadataPath, "utf-8"),
-      ) as AssetMetadataType;
+      const currentMetadata = asset.metadata as AssetMetadataType;
 
       // Update metadata with new values
       const updatedMetadata: AssetMetadataType = {
@@ -170,63 +168,72 @@ export class AssetService {
 
       // Handle name change if provided
       if (updates.name && updates.name !== assetId) {
-        // Update name in metadata
         updatedMetadata.name = updates.name;
         updatedMetadata.gameId = updates.name;
 
-        // Create new directory with new name
-        const newAssetPath = path.join(this.assetsDir, updates.name);
-
-        // Check if new name already exists
-        try {
-          await fs.access(newAssetPath);
-          throw new Error(`Asset with name ${updates.name} already exists`);
-        } catch (error) {
-          const err = error as NodeJS.ErrnoException;
-          // If the error is NOT "file not found", re-throw it
-          if (err.code !== "ENOENT") {
-            throw error;
-          }
-          // Otherwise, the path doesn't exist, which is what we want
-        }
-
-        // Rename directory
-        await fs.rename(assetPath, newAssetPath);
-
-        // Update metadata in new location
-        await fs.writeFile(
-          path.join(newAssetPath, "metadata.json"),
-          JSON.stringify(updatedMetadata, null, 2),
-        );
-
-        // Update dependencies if needed
-        await this.updateDependenciesAfterRename(assetId, updates.name);
-
-        return this.loadAsset(updates.name);
-      } else {
-        // Just update metadata
-        await fs.writeFile(
-          metadataPath,
-          JSON.stringify(updatedMetadata, null, 2),
-        );
-
-        // Update database record
-        try {
-          await assetDatabaseService.updateAssetRecord(assetId, {
-            name: updatedMetadata.name,
-            description: updatedMetadata.description,
-            type: updatedMetadata.type,
+        // Update database record with new name and ID
+        await db
+          .update(assets)
+          .set({
+            id: updates.name,
+            name: updates.name,
+            type: updates.type || asset.type,
             metadata: updatedMetadata,
-          });
-        } catch (error) {
-          console.error(
-            "[AssetService] Failed to update asset in database:",
-            error,
-          );
-          // Continue - file update succeeded
+            updatedAt: new Date(),
+          })
+          .where(eq(assets.id, assetId));
+
+        // Return updated asset
+        const updatedAsset = await db.query.assets.findFirst({
+          where: eq(assets.id, updates.name),
+        });
+
+        if (!updatedAsset) {
+          return null;
         }
 
-        return this.loadAsset(assetId);
+        return {
+          id: updatedAsset.id,
+          name: updatedAsset.name,
+          description: updatedAsset.description || "",
+          type: updatedAsset.type,
+          metadata: updatedAsset.metadata as AssetMetadataType,
+          hasModel: !!updatedAsset.cdnUrl,
+          modelFile: updatedAsset.cdnUrl
+            ? path.basename(updatedAsset.cdnUrl)
+            : undefined,
+          generatedAt: updatedAsset.createdAt.toISOString(),
+        };
+      } else {
+        // Just update metadata in database
+        await assetDatabaseService.updateAssetRecord(assetId, {
+          name: updates.name || asset.name,
+          description: asset.description,
+          type: updates.type || asset.type,
+          metadata: updatedMetadata,
+        });
+
+        // Return updated asset
+        const updatedAsset = await db.query.assets.findFirst({
+          where: eq(assets.id, assetId),
+        });
+
+        if (!updatedAsset) {
+          return null;
+        }
+
+        return {
+          id: updatedAsset.id,
+          name: updatedAsset.name,
+          description: updatedAsset.description || "",
+          type: updatedAsset.type,
+          metadata: updatedAsset.metadata as AssetMetadataType,
+          hasModel: !!updatedAsset.cdnUrl,
+          modelFile: updatedAsset.cdnUrl
+            ? path.basename(updatedAsset.cdnUrl)
+            : undefined,
+          generatedAt: updatedAsset.createdAt.toISOString(),
+        };
       }
     } catch (error) {
       console.error(`Error updating asset ${assetId}:`, error);
@@ -234,38 +241,4 @@ export class AssetService {
     }
   }
 
-  async updateDependenciesAfterRename(
-    oldId: string,
-    newId: string,
-  ): Promise<void> {
-    const dependenciesPath = path.join(this.assetsDir, "dependencies.json");
-
-    try {
-      const dependencies = JSON.parse(
-        await fs.readFile(dependenciesPath, "utf-8"),
-      ) as Dependencies;
-
-      // Update the key if it exists
-      if (dependencies[oldId]) {
-        dependencies[newId] = dependencies[oldId];
-        delete dependencies[oldId];
-      }
-
-      // Update references in other assets
-      for (const [baseId, deps] of Object.entries(dependencies)) {
-        if (deps.variants && deps.variants.includes(oldId)) {
-          deps.variants = deps.variants.map((id) =>
-            id === oldId ? newId : id,
-          );
-        }
-      }
-
-      await fs.writeFile(
-        dependenciesPath,
-        JSON.stringify(dependencies, null, 2),
-      );
-    } catch (error) {
-      console.log("No dependencies file to update");
-    }
-  }
 }

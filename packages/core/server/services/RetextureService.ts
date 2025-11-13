@@ -318,7 +318,9 @@ export class RetextureService {
     const formData = new FormData();
 
     for (const file of files) {
-      const blob = new Blob([file.buffer], { type: file.type || 'application/octet-stream' });
+      // Convert Buffer to Uint8Array for Blob compatibility
+      const buffer = file.buffer instanceof Buffer ? new Uint8Array(file.buffer) : new Uint8Array(file.buffer);
+      const blob = new Blob([buffer], { type: file.type || 'application/octet-stream' });
       formData.append('files', blob, `${assetId}/${file.name}`);
     }
 

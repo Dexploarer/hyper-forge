@@ -25,6 +25,7 @@ interface FetchResponse {
   ok: boolean;
   status: number;
   json: () => Promise<unknown>;
+  text: () => Promise<string>;
   arrayBuffer: () => Promise<ArrayBuffer>;
 }
 
@@ -1514,7 +1515,9 @@ Your task is to enhance the user's description to create better results with ima
     const formData = new FormData();
 
     for (const file of files) {
-      const blob = new Blob([file.buffer], { type: file.type || 'application/octet-stream' });
+      // Convert Buffer to Uint8Array for Blob compatibility
+      const buffer = file.buffer instanceof Buffer ? new Uint8Array(file.buffer) : new Uint8Array(file.buffer);
+      const blob = new Blob([buffer], { type: file.type || 'application/octet-stream' });
       formData.append('files', blob, `${assetId}/${file.name}`);
     }
 
@@ -1535,10 +1538,10 @@ Your task is to enhance the user's description to create better results with ima
       throw new Error(`CDN upload failed (${response.status}): ${errorText}`);
     }
 
-    const result = await response.json();
+    const result = await response.json() as { success: boolean; files: any[] };
     console.log(`[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`);
 
-    return result as { success: boolean; files: any[] };
+    return result;
   }
 
   /**
