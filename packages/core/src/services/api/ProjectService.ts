@@ -3,6 +3,8 @@
  * Type-safe wrapper for project API endpoints
  */
 
+import { getAuthToken } from "@/utils/auth-token-store";
+
 export interface Project {
   id: string;
   name: string;
@@ -44,15 +46,10 @@ class ProjectServiceClass {
   private baseUrl = "/api/projects";
 
   /**
-   * Get auth token from Privy
+   * Get auth token from auth-token-store
    */
-  private async getAuthToken(): Promise<string> {
-    // Get token from global Privy instance
-    const privy = (window as any).__PRIVY__;
-    if (!privy?.getAccessToken) {
-      throw new Error("Privy not initialized");
-    }
-    const token = await privy.getAccessToken();
+  private getAuthToken(): string {
+    const token = getAuthToken();
     if (!token) {
       throw new Error("Not authenticated");
     }
@@ -66,7 +63,7 @@ class ProjectServiceClass {
     endpoint: string,
     options: RequestInit = {},
   ): Promise<T> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       ...options,

@@ -3,6 +3,8 @@
  * Client for user achievements and medals management
  */
 
+import { getAuthToken } from "@/utils/auth-token-store";
+
 const API_BASE = "/api/achievements";
 
 export interface Achievement {
@@ -67,14 +69,10 @@ export interface UpdateProgressResponse {
 
 export class AchievementsAPIClient {
   /**
-   * Get auth token from Privy
+   * Get auth token from auth-token-store
    */
-  private async getAuthToken(): Promise<string> {
-    const privy = (window as any).__PRIVY__;
-    if (!privy?.getAccessToken) {
-      throw new Error("Privy not initialized");
-    }
-    const token = await privy.getAccessToken();
+  private getAuthToken(): string {
+    const token = getAuthToken();
     if (!token) {
       throw new Error("Not authenticated");
     }
@@ -98,7 +96,7 @@ export class AchievementsAPIClient {
    * Get current user's achievements
    */
   async getUserAchievements(): Promise<UserAchievementSummary> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
     const response = await fetch(`${API_BASE}/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -106,7 +104,9 @@ export class AchievementsAPIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to get user achievements: ${response.statusText}`);
+      throw new Error(
+        `Failed to get user achievements: ${response.statusText}`,
+      );
     }
 
     return await response.json();
@@ -115,8 +115,10 @@ export class AchievementsAPIClient {
   /**
    * Get specific user's achievements
    */
-  async getUserAchievementsById(userId: string): Promise<UserAchievementSummary> {
-    const token = await this.getAuthToken();
+  async getUserAchievementsById(
+    userId: string,
+  ): Promise<UserAchievementSummary> {
+    const token = this.getAuthToken();
     const response = await fetch(`${API_BASE}/user/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -124,7 +126,9 @@ export class AchievementsAPIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to get user achievements: ${response.statusText}`);
+      throw new Error(
+        `Failed to get user achievements: ${response.statusText}`,
+      );
     }
 
     return await response.json();
@@ -139,7 +143,7 @@ export class AchievementsAPIClient {
     progress?: number,
     metadata?: Record<string, any>,
   ): Promise<AwardAchievementResponse> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
     const response = await fetch(`${API_BASE}/award`, {
       method: "POST",
       headers: {
@@ -174,7 +178,7 @@ export class AchievementsAPIClient {
     progress: number,
     metadata?: Record<string, any>,
   ): Promise<UpdateProgressResponse> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
     const response = await fetch(`${API_BASE}/progress`, {
       method: "POST",
       headers: {
@@ -202,4 +206,3 @@ export class AchievementsAPIClient {
 }
 
 export const achievementsClient = new AchievementsAPIClient();
-

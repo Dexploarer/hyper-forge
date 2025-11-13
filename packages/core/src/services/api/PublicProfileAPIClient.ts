@@ -3,6 +3,8 @@
  * Client for accessing public user profile endpoints
  */
 
+import { getAuthToken } from "@/utils/auth-token-store";
+
 export interface PublicProfile {
   id: string;
   displayName: string | null;
@@ -47,26 +49,17 @@ const API_BASE = "/api/public/users";
 
 export class PublicProfileAPIClient {
   /**
-   * Get auth token from Privy (optional for public endpoints)
+   * Get auth token from auth-token-store (optional for public endpoints)
    */
-  private async getAuthToken(): Promise<string | null> {
-    try {
-      const privy = (window as any).__PRIVY__;
-      if (!privy?.getAccessToken) {
-        return null;
-      }
-      const token = await privy.getAccessToken();
-      return token || null;
-    } catch {
-      return null;
-    }
+  private getAuthToken(): string | null {
+    return getAuthToken();
   }
 
   /**
    * Get public profile for a user
    */
   async getPublicProfile(userId: string): Promise<PublicProfileResponse> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
     const headers: Record<string, string> = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;
@@ -90,7 +83,7 @@ export class PublicProfileAPIClient {
     userId: string,
     type?: string,
   ): Promise<PublicAssetsResponse> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
     const headers: Record<string, string> = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;
@@ -113,7 +106,7 @@ export class PublicProfileAPIClient {
    * Get public projects for a user
    */
   async getPublicProjects(userId: string): Promise<PublicProjectsResponse> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
     const headers: Record<string, string> = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;
@@ -136,7 +129,7 @@ export class PublicProfileAPIClient {
   async getPublicAchievements(
     userId: string,
   ): Promise<PublicAchievementsResponse> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
     const headers: Record<string, string> = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;
@@ -161,7 +154,7 @@ export class PublicProfileAPIClient {
   async getUserStats(
     userId: string,
   ): Promise<{ stats: UserStats; isOwnProfile: boolean }> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
     const headers: Record<string, string> = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;

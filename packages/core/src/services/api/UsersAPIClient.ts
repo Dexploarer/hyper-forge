@@ -3,6 +3,8 @@
  * Client for user profile management and authentication
  */
 
+import { getAuthToken } from "@/utils/auth-token-store";
+
 const API_BASE = "/api/users";
 
 export interface User {
@@ -117,14 +119,10 @@ export class UsersAPIClient {
   }
 
   /**
-   * Get auth token from Privy
+   * Get auth token from auth-token-store
    */
-  private async getAuthToken(): Promise<string> {
-    const privy = (window as any).__PRIVY__;
-    if (!privy?.getAccessToken) {
-      throw new Error("Privy not initialized");
-    }
-    const token = await privy.getAccessToken();
+  private getAuthToken(): string {
+    const token = getAuthToken();
     if (!token) {
       throw new Error("Not authenticated");
     }
@@ -135,7 +133,7 @@ export class UsersAPIClient {
    * Update user settings
    */
   async updateSettings(settings: Record<string, any>): Promise<{ user: User }> {
-    const token = await this.getAuthToken();
+    const token = this.getAuthToken();
     const response = await fetch(`${API_BASE}/settings`, {
       method: "POST",
       headers: {
