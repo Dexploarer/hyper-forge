@@ -95,6 +95,9 @@ const MusicGenerationPage = lazy(
 // Public Profile page
 const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
 
+// Public VRM Converter page (no auth required)
+const FreeVRMConverterPage = lazy(() => import("./pages/FreeVRMConverterPage"));
+
 function AppContent() {
   const { isAuthenticated } = useAuth();
   const { currentView, navigateTo, navigateToAsset } = useNavigation();
@@ -102,6 +105,16 @@ function AppContent() {
   // Initialize global keyboard shortcuts
   const { shortcutsModalOpen, setShortcutsModalOpen, shortcuts } =
     useGlobalShortcuts();
+
+  // Check if viewing public VRM converter (no auth required)
+  const isVRMConverterRoute = window.location.pathname === "/vrm-converter";
+  if (isVRMConverterRoute) {
+    return (
+      <Suspense fallback={<PageSkeleton />}>
+        <FreeVRMConverterPage />
+      </Suspense>
+    );
+  }
 
   // Show landing page if not authenticated
   if (!isAuthenticated) {

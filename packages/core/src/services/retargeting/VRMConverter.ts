@@ -274,7 +274,7 @@ export class VRMConverter {
 
     // CRITICAL FIX: Find and bake out the Armature parent scale FIRST
     // Meshy models have an Armature with scale 0.01 that needs to be baked
-    let armature: THREE.Object3D | null = null;
+    let armature: THREE.Object3D | undefined;
     this.scene.traverse((obj) => {
       if (obj.name === "Armature" && obj !== this.skinnedMesh) {
         armature = obj;

@@ -226,6 +226,35 @@ export function LandingPage() {
           </form>
         </div>
 
+        {/* Free VRM Converter Banner */}
+        <div className="w-full max-w-5xl mb-8">
+          <a
+            href="/vrm-converter"
+            className="block bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/30 rounded-xl p-6 hover:border-primary/50 transition-all duration-200 hover:shadow-lg hover:shadow-primary/10"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center">
+                  <Box className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary mb-1">
+                    Free VRM Converter
+                  </h3>
+                  <p className="text-sm text-text-secondary">
+                    Convert your GLB/GLTF character models to VRM format - no
+                    login required
+                  </p>
+                </div>
+              </div>
+              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-primary rounded-lg text-white font-medium">
+                Try Now
+                <Send size={16} />
+              </div>
+            </div>
+          </a>
+        </div>
+
         {/* Tool Cards Grid */}
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
           {tools.map((tool) => {
