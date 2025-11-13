@@ -29,7 +29,8 @@ watchPatterns = [
 [deploy]
 # Start command - explicitly use Bun to run workers
 # Must cd into packages/core since Railway runs from repo root
-startCommand = "cd packages/core && bun run start:workers"
+# Using direct file path instead of npm script to avoid script lookup issues
+startCommand = "cd packages/core && NODE_ENV=production bun server/workers/start-workers.ts"
 # Restart policy - restart on failure with more retries for workers
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 20
