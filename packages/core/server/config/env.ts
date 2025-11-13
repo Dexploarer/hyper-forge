@@ -57,26 +57,39 @@ const envSchema = z.object({
   // =========================================
   // Vector Database (Optional)
   // =========================================
-  QDRANT_URL: z
-    .string()
-    .optional()
-    .refine(
-      (val) => {
-        if (!val || val === "") return true;
-        // Allow Railway internal hostnames (e.g., https://qdrant.railway.internal:6333)
-        // and standard URLs
-        try {
-          const url = new URL(val);
-          return url.protocol === "http:" || url.protocol === "https:";
-        } catch {
-          return false;
+    QDRANT_URL: z
+      .string()
+      .optional()
+      .transform((val) => {
+        // Auto-add protocol if missing (common with Railway service URLs)
+        if (!val || val === "") return val;
+        const trimmed = val.trim();
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+          return trimmed;
         }
-      },
-      {
-        message:
-          "Must be a valid URL with http:// or https:// protocol if provided",
-      },
-    ),
+        // Railway service URLs should use https://
+        // Railway internal URLs should use http://
+        if (trimmed.includes(".railway.internal")) {
+          return `http://${trimmed}`;
+        }
+        return `https://${trimmed}`;
+      })
+      .refine(
+        (val) => {
+          if (!val || val === "") return true;
+          // Allow Railway internal hostnames and standard URLs
+          try {
+            const url = new URL(val);
+            return url.protocol === "http:" || url.protocol === "https:";
+          } catch {
+            return false;
+          }
+        },
+        {
+          message:
+            "Must be a valid URL with http:// or https:// protocol if provided",
+        },
+      ),
   QDRANT_API_KEY: z.string().optional(),
 
   // =========================================
