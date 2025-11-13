@@ -1,0 +1,42 @@
+# Bun Configuration for Asset-Forge
+# November 2025 Best Practices
+
+[test]
+# Root directory for test discovery
+root = "."
+
+# Patterns to match test files (Bun tests ONLY - NOT Playwright)
+# Only matches .test.ts and .test.tsx files
+# This excludes .spec.ts/.spec.tsx which are used by Playwright
+testMatch = [
+  "**/__tests__/integration/**/*.test.ts",
+  "**/__tests__/unit/**/*.test.ts",
+  "**/__tests__/helpers/**/*.test.ts"
+]
+
+# Exclude E2E tests (Playwright), node_modules, and other non-test directories
+testIgnore = [
+  "**/__tests__/e2e/**",      # Playwright E2E tests - EXCLUDE ALL
+  "**/*.spec.ts",              # Playwright spec files
+  "**/*.spec.tsx",             # Playwright spec files
+  "**/node_modules/**",
+  "**/dist/**",
+  "**/.git/**",
+  "**/coverage/**",
+  "**/build/**"
+]
+
+# Test execution
+# Run tests in parallel for faster execution
+concurrent = true
+
+# Code coverage configuration
+coverage = true
+coverageThreshold = 80
+coverageSkipTestFiles = true
+
+# Test timeout (2 minutes default)
+timeout = 120000
+
+# Preload scripts (if needed for database setup, etc.)
+# preload = ["./test-setup.ts"]

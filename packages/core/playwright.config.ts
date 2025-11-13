@@ -4,8 +4,9 @@ import { defineConfig, devices } from "@playwright/test";
  * Playwright configuration for Asset Forge admin testing
  */
 export default defineConfig({
-  testDir: "./tests",
-  testMatch: "**/*.spec.ts",
+  // ONLY E2E tests in __tests__/e2e directory
+  testDir: "./__tests__/e2e",
+  testMatch: "**/*.spec.{ts,tsx}",
 
   // Maximum time one test can run - increased for power user tests
   timeout: 120 * 1000,

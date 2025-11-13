@@ -7,6 +7,11 @@ import { Elysia, t } from "elysia";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { projectService } from "../services/ProjectService";
+import { permissionService } from "../services/PermissionService";
+import { NotFoundError, ForbiddenError } from "../errors";
+import { createChildLogger } from "../utils/logger";
+
+const logger = createChildLogger("ProjectRoutes");
 
 export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
   // Create new project
@@ -34,7 +39,7 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
     {
       body: t.Object({
         name: t.String({ minLength: 1, maxLength: 255 }),
-        description: t.Optional(t.String()),
+        description: t.Optional(t.String({ maxLength: 2000 })),
         settings: t.Optional(t.Record(t.String(), t.Any())),
         metadata: t.Optional(t.Record(t.String(), t.Any())),
       }),
@@ -98,29 +103,14 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
       const project = await projectService.getProjectById(id);
 
       if (!project) {
-        return new Response(
-          JSON.stringify({
-            error: "Project not found",
-            message: "The specified project does not exist",
-          }),
-          {
-            status: 404,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        throw new NotFoundError("Project", id, { userId: user.id });
       }
 
-      // Check ownership (admins can view any project)
-      if (project.ownerId !== user.id && user.role !== "admin") {
-        return new Response(
-          JSON.stringify({
-            error: "Forbidden",
-            message: "You do not have permission to access this project",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
+      // Check permission using PermissionService
+      if (!permissionService.canViewProject(user, project)) {
+        throw new ForbiddenError(
+          "You do not have permission to access this project",
+          { projectId: id, userId: user.id, projectOwnerId: project.ownerId },
         );
       }
 
@@ -153,38 +143,22 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
       const { user } = authResult;
       const { id } = params;
 
-      // Check ownership
-      const isOwner = await projectService.isOwner(id, user.id);
-      const isAdmin = user.role === "admin";
+      // Get project to check permissions
+      const project = await projectService.getProjectById(id);
+      if (!project) {
+        throw new NotFoundError("Project", id, { userId: user.id });
+      }
 
-      if (!isOwner && !isAdmin) {
-        return new Response(
-          JSON.stringify({
-            error: "Forbidden",
-            message: "You do not have permission to update this project",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
+      // Check permission using PermissionService
+      if (!permissionService.canEditProject(user, project)) {
+        throw new ForbiddenError(
+          "You do not have permission to update this project",
+          { projectId: id, userId: user.id },
         );
       }
 
-      try {
-        const updatedProject = await projectService.updateProject(id, body);
-        return { success: true, project: updatedProject };
-      } catch (error) {
-        return new Response(
-          JSON.stringify({
-            error: "Project not found",
-            message: "The specified project does not exist",
-          }),
-          {
-            status: 404,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
+      const updatedProject = await projectService.updateProject(id, body);
+      return { success: true, project: updatedProject };
     },
     {
       params: t.Object({
@@ -192,8 +166,10 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
       }),
       body: t.Object({
         name: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
-        description: t.Optional(t.String()),
-        status: t.Optional(t.String()),
+        description: t.Optional(t.String({ maxLength: 2000 })),
+        status: t.Optional(
+          t.Union([t.Literal("active"), t.Literal("archived")]),
+        ),
         settings: t.Optional(t.Record(t.String(), t.Any())),
         metadata: t.Optional(t.Record(t.String(), t.Any())),
       }),
@@ -220,38 +196,22 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
       const { user } = authResult;
       const { id } = params;
 
-      // Check ownership
-      const isOwner = await projectService.isOwner(id, user.id);
-      const isAdmin = user.role === "admin";
+      // Get project to check permissions
+      const project = await projectService.getProjectById(id);
+      if (!project) {
+        throw new NotFoundError("Project", id, { userId: user.id });
+      }
 
-      if (!isOwner && !isAdmin) {
-        return new Response(
-          JSON.stringify({
-            error: "Forbidden",
-            message: "You do not have permission to archive this project",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
+      // Check permission using PermissionService
+      if (!permissionService.canArchiveProject(user, project)) {
+        throw new ForbiddenError(
+          "You do not have permission to archive this project",
+          { projectId: id, userId: user.id },
         );
       }
 
-      try {
-        const archivedProject = await projectService.archiveProject(id);
-        return { success: true, project: archivedProject };
-      } catch (error) {
-        return new Response(
-          JSON.stringify({
-            error: "Project not found",
-            message: "The specified project does not exist",
-          }),
-          {
-            status: 404,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
+      const archivedProject = await projectService.archiveProject(id);
+      return { success: true, project: archivedProject };
     },
     {
       params: t.Object({
@@ -280,38 +240,22 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
       const { user } = authResult;
       const { id } = params;
 
-      // Check ownership
-      const isOwner = await projectService.isOwner(id, user.id);
-      const isAdmin = user.role === "admin";
+      // Get project to check permissions
+      const project = await projectService.getProjectById(id);
+      if (!project) {
+        throw new NotFoundError("Project", id, { userId: user.id });
+      }
 
-      if (!isOwner && !isAdmin) {
-        return new Response(
-          JSON.stringify({
-            error: "Forbidden",
-            message: "You do not have permission to restore this project",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
+      // Check permission using PermissionService
+      if (!permissionService.canArchiveProject(user, project)) {
+        throw new ForbiddenError(
+          "You do not have permission to restore this project",
+          { projectId: id, userId: user.id },
         );
       }
 
-      try {
-        const restoredProject = await projectService.restoreProject(id);
-        return { success: true, project: restoredProject };
-      } catch (error) {
-        return new Response(
-          JSON.stringify({
-            error: "Project not found",
-            message: "The specified project does not exist",
-          }),
-          {
-            status: 404,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
+      const restoredProject = await projectService.restoreProject(id);
+      return { success: true, project: restoredProject };
     },
     {
       params: t.Object({
@@ -339,21 +283,8 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
 
       const { id } = params;
 
-      try {
-        await projectService.deleteProject(id);
-        return { success: true, message: "Project deleted successfully" };
-      } catch (error) {
-        return new Response(
-          JSON.stringify({
-            error: "Project not found",
-            message: "The specified project does not exist",
-          }),
-          {
-            status: 404,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
+      await projectService.deleteProject(id);
+      return { success: true, message: "Project deleted successfully" };
     },
     {
       params: t.Object({
@@ -409,42 +340,26 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
       const { user } = authResult;
       const { id } = params;
 
-      // Check ownership
-      const isOwner = await projectService.isOwner(id, user.id);
-      const isAdmin = user.role === "admin";
+      // Get project to check permissions
+      const project = await projectService.getProjectById(id);
+      if (!project) {
+        throw new NotFoundError("Project", id, { userId: user.id });
+      }
 
-      if (!isOwner && !isAdmin) {
-        return new Response(
-          JSON.stringify({
-            error: "Forbidden",
-            message: "You do not have permission to access this project",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
+      // Check permission using PermissionService
+      if (!permissionService.canViewProject(user, project)) {
+        throw new ForbiddenError(
+          "You do not have permission to access this project",
+          { projectId: id, userId: user.id },
         );
       }
 
-      try {
-        const assets = await projectService.getProjectAssets(id, {
-          type: query.type,
-          status: query.status,
-        });
+      const assets = await projectService.getProjectAssets(id, {
+        type: query.type,
+        status: query.status,
+      });
 
-        return { success: true, assets };
-      } catch (error) {
-        return new Response(
-          JSON.stringify({
-            error: "Project not found",
-            message: "The specified project does not exist",
-          }),
-          {
-            status: 404,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
+      return { success: true, assets };
     },
     {
       params: t.Object({
@@ -477,38 +392,22 @@ export const projectsRoutes = new Elysia({ prefix: "/api/projects" })
       const { user } = authResult;
       const { id } = params;
 
-      // Check ownership
-      const isOwner = await projectService.isOwner(id, user.id);
-      const isAdmin = user.role === "admin";
+      // Get project to check permissions
+      const project = await projectService.getProjectById(id);
+      if (!project) {
+        throw new NotFoundError("Project", id, { userId: user.id });
+      }
 
-      if (!isOwner && !isAdmin) {
-        return new Response(
-          JSON.stringify({
-            error: "Forbidden",
-            message: "You do not have permission to access this project",
-          }),
-          {
-            status: 403,
-            headers: { "Content-Type": "application/json" },
-          },
+      // Check permission using PermissionService
+      if (!permissionService.canViewProject(user, project)) {
+        throw new ForbiddenError(
+          "You do not have permission to access this project",
+          { projectId: id, userId: user.id },
         );
       }
 
-      try {
-        const stats = await projectService.getProjectStats(id);
-        return { success: true, stats };
-      } catch (error) {
-        return new Response(
-          JSON.stringify({
-            error: "Project not found",
-            message: "The specified project does not exist",
-          }),
-          {
-            status: 404,
-            headers: { "Content-Type": "application/json" },
-          },
-        );
-      }
+      const stats = await projectService.getProjectStats(id);
+      return { success: true, stats };
     },
     {
       params: t.Object({

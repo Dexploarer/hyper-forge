@@ -78,6 +78,7 @@ export class RelationshipService {
 
   /**
    * Create multiple relationships at once
+   * Uses transaction to ensure all relationships are created atomically
    */
   async createRelationships(
     relationshipList: CreateRelationshipParams[],
@@ -97,14 +98,18 @@ export class RelationshipService {
       }),
     );
 
-    const created = await db
-      .insert(entityRelationships)
-      .values(relationships)
-      .returning();
+    const created = await db.transaction(async (tx) => {
+      const result = await tx
+        .insert(entityRelationships)
+        .values(relationships)
+        .returning();
 
-    console.log(
-      `[RelationshipService] Created ${created.length} relationships`,
-    );
+      console.log(
+        `[RelationshipService] Created ${result.length} relationships`,
+      );
+
+      return result;
+    });
 
     return created;
   }
@@ -133,7 +138,10 @@ export class RelationshipService {
             eq(entityRelationships.sourceType, entityType),
             eq(entityRelationships.sourceId, entityId),
             options?.relationshipType
-              ? eq(entityRelationships.relationshipType, options.relationshipType)
+              ? eq(
+                  entityRelationships.relationshipType,
+                  options.relationshipType,
+                )
               : undefined,
           ),
         );
@@ -146,7 +154,10 @@ export class RelationshipService {
             eq(entityRelationships.targetType, entityType),
             eq(entityRelationships.targetId, entityId),
             options?.relationshipType
-              ? eq(entityRelationships.relationshipType, options.relationshipType)
+              ? eq(
+                  entityRelationships.relationshipType,
+                  options.relationshipType,
+                )
               : undefined,
           ),
         );
@@ -168,7 +179,10 @@ export class RelationshipService {
               ),
             ),
             options?.relationshipType
-              ? eq(entityRelationships.relationshipType, options.relationshipType)
+              ? eq(
+                  entityRelationships.relationshipType,
+                  options.relationshipType,
+                )
               : undefined,
           ),
         );
@@ -384,7 +398,8 @@ export class RelationshipService {
         rel.sourceType === entityType && rel.sourceId === entityId
           ? rel.targetType
           : rel.sourceType;
-      stats.byTargetType[targetType] = (stats.byTargetType[targetType] || 0) + 1;
+      stats.byTargetType[targetType] =
+        (stats.byTargetType[targetType] || 0) + 1;
 
       // Count by strength
       const strength = rel.strength || "medium";

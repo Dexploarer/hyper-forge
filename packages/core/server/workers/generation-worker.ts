@@ -100,40 +100,52 @@ export class GenerationWorker {
         progress: 0,
       });
 
-      // Convert job to pipeline format
-      const pipeline = this.jobService.jobToPipeline(job);
-
-      // Process the generation pipeline
-      await this.generationService.processPipeline(
-        queueJob.pipelineId,
-        pipeline,
-        {
-          onProgress: async (progress, stage) => {
-            // Update database
-            await this.jobService.updateJob(queueJob.pipelineId, {
-              progress,
-              stages: pipeline.stages as unknown as Record<string, unknown>,
-            });
-
-            // Publish to Redis for real-time updates
-            await this.queueService.publishProgress(queueJob.pipelineId, {
-              status: "processing",
-              progress,
-              stage,
-            });
-          },
-        },
+      // Start the generation pipeline using the public API
+      // Note: GenerationService.startPipeline creates its own pipeline ID,
+      // so we poll for status and sync to our database job
+      const response = await this.generationService.startPipeline(
+        job.config as any,
       );
 
-      // Mark as completed
-      await this.jobService.updateJob(queueJob.pipelineId, {
-        status: "completed",
-        progress: 100,
-        completedAt: new Date(),
-        stages: pipeline.stages as unknown as Record<string, unknown>,
-        results: pipeline.results,
-        finalAsset: pipeline.finalAsset as unknown as Record<string, unknown>,
-      });
+      // Poll for completion and sync progress
+      let completed = false;
+      while (!completed) {
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // Poll every 2 seconds
+
+        const status = await this.generationService.getPipelineStatus(
+          response.pipelineId,
+        );
+
+        // Update our database job with the status
+        await this.jobService.updateJob(queueJob.pipelineId, {
+          progress: status.progress,
+          stages: status.stages as unknown as Record<string, unknown>,
+        });
+
+        // Publish progress to Redis
+        await this.queueService.publishProgress(queueJob.pipelineId, {
+          status: status.status,
+          progress: status.progress,
+          stage: status.status,
+        });
+
+        if (status.status === "completed" || status.status === "failed") {
+          completed = true;
+
+          if (status.status === "failed") {
+            throw new Error(status.error || "Pipeline failed");
+          }
+
+          // Mark as completed
+          await this.jobService.updateJob(queueJob.pipelineId, {
+            status: "completed",
+            progress: 100,
+            completedAt: new Date(),
+            stages: status.stages as unknown as Record<string, unknown>,
+            results: status.results,
+          });
+        }
+      }
 
       await this.queueService.publishProgress(queueJob.pipelineId, {
         status: "completed",
@@ -152,9 +164,10 @@ export class GenerationWorker {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
 
-      // Get current retry count
-      const currentMetadata = (job.metadata as { retryCount?: number }) || {};
-      const retryCount = (currentMetadata.retryCount || 0) + 1;
+      // Get current retry count from error message
+      const errorMatch = job.error?.match(/Attempt (\d+) failed/);
+      const currentRetry = errorMatch ? parseInt(errorMatch[1], 10) : 0;
+      const retryCount = currentRetry + 1;
 
       if (retryCount < MAX_RETRIES) {
         // Re-queue for retry

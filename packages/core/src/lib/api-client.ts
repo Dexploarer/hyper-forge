@@ -20,22 +20,20 @@ import { getAuthToken } from "@/utils/auth-token-store";
 // Get API base URL
 // In production (Railway), frontend and API are served from same domain, so use relative URLs
 // In development, Vite proxy handles /api routes, so use relative URLs
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  ""; // Empty string = relative URL (Vite proxy handles /api -> localhost:3004 in dev)
+const API_BASE_URL = import.meta.env.VITE_API_URL || ""; // Empty string = relative URL (Vite proxy handles /api -> localhost:3004 in dev)
 
 /**
  * Get authentication headers with Privy token
  */
 function getAuthHeaders(): Record<string, string> {
   const token = getAuthToken();
-  
+
   if (token) {
     return {
       Authorization: `Bearer ${token}`,
     };
   }
-  
+
   return {};
 }
 
@@ -88,7 +86,7 @@ function getAuthHeaders(): Record<string, string> {
  * const { data: status } = await api.api.generation.pipeline({ pipelineId: '123' }).get()
  *
  * // Get material presets
- * const { data: presets } = await api['api']['material-presets'].get()
+ * const { data: presets } = await api.api['material-presets'].get()
  *
  * // Save sprites for an asset
  * const { data: result } = await api.api.assets({ id: 'sword-001' }).sprites.post({
@@ -116,15 +114,69 @@ function getAuthHeaders(): Record<string, string> {
  * const { data: orientation } = await api.api['weapon-orientation-detect'].post({
  *   image: 'data:image/png;base64,...'
  * })
+ *
+ * // Voice generation
+ * const { data: saved } = await api.api.voice.saved.get({ query: { type: 'voice' } })
+ * const { data: result } = await api.api.voice.save.post({ name: 'My Voice', type: 'voice', audioData: '...' })
+ *
+ * // World generation
+ * const { data: world } = await api.api.content['generate-world'].post({ theme: 'fantasy', complexity: 'medium' })
  * ```
  */
-export const api = treaty<App>(API_BASE_URL, {
+const _api = treaty<App>(API_BASE_URL, {
   // Dynamic headers - auth token updated on every request
   fetch: {
     credentials: "include",
     headers: () => getAuthHeaders(),
   } as any,
 });
+
+/**
+ * Properly typed API client with support for hyphenated routes
+ *
+ * This fixes TypeScript errors when accessing routes with hyphens like 'generate-world'
+ * by providing explicit type annotations. Eden Treaty's conditional types create complex
+ * union types that TypeScript struggles to infer, so we use explicit types for the routes
+ * that have issues.
+ */
+export const api = _api as any as typeof _api & {
+  api: {
+    voice: {
+      saved: {
+        get: (options?: {
+          query?: { type?: string; limit?: string };
+        }) => Promise<{
+          data: { success: boolean; audio: any[]; count: number } | null;
+          error: any;
+        }>;
+      };
+      save: {
+        post: (body: {
+          name: string;
+          type: "voice" | "music" | "sound_effect";
+          audioData: string;
+          metadata?: Record<string, any>;
+        }) => Promise<{
+          data: { success: boolean; id: string; fileUrl: string } | null;
+          error: any;
+        }>;
+      };
+    };
+    content: {
+      "generate-world": {
+        post: (body: {
+          theme?: string;
+          complexity?: string;
+          worldName?: string;
+          description?: string;
+        }) => Promise<{
+          data: { success: boolean; world: any; rawResponse?: any } | null;
+          error: any;
+        }>;
+      };
+    };
+  };
+};
 
 /**
  * Type-safe fetch wrapper for non-Eden endpoints

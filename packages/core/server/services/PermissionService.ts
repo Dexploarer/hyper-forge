@@ -1,0 +1,325 @@
+/**
+ * Permission Service
+ * Centralized authorization checks for Asset-Forge
+ *
+ * Phase 3.1 - Production Hardening
+ *
+ * This service standardizes permission logic across all routes and services.
+ * Instead of scattered checks like `user.role === 'admin'` or `asset.ownerId === user.id`,
+ * all authorization decisions go through this service.
+ */
+
+import type { Asset } from "../db/schema/assets.schema";
+import type { Project } from "../db/schema/users.schema";
+
+/**
+ * Simplified user interface for permission checks
+ * Compatible with both AuthUser (from middleware) and User (from database)
+ */
+export interface PermissionUser {
+  id: string;
+  role: string;
+}
+
+/**
+ * Generic content entity with optional creator tracking
+ * Matches NPCs, Quests, Dialogues, Lores, Worlds, Locations, MusicTracks
+ */
+export interface ContentEntity {
+  createdBy?: string | null;
+  isPublic?: boolean;
+}
+
+export class PermissionService {
+  /**
+   * Check if user can view an asset
+   * - Owner can always view
+   * - Admin can always view
+   * - Public assets can be viewed by anyone
+   * - Private assets only by owner or admin
+   */
+  canViewAsset(user: PermissionUser | null, asset: Asset): boolean {
+    // Public assets are viewable by everyone
+    if (asset.visibility === "public") {
+      return true;
+    }
+
+    // No user = unauthenticated = cannot view private assets
+    if (!user) {
+      return false;
+    }
+
+    // Admin can view all assets
+    if (user.role === "admin") {
+      return true;
+    }
+
+    // Owner can view their own assets
+    if (asset.ownerId === user.id) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if user can edit an asset
+   * - Only owner or admin
+   */
+  canEditAsset(user: PermissionUser | null, asset: Asset): boolean {
+    if (!user) {
+      return false;
+    }
+
+    if (user.role === "admin") {
+      return true;
+    }
+
+    return asset.ownerId === user.id;
+  }
+
+  /**
+   * Check if user can delete an asset
+   * - Only owner or admin
+   */
+  canDeleteAsset(user: PermissionUser | null, asset: Asset): boolean {
+    return this.canEditAsset(user, asset);
+  }
+
+  /**
+   * Check if user can publish an asset to CDN
+   * - Only owner or admin
+   */
+  canPublishAsset(user: PermissionUser | null, asset: Asset): boolean {
+    return this.canEditAsset(user, asset);
+  }
+
+  /**
+   * Check if user can view a project
+   * - Owner can always view
+   * - Admin can always view
+   * - Public projects can be viewed by anyone
+   * - Private projects only by owner or admin
+   */
+  canViewProject(user: PermissionUser | null, project: Project): boolean {
+    // Public projects are viewable by everyone
+    if (project.isPublic === true) {
+      return true;
+    }
+
+    // No user = unauthenticated = cannot view private projects
+    if (!user) {
+      return false;
+    }
+
+    // Admin can view all projects
+    if (user.role === "admin") {
+      return true;
+    }
+
+    // Owner can view their own projects
+    if (project.ownerId === user.id) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if user can edit a project
+   * - Only owner or admin
+   */
+  canEditProject(user: PermissionUser | null, project: Project): boolean {
+    if (!user) {
+      return false;
+    }
+
+    if (user.role === "admin") {
+      return true;
+    }
+
+    return project.ownerId === user.id;
+  }
+
+  /**
+   * Check if user can delete a project
+   * - Only owner or admin
+   */
+  canDeleteProject(user: PermissionUser | null, project: Project): boolean {
+    return this.canEditProject(user, project);
+  }
+
+  /**
+   * Check if user can archive/restore a project
+   * - Only owner or admin
+   */
+  canArchiveProject(user: PermissionUser | null, project: Project): boolean {
+    return this.canEditProject(user, project);
+  }
+
+  /**
+   * Check if user can view content (NPC, Quest, Lore, etc.)
+   * - Public content is viewable by everyone
+   * - Private content only by creator or admin
+   * - Content without visibility defaults to public
+   */
+  canViewContent(user: PermissionUser | null, content: ContentEntity): boolean {
+    // If content has no isPublic field or is public, anyone can view
+    if (content.isPublic === undefined || content.isPublic === true) {
+      return true;
+    }
+
+    // Private content requires authentication
+    if (!user) {
+      return false;
+    }
+
+    // Admin can view all content
+    if (user.role === "admin") {
+      return true;
+    }
+
+    // Creator can view their own content
+    if (content.createdBy && content.createdBy === user.id) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if user can edit content (NPC, Quest, Lore, etc.)
+   * - Only creator or admin
+   * - Content without creator can be edited by anyone (backward compatibility)
+   */
+  canEditContent(user: PermissionUser | null, content: ContentEntity): boolean {
+    if (!user) {
+      return false;
+    }
+
+    // Admin can edit all content
+    if (user.role === "admin") {
+      return true;
+    }
+
+    // If no creator is set, allow editing (backward compatibility)
+    if (!content.createdBy) {
+      return true;
+    }
+
+    // Creator can edit their own content
+    return content.createdBy === user.id;
+  }
+
+  /**
+   * Check if user can delete content (NPC, Quest, Lore, etc.)
+   * - Only creator or admin
+   */
+  canDeleteContent(
+    user: PermissionUser | null,
+    content: ContentEntity,
+  ): boolean {
+    return this.canEditContent(user, content);
+  }
+
+  /**
+   * Check if user has admin access
+   * - Only users with role 'admin'
+   */
+  hasAdminAccess(user: PermissionUser | null): boolean {
+    return user?.role === "admin";
+  }
+
+  /**
+   * Check if user can perform bulk operations on assets
+   * - Only owners can bulk operate their own assets
+   * - Admins can bulk operate any assets
+   */
+  canBulkOperate(user: PermissionUser | null, assets: Asset[]): boolean {
+    if (!user) {
+      return false;
+    }
+
+    // Admin can bulk operate any assets
+    if (user.role === "admin") {
+      return true;
+    }
+
+    // Owner can only bulk operate their own assets
+    return assets.every((asset) => asset.ownerId === user.id);
+  }
+
+  /**
+   * Check if user can bulk operate on content entities
+   * - Only creators can bulk operate their own content
+   * - Admins can bulk operate any content
+   */
+  canBulkOperateContent(
+    user: PermissionUser | null,
+    content: ContentEntity[],
+  ): boolean {
+    if (!user) {
+      return false;
+    }
+
+    // Admin can bulk operate any content
+    if (user.role === "admin") {
+      return true;
+    }
+
+    // Creator can only bulk operate their own content
+    // Allow operations on content without creators (backward compatibility)
+    return content.every(
+      (item) => !item.createdBy || item.createdBy === user.id,
+    );
+  }
+
+  /**
+   * Check if user is the owner of a resource
+   * Generic ownership check for any resource with ownerId or createdBy
+   */
+  isOwner(
+    user: PermissionUser | null,
+    resource: { ownerId?: string; createdBy?: string | null },
+  ): boolean {
+    if (!user) {
+      return false;
+    }
+
+    // Check ownerId first (for assets, projects)
+    if (resource.ownerId) {
+      return resource.ownerId === user.id;
+    }
+
+    // Check createdBy (for content)
+    if (resource.createdBy) {
+      return resource.createdBy === user.id;
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if user can modify any resource
+   * Combines isOwner and hasAdminAccess checks
+   */
+  canModify(
+    user: PermissionUser | null,
+    resource: { ownerId?: string; createdBy?: string | null },
+  ): boolean {
+    if (!user) {
+      return false;
+    }
+
+    // Admin can modify anything
+    if (user.role === "admin") {
+      return true;
+    }
+
+    // Owner/creator can modify their own resources
+    return this.isOwner(user, resource);
+  }
+}
+
+// Export singleton instance
+export const permissionService = new PermissionService();

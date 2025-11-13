@@ -4,7 +4,7 @@ import { useGenerationStore } from "../store";
 import { MaterialPreset } from "../types";
 import { notify } from "../utils/notify";
 
-import { apiFetch } from "@/utils/api";
+import { api } from "@/lib/api-client";
 
 export function useMaterialPresets() {
   const {
@@ -40,13 +40,11 @@ export function useMaterialPresets() {
       const updatedPresets = [...materialPresets, ...newMaterials];
 
       // Save to JSON file
-      const response = await apiFetch("/api/material-presets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedPresets),
-      });
+      const { data, error } = await api.api["material-presets"].post(
+        updatedPresets as any,
+      );
 
-      if (response.ok) {
+      if (!error && data) {
         setMaterialPresets(updatedPresets);
         setCustomMaterials([]);
         notify.success("Custom materials saved successfully!");
@@ -73,13 +71,11 @@ export function useMaterialPresets() {
           preset.id === updatedPreset.id ? updatedPreset : preset,
         );
 
-        const response = await apiFetch("/api/material-presets", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedPresets),
-        });
+        const { data, error } = await api.api["material-presets"].post(
+          updatedPresets as any,
+        );
 
-        if (response.ok) {
+        if (!error && data) {
           setMaterialPresets(updatedPresets);
           setEditingPreset(null);
           notify.success("Material preset updated successfully!");
@@ -101,13 +97,11 @@ export function useMaterialPresets() {
           (preset) => preset.id !== presetId,
         );
 
-        const response = await apiFetch("/api/material-presets", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedPresets),
-        });
+        const { data, error } = await api.api["material-presets"].post(
+          updatedPresets as any,
+        );
 
-        if (response.ok) {
+        if (!error && data) {
           setMaterialPresets(updatedPresets);
           setSelectedMaterials(
             selectedMaterials.filter((id) => id !== presetId),

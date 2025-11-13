@@ -165,7 +165,7 @@ export const AssetMetadata = t.Object({
     ]),
   ),
   // Project Management
-  projectId: t.Optional(t.String()),
+  projectId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
 });
 
 export const AssetList = t.Array(AssetMetadata);
@@ -189,12 +189,24 @@ export const AssetResponse = t.Object({
 export const AssetListResponse = t.Array(AssetResponse);
 
 export const AssetUpdate = t.Object({
-  name: t.Optional(t.String()),
-  type: t.Optional(t.String()),
-  tier: t.Optional(t.Number()),
-  category: t.Optional(t.String()),
+  name: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+  type: t.Optional(
+    t.Union([
+      t.Literal("character"),
+      t.Literal("weapon"),
+      t.Literal("armor"),
+      t.Literal("item"),
+      t.Literal("environment"),
+      t.Literal("building"),
+      t.Literal("vehicle"),
+      t.Literal("creature"),
+      t.Literal("prop"),
+    ]),
+  ),
+  tier: t.Optional(t.Number({ minimum: 1, maximum: 5 })),
+  category: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
   isFavorite: t.Optional(t.Boolean()),
-  notes: t.Optional(t.String()),
+  notes: t.Optional(t.String({ maxLength: 5000 })),
   status: t.Optional(
     t.Union([
       t.Literal("draft"),
@@ -638,13 +650,13 @@ export const DialogueNodeResponse = t.Object({
 });
 
 export const GenerateDialogueRequest = t.Object({
-  npcName: t.Optional(t.String({ minLength: 1 })),
-  npcPersonality: t.Optional(t.String({ minLength: 1 })),
-  prompt: t.Optional(t.String()),
-  context: t.Optional(t.String()),
+  npcName: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
+  npcPersonality: t.Optional(t.String({ minLength: 1, maxLength: 500 })),
+  prompt: t.Optional(t.String({ minLength: 10, maxLength: 2000 })),
+  context: t.Optional(t.String({ maxLength: 5000 })),
   existingNodes: t.Optional(t.Array(DialogueNodeResponse)),
   quality: t.Optional(ModelQuality),
-  worldConfigId: t.Optional(t.String()),
+  worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
 });
 
 export const GenerateDialogueResponse = t.Object({
@@ -680,11 +692,27 @@ export const NPCDataResponse = t.Object({
 });
 
 export const GenerateNPCRequest = t.Object({
-  prompt: t.String({ minLength: 1 }),
-  archetype: t.Optional(t.String({ minLength: 1 })),
-  context: t.Optional(t.String()),
+  prompt: t.String({ minLength: 10, maxLength: 2000 }),
+  archetype: t.Optional(
+    t.Union([
+      t.Literal("warrior"),
+      t.Literal("mage"),
+      t.Literal("rogue"),
+      t.Literal("merchant"),
+      t.Literal("noble"),
+      t.Literal("peasant"),
+      t.Literal("guard"),
+      t.Literal("priest"),
+      t.Literal("scholar"),
+      t.Literal("artisan"),
+      t.Literal("monster"),
+      t.Literal("beast"),
+      t.Literal("custom"),
+    ]),
+  ),
+  context: t.Optional(t.String({ maxLength: 5000 })),
   quality: t.Optional(ModelQuality),
-  worldConfigId: t.Optional(t.String()),
+  worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
 });
 
 export const GenerateNPCResponse = t.Object({
@@ -728,13 +756,33 @@ export const QuestDataResponse = t.Object({
 });
 
 export const GenerateQuestRequest = t.Object({
-  prompt: t.Optional(t.String({ minLength: 1 })),
-  questType: t.Optional(t.String({ minLength: 1 })),
-  difficulty: t.Optional(t.String({ minLength: 1 })),
-  theme: t.Optional(t.String()),
-  context: t.Optional(t.String()),
+  prompt: t.Optional(t.String({ minLength: 10, maxLength: 2000 })),
+  questType: t.Optional(
+    t.Union([
+      t.Literal("combat"),
+      t.Literal("exploration"),
+      t.Literal("fetch"),
+      t.Literal("escort"),
+      t.Literal("puzzle"),
+      t.Literal("stealth"),
+      t.Literal("diplomatic"),
+      t.Literal("crafting"),
+      t.Literal("mystery"),
+      t.Literal("custom"),
+    ]),
+  ),
+  difficulty: t.Optional(
+    t.Union([
+      t.Literal("easy"),
+      t.Literal("medium"),
+      t.Literal("hard"),
+      t.Literal("expert"),
+    ]),
+  ),
+  theme: t.Optional(t.String({ maxLength: 200 })),
+  context: t.Optional(t.String({ maxLength: 5000 })),
   quality: t.Optional(ModelQuality),
-  worldConfigId: t.Optional(t.String()),
+  worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
 });
 
 export const GenerateQuestResponse = t.Object({
@@ -756,12 +804,26 @@ export const LoreDataResponse = t.Object({
 });
 
 export const GenerateLoreRequest = t.Object({
-  prompt: t.Optional(t.String({ minLength: 1 })),
-  category: t.Optional(t.String({ minLength: 1 })),
-  topic: t.Optional(t.String({ minLength: 1 })),
-  context: t.Optional(t.String()),
+  prompt: t.Optional(t.String({ minLength: 10, maxLength: 2000 })),
+  category: t.Optional(
+    t.Union([
+      t.Literal("history"),
+      t.Literal("mythology"),
+      t.Literal("religion"),
+      t.Literal("politics"),
+      t.Literal("geography"),
+      t.Literal("culture"),
+      t.Literal("magic"),
+      t.Literal("technology"),
+      t.Literal("creatures"),
+      t.Literal("legends"),
+      t.Literal("custom"),
+    ]),
+  ),
+  topic: t.Optional(t.String({ minLength: 1, maxLength: 200 })),
+  context: t.Optional(t.String({ maxLength: 5000 })),
   quality: t.Optional(ModelQuality),
-  worldConfigId: t.Optional(t.String()),
+  worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
 });
 
 export const GenerateLoreResponse = t.Object({

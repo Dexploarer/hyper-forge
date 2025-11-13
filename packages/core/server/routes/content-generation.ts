@@ -11,6 +11,10 @@ import { MediaStorageService } from "../services/MediaStorageService";
 import { RelationshipService } from "../services/RelationshipService";
 import * as Models from "../models";
 import { optionalAuth } from "../middleware/auth";
+import { NotFoundError, InternalServerError, ForbiddenError } from "../errors";
+import { createChildLogger } from "../utils/logger";
+
+const logger = createChildLogger("ContentGenerationRoutes");
 
 const contentGenService = new ContentGenerationService();
 const mediaStorageService = new MediaStorageService();
@@ -28,8 +32,10 @@ export const contentGenerationRoutes = new Elysia({
   .guard(
     {
       beforeHandle: ({ request }) => {
-        console.log(
-          `[ContentGeneration] ${request.method} ${new URL(request.url).pathname}`,
+        const url = new URL(request.url);
+        logger.debug(
+          { method: request.method, path: url.pathname },
+          "Content generation request",
         );
       },
     },
@@ -44,47 +50,45 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/generate-dialogue",
           async ({ body, user }) => {
-            try {
-              console.log(
-                `[ContentGeneration] Generating dialogue${body.npcName ? ` for NPC: ${body.npcName}` : ""}`,
-              );
-
-              const result = await contentGenService.generateDialogue({
+            logger.info(
+              {
                 npcName: body.npcName,
+                userId: user?.id,
+                quality: body.quality,
+              },
+              "Generating dialogue",
+            );
+
+            const result = await contentGenService.generateDialogue({
+              npcName: body.npcName,
+              npcPersonality: body.npcPersonality,
+              prompt: body.prompt,
+              context: body.context,
+              existingNodes: body.existingNodes,
+              quality: body.quality,
+              worldConfigId: body.worldConfigId,
+            });
+
+            // Save to database
+            const dialogue = await contentDatabaseService.createDialogue({
+              npcName: body.npcName || "Unknown",
+              context: body.context,
+              nodes: result.nodes,
+              generationParams: {
                 npcPersonality: body.npcPersonality,
                 prompt: body.prompt,
-                context: body.context,
-                existingNodes: body.existingNodes,
                 quality: body.quality,
                 worldConfigId: body.worldConfigId,
-              });
+              },
+              createdBy: user?.id,
+              walletAddress: user?.walletAddress || undefined,
+            });
 
-              // Save to database
-              const dialogue = await contentDatabaseService.createDialogue({
-                npcName: body.npcName || "Unknown",
-                context: body.context,
-                nodes: result.nodes,
-                generationParams: {
-                  npcPersonality: body.npcPersonality,
-                  prompt: body.prompt,
-                  quality: body.quality,
-                  worldConfigId: body.worldConfigId,
-                },
-                createdBy: user?.id,
-                walletAddress: user?.walletAddress || undefined,
-              });
-
-              console.log(
-                `[ContentGeneration] Successfully generated and saved dialogue`,
-              );
-              return { ...result, id: dialogue.id };
-            } catch (error) {
-              console.error(
-                `[ContentGeneration] Error generating dialogue:`,
-                error,
-              );
-              throw error;
-            }
+            logger.info(
+              { dialogueId: dialogue.id, npcName: body.npcName },
+              "Dialogue generated successfully",
+            );
+            return { ...result, id: dialogue.id };
           },
           {
             body: Models.GenerateDialogueRequest,
@@ -101,50 +105,46 @@ export const contentGenerationRoutes = new Elysia({
         // POST /api/content/generate-npc
         .post(
           "/generate-npc",
-          async ({ body, user, set }) => {
-            try {
-              console.log(
-                `[ContentGeneration] Generating NPC${body.archetype ? ` with archetype: ${body.archetype}` : ""}`,
-              );
+          async ({ body, user }) => {
+            logger.info(
+              {
+                archetype: body.archetype,
+                userId: user?.id,
+                quality: body.quality,
+              },
+              "Generating NPC",
+            );
 
-              const result = await contentGenService.generateNPC({
+            const result = await contentGenService.generateNPC({
+              prompt: body.prompt,
+              archetype: body.archetype,
+              context: body.context,
+              quality: body.quality,
+              worldConfigId: body.worldConfigId,
+            });
+
+            // Save to database
+            const npc = await contentDatabaseService.createNPC({
+              name: result.npc.name,
+              archetype: result.npc.archetype,
+              data: result.npc,
+              generationParams: {
                 prompt: body.prompt,
                 archetype: body.archetype,
                 context: body.context,
                 quality: body.quality,
                 worldConfigId: body.worldConfigId,
-              });
+              },
+              tags: [], // Could extract from archetype or personality
+              createdBy: user?.id,
+              walletAddress: user?.walletAddress || undefined,
+            });
 
-              // Save to database
-              const npc = await contentDatabaseService.createNPC({
-                name: result.npc.name,
-                archetype: result.npc.archetype,
-                data: result.npc,
-                generationParams: {
-                  prompt: body.prompt,
-                  archetype: body.archetype,
-                  context: body.context,
-                  quality: body.quality,
-                  worldConfigId: body.worldConfigId,
-                },
-                tags: [], // Could extract from archetype or personality
-                createdBy: user?.id,
-                walletAddress: user?.walletAddress || undefined,
-              });
-
-              console.log(
-                `[ContentGeneration] Successfully generated and saved NPC`,
-              );
-              return { ...result, id: npc.id };
-            } catch (error) {
-              console.error("[ContentGeneration] Error generating NPC:", error);
-              set.status = 500;
-              throw new Error(
-                error instanceof Error
-                  ? error.message
-                  : "An unexpected error occurred while generating the NPC",
-              );
-            }
+            logger.info(
+              { npcId: npc.id, npcName: result.npc.name },
+              "NPC generated successfully",
+            );
+            return { ...result, id: npc.id };
           },
           {
             body: Models.GenerateNPCRequest,
@@ -162,8 +162,14 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/generate-quest",
           async ({ body, user }) => {
-            console.log(
-              `[ContentGeneration] Generating${body.difficulty ? ` ${body.difficulty}` : ""}${body.questType ? ` ${body.questType}` : ""} quest`,
+            logger.info(
+              {
+                questType: body.questType,
+                difficulty: body.difficulty,
+                userId: user?.id,
+                quality: body.quality,
+              },
+              "Generating quest",
             );
 
             const result = await contentGenService.generateQuest({
@@ -194,8 +200,9 @@ export const contentGenerationRoutes = new Elysia({
               walletAddress: user?.walletAddress || undefined,
             });
 
-            console.log(
-              `[ContentGeneration] Successfully generated and saved Quest`,
+            logger.info(
+              { questId: quest.id, title: result.quest.title },
+              "Quest generated successfully",
             );
             return { ...result, id: quest.id };
           },
@@ -215,8 +222,14 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/generate-lore",
           async ({ body, user }) => {
-            console.log(
-              `[ContentGeneration] Generating lore${body.category ? `: ${body.category}` : ""}${body.topic ? ` - ${body.topic}` : ""}`,
+            logger.info(
+              {
+                category: body.category,
+                topic: body.topic,
+                userId: user?.id,
+                quality: body.quality,
+              },
+              "Generating lore",
             );
 
             const result = await contentGenService.generateLore({
@@ -246,8 +259,9 @@ export const contentGenerationRoutes = new Elysia({
               walletAddress: user?.walletAddress || undefined,
             });
 
-            console.log(
-              `[ContentGeneration] Successfully generated and saved Lore`,
+            logger.info(
+              { loreId: lore.id, title: result.lore.title },
+              "Lore generated successfully",
             );
             return { ...result, id: lore.id };
           },
@@ -314,10 +328,10 @@ export const contentGenerationRoutes = new Elysia({
           },
           {
             body: t.Object({
-              npcName: t.String(),
-              archetype: t.String(),
-              appearance: t.String(),
-              personality: t.String(),
+              npcName: t.String({ minLength: 1, maxLength: 100 }),
+              archetype: t.String({ minLength: 1, maxLength: 50 }),
+              appearance: t.String({ minLength: 10, maxLength: 500 }),
+              personality: t.String({ minLength: 10, maxLength: 500 }),
             }),
             response: t.Object({
               success: t.Boolean(),
@@ -384,10 +398,15 @@ export const contentGenerationRoutes = new Elysia({
           },
           {
             body: t.Object({
-              questTitle: t.String(),
-              description: t.String(),
-              questType: t.String(),
-              difficulty: t.String(),
+              questTitle: t.String({ minLength: 1, maxLength: 200 }),
+              description: t.String({ minLength: 10, maxLength: 1000 }),
+              questType: t.String({ minLength: 1, maxLength: 50 }),
+              difficulty: t.Union([
+                t.Literal("easy"),
+                t.Literal("medium"),
+                t.Literal("hard"),
+                t.Literal("expert"),
+              ]),
             }),
             response: t.Object({
               success: t.Boolean(),
@@ -436,7 +455,7 @@ export const contentGenerationRoutes = new Elysia({
           async ({ params }) => {
             const npc = await contentDatabaseService.getNPC(params.id);
             if (!npc) {
-              throw new Error("NPC not found");
+              throw new NotFoundError("NPC", params.id);
             }
             return { success: true, npc };
           },
@@ -458,7 +477,7 @@ export const contentGenerationRoutes = new Elysia({
           async ({ params, body, user }) => {
             const existing = await contentDatabaseService.getNPC(params.id);
             if (!existing) {
-              throw new Error("NPC not found");
+              throw new NotFoundError("NPC", params.id);
             }
 
             // Update the NPC
@@ -479,11 +498,15 @@ export const contentGenerationRoutes = new Elysia({
               id: t.String(),
             }),
             body: t.Object({
-              name: t.String(),
-              archetype: t.String(),
+              name: t.String({ minLength: 1, maxLength: 100 }),
+              archetype: t.String({ minLength: 1, maxLength: 50 }),
               data: t.Any(),
               generationParams: t.Optional(t.Any()),
-              tags: t.Optional(t.Array(t.String())),
+              tags: t.Optional(
+                t.Array(t.String({ minLength: 1, maxLength: 50 }), {
+                  maxItems: 20,
+                }),
+              ),
               createVersion: t.Optional(t.Boolean()),
             }),
             detail: {
@@ -550,7 +573,7 @@ export const contentGenerationRoutes = new Elysia({
           async ({ params }) => {
             const quest = await contentDatabaseService.getQuest(params.id);
             if (!quest) {
-              throw new Error("Quest not found");
+              throw new NotFoundError("Quest", params.id);
             }
             return { success: true, quest };
           },
@@ -562,6 +585,81 @@ export const contentGenerationRoutes = new Elysia({
               tags: ["Content Retrieval"],
               summary: "Get Quest by ID",
               description: "Retrieve a single quest by its database ID",
+            },
+          },
+        )
+
+        // PUT /api/content/quests/:id - Update Quest
+        .put(
+          "/quests/:id",
+          async ({ params, body, user }) => {
+            const existing = await contentDatabaseService.getQuest(params.id);
+            if (!existing) {
+              throw new NotFoundError("Quest", params.id);
+            }
+
+            // Permission check
+            if (existing.createdBy !== user?.id && user?.role !== "admin") {
+              throw new ForbiddenError(
+                "You do not have permission to edit this quest",
+              );
+            }
+
+            // Update the Quest
+            const updated = await contentDatabaseService.updateQuest(
+              params.id,
+              {
+                title: body.title,
+                questType: body.questType,
+                difficulty: body.difficulty,
+                data: body.data,
+                generationParams: body.generationParams,
+                tags: body.tags,
+                version: (existing.version || 1) + 1,
+                parentId: body.createVersion ? existing.id : existing.parentId,
+              },
+            );
+
+            return { success: true, quest: updated };
+          },
+          {
+            params: t.Object({
+              id: t.String(),
+            }),
+            body: t.Object({
+              title: t.String({ minLength: 1, maxLength: 200 }),
+              questType: t.Union([
+                t.Literal("combat"),
+                t.Literal("exploration"),
+                t.Literal("fetch"),
+                t.Literal("escort"),
+                t.Literal("puzzle"),
+                t.Literal("stealth"),
+                t.Literal("diplomatic"),
+                t.Literal("crafting"),
+                t.Literal("mystery"),
+                t.Literal("custom"),
+              ]),
+              difficulty: t.Union([
+                t.Literal("easy"),
+                t.Literal("medium"),
+                t.Literal("hard"),
+                t.Literal("expert"),
+              ]),
+              data: t.Any(),
+              generationParams: t.Optional(t.Any()),
+              tags: t.Optional(
+                t.Array(t.String({ minLength: 1, maxLength: 50 }), {
+                  maxItems: 20,
+                }),
+              ),
+              createVersion: t.Optional(t.Boolean()),
+            }),
+            detail: {
+              tags: ["Content Management"],
+              summary: "Update Quest",
+              description:
+                "Update a quest with optional versioning. Set createVersion=true to create a new version linked to the original.",
             },
           },
         )
@@ -623,7 +721,7 @@ export const contentGenerationRoutes = new Elysia({
               params.id,
             );
             if (!dialogue) {
-              throw new Error("Dialogue not found");
+              throw new NotFoundError("Dialogue", params.id);
             }
             return { success: true, dialogue };
           },
@@ -635,6 +733,59 @@ export const contentGenerationRoutes = new Elysia({
               tags: ["Content Retrieval"],
               summary: "Get Dialogue by ID",
               description: "Retrieve a single dialogue by its database ID",
+            },
+          },
+        )
+
+        // PUT /api/content/dialogues/:id - Update Dialogue
+        .put(
+          "/dialogues/:id",
+          async ({ params, body, user }) => {
+            const existing = await contentDatabaseService.getDialogue(
+              params.id,
+            );
+            if (!existing) {
+              throw new NotFoundError("Dialogue", params.id);
+            }
+
+            // Permission check
+            if (existing.createdBy !== user?.id && user?.role !== "admin") {
+              throw new ForbiddenError(
+                "You do not have permission to edit this dialogue",
+              );
+            }
+
+            // Update the Dialogue
+            const updated = await contentDatabaseService.updateDialogue(
+              params.id,
+              {
+                npcName: body.npcName,
+                context: body.context,
+                nodes: body.nodes,
+                generationParams: body.generationParams,
+                version: (existing.version || 1) + 1,
+                parentId: body.createVersion ? existing.id : existing.parentId,
+              },
+            );
+
+            return { success: true, dialogue: updated };
+          },
+          {
+            params: t.Object({
+              id: t.String(),
+            }),
+            body: t.Object({
+              npcName: t.String({ minLength: 1, maxLength: 100 }),
+              context: t.Optional(t.String({ maxLength: 5000 })),
+              nodes: t.Any(),
+              generationParams: t.Optional(t.Any()),
+              createVersion: t.Optional(t.Boolean()),
+            }),
+            detail: {
+              tags: ["Content Management"],
+              summary: "Update Dialogue",
+              description:
+                "Update a dialogue with optional versioning. Set createVersion=true to create a new version linked to the original.",
             },
           },
         )
@@ -691,7 +842,7 @@ export const contentGenerationRoutes = new Elysia({
           async ({ params }) => {
             const lore = await contentDatabaseService.getLore(params.id);
             if (!lore) {
-              throw new Error("Lore not found");
+              throw new NotFoundError("Lore", params.id);
             }
             return { success: true, lore };
           },
@@ -703,6 +854,74 @@ export const contentGenerationRoutes = new Elysia({
               tags: ["Content Retrieval"],
               summary: "Get Lore by ID",
               description: "Retrieve a single lore entry by its database ID",
+            },
+          },
+        )
+
+        // PUT /api/content/lores/:id - Update Lore
+        .put(
+          "/lores/:id",
+          async ({ params, body, user }) => {
+            const existing = await contentDatabaseService.getLore(params.id);
+            if (!existing) {
+              throw new NotFoundError("Lore", params.id);
+            }
+
+            // Permission check
+            if (existing.createdBy !== user?.id && user?.role !== "admin") {
+              throw new ForbiddenError(
+                "You do not have permission to edit this lore",
+              );
+            }
+
+            // Update the Lore
+            const updated = await contentDatabaseService.updateLore(params.id, {
+              title: body.title,
+              category: body.category,
+              summary: body.summary,
+              data: body.data,
+              generationParams: body.generationParams,
+              tags: body.tags,
+              version: (existing.version || 1) + 1,
+              parentId: body.createVersion ? existing.id : existing.parentId,
+            });
+
+            return { success: true, lore: updated };
+          },
+          {
+            params: t.Object({
+              id: t.String(),
+            }),
+            body: t.Object({
+              title: t.String({ minLength: 1, maxLength: 200 }),
+              category: t.Union([
+                t.Literal("history"),
+                t.Literal("mythology"),
+                t.Literal("religion"),
+                t.Literal("politics"),
+                t.Literal("geography"),
+                t.Literal("culture"),
+                t.Literal("magic"),
+                t.Literal("technology"),
+                t.Literal("creatures"),
+                t.Literal("legends"),
+                t.Literal("custom"),
+              ]),
+              summary: t.Optional(t.String({ maxLength: 500 })),
+              data: t.Any(),
+              generationParams: t.Optional(t.Any()),
+              tags: t.Optional(
+                t.Array(t.String({ minLength: 1, maxLength: 50 }), {
+                  maxItems: 20,
+                }),
+              ),
+              createVersion: t.Optional(t.Boolean()),
+            }),
+            detail: {
+              tags: ["Content Management"],
+              summary: "Update Lore",
+              description:
+                "Update a lore entry with optional versioning. Set createVersion=true to create a new version linked to the original.",
             },
           },
         )
@@ -747,7 +966,12 @@ export const contentGenerationRoutes = new Elysia({
 
             // Save media file and create database record
             const result = await mediaStorageService.saveMedia({
-              type: mediaType as "portrait" | "banner" | "voice" | "music" | "sound_effect",
+              type: mediaType as
+                | "portrait"
+                | "banner"
+                | "voice"
+                | "music"
+                | "sound_effect",
               entityType: body.entityType as
                 | "npc"
                 | "quest"
@@ -790,13 +1014,22 @@ export const contentGenerationRoutes = new Elysia({
           },
           {
             body: t.Object({
-              entityType: t.String(),
-              entityId: t.String(),
-              imageData: t.String(), // base64 encoded
-              type: t.Optional(t.String()), // "portrait" | "banner" | etc.
-              prompt: t.Optional(t.String()),
-              model: t.Optional(t.String()),
-              createdBy: t.Optional(t.String()),
+              entityType: t.Union([
+                t.Literal("npc"),
+                t.Literal("quest"),
+                t.Literal("lore"),
+                t.Literal("location"),
+                t.Literal("world"),
+                t.Literal("dialogue"),
+              ]),
+              entityId: t.String({ minLength: 1, maxLength: 255 }),
+              imageData: t.String({ minLength: 100 }), // base64 encoded - minimum realistic size
+              type: t.Optional(
+                t.Union([t.Literal("portrait"), t.Literal("banner")]),
+              ), // "portrait" | "banner" | etc.
+              prompt: t.Optional(t.String({ maxLength: 2000 })),
+              model: t.Optional(t.String({ maxLength: 100 })),
+              createdBy: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
             }),
             detail: {
               tags: ["Media Assets"],
@@ -866,14 +1099,21 @@ export const contentGenerationRoutes = new Elysia({
           },
           {
             body: t.Object({
-              entityType: t.String(),
-              entityId: t.String(),
-              audioData: t.String(), // base64 encoded
-              voiceId: t.Optional(t.String()),
+              entityType: t.Union([
+                t.Literal("npc"),
+                t.Literal("quest"),
+                t.Literal("lore"),
+                t.Literal("location"),
+                t.Literal("world"),
+                t.Literal("dialogue"),
+              ]),
+              entityId: t.String({ minLength: 1, maxLength: 255 }),
+              audioData: t.String({ minLength: 100 }), // base64 encoded - minimum realistic size
+              voiceId: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
               voiceSettings: t.Optional(t.Any()),
-              text: t.Optional(t.String()),
-              duration: t.Optional(t.Number()),
-              createdBy: t.Optional(t.String()),
+              text: t.Optional(t.String({ maxLength: 5000 })),
+              duration: t.Optional(t.Number({ minimum: 0, maximum: 600 })), // Max 10 minutes
+              createdBy: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
             }),
             detail: {
               tags: ["Media Assets"],
@@ -983,13 +1223,29 @@ export const contentGenerationRoutes = new Elysia({
           },
           {
             body: t.Object({
-              npcId: t.String(),
-              npcName: t.String(),
-              archetype: t.String(),
-              personality: t.Optional(t.String()),
-              questType: t.String(),
-              difficulty: t.String(),
-              theme: t.Optional(t.String()),
+              npcId: t.String({ minLength: 1, maxLength: 255 }),
+              npcName: t.String({ minLength: 1, maxLength: 100 }),
+              archetype: t.String({ minLength: 1, maxLength: 50 }),
+              personality: t.Optional(t.String({ maxLength: 500 })),
+              questType: t.Union([
+                t.Literal("combat"),
+                t.Literal("exploration"),
+                t.Literal("fetch"),
+                t.Literal("escort"),
+                t.Literal("puzzle"),
+                t.Literal("stealth"),
+                t.Literal("diplomatic"),
+                t.Literal("crafting"),
+                t.Literal("mystery"),
+                t.Literal("custom"),
+              ]),
+              difficulty: t.Union([
+                t.Literal("easy"),
+                t.Literal("medium"),
+                t.Literal("hard"),
+                t.Literal("expert"),
+              ]),
+              theme: t.Optional(t.String({ maxLength: 200 })),
               quality: t.Optional(
                 t.Union([
                   t.Literal("quality"),
@@ -997,7 +1253,7 @@ export const contentGenerationRoutes = new Elysia({
                   t.Literal("balanced"),
                 ]),
               ),
-              createdBy: t.Optional(t.String()),
+              createdBy: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
             }),
             detail: {
               tags: ["Content Generation"],
@@ -1076,12 +1332,24 @@ export const contentGenerationRoutes = new Elysia({
           },
           {
             body: t.Object({
-              npcId: t.String(),
-              npcName: t.String(),
-              archetype: t.String(),
-              category: t.String(),
-              topic: t.String(),
-              additionalContext: t.Optional(t.String()),
+              npcId: t.String({ minLength: 1, maxLength: 255 }),
+              npcName: t.String({ minLength: 1, maxLength: 100 }),
+              archetype: t.String({ minLength: 1, maxLength: 50 }),
+              category: t.Union([
+                t.Literal("history"),
+                t.Literal("mythology"),
+                t.Literal("religion"),
+                t.Literal("politics"),
+                t.Literal("geography"),
+                t.Literal("culture"),
+                t.Literal("magic"),
+                t.Literal("technology"),
+                t.Literal("creatures"),
+                t.Literal("legends"),
+                t.Literal("custom"),
+              ]),
+              topic: t.String({ minLength: 1, maxLength: 200 }),
+              additionalContext: t.Optional(t.String({ maxLength: 5000 })),
               quality: t.Optional(
                 t.Union([
                   t.Literal("quality"),
@@ -1089,7 +1357,7 @@ export const contentGenerationRoutes = new Elysia({
                   t.Literal("balanced"),
                 ]),
               ),
-              createdBy: t.Optional(t.String()),
+              createdBy: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
             }),
             detail: {
               tags: ["Content Generation"],

@@ -1,6 +1,6 @@
 import {
   Settings as SettingsIcon,
-  User,
+  User as UserIcon,
   Palette,
   Sparkles,
   FileText,
@@ -110,6 +110,10 @@ interface UserSettings {
   ui?: {
     showTooltips?: boolean;
     compactMode?: boolean;
+  };
+  privacy?: {
+    defaultAssetPublic?: boolean;
+    defaultProjectPublic?: boolean;
   };
 }
 
@@ -285,7 +289,7 @@ export const SettingsPage: React.FC = () => {
   };
 
   const tabs = [
-    { id: "profile" as SettingsTab, label: "Profile", icon: User },
+    { id: "profile" as SettingsTab, label: "Profile", icon: UserIcon },
     { id: "preferences" as SettingsTab, label: "Preferences", icon: Palette },
     { id: "generation" as SettingsTab, label: "Generation", icon: Sparkles },
     { id: "prompts" as SettingsTab, label: "System Prompts", icon: FileText },

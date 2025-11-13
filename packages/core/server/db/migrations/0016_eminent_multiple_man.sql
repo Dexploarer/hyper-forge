@@ -1,0 +1,1 @@
+CREATE INDEX "idx_assets_file_path" ON "assets" USING btree ("file_path");

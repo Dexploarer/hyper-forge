@@ -42,7 +42,8 @@ export class MediaStorageService {
 
   /**
    * Save media file to filesystem and create database record
-   * Uses atomic file writes with rollback on database failure
+   * Uses transaction to ensure atomicity between file and database operations
+   * If database insert fails, file is automatically rolled back
    */
   async saveMedia(params: SaveMediaParams): Promise<{
     id: string;
@@ -97,32 +98,34 @@ export class MediaStorageService {
       const stats = await fs.promises.stat(filePath);
       const fileSize = stats.size;
 
-      // Create database record
+      // Create database record in transaction
       let mediaAsset;
       try {
-        [mediaAsset] = await db
-          .insert(mediaAssets)
-          .values({
-            type,
-            entityType,
-            entityId,
-            fileUrl,
-            fileName,
-            metadata: {
-              ...metadata,
-              fileSize,
-            },
-            createdBy,
-          } as NewMediaAsset)
-          .returning();
+        mediaAsset = await db.transaction(async (tx) => {
+          const [asset] = await tx
+            .insert(mediaAssets)
+            .values({
+              type,
+              entityType,
+              entityId,
+              fileUrl,
+              fileName,
+              metadata: {
+                ...metadata,
+                fileSize,
+              },
+              createdBy,
+            } as NewMediaAsset)
+            .returning();
 
-        console.log(
-          `[MediaStorage] Created media asset record: ${mediaAsset.id}`,
-        );
+          console.log(`[MediaStorage] Created media asset record: ${asset.id}`);
+
+          return asset;
+        });
       } catch (dbError) {
-        // Rollback: Delete the file since database insert failed
+        // Rollback: Delete the file since database transaction failed
         console.error(
-          `[MediaStorage] Database insert failed, rolling back file: ${filePath}`,
+          `[MediaStorage] Database transaction failed, rolling back file: ${filePath}`,
         );
         try {
           await fs.promises.unlink(filePath);

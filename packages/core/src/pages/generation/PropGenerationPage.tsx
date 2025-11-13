@@ -314,7 +314,7 @@ export function PropGenerationPage({
       assetType: actualCategory || "item",
       description: `${description}. Item category: ${actualCategory}. Style: ${actualStyle}. Size: ${itemSize}.`,
       generationType: "item",
-      gameStyle: "generic",
+      gameStyle: "custom",
       customStyle: undefined,
       customGamePrompt: "low-poly 3D game prop",
       customAssetTypePrompt: "",
@@ -326,7 +326,7 @@ export function PropGenerationPage({
       selectedMaterials,
       materialPresets,
       materialPromptOverrides,
-      materialPromptTemplates: {},
+      materialPromptTemplates: undefined,
       gameStyleConfig: undefined,
       quality,
       user: { userId: user.id },
@@ -596,15 +596,16 @@ export function PropGenerationPage({
                   </label>
                   <select
                     value={quality}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Map preview to standard since store doesn't support preview
                       setQuality(
-                        e.target.value as
-                          | "preview"
+                        (value === "preview" ? "standard" : value) as
                           | "standard"
                           | "high"
                           | "ultra",
-                      )
-                    }
+                      );
+                    }}
                     className="w-full px-4 py-2 bg-bg-secondary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="preview">Preview (Fast)</option>
@@ -624,7 +625,7 @@ export function PropGenerationPage({
                     Material Variants
                   </h3>
                   <MaterialVariantsCard
-                    gameStyle="generic"
+                    gameStyle="custom"
                     isLoadingMaterials={isLoadingMaterials}
                     materialPresets={materialPresets}
                     selectedMaterials={selectedMaterials}

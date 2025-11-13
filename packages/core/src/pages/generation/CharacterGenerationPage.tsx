@@ -226,7 +226,7 @@ export function CharacterGenerationPage({
       selectedMaterials: [],
       materialPresets: [],
       materialPromptOverrides: {},
-      materialPromptTemplates: {},
+      materialPromptTemplates: undefined,
       gameStyleConfig: undefined,
       quality,
       user: { userId: user.id },
@@ -508,15 +508,16 @@ export function CharacterGenerationPage({
                   </label>
                   <select
                     value={quality}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Map preview to standard since store doesn't support preview
                       setQuality(
-                        e.target.value as
-                          | "preview"
+                        (value === "preview" ? "standard" : value) as
                           | "standard"
                           | "high"
                           | "ultra",
-                      )
-                    }
+                      );
+                    }}
                     className="w-full px-4 py-2 bg-bg-secondary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="preview">Preview (Fast)</option>

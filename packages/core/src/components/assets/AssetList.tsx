@@ -1599,22 +1599,7 @@ const AssetList: React.FC<AssetListProps> = ({ assets, onAssetDelete }) => {
 
       {/* Bulk Actions Bar */}
       {selectionMode && selectedAssetIds.size > 0 && (
-        <BulkActionsBar
-          selectedCount={selectedAssetIds.size}
-          onDelete={() => {
-            showNotification(
-              `Deleting ${selectedAssetIds.size} assets...`,
-              "info",
-            );
-          }}
-          onStatusChange={() => {
-            showNotification("Bulk status change coming soon!", "info");
-          }}
-          onFavorite={() => {
-            showNotification("Bulk favorite coming soon!", "info");
-          }}
-          onClearSelection={clearSelection}
-        />
+        <BulkActionsBar assets={assets} />
       )}
 
       {/* Asset Details Panel */}

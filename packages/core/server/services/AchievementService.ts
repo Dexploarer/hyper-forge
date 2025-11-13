@@ -199,6 +199,7 @@ export class AchievementService {
   /**
    * Award an achievement to a user
    * Returns true if newly earned, false if already earned
+   * Uses transaction to ensure achievement is awarded atomically
    */
   async awardAchievement(
     userId: string,
@@ -217,7 +218,7 @@ export class AchievementService {
         throw new Error(`Achievement is not active: ${achievementCode}`);
       }
 
-      // Check if user already has this achievement
+      // Check if user already has this achievement (outside transaction for performance)
       const existing = await db.query.userAchievements.findFirst({
         where: and(
           eq(userAchievements.userId, userId),
@@ -233,20 +234,24 @@ export class AchievementService {
       // Determine progress value
       const finalProgress = progress ?? achievement.maxProgress ?? 1;
 
-      // Award achievement
-      const [newUserAchievement] = await db
-        .insert(userAchievements)
-        .values({
-          userId,
-          achievementId: achievement.id,
-          progress: finalProgress,
-          metadata: metadata || {},
-        })
-        .returning();
+      // Award achievement in transaction
+      const newUserAchievement = await db.transaction(async (tx) => {
+        const [awarded] = await tx
+          .insert(userAchievements)
+          .values({
+            userId,
+            achievementId: achievement.id,
+            progress: finalProgress,
+            metadata: metadata || {},
+          })
+          .returning();
 
-      console.log(
-        `[AchievementService] Awarded achievement ${achievementCode} to user ${userId}`,
-      );
+        console.log(
+          `[AchievementService] Awarded achievement ${achievementCode} to user ${userId}`,
+        );
+
+        return awarded;
+      });
 
       return { earned: true, userAchievement: newUserAchievement };
     } catch (error) {

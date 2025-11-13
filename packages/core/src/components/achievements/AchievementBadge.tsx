@@ -49,9 +49,11 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   showProgress = false,
   className,
 }) => {
-  const IconComponent =
-    ICON_MAP[achievement.achievement.icon || "award"] || Award;
-  const rarityColor = RARITY_COLORS[achievement.achievement.rarity] || RARITY_COLORS.common;
+  const IconComponent = (ICON_MAP[achievement.achievement.icon || "award"] ||
+    Award) as React.ComponentType<{ className?: string }>;
+  const rarityColor =
+    (RARITY_COLORS as Record<string, string>)[achievement.achievement.rarity] ||
+    RARITY_COLORS.common;
   const sizeClass = SIZE_CLASSES[size];
   const isEarned = achievement.isEarned;
   const progress = achievement.maxProgress
@@ -115,4 +117,3 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
     </div>
   );
 };
-

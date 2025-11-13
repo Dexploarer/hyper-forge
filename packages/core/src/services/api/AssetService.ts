@@ -5,7 +5,7 @@
 
 import { MaterialPreset, AssetMetadata } from "../../types";
 
-import { apiFetch } from "@/utils/api";
+import { api } from "@/lib/api-client";
 
 export type { MaterialPreset };
 
@@ -54,48 +54,47 @@ export interface RetextureResponse {
 }
 
 class AssetServiceClass {
-  private baseUrl = "/api";
-
   async listAssets(): Promise<Asset[]> {
-    const response = await apiFetch(`${this.baseUrl}/assets?t=${Date.now()}`, {
+    const { data, error } = await api.api.assets.get({
+      query: { t: Date.now().toString() },
       headers: {
         "Cache-Control": "no-cache",
         Pragma: "no-cache",
       },
-      timeoutMs: 15000,
     });
-    if (!response.ok) {
+
+    if (error) {
+      console.error("Failed to fetch assets:", error);
       throw new Error("Failed to fetch assets");
     }
-    return response.json();
+
+    return data as Asset[];
   }
 
   async getMaterialPresets(): Promise<MaterialPreset[]> {
-    const response = await apiFetch(`${this.baseUrl}/material-presets`, {
-      timeoutMs: 10000,
-    });
-    if (!response.ok) {
+    const { data, error } = await api.api["material-presets"].get();
+
+    if (error) {
+      console.error("Failed to fetch material presets:", error);
       throw new Error("Failed to fetch material presets");
     }
-    return response.json();
+
+    return data as MaterialPreset[];
   }
 
   async retexture(request: RetextureRequest): Promise<RetextureResponse> {
-    const response = await apiFetch(`${this.baseUrl}/retexture`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(request),
-      timeoutMs: 30000,
-    });
+    const { data, error } = await api.api.retexture.post(request as any);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || "Retexturing failed");
+    if (error) {
+      console.error("Retexturing failed:", error);
+      throw new Error(
+        typeof error === "object" && error !== null && "message" in error
+          ? (error.message as string)
+          : "Retexturing failed",
+      );
     }
 
-    return response.json();
+    return data as RetextureResponse;
   }
 
   getModelUrl(assetId: string): string {
@@ -180,18 +179,20 @@ class AssetServiceClass {
     formData.append("file", blob, filename);
     formData.append("assetId", assetId);
 
-    const response = await apiFetch(`${this.baseUrl}/assets/upload-vrm`, {
-      method: "POST",
-      body: formData,
-      timeoutMs: 30000,
-    });
+    const { data, error } = await api.api.assets["upload-vrm"].post(
+      formData as any,
+    );
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || "VRM upload failed");
+    if (error) {
+      console.error("VRM upload failed:", error);
+      throw new Error(
+        typeof error === "object" && error !== null && "message" in error
+          ? (error.message as string)
+          : "VRM upload failed",
+      );
     }
 
-    return response.json();
+    return data as { success: boolean; url: string };
   }
 
   /**
@@ -225,24 +226,26 @@ class AssetServiceClass {
     failed: number;
     errors?: Array<{ assetId: string; error: string }>;
   }> {
-    const response = await apiFetch(`${this.baseUrl}/assets/bulk-update`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        assetIds,
-        updates,
-      }),
-      timeoutMs: 30000,
-    });
+    const { data, error } = await api.api.assets["bulk-update"].post({
+      assetIds,
+      updates,
+    } as any);
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error?.message || "Bulk update failed");
+    if (error) {
+      console.error("Bulk update failed:", error);
+      throw new Error(
+        typeof error === "object" && error !== null && "message" in error
+          ? (error.message as string)
+          : "Bulk update failed",
+      );
     }
 
-    return response.json();
+    return data as {
+      success: boolean;
+      updated: number;
+      failed: number;
+      errors?: Array<{ assetId: string; error: string }>;
+    };
   }
 }
 

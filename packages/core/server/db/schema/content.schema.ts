@@ -89,6 +89,15 @@ export const npcs = pgTable(
     projectIdIdx: index("idx_npcs_project_id").on(table.projectId),
     isPublicIdx: index("idx_npcs_is_public").on(table.isPublic),
     viewCountIdx: index("idx_npcs_view_count").on(table.viewCount),
+    // Composite indexes for query optimization
+    createdByDateIdx: index("idx_npcs_created_by_date").on(
+      table.createdBy,
+      table.createdAt.desc(),
+    ),
+    archetypeNameIdx: index("idx_npcs_archetype_name").on(
+      table.archetype,
+      table.name,
+    ),
   }),
 );
 
@@ -167,6 +176,15 @@ export const quests = pgTable(
     projectIdIdx: index("idx_quests_project_id").on(table.projectId),
     isPublicIdx: index("idx_quests_is_public").on(table.isPublic),
     viewCountIdx: index("idx_quests_view_count").on(table.viewCount),
+    // Composite indexes for query optimization
+    createdByDateIdx: index("idx_quests_created_by_date").on(
+      table.createdBy,
+      table.createdAt.desc(),
+    ),
+    difficultyTypeIdx: index("idx_quests_difficulty_type").on(
+      table.difficulty,
+      table.questType,
+    ),
   }),
 );
 
@@ -238,6 +256,11 @@ export const dialogues = pgTable(
     projectIdIdx: index("idx_dialogues_project_id").on(table.projectId),
     isPublicIdx: index("idx_dialogues_is_public").on(table.isPublic),
     viewCountIdx: index("idx_dialogues_view_count").on(table.viewCount),
+    // Composite indexes for query optimization
+    createdByDateIdx: index("idx_dialogues_created_by_date").on(
+      table.createdBy,
+      table.createdAt.desc(),
+    ),
   }),
 );
 
@@ -315,6 +338,11 @@ export const lores = pgTable(
     projectIdIdx: index("idx_lores_project_id").on(table.projectId),
     isPublicIdx: index("idx_lores_is_public").on(table.isPublic),
     viewCountIdx: index("idx_lores_view_count").on(table.viewCount),
+    // Composite indexes for query optimization
+    createdByDateIdx: index("idx_lores_created_by_date").on(
+      table.createdBy,
+      table.createdAt.desc(),
+    ),
   }),
 );
 
@@ -388,6 +416,11 @@ export const worlds = pgTable(
     projectIdIdx: index("idx_worlds_project_id").on(table.projectId),
     isPublicIdx: index("idx_worlds_is_public").on(table.isPublic),
     viewCountIdx: index("idx_worlds_view_count").on(table.viewCount),
+    // Composite indexes for query optimization
+    createdByDateIdx: index("idx_worlds_created_by_date").on(
+      table.createdBy,
+      table.createdAt.desc(),
+    ),
   }),
 );
 
@@ -463,6 +496,11 @@ export const locations = pgTable(
     projectIdIdx: index("idx_locations_project_id").on(table.projectId),
     isPublicIdx: index("idx_locations_is_public").on(table.isPublic),
     viewCountIdx: index("idx_locations_view_count").on(table.viewCount),
+    // Composite indexes for query optimization
+    worldIdTypeIdx: index("idx_locations_world_type").on(
+      table.worldId,
+      table.type,
+    ),
   }),
 );
 
@@ -578,6 +616,11 @@ export const musicTracks = pgTable(
     projectIdIdx: index("idx_music_project_id").on(table.projectId),
     isPublicIdx: index("idx_music_is_public").on(table.isPublic),
     viewCountIdx: index("idx_music_view_count").on(table.viewCount),
+    // Composite indexes for query optimization
+    moodPublicIdx: index("idx_music_mood_public").on(
+      table.mood,
+      table.isPublic,
+    ),
   }),
 );
 

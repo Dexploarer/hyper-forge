@@ -1084,7 +1084,7 @@ export const AdminDashboardPage: React.FC = () => {
                             {log.user ? (
                               <button
                                 onClick={() =>
-                                  navigateToUserProfile(log.user.id)
+                                  navigateToUserProfile(log.user!.id)
                                 }
                                 className="text-text-primary hover:text-primary transition-colors text-left font-medium"
                               >

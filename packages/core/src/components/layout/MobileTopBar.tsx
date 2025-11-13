@@ -14,6 +14,7 @@ const VIEW_TITLES: Record<NavigationView, string> = {
   // Core
   [NAVIGATION_VIEWS.DASHBOARD]: "Dashboard",
   [NAVIGATION_VIEWS.ASSETS]: "Assets",
+  [NAVIGATION_VIEWS.PROJECTS]: "Projects",
   [NAVIGATION_VIEWS.CONTENT_LIBRARY]: "Library",
   // 3D Generation
   [NAVIGATION_VIEWS.GENERATION_CHARACTER]: "Characters",
@@ -38,7 +39,10 @@ const VIEW_TITLES: Record<NavigationView, string> = {
   // System
   [NAVIGATION_VIEWS.SETTINGS]: "Settings",
   [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin",
+  // Public profiles
+  [NAVIGATION_VIEWS.PUBLIC_PROFILE]: "Profile",
   // Legacy
+  [NAVIGATION_VIEWS.GENERATION]: "Generation",
   [NAVIGATION_VIEWS.AUDIO]: "Audio",
   [NAVIGATION_VIEWS.CONTENT]: "Content",
   [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",

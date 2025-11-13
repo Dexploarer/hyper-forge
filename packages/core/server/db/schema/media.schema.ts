@@ -66,6 +66,12 @@ export const mediaAssets = pgTable(
       table.entityId,
     ),
     createdByIdx: index("idx_media_assets_created_by").on(table.createdBy),
+    // Composite indexes for query optimization
+    entityTypeMediaTypeIdx: index("idx_media_entity_type_media_type").on(
+      table.entityType,
+      table.entityId,
+      table.type,
+    ),
   }),
 );
 

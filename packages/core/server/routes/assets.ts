@@ -8,6 +8,12 @@ import path from "path";
 import fs from "fs";
 import type { AssetService } from "../services/AssetService";
 import * as Models from "../models";
+import { optionalAuth, requireAuth } from "../middleware/auth";
+import {
+  getAssetFromPath,
+  canViewAsset,
+  canModifyAsset,
+} from "../middleware/assetAuth";
 
 export const createAssetRoutes = (
   rootDir: string,
@@ -22,19 +28,45 @@ export const createAssetRoutes = (
     (app) =>
       app
         // Asset listing endpoint
+        // SECURED: Filters based on visibility and ownership
         .get(
           "",
-          async ({ query }) => {
+          async (context) => {
+            const { query } = context;
+
+            // Check authentication (optional)
+            const authResult = await optionalAuth(context);
+            const user = authResult.user;
+
+            // Get all assets from filesystem
             let assets = await assetService.listAssets();
+
+            // Filter assets based on visibility and ownership
+            const filteredAssets = [];
+            for (const asset of assets) {
+              // Get database record for visibility check
+              const dbAsset = await getAssetFromPath(asset.id);
+
+              if (!dbAsset) {
+                // Asset not in database - include for backward compatibility
+                filteredAssets.push(asset);
+                continue;
+              }
+
+              // Check if user can view this asset
+              if (canViewAsset(dbAsset, user)) {
+                filteredAssets.push(asset);
+              }
+            }
 
             // Apply projectId filter if provided
             if (query.projectId) {
-              assets = assets.filter(
+              return filteredAssets.filter(
                 (asset) => asset.metadata.projectId === query.projectId,
               );
             }
 
-            return assets;
+            return filteredAssets;
           },
           {
             query: t.Object({
@@ -51,7 +83,32 @@ export const createAssetRoutes = (
         )
 
         // Get single asset model
-        .get("/:id/model", async ({ params: { id }, set }) => {
+        // SECURED: Checks visibility and ownership
+        .get("/:id/model", async (context) => {
+          const { params, set } = context;
+          const id = params.id;
+
+          // Check authentication (optional)
+          const authResult = await optionalAuth(context);
+          const user = authResult.user;
+
+          // Get asset from database to check visibility
+          const asset = await getAssetFromPath(id);
+
+          if (!asset) {
+            // Asset not in database - allow for backward compatibility
+            console.warn(
+              `[Model Serving] Asset ${id} not found in database, serving without auth check`,
+            );
+          } else if (!canViewAsset(asset, user)) {
+            // User not authorized to view this private asset
+            set.status = 403;
+            return {
+              error: "Forbidden",
+              message: "You do not have permission to access this asset",
+            };
+          }
+
           const modelPath = await assetService.getModelPath(id);
           const modelFile = Bun.file(modelPath);
 
@@ -76,8 +133,24 @@ export const createAssetRoutes = (
           // Wrap Bun.file() in Response for proper HEAD request handling
           return new Response(modelFile);
         })
-        .head("/:id/model", async ({ params: { id }, set }) => {
+        .head("/:id/model", async (context) => {
           try {
+            const { params, set } = context;
+            const id = params.id;
+
+            // Check authentication (optional)
+            const authResult = await optionalAuth(context);
+            const user = authResult.user;
+
+            // Get asset from database to check visibility
+            const asset = await getAssetFromPath(id);
+
+            if (asset && !canViewAsset(asset, user)) {
+              // User not authorized to view this private asset
+              set.status = 403;
+              return null;
+            }
+
             const modelPath = await assetService.getModelPath(id);
             const modelFile = Bun.file(modelPath);
 
@@ -99,16 +172,40 @@ export const createAssetRoutes = (
 
             return null;
           } catch (error) {
+            const id = context.params.id;
             console.error(`[HEAD /:id/model] Error for asset ${id}:`, error);
-            set.status = 500;
+            context.set.status = 500;
             return null;
           }
         })
 
         // Serve any file from an asset directory
-        .get("/:id/*", async ({ params, set }) => {
+        // SECURED: Checks visibility and ownership
+        .get("/:id/*", async (context) => {
+          const { params, set } = context;
           const assetId = params.id;
           const filePath = params["*"]; // Everything after the asset ID
+
+          // Check authentication (optional)
+          const authResult = await optionalAuth(context);
+          const user = authResult.user;
+
+          // Get asset from database to check visibility
+          const asset = await getAssetFromPath(assetId);
+
+          if (!asset) {
+            // Asset not in database - allow for backward compatibility
+            console.warn(
+              `[File Serving] Asset ${assetId} not found in database, serving without auth check`,
+            );
+          } else if (!canViewAsset(asset, user)) {
+            // User not authorized to view this private asset
+            set.status = 403;
+            return {
+              error: "Forbidden",
+              message: "You do not have permission to access this asset",
+            };
+          }
 
           const fullPath = path.join(rootDir, "gdd-assets", assetId, filePath);
 
@@ -131,10 +228,24 @@ export const createAssetRoutes = (
           // Wrap Bun.file() in Response for proper HEAD request handling
           return new Response(file);
         })
-        .head("/:id/*", async ({ params, set }) => {
+        .head("/:id/*", async (context) => {
           try {
+            const { params, set } = context;
             const assetId = params.id;
             const filePath = params["*"]; // Everything after the asset ID
+
+            // Check authentication (optional)
+            const authResult = await optionalAuth(context);
+            const user = authResult.user;
+
+            // Get asset from database to check visibility
+            const asset = await getAssetFromPath(assetId);
+
+            if (asset && !canViewAsset(asset, user)) {
+              // User not authorized to view this private asset
+              set.status = 403;
+              return null;
+            }
 
             const fullPath = path.join(
               rootDir,
@@ -163,23 +274,43 @@ export const createAssetRoutes = (
             return null;
           } catch (error) {
             console.error(`[HEAD /:id/*] Error:`, error);
-            set.status = 500;
+            context.set.status = 500;
             return null;
           }
         })
 
         // Delete asset endpoint
+        // SECURED: Requires authentication and ownership check
         .delete(
           "/:id",
-          async ({ params: { id }, query, set }) => {
-            const assets = await assetService.listAssets();
-            const asset = assets.find(
-              (a: Models.AssetMetadataType) => a.id === id,
-            );
+          async (context) => {
+            const { params, query, set } = context;
+            const id = params.id;
 
-            if (!asset) {
+            // Require authentication
+            const authResult = await requireAuth(context);
+            if (authResult instanceof Response) {
+              set.status = 401;
+              return { error: "Unauthorized" };
+            }
+            const user = authResult.user;
+
+            // Get asset from database to check ownership
+            const dbAsset = await getAssetFromPath(id);
+
+            if (!dbAsset) {
               set.status = 404;
               return { error: "Asset not found" };
+            }
+
+            // Check if user can modify this asset
+            if (!canModifyAsset(dbAsset, user)) {
+              set.status = 403;
+              return {
+                error: "Forbidden",
+                message:
+                  "You do not have permission to delete this asset. Only the owner or admins can delete assets.",
+              };
             }
 
             const includeVariants = query.includeVariants === "true";
@@ -197,6 +328,7 @@ export const createAssetRoutes = (
             query: Models.DeleteAssetQuery,
             response: {
               200: Models.DeleteAssetResponse,
+              401: Models.ErrorResponse,
               403: Models.ErrorResponse,
               404: Models.ErrorResponse,
             },
@@ -210,17 +342,37 @@ export const createAssetRoutes = (
         )
 
         // Update asset metadata
+        // SECURED: Requires authentication and ownership check
         .patch(
           "/:id",
-          async ({ params: { id }, body, set }) => {
-            const assets = await assetService.listAssets();
-            const asset = assets.find(
-              (a: Models.AssetMetadataType) => a.id === id,
-            );
+          async (context) => {
+            const { params, body, set } = context;
+            const id = params.id;
 
-            if (!asset) {
+            // Require authentication
+            const authResult = await requireAuth(context);
+            if (authResult instanceof Response) {
+              set.status = 401;
+              return { error: "Unauthorized" };
+            }
+            const user = authResult.user;
+
+            // Get asset from database to check ownership
+            const dbAsset = await getAssetFromPath(id);
+
+            if (!dbAsset) {
               set.status = 404;
               return { error: "Asset not found" };
+            }
+
+            // Check if user can modify this asset
+            if (!canModifyAsset(dbAsset, user)) {
+              set.status = 403;
+              return {
+                error: "Forbidden",
+                message:
+                  "You do not have permission to update this asset. Only the owner or admins can modify assets.",
+              };
             }
 
             const updatedAsset = await assetService.updateAsset(id, body);
@@ -239,6 +391,7 @@ export const createAssetRoutes = (
             body: Models.AssetUpdate,
             response: {
               200: Models.AssetMetadata,
+              401: Models.ErrorResponse,
               403: Models.ErrorResponse,
               404: Models.ErrorResponse,
             },

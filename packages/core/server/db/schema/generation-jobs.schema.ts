@@ -77,6 +77,15 @@ export const generationJobs = pgTable(
     assetIdIdx: index("idx_generation_jobs_asset").on(table.assetId),
     createdAtIdx: index("idx_generation_jobs_created").on(table.createdAt),
     expiresAtIdx: index("idx_generation_jobs_expires").on(table.expiresAt),
+    // Composite indexes for query optimization
+    userStatusIdx: index("idx_generation_jobs_user_status").on(
+      table.userId,
+      table.status,
+    ),
+    userCreatedIdx: index("idx_generation_jobs_user_created").on(
+      table.userId,
+      table.createdAt.desc(),
+    ),
   }),
 );
 

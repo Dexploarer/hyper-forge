@@ -160,6 +160,7 @@ const ThreeViewerComponent = forwardRef(
 
     const [loading, setLoading] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [modelInfo, setModelInfo] = useState({
       vertices: 0,
       faces: 0,
@@ -3982,6 +3983,7 @@ const ThreeViewerComponent = forwardRef(
       currentModelUrlRef.current = modelUrl;
       setLoading(true);
       setLoadingProgress(0);
+      setLoadError(null); // Clear any previous errors
 
       const loader = new GLTFLoader();
 
@@ -4801,6 +4803,11 @@ const ThreeViewerComponent = forwardRef(
           (error) => {
             console.error("Error loading model:", error);
             setLoading(false);
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : "Failed to load 3D model";
+            setLoadError(errorMessage);
             // Clear the current model URL on error to allow retry
             currentModelUrlRef.current = null;
           },
@@ -4978,6 +4985,41 @@ const ThreeViewerComponent = forwardRef(
               <div className="text-xs text-text-tertiary mt-2 text-center">
                 {Math.round(loadingProgress)}%
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Error overlay */}
+        {loadError && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-75">
+            <div className="bg-bg-secondary p-8 rounded-lg shadow-xl max-w-md">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-error bg-opacity-20 flex items-center justify-center flex-shrink-0">
+                  <svg
+                    className="w-6 h-6 text-error"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-text-primary">
+                  Failed to Load Model
+                </h3>
+              </div>
+              <p className="text-text-secondary mb-6">{loadError}</p>
+              <button
+                onClick={() => setLoadError(null)}
+                className="w-full px-4 py-2 bg-primary hover:bg-primary-light text-white rounded-lg transition-colors"
+              >
+                Dismiss
+              </button>
             </div>
           </div>
         )}

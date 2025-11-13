@@ -98,7 +98,7 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
         id: t.String(),
       }),
       body: t.Object({
-        role: t.String(),
+        role: t.Union([t.Literal("admin"), t.Literal("member")]),
       }),
       detail: {
         tags: ["Admin"],

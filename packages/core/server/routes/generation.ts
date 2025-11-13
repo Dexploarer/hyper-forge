@@ -7,112 +7,86 @@ import { Elysia, t } from "elysia";
 import type { GenerationService } from "../services/GenerationService";
 import { optionalAuth } from "../middleware/auth";
 import * as Models from "../models";
+import { UnauthorizedError, InternalServerError } from "../errors";
+import { createChildLogger } from "../utils/logger";
 
-export const createGenerationRoutes = (
-  generationService: GenerationService,
-) => new Elysia({ prefix: "/api/generation", name: "generation" })
-  .derive(async (context) => {
-    // Extract user from auth token if present (optional)
-    const authResult = await optionalAuth(context as any);
-    return { user: authResult.user };
-  })
-  .guard(
-    {
-      beforeHandle: ({ request }) => {
-        console.log(`[Generation Pipeline] ${request.method} operation`);
+const logger = createChildLogger("GenerationRoutes");
+
+export const createGenerationRoutes = (generationService: GenerationService) =>
+  new Elysia({ prefix: "/api/generation", name: "generation" })
+    .derive(async (context) => {
+      // Extract user from auth token if present (optional)
+      const authResult = await optionalAuth(context as any);
+      return { user: authResult.user };
+    })
+    .guard(
+      {
+        beforeHandle: ({ request }) => {
+          logger.debug(
+            { method: request.method },
+            "Generation pipeline request",
+          );
+        },
       },
-    },
-    (app) =>
-      app
+      (app) =>
+        app
           // Start generation pipeline
           .post(
             "/pipeline",
-            async ({ body, set, user: authUser, request }) => {
-              try {
-                // Log auth status
-                const authHeader = request.headers.get("authorization");
-                console.log(`[Generation Route] Request received:`, {
+            async ({ body, user: authUser, request }) => {
+              // Log auth status
+              const authHeader = request.headers.get("authorization");
+              logger.info(
+                {
                   hasAuthHeader: !!authHeader,
-                  authHeaderPrefix: authHeader?.substring(0, 20) + "...",
                   hasAuthUser: !!authUser,
                   authUserId: authUser?.id,
-                  bodyUserId: body.user?.userId,
-                });
+                },
+                "Pipeline start request received",
+              );
 
-                // If we have an authenticated user from Privy token, use it
-                // This is the simplest and most secure approach
-                if (!authUser) {
-                  console.error(
-                    `[Generation Route] No authenticated user found. Auth header present: ${!!authHeader}`,
-                  );
-                  set.status = 401;
-                  return {
-                    error:
-                      "Authentication required. Please log in with Privy to create generation jobs.",
-                  };
-                }
-
-                const userId = authUser.id;
-                console.log(
-                  `[Generation Route] Using authenticated user ID: ${userId}`,
+              // If we have an authenticated user from Privy token, use it
+              // This is the simplest and most secure approach
+              if (!authUser) {
+                throw new UnauthorizedError(
+                  "Authentication required. Please log in with Privy to create generation jobs.",
+                  { hasAuthHeader: !!authHeader },
                 );
-
-                // Update body with verified userId
-                const configWithUser = {
-                  ...body,
-                  user: {
-                    ...body.user,
-                    userId,
-                  },
-                };
-
-                // Cast to GenerationService's PipelineConfig type which has slightly different user field typing
-                const result = await generationService.startPipeline(
-                  configWithUser as Parameters<
-                    typeof generationService.startPipeline
-                  >[0],
-                );
-
-                if (!result || !result.pipelineId) {
-                  set.status = 500;
-                  return {
-                    error: "Failed to start pipeline - no pipeline ID returned",
-                  };
-                }
-
-                return result;
-              } catch (error) {
-                console.error(
-                  "[Generation Route] Error starting pipeline:",
-                  error,
-                );
-
-                // Extract error message
-                let errorMessage = "Failed to start generation pipeline";
-                if (error instanceof Error) {
-                  errorMessage = error.message;
-                } else if (typeof error === "string") {
-                  errorMessage = error;
-                } else if (
-                  error &&
-                  typeof error === "object" &&
-                  "message" in error
-                ) {
-                  errorMessage = String(error.message);
-                }
-
-                // Log full error details for debugging
-                console.error("[Generation Route] Full error details:", {
-                  message: errorMessage,
-                  error,
-                  stack: error instanceof Error ? error.stack : undefined,
-                });
-
-                set.status = 500;
-                return {
-                  error: errorMessage,
-                };
               }
+
+              const userId = authUser.id;
+              logger.info(
+                { userId },
+                "Starting pipeline for authenticated user",
+              );
+
+              // Update body with verified userId
+              const configWithUser = {
+                ...body,
+                user: {
+                  ...body.user,
+                  userId,
+                },
+              };
+
+              // Cast to GenerationService's PipelineConfig type which has slightly different user field typing
+              const result = await generationService.startPipeline(
+                configWithUser as Parameters<
+                  typeof generationService.startPipeline
+                >[0],
+              );
+
+              if (!result || !result.pipelineId) {
+                throw new InternalServerError(
+                  "Failed to start pipeline - no pipeline ID returned",
+                );
+              }
+
+              logger.info(
+                { pipelineId: result.pipelineId, userId },
+                "Pipeline started successfully",
+              );
+              return result;
             },
             {
               body: Models.PipelineConfig,
@@ -153,4 +127,4 @@ export const createGenerationRoutes = (
               },
             },
           ),
-  );
+    );

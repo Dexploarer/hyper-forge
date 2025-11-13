@@ -5,7 +5,7 @@
 
 import { db } from "../db/db";
 import { users, type User, type NewUser } from "../db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, count } from "drizzle-orm";
 
 export interface UserProfileUpdate {
   displayName?: string;
@@ -48,6 +48,8 @@ export class UserService {
 
   /**
    * Create new user
+   * Uses transaction to ensure user creation is atomic
+   * Future: Can include initial achievement grants, welcome data, etc.
    */
   async createUser(data: {
     privyUserId: string;
@@ -56,19 +58,27 @@ export class UserService {
     role?: string;
   }): Promise<User> {
     try {
-      const [user] = await db
-        .insert(users)
-        .values({
-          privyUserId: data.privyUserId,
-          email: data.email || null,
-          walletAddress: data.walletAddress || null,
-          role: data.role || "member", // Default role
-        })
-        .returning();
+      const user = await db.transaction(async (tx) => {
+        const [newUser] = await tx
+          .insert(users)
+          .values({
+            privyUserId: data.privyUserId,
+            email: data.email || null,
+            walletAddress: data.walletAddress || null,
+            role: data.role || "member", // Default role
+          })
+          .returning();
 
-      console.log(
-        `[UserService] Created new user: ${user.id} (${data.privyUserId})`,
-      );
+        console.log(
+          `[UserService] Created new user: ${newUser.id} (${data.privyUserId})`,
+        );
+
+        // Future: Add initial achievements, welcome notifications, etc. here
+        // All within the same transaction for atomicity
+
+        return newUser;
+      });
+
       return user;
     } catch (error) {
       console.error("[UserService] Failed to create user:", error);
@@ -303,6 +313,7 @@ export class UserService {
 
   /**
    * Get user statistics (assets, projects, achievements)
+   * Optimized with SQL aggregation to avoid N+1 queries
    */
   async getUserStats(userId: string): Promise<{
     totalAssets: number;
@@ -319,27 +330,42 @@ export class UserService {
         "../db/schema/achievements.schema"
       );
 
-      // Count assets
-      const userAssets = await db.query.assets.findMany({
-        where: eq(assets.ownerId, userId),
-      });
-      const totalAssets = userAssets.length;
-      const publicAssets = userAssets.filter(
-        (a) => a.visibility === "public",
-      ).length;
+      // Count total assets using SQL aggregation
+      const [totalAssetsResult] = await db
+        .select({ count: count() })
+        .from(assets)
+        .where(eq(assets.ownerId, userId));
+      const totalAssets = Number(totalAssetsResult.count);
 
-      // Count projects
-      const userProjects = await db.query.projects.findMany({
-        where: eq(projects.ownerId, userId),
-      });
-      const totalProjects = userProjects.length;
-      const publicProjects = userProjects.filter((p) => p.isPublic).length;
+      // Count public assets using SQL aggregation
+      const [publicAssetsResult] = await db
+        .select({ count: count() })
+        .from(assets)
+        .where(
+          and(eq(assets.ownerId, userId), eq(assets.visibility, "public")),
+        );
+      const publicAssets = Number(publicAssetsResult.count);
 
-      // Count achievements
-      const achievements = await db.query.userAchievements.findMany({
-        where: eq(userAchievements.userId, userId),
-      });
-      const totalAchievements = achievements.length;
+      // Count total projects using SQL aggregation
+      const [totalProjectsResult] = await db
+        .select({ count: count() })
+        .from(projects)
+        .where(eq(projects.ownerId, userId));
+      const totalProjects = Number(totalProjectsResult.count);
+
+      // Count public projects using SQL aggregation
+      const [publicProjectsResult] = await db
+        .select({ count: count() })
+        .from(projects)
+        .where(and(eq(projects.ownerId, userId), eq(projects.isPublic, true)));
+      const publicProjects = Number(publicProjectsResult.count);
+
+      // Count achievements using SQL aggregation
+      const [achievementsResult] = await db
+        .select({ count: count() })
+        .from(userAchievements)
+        .where(eq(userAchievements.userId, userId));
+      const totalAchievements = Number(achievementsResult.count);
 
       return {
         totalAssets,

@@ -574,14 +574,15 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
 
         if (currentAnimation === "walking") {
           // Try to find walking animation with more lenient matching
-          targetClip = animations.find((clip) => {
-            const name = clip.name.toLowerCase();
-            // Match walk/walking but exclude run/running (unless it's "run_walk" or similar)
-            const hasWalk = name.includes("walk");
-            const hasRunButNotWalk =
-              name.includes("run") && !name.includes("walk");
-            return hasWalk && !hasRunButNotWalk;
-          });
+          targetClip =
+            animations.find((clip) => {
+              const name = clip.name.toLowerCase();
+              // Match walk/walking but exclude run/running (unless it's "run_walk" or similar)
+              const hasWalk = name.includes("walk");
+              const hasRunButNotWalk =
+                name.includes("run") && !name.includes("walk");
+              return hasWalk && !hasRunButNotWalk;
+            }) || null;
 
           if (!targetClip) {
             console.warn(
@@ -593,16 +594,17 @@ const ModelDemo: React.FC<ModelDemoProps> = ({
           }
         } else if (currentAnimation === "running") {
           // Try to find running animation with better pattern matching
-          targetClip = animations.find((clip) => {
-            const name = clip.name.toLowerCase();
-            // Match run/running/sprint/jog but exclude walk
-            const hasRun =
-              name.includes("run") ||
-              name.includes("sprint") ||
-              name.includes("jog");
-            const hasWalk = name.includes("walk");
-            return hasRun && !hasWalk;
-          });
+          targetClip =
+            animations.find((clip) => {
+              const name = clip.name.toLowerCase();
+              // Match run/running/sprint/jog but exclude walk
+              const hasRun =
+                name.includes("run") ||
+                name.includes("sprint") ||
+                name.includes("jog");
+              const hasWalk = name.includes("walk");
+              return hasRun && !hasWalk;
+            }) || null;
 
           if (!targetClip) {
             console.error(

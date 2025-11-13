@@ -42,30 +42,64 @@ export async function optionalAuth(context: any): Promise<{ user?: AuthUser }> {
 
     const token = authHeader.replace("Bearer ", "");
 
-    // Verify Privy JWT
-    const verifiedClaims = await privy.verifyAuthToken(token);
-    const privyUserId = verifiedClaims.userId;
+    let privyUserId: string;
 
-    console.log(`[Auth Middleware] Verifying token for Privy userId: ${privyUserId}`);
+    // In test mode, decode JWT without verifying signature
+    if (process.env.NODE_ENV === "test" || Bun.env.NODE_ENV === "test") {
+      try {
+        // Decode JWT payload (part between first and second dot)
+        const parts = token.split(".");
+        if (parts.length !== 3) {
+          throw new Error("Invalid JWT format");
+        }
+        const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
+        privyUserId = payload.sub;
+        console.log(
+          `[Auth Middleware] TEST MODE - Decoded token for userId: ${privyUserId}`,
+        );
+      } catch (error) {
+        console.error(
+          "[Auth Middleware] TEST MODE - Failed to decode token:",
+          error,
+        );
+        return {};
+      }
+    } else {
+      // Production: Verify Privy JWT with cryptographic signature
+      const verifiedClaims = await privy.verifyAuthToken(token);
+      privyUserId = verifiedClaims.userId;
+      console.log(
+        `[Auth Middleware] Verifying token for Privy userId: ${privyUserId}`,
+      );
+    }
 
     // Find or create user in database
     let user = await userService.findByPrivyUserId(privyUserId);
 
     if (!user) {
-      console.log(`[Auth Middleware] User not found for Privy userId ${privyUserId}, creating new user...`);
+      console.log(
+        `[Auth Middleware] User not found for Privy userId ${privyUserId}, creating new user...`,
+      );
       // Auto-create user on first request with valid Privy token
       try {
         user = await userService.createUser({
           privyUserId,
           role: "member", // Default role - admins must be promoted manually
         });
-        console.log(`[Auth Middleware] Created new user: ${user.id} for Privy userId: ${privyUserId}`);
+        console.log(
+          `[Auth Middleware] Created new user: ${user.id} for Privy userId: ${privyUserId}`,
+        );
       } catch (error) {
-        console.error(`[Auth Middleware] Failed to create user for Privy userId ${privyUserId}:`, error);
+        console.error(
+          `[Auth Middleware] Failed to create user for Privy userId ${privyUserId}:`,
+          error,
+        );
         throw error;
       }
     } else {
-      console.log(`[Auth Middleware] Found existing user: ${user.id} for Privy userId: ${privyUserId}`);
+      console.log(
+        `[Auth Middleware] Found existing user: ${user.id} for Privy userId: ${privyUserId}`,
+      );
     }
 
     // Update last login timestamp

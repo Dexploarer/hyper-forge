@@ -1,16 +1,17 @@
-import { X, Save, Trash2, AlertTriangle } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { X, Save, Trash2, AlertTriangle } from "lucide-react";
+import { useState, useEffect } from "react";
 
-import type { Asset, AssetMetadata } from '../../types'
-import { Modal, Button, Input } from '../common'
+import type { Asset, AssetMetadata } from "../../types";
+import { Modal, Button, Input } from "../common";
+import { useApp } from "../../contexts/AppContext";
 
 interface AssetEditModalProps {
-  asset: Asset | null
-  isOpen: boolean
-  onClose: () => void
-  onSave: (updatedAsset: Partial<Asset>) => Promise<Asset>
-  onDelete?: (asset: Asset, includeVariants?: boolean) => void
-  hasVariants?: boolean
+  asset: Asset | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedAsset: Partial<Asset>) => Promise<Asset>;
+  onDelete?: (asset: Asset, includeVariants?: boolean) => void;
+  hasVariants?: boolean;
 }
 
 export function AssetEditModal({
@@ -19,31 +20,32 @@ export function AssetEditModal({
   onClose,
   onSave,
   onDelete,
-  hasVariants = false
+  hasVariants = false,
 }: AssetEditModalProps) {
   interface EditedAssetData {
-    name: string
-    type: string
+    name: string;
+    type: string;
     metadata: {
-      tier: string
-      subtype: string
-      notes?: string
-    }
+      tier: string;
+      subtype: string;
+      notes?: string;
+    };
   }
 
   const [editedData, setEditedData] = useState<EditedAssetData>({
-    name: '',
-    type: '',
+    name: "",
+    type: "",
     metadata: {
-      tier: '',
-      subtype: '',
-      notes: ''
-    }
-  })
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [isDirty, setIsDirty] = useState(false)
-  const [nameError, setNameError] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
+      tier: "",
+      subtype: "",
+      notes: "",
+    },
+  });
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [nameError, setNameError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const { showNotification } = useApp();
 
   useEffect(() => {
     if (asset) {
@@ -51,57 +53,63 @@ export function AssetEditModal({
         name: asset.name,
         type: asset.type,
         metadata: {
-          tier: typeof asset.metadata.tier === 'string' ? asset.metadata.tier : String(asset.metadata.tier || ''),
-          subtype: asset.metadata.subtype || '',
-          notes: asset.metadata.notes || ''
-        }
-      })
-      setIsDirty(false)
-      setShowDeleteConfirm(false)
-      setNameError('')
+          tier:
+            typeof asset.metadata.tier === "string"
+              ? asset.metadata.tier
+              : String(asset.metadata.tier || ""),
+          subtype: asset.metadata.subtype || "",
+          notes: asset.metadata.notes || "",
+        },
+      });
+      setIsDirty(false);
+      setShowDeleteConfirm(false);
+      setNameError("");
     }
-  }, [asset])
+  }, [asset]);
 
   const validateName = (name: string): string => {
     if (!name.trim()) {
-      return 'Name is required'
+      return "Name is required";
     }
     if (!/^[a-zA-Z0-9-_]+$/.test(name)) {
-      return 'Only letters, numbers, hyphens, and underscores allowed'
+      return "Only letters, numbers, hyphens, and underscores allowed";
     }
-    return ''
-  }
+    return "";
+  };
 
   const handleChange = (field: string, value: string): void => {
-    setEditedData(prev => {
-      if (field.includes('.')) {
-        const [parent, child] = field.split('.') as [keyof EditedAssetData, string]
+    setEditedData((prev) => {
+      if (field.includes(".")) {
+        const [parent, child] = field.split(".") as [
+          keyof EditedAssetData,
+          string,
+        ];
         return {
           ...prev,
           [parent]: {
             ...(prev[parent] as Record<string, string>),
-            [child]: value
-          }
-        }
+            [child]: value,
+          },
+        };
       }
-      return { ...prev, [field]: value }
-    })
-    setIsDirty(true)
+      return { ...prev, [field]: value };
+    });
+    setIsDirty(true);
 
-    if (field === 'name') {
-      setNameError(validateName(value))
+    if (field === "name") {
+      setNameError(validateName(value));
     }
-  }
+  };
 
   const handleSave = async (): Promise<void> => {
-    const error = validateName(editedData.name)
+    const error = validateName(editedData.name);
     if (error) {
-      setNameError(error)
-      return
+      setNameError(error);
+      return;
     }
-    
+
     if (asset && isDirty) {
-      setIsSaving(true)
+      setIsSaving(true);
       try {
         await onSave({
           id: asset.id,
@@ -109,27 +117,30 @@ export function AssetEditModal({
           type: editedData.type,
           metadata: {
             ...asset.metadata,
-            ...editedData.metadata
-          }
-        })
+            ...editedData.metadata,
+          },
+        });
         // Don't close here - let the parent handle it after successful save
       } catch (error) {
-        console.error('Failed to save asset:', error)
+        console.error("Failed to save asset:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to save asset";
+        showNotification(errorMessage, "error");
         // Keep modal open on error so user can retry
       } finally {
-        setIsSaving(false)
+        setIsSaving(false);
       }
     }
-  }
+  };
 
   const handleDelete = (): void => {
     if (asset && onDelete) {
-      onDelete(asset, hasVariants)
+      onDelete(asset, hasVariants);
       // Don't close here - let the parent handle it
     }
-  }
+  };
 
-  if (!asset) return null
+  if (!asset) return null;
 
   return (
     <Modal open={isOpen} onClose={onClose} className="max-w-md">
@@ -151,13 +162,11 @@ export function AssetEditModal({
           </label>
           <Input
             value={editedData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
+            onChange={(e) => handleChange("name", e.target.value)}
             placeholder="e.g., sword-iron-basic"
-            className={`w-full ${nameError ? 'border-error' : ''}`}
+            className={`w-full ${nameError ? "border-error" : ""}`}
           />
-          {nameError && (
-            <p className="text-xs text-error mt-1">{nameError}</p>
-          )}
+          {nameError && <p className="text-xs text-error mt-1">{nameError}</p>}
         </div>
 
         {/* Asset Type */}
@@ -167,7 +176,7 @@ export function AssetEditModal({
           </label>
           <select
             value={editedData.type}
-            onChange={(e) => handleChange('type', e.target.value)}
+            onChange={(e) => handleChange("type", e.target.value)}
             className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           >
             <option value="armor">Armor</option>
@@ -186,7 +195,7 @@ export function AssetEditModal({
             </label>
             <select
               value={editedData.metadata.tier}
-              onChange={(e) => handleChange('metadata.tier', e.target.value)}
+              onChange={(e) => handleChange("metadata.tier", e.target.value)}
               className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             >
               <option value="base">Base</option>
@@ -206,7 +215,7 @@ export function AssetEditModal({
             </label>
             <Input
               value={editedData.metadata.subtype}
-              onChange={(e) => handleChange('metadata.subtype', e.target.value)}
+              onChange={(e) => handleChange("metadata.subtype", e.target.value)}
               placeholder="e.g., body, helmet, legs"
               className="w-full"
             />
@@ -219,8 +228,8 @@ export function AssetEditModal({
             Notes
           </label>
           <textarea
-            value={editedData.metadata.notes || ''}
-            onChange={(e) => handleChange('metadata.notes', e.target.value)}
+            value={editedData.metadata.notes || ""}
+            onChange={(e) => handleChange("metadata.notes", e.target.value)}
             placeholder="Add notes about this asset..."
             rows={3}
             className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary placeholder-text-tertiary resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -289,16 +298,13 @@ export function AssetEditModal({
             )}
           </div>
         )}
-        
+
         {/* If no delete option, add empty div to maintain layout */}
         {!onDelete && <div />}
-        
+
         {/* Save/Cancel Buttons */}
         <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={onClose}
-          >
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button
@@ -321,5 +327,5 @@ export function AssetEditModal({
         </div>
       </div>
     </Modal>
-  )
-} 
+  );
+}

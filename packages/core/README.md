@@ -187,12 +187,14 @@ const { data } = await api.api.assets({ id: "sword-001" }).delete({
 
 ### Admin Access
 
-Admins can be managed via the database `admin_whitelist` table or through admin routes. Admin users can:
+Admin users are managed through the user `role` field in the database or via the admin API routes. Admin users can:
 
 - Delete any asset
 - Update any asset metadata
 - View system statistics
-- Manage users
+- Manage users and roles
+- View activity logs
+- Monitor system health
 
 ## Project Structure
 

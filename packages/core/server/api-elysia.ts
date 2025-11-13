@@ -15,6 +15,14 @@ import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { serverTiming } from "@elysiajs/server-timing";
 import { rateLimit } from "elysia-rate-limit";
+// ❌ COMPRESSION PLUGINS INCOMPATIBLE WITH ELYSIA 1.4.15:
+// - @labzzhq/compressor: Requires mapResponse export (not available)
+// - elysia-compress: Same issue - requires mapResponse export
+// - mapResponse is internal to Elysia adapter, not part of public API
+// TODO: Wait for plugin updates or implement custom compression middleware
+import { etag } from "@bogeychan/elysia-etag"; // ⚠️ Installs but doesn't generate ETag headers
+import { requestID } from "elysia-requestid"; // ✅ Working - generates X-Request-ID headers
+import prometheus from "elysia-prometheus";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -27,9 +35,17 @@ import { GenerationService } from "./services/GenerationService";
 // Middleware
 import { errorHandler } from "./middleware/errorHandler";
 import { loggingMiddleware } from "./middleware/logging";
+import { optionalAuth } from "./middleware/auth";
+import {
+  extractAssetIdFromPath,
+  getAssetFromPath,
+  canViewAsset,
+} from "./middleware/assetAuth";
 
 // Plugins
 import { securityHeaders } from "./plugins/security-headers";
+import { gracefulShutdown } from "./plugins/graceful-shutdown";
+import { performanceTracing } from "./plugins/performance-tracing";
 
 // Routes
 import { healthRoutes } from "./routes/health";
@@ -54,6 +70,7 @@ import { worldConfigRoutes } from "./routes/world-config";
 import { generationQueueRoutes } from "./routes/generation-queue";
 import { publicProfilesRoutes } from "./routes/public-profiles";
 import { debugStorageRoute } from "./routes/debug-storage";
+import { createCDNRoutes } from "./routes/cdn";
 
 // Cron and job cleanup
 import { cron } from "@elysiajs/cron";
@@ -86,7 +103,9 @@ achievementService.initializeDefaultAchievements().catch((error) => {
 // Initialize services
 // Railway uses PORT, but we fallback to API_PORT for local dev
 const API_PORT = process.env.PORT || process.env.API_PORT || 3004;
-const assetService = new AssetService(path.join(ROOT_DIR, "gdd-assets"));
+const ASSETS_DIR = process.env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
+const CDN_URL = process.env.CDN_URL || "http://localhost:3005";
+const assetService = new AssetService(ASSETS_DIR);
 const retextureService = new RetextureService({
   meshyApiKey: process.env.MESHY_API_KEY || "",
   imageServerBaseUrl:
@@ -94,14 +113,26 @@ const retextureService = new RetextureService({
 });
 const generationService = new GenerationService();
 
-// Create Elysia app
-// Type as 'any' to avoid non-portable croner package reference from @elysiajs/cron plugin
-const app: any = new Elysia()
-  // Performance monitoring
+// Create Elysia app with full type inference for Eden Treaty
+// @ts-ignore TS2742 - croner module reference from cron plugin is non-portable (doesn't affect runtime)
+const app = new Elysia()
+  // Graceful shutdown handler
+  .use(gracefulShutdown)
+
+  // Request correlation ID (must be first for logging correlation)
+  .use(requestID())
+
+  // Performance monitoring (Elysia's native tracing)
+  .use(performanceTracing)
   .use(serverTiming())
 
   // Security headers for Privy embedded wallets (applied to ALL responses)
   .use(securityHeaders)
+
+  // Response compression DISABLED - plugins incompatible with Elysia 1.4.15
+  // Both @labzzhq/compressor and elysia-compress require mapResponse export
+  // which is internal to Elysia adapter (not part of public API)
+  // TODO: Implement custom compression middleware or wait for plugin updates
 
   // Rate limiting - protect against abuse
   .use(
@@ -201,6 +232,11 @@ const app: any = new Elysia()
             name: "World Configuration",
             description: "Master parameters for AI content generation",
           },
+          {
+            name: "CDN",
+            description:
+              "CDN publishing and health checks for stable asset delivery",
+          },
         ],
         components: {
           securitySchemes: {
@@ -251,11 +287,49 @@ const app: any = new Elysia()
 
   // Static file serving using native Bun.file() for reliability
   // Bun.file() works better than @elysiajs/static on Railway
-  .get("/gdd-assets/*", async ({ params, set }) => {
+  // SECURED: Checks asset visibility and ownership before serving
+  .get("/gdd-assets/*", async (context) => {
+    const { params, set } = context;
     const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
-    const file = Bun.file(filePath);
+    const filePath = path.join(ASSETS_DIR, relativePath);
 
+    // Extract asset ID from path
+    const assetId = extractAssetIdFromPath(relativePath);
+    if (!assetId) {
+      set.status = 400;
+      return new Response("Invalid asset path", { status: 400 });
+    }
+
+    // Check authentication
+    const authResult = await optionalAuth(context);
+    const user = authResult.user;
+
+    // Get asset from database to check visibility
+    const asset = await getAssetFromPath(assetId);
+
+    if (!asset) {
+      // Asset not in database - allow for backward compatibility
+      // (some assets may not have been indexed yet)
+      console.warn(
+        `[Static Files] Asset ${assetId} not found in database, serving without auth check`,
+      );
+    } else if (!canViewAsset(asset, user)) {
+      // User not authorized to view this private asset
+      set.status = 403;
+      return new Response(
+        JSON.stringify({
+          error: "Forbidden",
+          message: "You do not have permission to access this asset",
+        }),
+        {
+          status: 403,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Check if file exists
+    const file = Bun.file(filePath);
     if (!(await file.exists())) {
       set.status = 404;
       return new Response("File not found", { status: 404 });
@@ -264,11 +338,37 @@ const app: any = new Elysia()
     // Wrap Bun.file() in Response for proper HEAD request handling
     return new Response(file);
   })
-  .head("/gdd-assets/*", async ({ params, set }) => {
+  .head("/gdd-assets/*", async (context) => {
+    const { params, set } = context;
     const relativePath = (params as any)["*"] || "";
-    const filePath = path.join(ROOT_DIR, "gdd-assets", relativePath);
-    const file = Bun.file(filePath);
+    const filePath = path.join(ASSETS_DIR, relativePath);
 
+    // Extract asset ID from path
+    const assetId = extractAssetIdFromPath(relativePath);
+    if (!assetId) {
+      set.status = 400;
+      return new Response(null, { status: 400 });
+    }
+
+    // Check authentication
+    const authResult = await optionalAuth(context);
+    const user = authResult.user;
+
+    // Get asset from database to check visibility
+    const asset = await getAssetFromPath(assetId);
+
+    if (!asset) {
+      // Asset not in database - allow for backward compatibility
+      console.warn(
+        `[Static Files HEAD] Asset ${assetId} not found in database, serving without auth check`,
+      );
+    } else if (!canViewAsset(asset, user)) {
+      // User not authorized to view this private asset
+      return new Response(null, { status: 403 });
+    }
+
+    // Check if file exists
+    const file = Bun.file(filePath);
     if (!(await file.exists())) {
       return new Response(null, { status: 404 });
     }
@@ -433,12 +533,17 @@ const app: any = new Elysia()
         });
       }
 
-      // Fetch external image
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": "Asset-Forge-Image-Proxy/1.0",
+      // Fetch external image with 30s timeout
+      const { fetchWithTimeout } = await import("./utils/fetch-with-timeout");
+      const response = await fetchWithTimeout(
+        url,
+        {
+          headers: {
+            "User-Agent": "Asset-Forge-Image-Proxy/1.0",
+          },
         },
-      });
+        30000, // 30s timeout
+      );
 
       if (!response.ok) {
         return new Response(
@@ -486,7 +591,7 @@ const app: any = new Elysia()
   .use(publicProfilesRoutes)
   .use(createAssetRoutes(ROOT_DIR, assetService))
   .use(createMaterialRoutes(ROOT_DIR))
-  .use(createRetextureRoutes(ROOT_DIR, retextureService))
+  .use(createRetextureRoutes(ROOT_DIR, retextureService, ASSETS_DIR))
   .use(createGenerationRoutes(generationService))
   .use(playtesterSwarmRoutes)
   .use(voiceGenerationRoutes)
@@ -498,6 +603,18 @@ const app: any = new Elysia()
   .use(worldConfigRoutes)
   .use(generationQueueRoutes)
   .use(debugStorageRoute)
+  .use(createCDNRoutes(ASSETS_DIR, CDN_URL))
+
+  // ETag generation for cache validation (after routes)
+  // Enables 304 Not Modified responses for cached content (90% bandwidth savings)
+  .use(etag())
+
+  // Prometheus metrics endpoint (after all routes)
+  .use(
+    prometheus({
+      metricsPath: "/metrics", // Prometheus scrape endpoint
+    }),
+  )
 
   // Debug endpoint to verify security headers
   .get("/api/debug/headers", async ({ set, request }) => {
@@ -533,7 +650,7 @@ const app: any = new Elysia()
 
   // TEMPORARY: Debug endpoint to check paths
   .get("/api/admin/debug-paths", async () => {
-    const assetsPath = path.join(ROOT_DIR, "gdd-assets");
+    const assetsPath = ASSETS_DIR;
     const bowBasePath = path.join(assetsPath, "bow-base");
     const modelPath = path.join(bowBasePath, "model.glb");
 
@@ -591,7 +708,7 @@ const app: any = new Elysia()
       }
 
       const tarPath = path.join(ROOT_DIR, "gdd-assets.tar.gz");
-      const assetsDir = path.join(ROOT_DIR, "gdd-assets");
+      const assetsDir = ASSETS_DIR;
 
       console.log(`📥 Downloading from ${url}...`);
 
@@ -713,8 +830,13 @@ const app: any = new Elysia()
     }
   })
 
-  // Start server
-  .listen(API_PORT);
+  // Start server with production configuration
+  .listen({
+    port: Number(API_PORT),
+    hostname: "0.0.0.0", // Bind to all interfaces for Railway/Docker
+    maxRequestBodySize: 100 * 1024 * 1024, // 100MB limit (below 128MB default)
+    development: process.env.NODE_ENV !== "production", // Disable detailed errors in prod
+  });
 
 // Startup banner
 console.log("\n" + "=".repeat(60));
@@ -827,7 +949,7 @@ console.log(
 );
 console.log("=".repeat(60) + "\n");
 
-// Export with explicit type to avoid croner module reference issues
-// @ts-ignore - Elysia + cron plugin creates non-portable type reference
+// Export app for Eden Treaty - suppress declaration emit warning about croner
+// @ts-ignore TS2742 - croner module reference is non-portable but type inference works at runtime
 export type App = typeof app;
 export { app };

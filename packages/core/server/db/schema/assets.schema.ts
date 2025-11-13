@@ -121,6 +121,17 @@ export const assets = pgTable(
       table.projectId,
       table.type,
     ),
+    filePathIdx: index("idx_assets_file_path").on(table.filePath),
+    // Additional composite indexes for query optimization
+    ownerCreatedIdx: index("idx_assets_owner_created").on(
+      table.ownerId,
+      table.createdAt.desc(),
+    ),
+    typeStatusIdx: index("idx_assets_type_status").on(table.type, table.status),
+    projectStatusIdx: index("idx_assets_project_status").on(
+      table.projectId,
+      table.status,
+    ),
   }),
 );
 

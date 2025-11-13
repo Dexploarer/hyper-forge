@@ -5,7 +5,7 @@
 
 import { db } from "../db/db";
 import { projects, type Project, type NewProject } from "../db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, count, sum, sql } from "drizzle-orm";
 
 export interface ProjectCreateData {
   name: string;
@@ -262,6 +262,7 @@ export class ProjectService {
 
   /**
    * Get project statistics
+   * Optimized with SQL aggregation to avoid N+1 queries
    */
   async getProjectStats(projectId: string): Promise<{
     assetCount: number;
@@ -280,35 +281,47 @@ export class ProjectService {
         throw new Error(`Project not found: ${projectId}`);
       }
 
-      // Get all project assets
-      const projectAssets = await db.query.assets.findMany({
-        where: eq(assets.projectId, projectId),
-      });
+      // Count total assets using SQL aggregation
+      const [assetCountResult] = await db
+        .select({ count: count() })
+        .from(assets)
+        .where(eq(assets.projectId, projectId));
+      const assetCount = Number(assetCountResult.count);
 
-      // Calculate statistics
-      const assetCount = projectAssets.length;
+      // Count assets by type using SQL GROUP BY
+      const assetsByTypeResults = await db
+        .select({
+          type: assets.type,
+          count: count(),
+        })
+        .from(assets)
+        .where(eq(assets.projectId, projectId))
+        .groupBy(assets.type);
 
-      // Count by type
       const assetsByType: Record<string, number> = {};
-      for (const asset of projectAssets) {
-        const type = asset.type || "unknown";
-        assetsByType[type] = (assetsByType[type] || 0) + 1;
+      for (const result of assetsByTypeResults) {
+        const type = result.type || "unknown";
+        assetsByType[type] = Number(result.count);
       }
 
-      // Sum file sizes
-      const totalSizeBytes = projectAssets.reduce((sum, asset) => {
-        return sum + (asset.fileSize || 0);
-      }, 0);
+      // Sum file sizes using SQL aggregation
+      const [sizeResult] = await db
+        .select({
+          totalSize: sum(assets.fileSize),
+        })
+        .from(assets)
+        .where(eq(assets.projectId, projectId));
+      const totalSizeBytes = Number(sizeResult.totalSize || 0);
 
-      // Find most recent asset update
-      let lastModifiedAt: Date | null = null;
-      for (const asset of projectAssets) {
-        if (asset.updatedAt) {
-          if (!lastModifiedAt || asset.updatedAt > lastModifiedAt) {
-            lastModifiedAt = asset.updatedAt;
-          }
-        }
-      }
+      // Get most recent asset update using SQL MAX
+      const [lastUpdateResult] = await db
+        .select({
+          lastUpdate: sql<Date | null>`MAX(${assets.updatedAt})`,
+        })
+        .from(assets)
+        .where(eq(assets.projectId, projectId));
+
+      const lastModifiedAt = lastUpdateResult.lastUpdate;
 
       return {
         assetCount,

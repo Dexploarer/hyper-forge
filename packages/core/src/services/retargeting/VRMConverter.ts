@@ -1,4 +1,3 @@
-
 /**
  * VRMConverter - Convert Meshy GLB to VRM 1.0 Format
  *
@@ -333,12 +332,12 @@ export class VRMConverter {
     // Hips-to-head distance is typically ~0.7-0.8m for a 1.6m avatar
     const hipsToHeadDistance = hipsPos.distanceTo(headPos);
     const totalHeight = headPos.y; // Assuming root is at Y=0
-    
+
     // Use total height if hips are near ground (Y < 0.5), otherwise use hips-to-head
     // This handles both cases: models with root at ground vs models with hips at ground
     let currentHeight: number;
     let measurementType: string;
-    
+
     if (hipsPos.y < 0.5) {
       // Hips are near ground, use total height (head Y position)
       currentHeight = totalHeight;
@@ -352,7 +351,7 @@ export class VRMConverter {
       currentHeight = estimatedTotalHeight;
       measurementType = "estimated total height (hips Y + hips-to-head)";
     }
-    
+
     console.log(
       `   Current ${measurementType}: ${currentHeight.toFixed(3)} units`,
     );
@@ -417,17 +416,21 @@ export class VRMConverter {
     const finalHeadPos = new THREE.Vector3();
     if (hipsBone) hipsBone.getWorldPosition(finalHipsPos);
     if (headBone) headBone.getWorldPosition(finalHeadPos);
-    
+
     const finalHipsToHead = finalHipsPos.distanceTo(finalHeadPos);
     const finalTotalHeight = finalHeadPos.y; // Total height from ground to head
 
     console.log("📏 [VALIDATION] Final avatar height verification:");
-    console.log(`   Total height (ground to head): ${finalTotalHeight.toFixed(3)}m`);
+    console.log(
+      `   Total height (ground to head): ${finalTotalHeight.toFixed(3)}m`,
+    );
     console.log(`   Hips to Head distance: ${finalHipsToHead.toFixed(3)}m`);
     console.log(`   Hips Y position: ${finalHipsPos.y.toFixed(3)}m`);
     console.log(`   Head Y position: ${finalHeadPos.y.toFixed(3)}m`);
     console.log(`   Target total height: 1.600m`);
-    console.log(`   Difference: ${Math.abs(finalTotalHeight - 1.6).toFixed(3)}m`);
+    console.log(
+      `   Difference: ${Math.abs(finalTotalHeight - 1.6).toFixed(3)}m`,
+    );
 
     if (Math.abs(finalTotalHeight - 1.6) > 0.1) {
       console.warn(
