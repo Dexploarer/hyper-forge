@@ -93,17 +93,7 @@ initializeQdrantCollections().catch((error) => {
   console.error("[Startup] Qdrant initialization failed (non-fatal):", error);
 });
 
-// Initialize default achievements (async, non-blocking)
-import { achievementService } from "./services/AchievementService";
-achievementService.initializeDefaultAchievements().catch((error) => {
-  console.error(
-    "[Startup] Achievement initialization failed (non-fatal):",
-    error,
-  );
-});
-
 // Initialize services
-// Railway uses PORT, but we fallback to API_PORT for local dev
 const API_PORT = process.env.PORT || process.env.API_PORT || 3004;
 
 // Railway volume path takes priority, then ASSETS_DIR env var, then local default
@@ -917,12 +907,12 @@ console.log("🚀 ASSET-FORGE API SERVER - ELYSIA + BUN");
 console.log("=".repeat(60));
 
 // Server info
-// Get public URL from environment
+// Get public URL from environment (Railway production only)
 const publicUrl =
-  process.env.RAILWAY_STATIC_URL ||
-  process.env.RAILWAY_PUBLIC_DOMAIN ||
-  process.env.PUBLIC_URL ||
-  `http://0.0.0.0:${API_PORT}`;
+  process.env.RAILWAY_PUBLIC_DOMAIN
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+    : process.env.RAILWAY_STATIC_URL ||
+      `https://hyperforge-production.up.railway.app`;
 
 console.log("\n📍 SERVER ENDPOINTS:");
 console.log(`   🌐 Server:      ${publicUrl}`);
