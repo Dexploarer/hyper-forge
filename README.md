@@ -63,8 +63,8 @@ bun run dev
 
 The application will be available at:
 
-- **Frontend**: http://localhost:3000
-- **API**: http://localhost:3004
+- **Frontend**: Port 3000 (configurable via VITE_PORT)
+- **API**: Port 3004 (configurable via PORT)
 
 ## Development
 

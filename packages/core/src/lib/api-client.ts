@@ -19,8 +19,8 @@ import { getAuthToken } from "@/utils/auth-token-store";
 
 // Get API base URL
 // In production (Railway), frontend and API are served from same domain, so use relative URLs
-// In development, Vite proxy handles /api routes, so use relative URLs
-const API_BASE_URL = import.meta.env.VITE_API_URL || ""; // Empty string = relative URL (Vite proxy handles /api -> localhost:3004 in dev)
+// In development, Vite proxy handles /api routes to backend, so use relative URLs
+const API_BASE_URL = import.meta.env.VITE_API_URL || ""; // Empty string = relative URL (Vite proxy handles /api -> backend in dev)
 
 /**
  * Get authentication headers with Privy token

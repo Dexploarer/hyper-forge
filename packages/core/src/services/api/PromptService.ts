@@ -42,12 +42,10 @@ class PromptServiceClass {
   private baseUrl: string;
 
   constructor() {
-    // Use environment variable if available, otherwise use relative URL in production
+    // Use environment variable if available, otherwise use relative URL
     const envApiUrl = (import.meta as ExtendedImportMeta).env
       ?.VITE_GENERATION_API_URL;
-    const apiBaseUrl =
-      envApiUrl ||
-      (import.meta.env.PROD ? "/api" : "http://localhost:3004/api");
+    const apiBaseUrl = envApiUrl || "/api";
     this.baseUrl = `${apiBaseUrl}/prompts`;
   }
 

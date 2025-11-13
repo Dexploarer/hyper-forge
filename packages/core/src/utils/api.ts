@@ -14,9 +14,9 @@ const getApiBaseUrl = (): string => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
+
   // In production, use relative URLs (same domain)
-  // In development, use relative URLs (Vite proxy handles /api -> localhost:3004)
+  // In development, use relative URLs (Vite proxy handles /api -> backend)
   return "";
 }
 
