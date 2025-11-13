@@ -43,6 +43,6 @@
         "comment": "Ensures bun and node are available at runtime"
       }
     ],
-    "cmd": "bun run start:workers"
+    "cmd": "cd packages/core && bun run start:workers"
   }
 }
