@@ -49,6 +49,7 @@ export interface SearchResultItem {
  */
 export class QdrantService {
   private client: QdrantClient;
+  private url: string | null = null;
   private readonly VECTOR_SIZE = (EMBEDDING_CONFIG as typeof EMBEDDING_CONFIG)
     .DIMENSIONS;
   private readonly DISTANCE = (EMBEDDING_CONFIG as typeof EMBEDDING_CONFIG)
@@ -89,6 +90,9 @@ export class QdrantService {
         `[QdrantService] Converted HTTPS to HTTP for Railway internal URL: ${normalizedUrl}`,
       );
     }
+
+    // Store URL for health checks
+    this.url = normalizedUrl;
 
     // Initialize Qdrant client
     this.client = new QdrantClient({
@@ -466,8 +470,10 @@ export class QdrantService {
     try {
       // Use the dedicated health check endpoint
       // Qdrant's /healthz endpoint returns 200 OK with "healthz check passed"
-      const url = this.client["url"]; // Access the URL from client config
-      const healthUrl = `${url}/healthz`;
+      if (!this.url) {
+        return false;
+      }
+      const healthUrl = `${this.url}/healthz`;
 
       const response = await fetch(healthUrl, {
         method: "GET",

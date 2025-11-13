@@ -27,6 +27,7 @@ import { fileURLToPath } from "url";
 import { AssetService } from "./services/AssetService";
 import { RetextureService } from "./services/RetextureService";
 import { GenerationService } from "./services/GenerationService";
+import { CDNWebSocketService } from "./services/CDNWebSocketService";
 
 // Middleware
 import { errorHandler } from "./middleware/errorHandler";
@@ -140,6 +141,30 @@ const app = new Elysia()
   .onStart(async () => {
     console.log(`[Startup] Elysia server started on port ${API_PORT}`);
 
+    // Initialize WebSocket client to CDN (if configured)
+    if (process.env.CDN_WS_URL && process.env.CDN_API_KEY) {
+      console.log("[CDN WebSocket] Initializing connection to CDN...");
+      const cdnWebSocket = new CDNWebSocketService(
+        process.env.CDN_WS_URL,
+        process.env.CDN_API_KEY,
+      );
+
+      // Connect to CDN WebSocket server
+      cdnWebSocket.connect().catch((error) => {
+        console.error(
+          "[CDN WebSocket] Failed to connect (non-fatal):",
+          error instanceof Error ? error.message : String(error),
+        );
+      });
+
+      // Store in app context for shutdown
+      (app as any).cdnWebSocket = cdnWebSocket;
+    } else {
+      console.log(
+        "[CDN WebSocket] Skipped - CDN_WS_URL or CDN_API_KEY not configured",
+      );
+    }
+
     // Check if we should run workers embedded in API process (dev mode)
     if (
       process.env.ENABLE_EMBEDDED_WORKERS === "true" &&
@@ -172,6 +197,16 @@ const app = new Elysia()
   })
   .onStop(async (ctx) => {
     console.log("[Shutdown] Stopping Elysia server...");
+
+    // Disconnect CDN WebSocket if it exists
+    const cdnWebSocket = (ctx as any).cdnWebSocket as
+      | CDNWebSocketService
+      | undefined;
+    if (cdnWebSocket) {
+      console.log("[CDN WebSocket] Disconnecting...");
+      cdnWebSocket.disconnect();
+      console.log("[CDN WebSocket] Disconnected");
+    }
 
     // Stop embedded workers if they exist
     const workers = (ctx as any).workers as GenerationWorker[] | undefined;

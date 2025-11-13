@@ -873,8 +873,15 @@ export const WorldDataResponse = t.Object({
 export const GenerateWorldRequest = t.Object({
   theme: t.Optional(t.String()),
   complexity: t.Optional(
-    t.Union([t.Literal("simple"), t.Literal("medium"), t.Literal("complex")]),
+    t.Union([
+      t.Literal("simple"),
+      t.Literal("medium"),
+      t.Literal("complex"),
+      t.Literal("epic"),
+    ]),
   ),
+  worldName: t.Optional(t.String({ minLength: 1, maxLength: 200 })),
+  description: t.Optional(t.String({ maxLength: 5000 })),
   customPrompt: t.Optional(t.String()),
   quality: t.Optional(ModelQuality),
 });

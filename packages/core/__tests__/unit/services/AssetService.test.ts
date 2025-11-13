@@ -9,7 +9,7 @@ import type { Asset } from "../../../src/services/api/AssetService";
 
 describe("AssetService", () => {
   describe("getModelUrl", () => {
-    it("should return CDN URL when asset is published to CDN", () => {
+    it("should return CDN URL when available", () => {
       const asset: Asset = {
         id: "test-asset",
         name: "Test Asset",
@@ -18,7 +18,6 @@ describe("AssetService", () => {
         metadata: {} as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: true,
         cdnUrl: "https://cdn.example.com/models/test-asset/test-asset.glb",
       };
 
@@ -38,7 +37,6 @@ describe("AssetService", () => {
         metadata: {} as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: false,
       };
 
       const url = AssetService.getModelUrl(asset);
@@ -46,7 +44,7 @@ describe("AssetService", () => {
       expect(url).toBe("/gdd-assets/test-asset/test-asset.glb");
     });
 
-    it("should fallback to local path when publishedToCdn is true but cdnUrl is missing", () => {
+    it("should fallback to local path when cdnUrl is missing", () => {
       const asset: Asset = {
         id: "test-asset",
         name: "Test Asset",
@@ -55,7 +53,6 @@ describe("AssetService", () => {
         metadata: {} as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: true,
         cdnUrl: undefined,
       };
 
@@ -81,7 +78,6 @@ describe("AssetService", () => {
         metadata: {} as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: true,
         cdnConceptArtUrl:
           "https://cdn.example.com/models/test-asset/concept-art.png",
       };
@@ -102,7 +98,6 @@ describe("AssetService", () => {
         metadata: {} as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: false,
       };
 
       const url = AssetService.getConceptArtUrl(asset);
@@ -130,7 +125,6 @@ describe("AssetService", () => {
         } as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: true,
         cdnThumbnailUrl:
           "https://cdn.example.com/models/test-asset/thumbnail.png",
         cdnConceptArtUrl:
@@ -156,7 +150,6 @@ describe("AssetService", () => {
         metadata: {} as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: true,
         cdnConceptArtUrl:
           "https://cdn.example.com/models/test-asset/concept-art.png",
       };
@@ -177,7 +170,6 @@ describe("AssetService", () => {
         metadata: {} as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: false,
         thumbnailPath: "sprites/0deg.png",
       };
 
@@ -198,7 +190,6 @@ describe("AssetService", () => {
         } as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: false,
       };
 
       const url = AssetService.getPreviewImageUrl(asset);
@@ -215,7 +206,6 @@ describe("AssetService", () => {
         metadata: {} as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: false,
         conceptArtPath: "concept.png",
       };
 
@@ -233,7 +223,6 @@ describe("AssetService", () => {
         metadata: {} as any,
         hasModel: true,
         generatedAt: new Date().toISOString(),
-        publishedToCdn: false,
       };
 
       const url = AssetService.getPreviewImageUrl(asset);
@@ -260,10 +249,9 @@ describe("AssetService", () => {
         conceptArtPath: "local-concept.png",
       };
 
-      // Priority 1: CDN thumbnail (when published)
+      // Priority 1: CDN thumbnail (when available)
       let asset = {
         ...baseAsset,
-        publishedToCdn: true,
         cdnThumbnailUrl: "https://cdn.example.com/thumb.png",
         cdnConceptArtUrl: "https://cdn.example.com/concept.png",
       };
@@ -274,15 +262,14 @@ describe("AssetService", () => {
       // Priority 2: CDN concept art (no CDN thumbnail)
       asset = {
         ...baseAsset,
-        publishedToCdn: true,
         cdnConceptArtUrl: "https://cdn.example.com/concept.png",
       };
       expect(AssetService.getPreviewImageUrl(asset)).toBe(
         "https://cdn.example.com/concept.png",
       );
 
-      // Priority 3: Local thumbnail (not published to CDN)
-      asset = { ...baseAsset, publishedToCdn: false };
+      // Priority 3: Local thumbnail (no CDN URLs)
+      asset = { ...baseAsset };
       expect(AssetService.getPreviewImageUrl(asset)).toBe(
         "/gdd-assets/test-asset/local-thumb.png",
       );
@@ -290,7 +277,6 @@ describe("AssetService", () => {
       // Priority 4: Metadata concept art (no local thumbnail)
       asset = {
         ...baseAsset,
-        publishedToCdn: false,
         thumbnailPath: undefined,
       };
       expect(AssetService.getPreviewImageUrl(asset)).toBe(
@@ -300,7 +286,6 @@ describe("AssetService", () => {
       // Priority 5: conceptArtPath field (no metadata concept art)
       asset = {
         ...baseAsset,
-        publishedToCdn: false,
         thumbnailPath: undefined,
         metadata: {} as any,
       };
@@ -311,7 +296,6 @@ describe("AssetService", () => {
       // No preview available
       asset = {
         ...baseAsset,
-        publishedToCdn: false,
         thumbnailPath: undefined,
         conceptArtPath: undefined,
         metadata: {} as any,

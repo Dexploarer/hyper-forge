@@ -385,7 +385,7 @@ export class ContentGenerationService {
    */
   async generateWorld(params: {
     theme?: string;
-    complexity?: "simple" | "medium" | "complex";
+    complexity?: "simple" | "medium" | "complex" | "epic";
     customPrompt?: string;
     quality?: "quality" | "speed" | "balanced";
   }): Promise<{
@@ -583,6 +583,7 @@ Return ONLY the JSON object, no explanation.`;
       simple: "3-5 key NPCs, 5-8 asset types, 2-3 main locations",
       medium: "5-8 key NPCs, 10-15 asset types, 4-6 main locations",
       complex: "10-15 key NPCs, 20-30 asset types, 8-12 main locations",
+      epic: "15-25 key NPCs, 30-50 asset types, 12-20 main locations",
     };
 
     return `You are a world designer for a game development platform. Generate a complete, cohesive game world seed.

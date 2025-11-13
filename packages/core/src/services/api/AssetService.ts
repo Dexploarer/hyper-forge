@@ -35,8 +35,7 @@ export interface Asset {
   thumbnailPath?: string; // Path to thumbnail/sprite image (e.g., "sprites/0deg.png" or "pfp.png")
   conceptArtPath?: string; // Path to concept art image
 
-  // CDN URLs (populated when asset is published to CDN)
-  publishedToCdn?: boolean;
+  // CDN URLs (presence indicates asset is on CDN - single source of truth)
   cdnUrl?: string; // Full CDN URL for main model file
   cdnThumbnailUrl?: string; // CDN URL for thumbnail
   cdnConceptArtUrl?: string; // CDN URL for concept art
@@ -115,8 +114,8 @@ class AssetServiceClass {
       return `/gdd-assets/${asset}/${asset}.glb`;
     }
 
-    // Priority 1: Use CDN URL if asset is published to CDN
-    if (asset.publishedToCdn && asset.cdnUrl) {
+    // Priority 1: Use CDN URL if available
+    if (asset.cdnUrl) {
       return asset.cdnUrl;
     }
 
@@ -172,7 +171,7 @@ class AssetServiceClass {
     }
 
     // Priority 1: Use CDN concept art URL if available
-    if (asset.publishedToCdn && asset.cdnConceptArtUrl) {
+    if (asset.cdnConceptArtUrl) {
       return asset.cdnConceptArtUrl;
     }
 
@@ -186,13 +185,13 @@ class AssetServiceClass {
    * Prioritizes CDN URLs when available
    */
   getPreviewImageUrl(asset: Asset): string | null {
-    // Priority 1: CDN thumbnail URL if published
-    if (asset.publishedToCdn && asset.cdnThumbnailUrl) {
+    // Priority 1: CDN thumbnail URL if available
+    if (asset.cdnThumbnailUrl) {
       return asset.cdnThumbnailUrl;
     }
 
-    // Priority 2: CDN concept art URL if published
-    if (asset.publishedToCdn && asset.cdnConceptArtUrl) {
+    // Priority 2: CDN concept art URL if available
+    if (asset.cdnConceptArtUrl) {
       return asset.cdnConceptArtUrl;
     }
 

@@ -132,51 +132,21 @@ const _api = treaty<App>(API_BASE_URL, {
 });
 
 /**
- * Properly typed API client with support for hyphenated routes
+ * Export the API client directly without type overlay
  *
- * This fixes TypeScript errors when accessing routes with hyphens like 'generate-world'
- * by providing explicit type annotations. Eden Treaty's conditional types create complex
- * union types that TypeScript struggles to infer, so we use explicit types for the routes
- * that have issues.
+ * Eden Treaty automatically infers types from the Elysia server,
+ * so we don't need manual type definitions. The server's App type
+ * provides full type safety for all routes including:
+ * - api.api.assets (asset CRUD operations)
+ * - api.api.generation (3D model generation)
+ * - api.api.prompts (prompt management)
+ * - api.api['material-presets'] (material presets)
+ * - api.api.voice (voice/audio operations)
+ * - api.api.content (content generation)
+ * - api.api.health (health check)
+ * - And all other routes defined in api-elysia.ts
  */
-export const api = _api as any as typeof _api & {
-  api: {
-    voice: {
-      saved: {
-        get: (options?: {
-          query?: { type?: string; limit?: string };
-        }) => Promise<{
-          data: { success: boolean; audio: any[]; count: number } | null;
-          error: any;
-        }>;
-      };
-      save: {
-        post: (body: {
-          name: string;
-          type: "voice" | "music" | "sound_effect";
-          audioData: string;
-          metadata?: Record<string, any>;
-        }) => Promise<{
-          data: { success: boolean; id: string; fileUrl: string } | null;
-          error: any;
-        }>;
-      };
-    };
-    content: {
-      "generate-world": {
-        post: (body: {
-          theme?: string;
-          complexity?: string;
-          worldName?: string;
-          description?: string;
-        }) => Promise<{
-          data: { success: boolean; world: any; rawResponse?: any } | null;
-          error: any;
-        }>;
-      };
-    };
-  };
-};
+export const api = _api;
 
 /**
  * Type-safe fetch wrapper for non-Eden endpoints

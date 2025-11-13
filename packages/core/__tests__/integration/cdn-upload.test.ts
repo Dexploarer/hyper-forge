@@ -37,11 +37,7 @@ describe("CDN Upload Integration", () => {
     const testGlb = new Blob([new ArrayBuffer(100)], {
       type: "model/gltf-binary",
     });
-    formData.append(
-      "files",
-      testGlb,
-      `${testAssetId}/${testAssetId}.glb`,
-    );
+    formData.append("files", testGlb, `${testAssetId}/${testAssetId}.glb`);
     formData.append("directory", "models");
 
     console.log(`[Test] Uploading to CDN: ${process.env.CDN_URL}/api/upload`);
@@ -65,10 +61,7 @@ describe("CDN Upload Integration", () => {
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       asset = await db.query.assets.findFirst({
-        where: eq(
-          assets.filePath,
-          `models/${testAssetId}/${testAssetId}.glb`,
-        ),
+        where: eq(assets.filePath, `models/${testAssetId}/${testAssetId}.glb`),
       });
 
       if (asset) {
@@ -80,8 +73,8 @@ describe("CDN Upload Integration", () => {
     // Step 3: Verify database record created
     expect(asset).toBeDefined();
     if (asset) {
-      expect(asset.publishedToCdn).toBe(true);
       expect(asset.cdnUrl).toContain(testAssetId);
+      expect(asset.cdnUrl).toBeTruthy();
       expect(asset.name).toBeTruthy();
       expect(asset.type).toBeTruthy();
 
@@ -89,7 +82,6 @@ describe("CDN Upload Integration", () => {
         id: asset.id,
         name: asset.name,
         cdnUrl: asset.cdnUrl,
-        publishedToCdn: asset.publishedToCdn,
       });
     }
   }, 10000); // 10 second timeout for CDN upload + webhook
@@ -120,8 +112,8 @@ describe("CDN Upload Integration", () => {
       expect(asset.cdnUrl).toBeTruthy();
 
       // Verify CDN-specific fields
-      expect(asset.publishedToCdn).toBe(true);
-      expect(asset.cdnPublishedAt).toBeDefined();
+      expect(asset.cdnUrl).toBeDefined();
+      expect(asset.cdnFiles).toBeDefined();
 
       // Verify metadata structure
       expect(asset.metadata).toBeDefined();
@@ -130,7 +122,7 @@ describe("CDN Upload Integration", () => {
       console.log(`[Test] Metadata validation passed:`, {
         name: asset.name,
         type: asset.type,
-        publishedToCdn: asset.publishedToCdn,
+        cdnUrl: asset.cdnUrl,
         hasMetadata: !!asset.metadata,
       });
     }
