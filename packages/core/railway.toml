@@ -25,7 +25,8 @@ watchPatterns = [
 
 [deploy]
 # Start command - explicitly use Bun to run workers
-startCommand = "bun run start:workers"
+# Must cd into packages/core first since Railway runs from repo root
+startCommand = "cd packages/core && bun run start:workers"
 # Restart policy - restart on failure with more retries for workers
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 20
