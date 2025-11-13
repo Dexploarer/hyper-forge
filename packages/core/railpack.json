@@ -10,32 +10,6 @@
       "paths": ["node_modules"]
     }
   },
-  "build": {
-    "inputs": [
-      {
-        "step": "packages",
-        "comment": "Install Bun and Node.js runtime"
-      },
-      {
-        "step": "copy",
-        "paths": [
-          "package.json",
-          "bun.lock"
-        ],
-        "comment": "Copy dependency files first"
-      },
-      {
-        "step": "install",
-        "cmd": "bun install --frozen-lockfile",
-        "comment": "Install dependencies using Bun"
-      },
-      {
-        "step": "copy",
-        "paths": ["**"],
-        "comment": "Copy all source files"
-      }
-    ]
-  },
   "deploy": {
     "inputs": [
       {

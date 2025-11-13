@@ -12,7 +12,8 @@
 builder = "RAILPACK"
 # Explicit build command using Bun to bypass Railpack auto-detection
 # Workers don't need a frontend build, just install dependencies
-buildCommand = "bun install --frozen-lockfile"
+# Must cd into packages/core since Railway runs from repo root
+buildCommand = "cd packages/core && bun install --frozen-lockfile"
 # Watch paths for automatic rebuilds
 watchPatterns = [
   "server/workers/**",
