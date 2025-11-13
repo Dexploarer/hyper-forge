@@ -17,7 +17,7 @@ import { createAuthHeader } from "./auth";
 export function req(
   path: string,
   options: RequestInit = {},
-  baseURL = "http://localhost",
+  baseURL = "http://test-server",
 ): Request {
   const url = path.startsWith("http") ? path : `${baseURL}${path}`;
   return new Request(url, options);

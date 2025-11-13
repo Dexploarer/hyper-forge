@@ -9,7 +9,7 @@ import { Window } from "happy-dom";
 
 // Create happy-dom window
 const window = new Window({
-  url: "http://localhost:3000",
+  url: "http://test-client",
   width: 1920,
   height: 1080,
 });
