@@ -10,6 +10,7 @@ import { createAuthHeader } from "../../../helpers/auth";
 import {
   createTestUser,
   createTestAdmin,
+  createTestAsset,
   cleanDatabase,
 } from "../../../helpers/db";
 import { db } from "../../../../server/db";
@@ -718,6 +719,252 @@ describe("Asset Routes", () => {
       );
 
       expect(updateResponse.status).toBe(403);
+    });
+  });
+
+  describe("CDN URL Merging", () => {
+    it("should include CDN URLs when asset is published to CDN", async () => {
+      // Create database asset record with CDN URLs
+      const { user } = await createTestUser({
+        privyUserId: "cdn-user",
+        email: "cdn-user@test.com",
+      });
+
+      await createTestAsset(user.id, {
+        name: "CDN Asset",
+        type: "weapon",
+        category: "melee",
+        filePath: "cdn-asset/cdn-asset.glb",
+        status: "completed",
+        visibility: "public",
+        publishedToCdn: true,
+        cdnUrl: "https://cdn.example.com/models/cdn-asset/model.glb",
+        cdnThumbnailUrl:
+          "https://cdn.example.com/models/cdn-asset/thumbnail.png",
+        cdnConceptArtUrl:
+          "https://cdn.example.com/models/cdn-asset/concept-art.png",
+        cdnFiles: [
+          "https://cdn.example.com/models/cdn-asset/model.glb",
+          "https://cdn.example.com/models/cdn-asset/concept-art.png",
+          "https://cdn.example.com/models/cdn-asset/thumbnail.png",
+        ],
+      });
+
+      // Add filesystem mock asset (without CDN fields)
+      mockAssets.push({
+        id: "cdn-asset",
+        name: "CDN Asset",
+        type: "weapon",
+        tier: 1,
+        category: "melee",
+        modelUrl: "/gdd-assets/cdn-asset/model.glb",
+        createdBy: user.privyUserId,
+        isPublic: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      const response = await app.handle(
+        new Request("http://localhost/api/assets"),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      // Find our CDN asset
+      const returnedAsset = data.find((a: any) => a.id === "cdn-asset");
+
+      // Should include CDN URL fields merged from database
+      expect(returnedAsset).toBeDefined();
+      expect(returnedAsset.publishedToCdn).toBe(true);
+      expect(returnedAsset.cdnUrl).toBe(
+        "https://cdn.example.com/models/cdn-asset/model.glb",
+      );
+      expect(returnedAsset.cdnThumbnailUrl).toBe(
+        "https://cdn.example.com/models/cdn-asset/thumbnail.png",
+      );
+      expect(returnedAsset.cdnConceptArtUrl).toBe(
+        "https://cdn.example.com/models/cdn-asset/concept-art.png",
+      );
+      expect(Array.isArray(returnedAsset.cdnFiles)).toBe(true);
+      expect(returnedAsset.cdnFiles.length).toBe(3);
+    });
+
+    it("should set publishedToCdn to false when asset not on CDN", async () => {
+      // Create database asset without CDN fields
+      const { user } = await createTestUser({
+        privyUserId: "local-user",
+        email: "local-user@test.com",
+      });
+
+      await createTestAsset(user.id, {
+        name: "Local Asset",
+        type: "weapon",
+        category: "melee",
+        filePath: "local-asset/local-asset.glb",
+        status: "completed",
+        visibility: "public",
+        publishedToCdn: false,
+      });
+
+      // Add filesystem mock asset
+      mockAssets.push({
+        id: "local-asset",
+        name: "Local Asset",
+        type: "weapon",
+        tier: 1,
+        category: "melee",
+        modelUrl: "/gdd-assets/local-asset/model.glb",
+        createdBy: user.privyUserId,
+        isPublic: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      const response = await app.handle(
+        new Request("http://localhost/api/assets"),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      const returnedAsset = data.find((a: any) => a.id === "local-asset");
+
+      expect(returnedAsset).toBeDefined();
+      expect(returnedAsset.publishedToCdn).toBe(false);
+      expect(returnedAsset.cdnUrl).toBeUndefined();
+    });
+
+    it("should handle mixed CDN and local assets", async () => {
+      // Create user
+      const { user } = await createTestUser({
+        privyUserId: "mixed-user",
+        email: "mixed-user@test.com",
+      });
+
+      // Create CDN asset in database
+      await createTestAsset(user.id, {
+        name: "CDN Asset",
+        type: "weapon",
+        filePath: "mixed-cdn/mixed-cdn.glb",
+        status: "completed",
+        visibility: "public",
+        publishedToCdn: true,
+        cdnUrl: "https://cdn.example.com/models/mixed-cdn/model.glb",
+      });
+
+      // Create local asset in database
+      await createTestAsset(user.id, {
+        name: "Local Asset",
+        type: "armor",
+        filePath: "mixed-local/mixed-local.glb",
+        status: "completed",
+        visibility: "public",
+        publishedToCdn: false,
+      });
+
+      // Add filesystem mock assets
+      mockAssets.push(
+        {
+          id: "mixed-cdn",
+          name: "CDN Asset",
+          type: "weapon",
+          modelUrl: "/gdd-assets/mixed-cdn/model.glb",
+          createdBy: user.privyUserId,
+          isPublic: true,
+          createdAt: new Date().toISOString(),
+        },
+        {
+          id: "mixed-local",
+          name: "Local Asset",
+          type: "armor",
+          modelUrl: "/gdd-assets/mixed-local/model.glb",
+          createdBy: user.privyUserId,
+          isPublic: true,
+          createdAt: new Date().toISOString(),
+        },
+      );
+
+      const response = await app.handle(
+        new Request("http://localhost/api/assets"),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      // Should have both types
+      const cdnReturned = data.find((a: any) => a.id === "mixed-cdn");
+      const localReturned = data.find((a: any) => a.id === "mixed-local");
+
+      expect(cdnReturned.publishedToCdn).toBe(true);
+      expect(cdnReturned.cdnUrl).toBeDefined();
+
+      expect(localReturned.publishedToCdn).toBe(false);
+      expect(localReturned.cdnUrl).toBeUndefined();
+    });
+
+    it("should preserve all original asset fields when merging CDN URLs", async () => {
+      // Create user
+      const { user } = await createTestUser({
+        privyUserId: "full-user",
+        email: "full-user@test.com",
+        walletAddress: "0xABC",
+      });
+
+      // Create database asset with CDN fields
+      await createTestAsset(user.id, {
+        name: "Full Asset",
+        description: "Test description",
+        type: "weapon",
+        subtype: "sword",
+        category: "melee",
+        filePath: "full-asset/full-asset.glb",
+        status: "completed",
+        visibility: "public",
+        publishedToCdn: true,
+        cdnUrl: "https://cdn.example.com/models/full-asset/model.glb",
+      });
+
+      // Add filesystem mock asset with all fields
+      mockAssets.push({
+        id: "full-asset",
+        name: "Full Asset",
+        description: "Test description",
+        type: "weapon",
+        subtype: "sword",
+        tier: 3,
+        category: "melee",
+        modelUrl: "/gdd-assets/full-asset/model.glb",
+        thumbnailUrl: "/gdd-assets/full-asset/thumbnail.png",
+        hasSpriteSheet: true,
+        createdBy: user.privyUserId,
+        walletAddress: "0xABC",
+        isPublic: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      const response = await app.handle(
+        new Request("http://localhost/api/assets"),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      const returnedAsset = data.find((a: any) => a.id === "full-asset");
+
+      // Should have all original fields
+      expect(returnedAsset.name).toBe("Full Asset");
+      expect(returnedAsset.description).toBe("Test description");
+      expect(returnedAsset.type).toBe("weapon");
+      expect(returnedAsset.tier).toBe(3);
+      expect(returnedAsset.modelUrl).toBe("/gdd-assets/full-asset/model.glb");
+
+      // Plus CDN fields merged from database
+      expect(returnedAsset.publishedToCdn).toBe(true);
+      expect(returnedAsset.cdnUrl).toBe(
+        "https://cdn.example.com/models/full-asset/model.glb",
+      );
     });
   });
 });

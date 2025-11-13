@@ -42,9 +42,10 @@ export const createAssetRoutes = (
             let assets = await assetService.listAssets();
 
             // Filter assets based on visibility and ownership
+            // AND merge CDN URLs from database
             const filteredAssets = [];
             for (const asset of assets) {
-              // Get database record for visibility check
+              // Get database record for visibility check AND CDN URLs
               const dbAsset = await getAssetFromPath(asset.id);
 
               if (!dbAsset) {
@@ -55,7 +56,16 @@ export const createAssetRoutes = (
 
               // Check if user can view this asset
               if (canViewAsset(dbAsset, user)) {
-                filteredAssets.push(asset);
+                // Merge CDN URLs from database into asset response
+                const assetWithCDN = {
+                  ...asset,
+                  publishedToCdn: dbAsset.publishedToCdn ?? false,
+                  cdnUrl: dbAsset.cdnUrl,
+                  cdnThumbnailUrl: dbAsset.cdnThumbnailUrl,
+                  cdnConceptArtUrl: dbAsset.cdnConceptArtUrl,
+                  cdnFiles: dbAsset.cdnFiles,
+                };
+                filteredAssets.push(assetWithCDN);
               }
             }
 

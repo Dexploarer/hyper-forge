@@ -34,6 +34,13 @@ export interface Asset {
   generatedAt: string;
   thumbnailPath?: string; // Path to thumbnail/sprite image (e.g., "sprites/0deg.png" or "pfp.png")
   conceptArtPath?: string; // Path to concept art image
+
+  // CDN URLs (populated when asset is published to CDN)
+  publishedToCdn?: boolean;
+  cdnUrl?: string; // Full CDN URL for main model file
+  cdnThumbnailUrl?: string; // CDN URL for thumbnail
+  cdnConceptArtUrl?: string; // CDN URL for concept art
+  cdnFiles?: string[]; // Array of all CDN file URLs
 }
 
 export interface RetextureRequest {
@@ -97,8 +104,24 @@ class AssetServiceClass {
     return data as RetextureResponse;
   }
 
-  getModelUrl(assetId: string): string {
-    return `/gdd-assets/${assetId}/${assetId}.glb`;
+  /**
+   * Get model URL - uses CDN URL if available, falls back to local
+   * @param asset - Asset object with CDN URL fields (preferred)
+   * @param assetId - Asset ID for backward compatibility fallback
+   */
+  getModelUrl(asset: Asset | string): string {
+    // Handle string input for backward compatibility
+    if (typeof asset === "string") {
+      return `/gdd-assets/${asset}/${asset}.glb`;
+    }
+
+    // Priority 1: Use CDN URL if asset is published to CDN
+    if (asset.publishedToCdn && asset.cdnUrl) {
+      return asset.cdnUrl;
+    }
+
+    // Priority 2: Fallback to local path
+    return `/gdd-assets/${asset.id}/${asset.id}.glb`;
   }
 
   /**
@@ -137,26 +160,53 @@ class AssetServiceClass {
     return this.getModelUrl(assetId);
   }
 
-  getConceptArtUrl(assetId: string): string {
-    return `/gdd-assets/${assetId}/concept-art.png`;
+  /**
+   * Get concept art URL - uses CDN URL if available, falls back to local
+   * @param asset - Asset object with CDN URL fields (preferred)
+   * @param assetId - Asset ID for backward compatibility fallback
+   */
+  getConceptArtUrl(asset: Asset | string): string {
+    // Handle string input for backward compatibility
+    if (typeof asset === "string") {
+      return `/gdd-assets/${asset}/concept-art.png`;
+    }
+
+    // Priority 1: Use CDN concept art URL if available
+    if (asset.publishedToCdn && asset.cdnConceptArtUrl) {
+      return asset.cdnConceptArtUrl;
+    }
+
+    // Priority 2: Fallback to local path
+    return `/gdd-assets/${asset.id}/concept-art.png`;
   }
 
   /**
    * Get preview image URL for an asset
    * Returns thumbnail, concept art, or null if no preview available
+   * Prioritizes CDN URLs when available
    */
   getPreviewImageUrl(asset: Asset): string | null {
-    // Priority 1: Thumbnail (sprite or PFP)
+    // Priority 1: CDN thumbnail URL if published
+    if (asset.publishedToCdn && asset.cdnThumbnailUrl) {
+      return asset.cdnThumbnailUrl;
+    }
+
+    // Priority 2: CDN concept art URL if published
+    if (asset.publishedToCdn && asset.cdnConceptArtUrl) {
+      return asset.cdnConceptArtUrl;
+    }
+
+    // Priority 3: Local thumbnail (sprite or PFP)
     if (asset.thumbnailPath) {
       return `/gdd-assets/${asset.id}/${asset.thumbnailPath}`;
     }
 
-    // Priority 2: Concept art from metadata
+    // Priority 4: Local concept art from metadata
     if (asset.metadata?.hasConceptArt && asset.metadata?.conceptArtPath) {
       return `/gdd-assets/${asset.id}/${asset.metadata.conceptArtPath}`;
     }
 
-    // Priority 3: Concept art from conceptArtPath field
+    // Priority 5: Local concept art from conceptArtPath field
     if (asset.conceptArtPath) {
       return `/gdd-assets/${asset.id}/${asset.conceptArtPath}`;
     }

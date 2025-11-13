@@ -1249,6 +1249,44 @@ export class GenerationService extends EventEmitter {
         }
       }
 
+      // Stage 6: Auto-publish to CDN (mirrors ImageHostingService pattern)
+      // This ensures assets are immediately available via permanent CDN URLs
+      if (process.env.CDN_URL && process.env.CDN_API_KEY) {
+        try {
+          console.log(
+            `📦 [Pipeline ${pipelineId}] Publishing asset ${config.assetId} to CDN...`,
+          );
+          const { CDNPublishService } = await import("./CDNPublishService");
+          const cdnService = CDNPublishService.fromEnv(
+            path.join(process.cwd(), "gdd-assets"),
+          );
+          const result = await cdnService.publishAndUpdateAsset(config.assetId);
+
+          if (result.success) {
+            console.log(
+              `✅ [Pipeline ${pipelineId}] Asset published to CDN: ${result.mainCdnUrl}`,
+            );
+            console.log(
+              `   Files published: ${result.filesPublished.join(", ")}`,
+            );
+          } else {
+            console.warn(
+              `⚠️ [Pipeline ${pipelineId}] CDN publish failed: ${result.error}`,
+            );
+          }
+        } catch (error) {
+          console.error(
+            `⚠️ [Pipeline ${pipelineId}] CDN publish error:`,
+            error,
+          );
+          // Don't fail pipeline if CDN publish fails - asset is still usable locally
+        }
+      } else {
+        console.log(
+          `⏭️ [Pipeline ${pipelineId}] CDN publishing skipped (CDN_URL or CDN_API_KEY not configured)`,
+        );
+      }
+
       // Complete
       pipeline.status = "completed";
       pipeline.completedAt = new Date().toISOString();
