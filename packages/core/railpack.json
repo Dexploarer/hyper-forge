@@ -17,6 +17,6 @@
         "comment": "Ensures bun and node are available at runtime"
       }
     ],
-    "cmd": "cd packages/core && NODE_ENV=production bun server/workers/start-workers.ts"
+    "cmd": "NODE_ENV=production bun packages/core/server/workers/start-workers.ts"
   }
 }

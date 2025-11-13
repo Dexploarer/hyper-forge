@@ -10,10 +10,8 @@
 
 [build]
 builder = "RAILPACK"
-# Explicit build command using Bun to bypass Railpack auto-detection
-# Workers don't need a frontend build, just install dependencies
-# Must cd into packages/core since Railway runs from repo root
-buildCommand = "cd packages/core && bun install --frozen-lockfile"
+# Railpack automatically detects bun and installs dependencies from root
+# The railpack.json in packages/core configures the deployment command
 # Watch paths for automatic rebuilds - absolute from repo root
 # These paths trigger redeployments when changed
 watchPatterns = [
@@ -27,10 +25,8 @@ watchPatterns = [
 ]
 
 [deploy]
-# Start command - explicitly use Bun to run workers
-# Must cd into packages/core since Railway runs from repo root
-# Using direct file path instead of npm script to avoid script lookup issues
-startCommand = "cd packages/core && NODE_ENV=production bun server/workers/start-workers.ts"
+# Start command is configured in railpack.json
+# Railpack runs from repo root, so paths are relative to root
 # Restart policy - restart on failure with more retries for workers
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 20
