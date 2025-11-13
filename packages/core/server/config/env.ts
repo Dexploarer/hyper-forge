@@ -62,8 +62,18 @@ const envSchema = z
       .string()
       .optional()
       .refine(
-        (val) => !val || val === "" || z.string().url().safeParse(val).success,
-        { message: "Must be a valid URL if provided" }
+        (val) => {
+          if (!val || val === "") return true;
+          // Allow Railway internal hostnames (e.g., https://qdrant.railway.internal:6333)
+          // and standard URLs
+          try {
+            const url = new URL(val);
+            return url.protocol === "http:" || url.protocol === "https:";
+          } catch {
+            return false;
+          }
+        },
+        { message: "Must be a valid URL with http:// or https:// protocol if provided" }
       ),
     QDRANT_API_KEY: z.string().optional(),
 
