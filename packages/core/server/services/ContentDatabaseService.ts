@@ -5,7 +5,7 @@
  */
 
 import { db } from "../db/db";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import {
   npcs,
   quests,
@@ -43,7 +43,10 @@ export class ContentDatabaseService {
         })
         .returning();
 
-      logger.info({ context: 'ContentDatabaseService' }, 'Created NPC: ${npc.name}');
+      logger.info(
+        { context: "ContentDatabaseService" },
+        `Created NPC: ${npc.name}`,
+      );
 
       // Index to Qdrant (async, don't block)
       this.indexNPC(npc).catch((error) => {
@@ -55,7 +58,10 @@ export class ContentDatabaseService {
 
       return npc;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to create NPC:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to create NPC:",
+      );
       throw error;
     }
   }
@@ -73,7 +79,10 @@ export class ContentDatabaseService {
 
       return result[0] || null;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to get NPC:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to get NPC:",
+      );
       return null;
     }
   }
@@ -92,7 +101,10 @@ export class ContentDatabaseService {
 
       return result;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to list NPCs:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to list NPCs:",
+      );
       return [];
     }
   }
@@ -111,7 +123,10 @@ export class ContentDatabaseService {
         .where(eq(npcs.id, id))
         .returning();
 
-      logger.info({ context: 'ContentDatabaseService' }, 'Updated NPC: ${npc.name}');
+      logger.info(
+        { context: "ContentDatabaseService" },
+        `Updated NPC: ${npc.name}`,
+      );
 
       // Re-index to Qdrant (async, don't block)
       this.indexNPC(npc).catch((error) => {
@@ -123,7 +138,10 @@ export class ContentDatabaseService {
 
       return npc;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to update NPC:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to update NPC:",
+      );
       throw error;
     }
   }
@@ -134,7 +152,7 @@ export class ContentDatabaseService {
   async deleteNPC(id: string): Promise<void> {
     try {
       await db.delete(npcs).where(eq(npcs.id, id));
-      logger.info({ context: 'ContentDatabaseService' }, 'Deleted NPC: ${id}');
+      logger.info({ context: "ContentDatabaseService" }, `Deleted NPC: ${id}`);
 
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
@@ -146,7 +164,10 @@ export class ContentDatabaseService {
         });
       }
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to delete NPC:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to delete NPC:",
+      );
       throw error;
     }
   }
@@ -169,7 +190,10 @@ export class ContentDatabaseService {
         })
         .returning();
 
-      logger.info({ context: 'ContentDatabaseService' }, 'Created Quest: ${quest.title}');
+      logger.info(
+        { context: "ContentDatabaseService" },
+        `Created Quest: ${quest.title}`,
+      );
 
       // Index to Qdrant (async, don't block)
       this.indexQuest(quest).catch((error) => {
@@ -181,7 +205,10 @@ export class ContentDatabaseService {
 
       return quest;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to create Quest:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to create Quest:",
+      );
       throw error;
     }
   }
@@ -199,7 +226,10 @@ export class ContentDatabaseService {
 
       return result[0] || null;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to get Quest:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to get Quest:",
+      );
       return null;
     }
   }
@@ -218,7 +248,10 @@ export class ContentDatabaseService {
 
       return result;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to list Quests:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to list Quests:",
+      );
       return [];
     }
   }
@@ -237,7 +270,10 @@ export class ContentDatabaseService {
         .where(eq(quests.id, id))
         .returning();
 
-      logger.info({ context: 'ContentDatabaseService' }, 'Updated Quest: ${quest.title}');
+      logger.info(
+        { context: "ContentDatabaseService" },
+        `Updated Quest: ${quest.title}`,
+      );
 
       // Re-index to Qdrant (async, don't block)
       this.indexQuest(quest).catch((error) => {
@@ -249,7 +285,10 @@ export class ContentDatabaseService {
 
       return quest;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to update Quest:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to update Quest:",
+      );
       throw error;
     }
   }
@@ -260,7 +299,10 @@ export class ContentDatabaseService {
   async deleteQuest(id: string): Promise<void> {
     try {
       await db.delete(quests).where(eq(quests.id, id));
-      logger.info({ context: 'ContentDatabaseService' }, 'Deleted Quest: ${id}');
+      logger.info(
+        { context: "ContentDatabaseService" },
+        `Deleted Quest: ${id}`,
+      );
 
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
@@ -272,7 +314,10 @@ export class ContentDatabaseService {
         });
       }
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to delete Quest:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to delete Quest:",
+      );
       throw error;
     }
   }
@@ -330,7 +375,10 @@ export class ContentDatabaseService {
 
       return result[0] || null;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to get Dialogue:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to get Dialogue:",
+      );
       return null;
     }
   }
@@ -402,7 +450,10 @@ export class ContentDatabaseService {
   async deleteDialogue(id: string): Promise<void> {
     try {
       await db.delete(dialogues).where(eq(dialogues.id, id));
-      logger.info({ context: 'ContentDatabaseService' }, 'Deleted Dialogue: ${id}');
+      logger.info(
+        { context: "ContentDatabaseService" },
+        `Deleted Dialogue: ${id}`,
+      );
 
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
@@ -440,7 +491,10 @@ export class ContentDatabaseService {
         })
         .returning();
 
-      logger.info({ context: 'ContentDatabaseService' }, 'Created Lore: ${lore.title}');
+      logger.info(
+        { context: "ContentDatabaseService" },
+        `Created Lore: ${lore.title}`,
+      );
 
       // Index to Qdrant (async, don't block)
       this.indexLore(lore).catch((error) => {
@@ -452,7 +506,10 @@ export class ContentDatabaseService {
 
       return lore;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to create Lore:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to create Lore:",
+      );
       throw error;
     }
   }
@@ -470,7 +527,10 @@ export class ContentDatabaseService {
 
       return result[0] || null;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to get Lore:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to get Lore:",
+      );
       return null;
     }
   }
@@ -489,7 +549,10 @@ export class ContentDatabaseService {
 
       return result;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to list Lores:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to list Lores:",
+      );
       return [];
     }
   }
@@ -508,7 +571,10 @@ export class ContentDatabaseService {
         .where(eq(lores.id, id))
         .returning();
 
-      logger.info({ context: 'ContentDatabaseService' }, 'Updated Lore: ${lore.title}');
+      logger.info(
+        { context: "ContentDatabaseService" },
+        `Updated Lore: ${lore.title}`,
+      );
 
       // Re-index to Qdrant (async, don't block)
       this.indexLore(lore).catch((error) => {
@@ -520,7 +586,10 @@ export class ContentDatabaseService {
 
       return lore;
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to update Lore:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to update Lore:",
+      );
       throw error;
     }
   }
@@ -531,7 +600,7 @@ export class ContentDatabaseService {
   async deleteLore(id: string): Promise<void> {
     try {
       await db.delete(lores).where(eq(lores.id, id));
-      logger.info({ context: 'ContentDatabaseService' }, 'Deleted Lore: ${id}');
+      logger.info({ context: "ContentDatabaseService" }, `Deleted Lore: ${id}`);
 
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
@@ -543,7 +612,10 @@ export class ContentDatabaseService {
         });
       }
     } catch (error) {
-      logger.error({, error }, '[ContentDatabaseService] Failed to delete Lore:');
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to delete Lore:",
+      );
       throw error;
     }
   }
@@ -578,7 +650,10 @@ export class ContentDatabaseService {
         },
       });
 
-      logger.info({ context: 'ContentDatabaseService' }, 'Indexed NPC to Qdrant: ${npc.id}');
+      logger.info(
+        { context: "ContentDatabaseService" },
+        `Indexed NPC to Qdrant: ${npc.id}`,
+      );
     } catch (error) {
       console.error(
         `[ContentDatabaseService] Error indexing NPC ${npc.id} to Qdrant:`,

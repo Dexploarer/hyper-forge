@@ -4,7 +4,7 @@
  */
 
 import { assetDatabaseService } from "../services/AssetDatabaseService";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import type { Asset } from "../db/schema";
 import type { AuthUser } from "./auth";
 
@@ -76,7 +76,7 @@ export async function getAssetFromPath(assetId: string): Promise<Asset | null> {
   try {
     return await assetDatabaseService.getAssetWithOwner(assetId);
   } catch (error) {
-    logger.error({, error }, '[AssetAuth] Failed to get asset ${assetId}:');
+    logger.error({ err: error }, `[AssetAuth] Failed to get asset ${assetId}:`);
     return null;
   }
 }

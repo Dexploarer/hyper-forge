@@ -4,7 +4,7 @@
  */
 
 import { QdrantClient } from "@qdrant/js-client-rest";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import type { QdrantFilter, QdrantPayload } from "./types/vector";
 import { EMBEDDING_CONFIG } from "./types/vector";
 
@@ -101,7 +101,10 @@ export class QdrantService {
       apiKey: qdrantApiKey, // Optional - Railway Qdrant may not require API key
     });
 
-    logger.info({ context: 'QdrantService' }, 'Initialized with URL: ${normalizedUrl}');
+    logger.info(
+      { context: "QdrantService" },
+      `Initialized with URL: ${normalizedUrl}`,
+    );
   }
 
   /**
@@ -131,13 +134,13 @@ export class QdrantService {
       "dialogues",
     ];
 
-    logger.info({ }, '[QdrantService] Initializing collections...');
+    logger.info({ context: "QdrantService" }, "Initializing collections...");
 
     for (const collection of collections) {
       await this.ensureCollection(collection);
     }
 
-    logger.info({ }, '[QdrantService] All collections initialized');
+    logger.info({ context: "QdrantService" }, "All collections initialized");
   }
 
   /**
@@ -149,7 +152,10 @@ export class QdrantService {
       const exists = await this.collectionExists(name);
 
       if (exists) {
-        logger.info({ context: 'QdrantService' }, 'Collection '${name}' already exists');
+        logger.info(
+          { context: "QdrantService" },
+          `Collection '${name}' already exists`,
+        );
         return;
       }
 
@@ -161,7 +167,7 @@ export class QdrantService {
         },
       });
 
-      logger.info({ context: 'QdrantService' }, 'Created collection '${name}'');
+      logger.info({ context: "QdrantService" }, `Created collection '${name}'`);
 
       // Create indexes for common payload fields
       await this.createPayloadIndexes(name);
@@ -259,7 +265,10 @@ export class QdrantService {
         ],
       });
 
-      logger.info({ context: 'QdrantService' }, 'Upserted point ${id} to '${collection}'');
+      logger.info(
+        { context: "QdrantService" },
+        `Upserted point ${id} to '${collection}'`,
+      );
     } catch (error) {
       console.error(
         `[QdrantService] Error upserting to '${collection}':`,
@@ -329,7 +338,10 @@ export class QdrantService {
         payload: result.payload as Record<string, unknown>,
       }));
     } catch (error) {
-      logger.error({, error }, '[QdrantService] Error searching '${collection}':');
+      logger.error(
+        { err: error },
+        `[QdrantService] Error searching '${collection}'`,
+      );
       throw error;
     }
   }
@@ -395,7 +407,10 @@ export class QdrantService {
         points: [id],
       });
 
-      logger.info({ context: 'QdrantService' }, 'Deleted point ${id} from '${collection}'');
+      logger.info(
+        { context: "QdrantService" },
+        `Deleted point ${id} from '${collection}'`,
+      );
     } catch (error) {
       console.error(
         `[QdrantService] Error deleting from '${collection}':`,
@@ -490,7 +505,7 @@ export class QdrantService {
       );
       return false;
     } catch (error) {
-      logger.error({ err: error }, '[QdrantService] Health check failed:');
+      logger.error({ err: error }, "[QdrantService] Health check failed:");
       return false;
     }
   }

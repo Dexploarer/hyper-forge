@@ -4,7 +4,7 @@
  */
 
 import { getGenerationPrompts } from "../utils/promptLoader";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 // Type for fetch function (compatible with both global fetch and node-fetch)
 type FetchFunction = typeof fetch;
@@ -168,7 +168,9 @@ class ImageGenerationService {
   ): Promise<ImageGenerationResult> {
     // Check for Vercel AI Gateway or direct OpenAI API
     // Use instance variable if available, otherwise fall back to environment variable
-    const useAIGateway = !!(this.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY);
+    const useAIGateway = !!(
+      this.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY
+    );
     const useDirectOpenAI = !!(this.apiKey || process.env.OPENAI_API_KEY);
 
     if (!useAIGateway && !useDirectOpenAI) {
@@ -197,8 +199,8 @@ class ImageGenerationService {
       : "https://api.openai.com/v1/images/generations";
 
     const apiKey = useAIGateway
-      ? (this.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY!)
-      : (this.apiKey || process.env.OPENAI_API_KEY!);
+      ? this.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY!
+      : this.apiKey || process.env.OPENAI_API_KEY!;
 
     // Use google/gemini-2.5-flash-image for AI Gateway, gpt-image-1 for direct OpenAI
     const modelName = useAIGateway
@@ -248,14 +250,17 @@ class ImageGenerationService {
 
     if (useAIGateway) {
       // Log the full response to debug
-      logger.info({, JSON.stringify(data, null, 2 }, 'AI Gateway response:'));
+      logger.info(
+        { context: "AICreation", data: JSON.stringify(data, null, 2) },
+        "AI Gateway response:",
+      );
 
       // AI Gateway returns images in choices[0].message.images array
       const images = data.choices?.[0]?.message?.images;
       if (images && images.length > 0) {
         imageUrl = images[0].image_url.url;
       } else {
-        logger.error({ err: data }, 'No images found in response. Full data:');
+        logger.error({ err: data }, "No images found in response. Full data:");
         throw new Error("No image data returned from AI Gateway");
       }
     } else {

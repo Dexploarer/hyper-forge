@@ -4,7 +4,7 @@
  */
 
 import EventEmitter from "events";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import type { UserContextType } from "../models";
 import { AICreationService } from "./AICreationService";
 import { ImageHostingService } from "./ImageHostingService";
@@ -242,14 +242,17 @@ export class GenerationService extends EventEmitter {
       config?.elevenLabsApiKey || process.env.ELEVENLABS_API_KEY || "";
 
     // Log which key sources are being used
-    logger.info({ }, '[GenerationService] Initializing with API keys:');
+    logger.info({ context: "GenerationService" }, "Initializing with API keys");
     console.log(
       `  - Meshy: ${config?.meshyApiKey ? "user-provided" : "environment variable"}`,
     );
     console.log(
       `  - AI Gateway: ${config?.aiGatewayApiKey ? "user-provided" : "environment variable"}`,
     );
-    logger.info({ }, '  - OpenAI: environment variable');
+    logger.info(
+      { context: "GenerationService" },
+      "OpenAI: environment variable",
+    );
     console.log(
       `  - ElevenLabs: ${config?.elevenLabsApiKey ? "user-provided" : "environment variable"}`,
     );
@@ -351,19 +354,22 @@ export class GenerationService extends EventEmitter {
       results: {},
       createdAt: new Date(),
     });
-    logger.info({ }, '📦 [Pipeline ${pipelineId}] Stored in database');
+    logger.info({ pipelineId }, "Pipeline stored in database");
 
     // Start processing asynchronously
-    logger.info({ }, '🚀 [Pipeline ${pipelineId}] Starting async processing...');
+    logger.info({ pipelineId }, "Starting async processing...");
     this.processPipeline(pipelineId).catch(async (error) => {
-      logger.error({, error }, '❌ [Pipeline ${pipelineId}] Failed:');
+      logger.error({ err: error, pipelineId }, "Pipeline failed");
       try {
         await this.pipelineRepo.update(pipelineId, {
           status: "failed",
           error: error.message,
         } as any);
       } catch (updateError) {
-        logger.error({, updateError }, 'Failed to update pipeline error status:');
+        logger.error(
+          { err: updateError, pipelineId },
+          "Failed to update pipeline error status",
+        );
       }
     });
 
@@ -415,7 +421,7 @@ export class GenerationService extends EventEmitter {
    * Process a pipeline through all stages
    */
   private async processPipeline(pipelineId: string): Promise<void> {
-    logger.info({ }, '⚙️ [Pipeline ${pipelineId}] processPipeline() called');
+    logger.info({ pipelineId }, "processPipeline() called");
     const pipeline = this.pipelines.get(pipelineId);
     if (!pipeline) {
       console.error(
@@ -428,7 +434,7 @@ export class GenerationService extends EventEmitter {
     const config = pipeline.config as PipelineConfig;
 
     try {
-      logger.info({ }, '📝 [Pipeline ${pipelineId}] Setting status to 'processing'');
+      logger.info({ pipelineId }, "Setting status to processing");
       pipeline.status = "processing";
 
       let enhancedPrompt = config.description;
@@ -437,10 +443,16 @@ export class GenerationService extends EventEmitter {
       let baseModelPath: string | null = null;
 
       // Stage 1: GPT-4 Prompt Enhancement (honor toggle; skip if explicitly disabled)
-      logger.info({ }, '📋 [Pipeline ${pipelineId}] Stage 1: Prompt Optimization');
+      logger.info(
+        { pipelineId, stage: "promptOptimization" },
+        "Stage 1: Prompt Optimization",
+      );
       if (config.metadata?.useGPT4Enhancement !== false) {
         pipeline.stages.promptOptimization.status = "processing";
-        logger.info({ }, '🤖 [Pipeline ${pipelineId}] Running GPT-4 enhancement...');
+        logger.info(
+          { pipelineId, stage: "promptOptimization" },
+          "Running GPT-4 enhancement",
+        );
 
         try {
           const optimizationResult = await this.enhancePromptWithGPT4(config);
@@ -472,20 +484,29 @@ export class GenerationService extends EventEmitter {
           `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
         );
       } else {
-        logger.info({ }, '⏭️ [Pipeline ${pipelineId}] GPT-4 enhancement skipped');
+        logger.info(
+          { pipelineId, stage: "promptOptimization" },
+          "GPT-4 enhancement skipped",
+        );
         pipeline.stages.promptOptimization.status = "skipped";
         pipeline.progress = 10; // CRITICAL FIX: Update progress even when skipped
       }
 
       // Stage 2: Image Source (User-provided or AI-generated)
-      logger.info({ }, '📋 [Pipeline ${pipelineId}] Stage 2: Image Generation');
+      logger.info(
+        { pipelineId, stage: "imageGeneration" },
+        "Stage 2: Image Generation",
+      );
       const hasUserRef = !!(
         config.referenceImage &&
         (config.referenceImage.url || config.referenceImage.dataUrl)
       );
       if (hasUserRef) {
         // Use user-provided reference image; skip auto image generation
-        logger.info({ }, '⏭️ [Pipeline ${pipelineId}] Using user-provided image');
+        logger.info(
+          { pipelineId, stage: "imageGeneration" },
+          "Using user-provided image",
+        );
         imageUrl =
           config.referenceImage!.dataUrl || config.referenceImage!.url!;
         pipeline.stages.imageGeneration.status = "skipped";
@@ -498,7 +519,10 @@ export class GenerationService extends EventEmitter {
           `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
         );
       } else {
-        logger.info({ }, '🎨 [Pipeline ${pipelineId}] Generating concept art...');
+        logger.info(
+          { pipelineId, stage: "imageGeneration" },
+          "Generating concept art",
+        );
         pipeline.stages.imageGeneration.status = "processing";
 
         try {
@@ -564,7 +588,10 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.imageGeneration.result = imageResult;
           pipeline.results.imageGeneration = imageResult;
           pipeline.progress = 25;
-          logger.info({ }, '✅ [Pipeline ${pipelineId}] Image generation completed');
+          logger.info(
+            { pipelineId, stage: "imageGeneration" },
+            "Image generation completed",
+          );
           console.log(
             `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
           );
@@ -610,7 +637,7 @@ export class GenerationService extends EventEmitter {
         }
 
         // Ensure we have a publicly accessible URL for Meshy
-        logger.info({, imageUrlForMeshy }, '📸 Initial image URL:');
+        logger.info({ imageUrlForMeshy, pipelineId }, "Initial image URL");
 
         // Meshy can't access localhost, 127.0.0.1, or data URIs - rehost if needed
         if (
@@ -627,7 +654,10 @@ export class GenerationService extends EventEmitter {
             imageUrlForMeshy = await this.imageHostingService.uploadImage(
               imageUrl!,
             );
-            logger.info({, imageUrlForMeshy }, '✅ Image uploaded to public URL:');
+            logger.info(
+              { imageUrlForMeshy, pipelineId },
+              "Image uploaded to public URL",
+            );
           } catch (uploadError) {
             console.error(
               "❌ Failed to upload image:",
@@ -779,7 +809,10 @@ export class GenerationService extends EventEmitter {
 
           if (config.type === "character") {
             // Normalize character height
-            logger.info({ }, '🔧 Normalizing character model...');
+            logger.info(
+              { pipelineId, type: "character" },
+              "Normalizing character model",
+            );
             try {
               const { AssetNormalizationService } = await import(
                 "../../src/services/processing/AssetNormalizationService"
@@ -798,7 +831,7 @@ export class GenerationService extends EventEmitter {
               normalizedBuffer = Buffer.from(normalized.glb);
               await fs.writeFile(normalizedModelPath, normalizedBuffer);
 
-              logger.info({ }, '✅ Character normalized to ${targetHeight}m height');
+              logger.info({ pipelineId, targetHeight }, "Character normalized");
 
               // Update with normalized dimensions
               (pipeline.stages.image3D as StageResult).normalized = true;
@@ -814,7 +847,10 @@ export class GenerationService extends EventEmitter {
             }
           } else if (config.type === "weapon") {
             // Normalize weapon with grip at origin
-            logger.info({ }, '🔧 Normalizing weapon model...');
+            logger.info(
+              { pipelineId, type: "weapon" },
+              "Normalizing weapon model",
+            );
             try {
               const { WeaponHandleDetector } = await import(
                 "../../src/services/processing/WeaponHandleDetector"
@@ -826,7 +862,10 @@ export class GenerationService extends EventEmitter {
               normalizedBuffer = Buffer.from(result.normalizedGlb);
               await fs.writeFile(normalizedModelPath, normalizedBuffer);
 
-              logger.info({ }, '✅ Weapon normalized with grip at origin');
+              logger.info(
+                { pipelineId, type: "weapon" },
+                "Weapon normalized with grip at origin",
+              );
 
               // Update with normalized dimensions
               (pipeline.stages.image3D as StageResult).normalized = true;
@@ -940,7 +979,7 @@ export class GenerationService extends EventEmitter {
           await fs
             .rm(tempDir, { recursive: true, force: true })
             .catch((err) =>
-              logger.warn({, err }, 'Failed to cleanup temp dir ${tempDir}:'),
+              logger.warn({ err, tempDir }, "Failed to cleanup temp dir"),
             );
         }
 
@@ -955,7 +994,7 @@ export class GenerationService extends EventEmitter {
         pipeline.results.image3D = pipeline.stages.image3D.result;
         pipeline.progress = 50;
       } catch (error) {
-        logger.error({ err: error }, 'Image to 3D conversion failed:');
+        logger.error({ err: error }, "Image to 3D conversion failed:");
         pipeline.stages.image3D.status = "failed";
         pipeline.stages.image3D.error = (error as Error).message;
         throw error;
@@ -1133,7 +1172,10 @@ export class GenerationService extends EventEmitter {
         pipeline.stages.rigging = { status: "processing", progress: 0 };
 
         try {
-          logger.info({ }, '🦴 Starting auto-rigging for avatar...');
+          logger.info(
+            { pipelineId, stage: "rigging" },
+            "Starting auto-rigging for avatar",
+          );
 
           // Start rigging task
           const riggingTaskId = await this.aiService
@@ -1145,7 +1187,7 @@ export class GenerationService extends EventEmitter {
               },
             );
 
-          logger.info({ }, 'Rigging task started: ${riggingTaskId}');
+          logger.info({ pipelineId, riggingTaskId }, "Rigging task started");
 
           // Poll for rigging completion
           let riggingResult: RiggingResult | null = null;
@@ -1186,7 +1228,10 @@ export class GenerationService extends EventEmitter {
           // IMPORTANT: For rigged avatars, we DON'T replace the main model
           // We keep the original T-pose model and save animations separately
           // This prevents the T-pose + animation layering issue
-          logger.info({ }, '🦴 Processing rigged character assets...');
+          logger.info(
+            { pipelineId, stage: "rigging" },
+            "Processing rigged character assets",
+          );
 
           // Use temp directory for T-pose extraction
           const tempRiggingDir = path.join("/tmp", `rigging-${config.assetId}`);
@@ -1200,7 +1245,10 @@ export class GenerationService extends EventEmitter {
               // CRITICAL: First, get the rigged model from the walking animation
               // This contains the model with bones that we need for animations
               if (animations.walking_glb_url) {
-                logger.info({ }, '🦴 Downloading rigged model and animations...');
+                logger.info(
+                  { pipelineId, stage: "rigging" },
+                  "Downloading rigged model and animations",
+                );
                 const walkingBuffer = await this.downloadFile(
                   animations.walking_glb_url,
                 );
@@ -1214,7 +1262,10 @@ export class GenerationService extends EventEmitter {
                 riggedAssets.walking = "animations/walking.glb";
 
                 // Extract T-pose from the walking animation
-                logger.info({ }, '🎯 Extracting T-pose from walking animation...');
+                logger.info(
+                  { pipelineId, stage: "rigging" },
+                  "Extracting T-pose from walking animation",
+                );
                 try {
                   const walkingTempPath = path.join(
                     tempRiggingDir,
@@ -1234,7 +1285,10 @@ export class GenerationService extends EventEmitter {
                     type: "model/gltf-binary",
                   });
                   riggedAssets.tpose = "t-pose.glb";
-                  logger.info({ }, '✅ T-pose extracted successfully');
+                  logger.info(
+                    { pipelineId, stage: "rigging" },
+                    "T-pose extracted successfully",
+                  );
                 } catch (tposeError) {
                   console.error(
                     "⚠️ Failed to extract T-pose:",
@@ -1250,7 +1304,10 @@ export class GenerationService extends EventEmitter {
                   name: `${config.assetId}_rigged.glb`,
                   type: "model/gltf-binary",
                 });
-                logger.info({ }, '✅ Prepared rigged model for animation player');
+                logger.info(
+                  { pipelineId, stage: "rigging" },
+                  "Prepared rigged model for animation player",
+                );
               }
 
               // Download running animation GLB
@@ -1314,8 +1371,11 @@ export class GenerationService extends EventEmitter {
           pipeline.results.rigging = pipeline.stages.rigging!.result;
           pipeline.progress = 85;
         } catch (error) {
-          logger.error({ err: (error as Error }, '❌ Rigging failed:').message);
-          logger.error({ err: error }, 'Full error:');
+          logger.error(
+            { err: error, pipelineId, stage: "rigging" },
+            "Rigging failed",
+          );
+          logger.error({ err: error }, "Full rigging error");
 
           // Upload failed rigging metadata to CDN
           try {
@@ -1539,7 +1599,7 @@ Your task is to enhance the user's description to create better results with ima
         keywords: this.extractKeywords(optimizedPrompt),
       };
     } catch (error) {
-      logger.error({ err: error }, 'GPT-4 enhancement failed:');
+      logger.error({ err: error }, "GPT-4 enhancement failed:");
       // Load generation prompts for fallback
       const generationPrompts = await getGenerationPrompts();
       const fallbackTemplate =
@@ -1774,10 +1834,16 @@ Your task is to enhance the user's description to create better results with ima
 
       if (pipeline.status === "completed" && age > completedThreshold) {
         this.pipelines.delete(pipelineId);
-        logger.info({ }, 'Cleaned up completed pipeline: ${pipelineId}');
+        logger.info(
+          { pipelineId, status: "completed" },
+          "Cleaned up completed pipeline",
+        );
       } else if (pipeline.status === "failed" && age > failedThreshold) {
         this.pipelines.delete(pipelineId);
-        logger.info({ }, 'Cleaned up failed pipeline: ${pipelineId}');
+        logger.info(
+          { pipelineId, status: "failed" },
+          "Cleaned up failed pipeline",
+        );
       }
     }
   }

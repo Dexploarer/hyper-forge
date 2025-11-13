@@ -5,7 +5,7 @@
  */
 
 import fs from "fs/promises";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import path from "path";
 import { db } from "../db/db";
 import { assets } from "../db/schema";
@@ -165,11 +165,17 @@ export class CDNPublishService {
       console.log(
         `✅ Published ${assetId} to CDN: ${filesPublished.length} files`,
       );
-      logger.info({ }, '   Main URL: ${mainCdnUrl}');
+      logger.info({ context: "CDNPublish" }, `   Main URL: ${mainCdnUrl}`);
       if (riggedModelCdnUrl) {
-        logger.info({ }, '   Rigged Model URL: ${riggedModelCdnUrl}');
+        logger.info(
+          { context: "CDNPublish" },
+          `   Rigged Model URL: ${riggedModelCdnUrl}`,
+        );
       }
-      logger.info({ }, '   All URLs: ${cdnUrls.join(", ")}');
+      logger.info(
+        { context: "CDNPublish" },
+        `   All URLs: ${cdnUrls.join(", ")}`,
+      );
 
       return {
         success: true,
@@ -182,7 +188,7 @@ export class CDNPublishService {
         riggedModelCdnUrl,
       };
     } catch (error) {
-      logger.error({, error }, 'Failed to publish ${assetId} to CDN:');
+      logger.error({ err: error }, `Failed to publish ${assetId} to CDN:`);
       return {
         success: false,
         assetId,
@@ -273,9 +279,15 @@ export class CDNPublishService {
         })
         .where(eq(assets.id, assetId));
 
-      logger.info({ }, '✅ Updated database with CDN URLs for ${assetId}');
+      logger.info(
+        { context: "CDNPublish" },
+        `✅ Updated database with CDN URLs for ${assetId}`,
+      );
     } catch (error) {
-      logger.error({, error }, '❌ Failed to update database for ${assetId}:');
+      logger.error(
+        { err: error },
+        `❌ Failed to update database for ${assetId}:`,
+      );
       throw error;
     }
   }
