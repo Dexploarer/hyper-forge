@@ -97,10 +97,9 @@ initializeQdrantCollections().catch((error) => {
 const API_PORT = process.env.PORT || process.env.API_PORT || 3004;
 
 // Railway volume path takes priority, then ASSETS_DIR env var, then local default
-const ASSETS_DIR =
-  process.env.RAILWAY_VOLUME_MOUNT_PATH
-    ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
-    : process.env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
+const ASSETS_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
+  ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
+  : process.env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
 
 // CDN_URL and IMAGE_SERVER_URL must be set in production
 const CDN_URL =
@@ -142,9 +141,17 @@ const app = new Elysia()
     console.log(`[Startup] Elysia server started on port ${API_PORT}`);
 
     // Check if we should run workers embedded in API process (dev mode)
-    if (process.env.ENABLE_EMBEDDED_WORKERS === "true" && process.env.REDIS_URL) {
-      const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || "2", 10);
-      console.log(`[Workers] Starting ${WORKER_CONCURRENCY} embedded workers...`);
+    if (
+      process.env.ENABLE_EMBEDDED_WORKERS === "true" &&
+      process.env.REDIS_URL
+    ) {
+      const WORKER_CONCURRENCY = parseInt(
+        process.env.WORKER_CONCURRENCY || "2",
+        10,
+      );
+      console.log(
+        `[Workers] Starting ${WORKER_CONCURRENCY} embedded workers...`,
+      );
 
       // Store worker references for cleanup
       const workers: GenerationWorker[] = [];
@@ -156,7 +163,9 @@ const app = new Elysia()
 
       // Store in app context for shutdown
       (app as any).workers = workers;
-      console.log(`[Workers] ${WORKER_CONCURRENCY} workers started successfully`);
+      console.log(
+        `[Workers] ${WORKER_CONCURRENCY} workers started successfully`,
+      );
     } else {
       console.log("[Workers] Using separate worker service (production mode)");
     }
@@ -889,9 +898,35 @@ try {
     development: process.env.NODE_ENV !== "production", // Disable detailed errors in prod
   });
 
-  console.log(
-    `[Startup] Server listen() completed successfully on port ${API_PORT}`,
-  );
+  const publicUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+    : process.env.RAILWAY_STATIC_URL || `http://localhost:${API_PORT}`;
+
+  const env = process.env.NODE_ENV || "development";
+
+  // Log startup
+  console.log(`\n[Server] Asset-Forge API started (${env})`);
+  console.log(`[Server] Port: ${API_PORT}`);
+  console.log(`[Server] URL: ${publicUrl}`);
+  console.log(`[Server] Docs: ${publicUrl}/swagger`);
+
+  // Log configured services
+  const services = [];
+  if (process.env.DATABASE_URL) services.push("PostgreSQL");
+  if (process.env.PRIVY_APP_ID && process.env.PRIVY_APP_SECRET)
+    services.push("Privy");
+  if (process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY)
+    services.push("AI");
+  if (process.env.MESHY_API_KEY) services.push("Meshy");
+  if (process.env.ELEVENLABS_API_KEY) services.push("ElevenLabs");
+  if (process.env.QDRANT_URL) services.push("Qdrant");
+  if (process.env.REDIS_URL) services.push("Redis");
+
+  if (services.length > 0) {
+    console.log(`[Server] Services: ${services.join(", ")}`);
+  }
+
+  console.log("");
 } catch (error) {
   console.error("[Startup] FATAL: Failed to start server:", error);
   console.error(
@@ -900,139 +935,6 @@ try {
   );
   process.exit(1);
 }
-
-// Startup banner
-console.log("\n" + "=".repeat(60));
-console.log("🚀 ASSET-FORGE API SERVER - ELYSIA + BUN");
-console.log("=".repeat(60));
-
-// Server info
-// Get public URL from environment (Railway production only)
-const publicUrl =
-  process.env.RAILWAY_PUBLIC_DOMAIN
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-    : process.env.RAILWAY_STATIC_URL ||
-      `https://hyperforge-production.up.railway.app`;
-
-console.log("\n📍 SERVER ENDPOINTS:");
-console.log(`   🌐 Server:      ${publicUrl}`);
-console.log(`   🎨 Frontend:    ${publicUrl}/`);
-console.log(`   📊 Health:      ${publicUrl}/api/health`);
-console.log(`   📚 API Docs:    ${publicUrl}/swagger`);
-console.log(`   🖼️  CDN Assets:  ${CDN_URL}/models/`);
-console.log(`   📁 Local Store: ${ASSETS_DIR}`);
-console.log(`   🔄 Proxy:       ${publicUrl}/api/proxy/image`);
-console.log(`   ✨ Performance: 22x faster than Express (2.4M req/s)`);
-
-// Show environment info
-if (process.env.NODE_ENV === "production") {
-  console.log(`   🚀 Environment: Production (Railway)`);
-} else {
-  console.log(`   🔧 Environment: Development (Local)`);
-}
-
-// Configuration status
-console.log("\n🔧 CONFIGURATION STATUS:");
-
-const configs = [
-  {
-    name: "Database (PostgreSQL)",
-    icon: "🗄️",
-    key: "DATABASE_URL",
-    enabled: !!process.env.DATABASE_URL,
-  },
-  {
-    name: "Authentication (Privy)",
-    icon: "🔐",
-    key: "PRIVY_APP_ID",
-    enabled: !!(process.env.PRIVY_APP_ID && process.env.PRIVY_APP_SECRET),
-  },
-  {
-    name: "AI Gateway / OpenAI",
-    icon: "🤖",
-    key: "AI_GATEWAY_API_KEY",
-    enabled: !!(process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY),
-  },
-  {
-    name: "3D Generation (Meshy)",
-    icon: "🎨",
-    key: "MESHY_API_KEY",
-    enabled: !!process.env.MESHY_API_KEY,
-  },
-  {
-    name: "Voice/Audio (ElevenLabs)",
-    icon: "🎤",
-    key: "ELEVENLABS_API_KEY",
-    enabled: !!process.env.ELEVENLABS_API_KEY,
-  },
-  {
-    name: "Vector Search (Qdrant)",
-    icon: "🔍",
-    key: "QDRANT_URL",
-    enabled: !!process.env.QDRANT_URL,
-  },
-  {
-    name: "Queue System (Redis)",
-    icon: "⚡",
-    key: "REDIS_URL",
-    enabled: !!process.env.REDIS_URL,
-    optional: true,
-  },
-  {
-    name: "Image Hosting (Imgur)",
-    icon: "📸",
-    key: "IMGUR_CLIENT_ID",
-    enabled: !!process.env.IMGUR_CLIENT_ID,
-    optional: true,
-  },
-];
-
-const configured = configs.filter((c) => c.enabled);
-const missing = configs.filter((c) => !c.enabled && !c.optional);
-
-configured.forEach((config) => {
-  console.log(`   ✅ ${config.icon} ${config.name}`);
-});
-
-if (missing.length > 0) {
-  console.log("\n⚠️  MISSING CONFIGURATION:");
-  missing.forEach((config) => {
-    console.log(`   ❌ ${config.icon} ${config.name}`);
-    console.log(`      → Set ${config.key} in environment variables`);
-  });
-}
-
-// Feature availability
-console.log("\n🎯 AVAILABLE FEATURES:");
-const features = [
-  { name: "Asset Management", enabled: true },
-  { name: "3D Generation Pipeline", enabled: !!process.env.MESHY_API_KEY },
-  {
-    name: "Content Generation (NPC/Quest/Lore)",
-    enabled: !!(process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY),
-  },
-  { name: "Voice Generation", enabled: !!process.env.ELEVENLABS_API_KEY },
-  { name: "Music Generation", enabled: !!process.env.ELEVENLABS_API_KEY },
-  { name: "Sound Effects", enabled: !!process.env.ELEVENLABS_API_KEY },
-  { name: "Vector Search", enabled: !!process.env.QDRANT_URL },
-  {
-    name: "User Authentication",
-    enabled: !!(process.env.PRIVY_APP_ID && process.env.PRIVY_APP_SECRET),
-  },
-  { name: "Image Proxy (CORS)", enabled: true },
-  { name: "World Configuration", enabled: true },
-];
-
-features.forEach((feature) => {
-  const status = feature.enabled ? "✅" : "❌";
-  console.log(`   ${status} ${feature.name}`);
-});
-
-console.log("\n" + "=".repeat(60));
-console.log(
-  `✨ Server ready! Environment: ${process.env.NODE_ENV || "development"}`,
-);
-console.log("=".repeat(60) + "\n");
 
 // Export app for Eden Treaty - suppress declaration emit warning about croner
 // @ts-ignore TS2742 - croner module reference is non-portable but type inference works at runtime

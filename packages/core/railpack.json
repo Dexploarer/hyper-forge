@@ -1,8 +1,8 @@
 {
   "$schema": "https://railpack.com/schema.json",
   "packages": {
-    "node": "22.12.0",
-    "bun": "latest"
+    "bun": "latest",
+    "node": "22.12.0"
   },
   "caches": {
     "node_modules": {
@@ -13,22 +13,26 @@
   "build": {
     "inputs": [
       {
-        "step": "packages"
+        "step": "packages",
+        "comment": "Install Bun and Node.js runtime"
       },
       {
         "step": "copy",
         "paths": [
           "package.json",
           "bun.lock"
-        ]
+        ],
+        "comment": "Copy dependency files first"
       },
       {
         "step": "install",
-        "cmd": "bun install --frozen-lockfile"
+        "cmd": "bun install --frozen-lockfile",
+        "comment": "Install dependencies using Bun"
       },
       {
         "step": "copy",
-        "paths": ["**"]
+        "paths": ["**"],
+        "comment": "Copy all source files"
       }
     ]
   },
