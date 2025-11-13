@@ -615,7 +615,7 @@ describe("Asset Routes", () => {
       expect([200, 500]).toContain(response.status);
     });
 
-    it("should return URL for uploaded VRM", async () => {
+    it("should return CDN URL for uploaded VRM", async () => {
       const mockFile = new File(["mock vrm content"], "avatar.vrm", {
         type: "model/vrm",
       });
@@ -634,7 +634,9 @@ describe("Asset Routes", () => {
       if (response.status === 200) {
         const data = await response.json();
         expect(data.success).toBe(true);
-        expect(data.url).toContain("/gdd-assets/test-asset-vrm/avatar.vrm");
+        // Should return CDN URL, not local path
+        expect(data.url).toContain("/models/test-asset-vrm/avatar.vrm");
+        expect(data.url).not.toContain("/gdd-assets/");
       }
     });
   });
