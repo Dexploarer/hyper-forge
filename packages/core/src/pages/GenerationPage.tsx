@@ -103,6 +103,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
     description,
     gameStyle,
     customStyle,
+    assetVisibility,
 
     // Custom Prompts
     customGamePrompt,
@@ -157,6 +158,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
     setDescription,
     setGameStyle,
     setCustomStyle,
+    setAssetVisibility,
     setCustomGamePrompt,
     setCustomAssetTypePrompt,
     setCustomAssetTypes,
@@ -709,6 +711,8 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
       quality,
       // Pass authenticated user for ownership tracking (required - checked above)
       user: { userId: user.id },
+      // Pass asset visibility
+      assetVisibility,
     });
 
     // Attach reference image into config when selected
@@ -853,6 +857,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                     description={description}
                     gameStyle={gameStyle}
                     customStyle={customStyle}
+                    assetVisibility={assetVisibility}
                     customAssetTypes={allCustomAssetTypes}
                     customGameStyles={customGameStyles}
                     onAssetNameChange={setAssetName}
@@ -860,6 +865,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                     onDescriptionChange={setDescription}
                     onGameStyleChange={setGameStyle}
                     onCustomStyleChange={setCustomStyle}
+                    onAssetVisibilityChange={setAssetVisibility}
                     onSaveCustomGameStyle={saveCustomGameStyle}
                   />
 

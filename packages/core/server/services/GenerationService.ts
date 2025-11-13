@@ -73,6 +73,7 @@ interface PipelineConfig {
     userId: string;
     walletAddress?: string;
   };
+  visibility?: "public" | "private";
 }
 
 interface StageResult {
@@ -829,7 +830,7 @@ export class GenerationService extends EventEmitter {
           // Ownership tracking (Phase 1)
           createdBy: config.user?.userId || null,
           walletAddress: config.user?.walletAddress || null,
-          isPublic: true, // Default to public for Phase 1
+          isPublic: config.visibility === "public", // Use visibility from config
         };
 
         await fs.writeFile(
@@ -996,7 +997,7 @@ export class GenerationService extends EventEmitter {
               // Ownership tracking (Phase 1) - inherit from parent
               createdBy: config.user?.userId || null,
               walletAddress: config.user?.walletAddress || null,
-              isPublic: true, // Default to public for Phase 1
+              isPublic: config.visibility === "public", // Use visibility from config
             };
 
             await fs.writeFile(

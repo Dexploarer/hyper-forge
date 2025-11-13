@@ -38,6 +38,8 @@ interface BuildConfigOptions {
     userId: string;
     walletAddress?: string;
   };
+  // Asset visibility (public/private)
+  assetVisibility?: "public" | "private";
 }
 
 export function buildGenerationConfig(
@@ -68,6 +70,7 @@ export function buildGenerationConfig(
     referenceImageUrl,
     referenceImageDataUrl,
     user,
+    assetVisibility = "public",
   } = options;
 
   // Prepare material variants
@@ -180,6 +183,8 @@ export function buildGenerationConfig(
     },
     // Attach user context if provided
     user: user,
+    // Asset visibility
+    visibility: assetVisibility,
   };
 
   // Attach optional reference image if selected by user

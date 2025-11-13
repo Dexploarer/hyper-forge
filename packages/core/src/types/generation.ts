@@ -165,6 +165,9 @@ export interface GenerationConfig {
     userId: string;
     walletAddress?: string;
   };
+
+  // Asset visibility (public/private)
+  visibility?: "public" | "private";
 }
 
 export interface PipelineStage {

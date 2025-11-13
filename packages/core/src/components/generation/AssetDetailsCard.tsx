@@ -1,4 +1,12 @@
-import { FileText, Layers, Package, User, Gamepad2 } from "lucide-react";
+import {
+  FileText,
+  Layers,
+  Package,
+  User,
+  Gamepad2,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import React from "react";
 
 import { GameStylePrompt } from "../../services/api/PromptService";
@@ -28,6 +36,7 @@ interface AssetDetailsCardProps {
   description: string;
   gameStyle: string;
   customStyle: string;
+  assetVisibility: "public" | "private";
   customAssetTypes: CustomAssetType[];
   customGameStyles?: Record<string, GameStylePrompt>;
   onAssetNameChange: (value: string) => void;
@@ -35,6 +44,7 @@ interface AssetDetailsCardProps {
   onDescriptionChange: (value: string) => void;
   onGameStyleChange: (style: "runescape" | "custom") => void;
   onCustomStyleChange: (value: string) => void;
+  onAssetVisibilityChange: (visibility: "public" | "private") => void;
   onSaveCustomGameStyle?: (
     styleId: string,
     style: GameStylePrompt,
@@ -48,6 +58,7 @@ export const AssetDetailsCard: React.FC<AssetDetailsCardProps> = ({
   description,
   gameStyle,
   customStyle,
+  assetVisibility,
   customAssetTypes,
   customGameStyles = {},
   onAssetNameChange,
@@ -55,6 +66,7 @@ export const AssetDetailsCard: React.FC<AssetDetailsCardProps> = ({
   onDescriptionChange,
   onGameStyleChange,
   onCustomStyleChange,
+  onAssetVisibilityChange,
   onSaveCustomGameStyle,
 }) => {
   return (
@@ -164,6 +176,53 @@ export const AssetDetailsCard: React.FC<AssetDetailsCardProps> = ({
           onCustomStyleChange={onCustomStyleChange}
           onSaveCustomGameStyle={onSaveCustomGameStyle}
         />
+
+        {/* Visibility Toggle */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-text-primary flex items-center gap-2">
+            <div className="p-1.5 bg-primary/10 rounded-lg">
+              {assetVisibility === "public" ? (
+                <Eye className="w-3.5 h-3.5 text-primary" />
+              ) : (
+                <EyeOff className="w-3.5 h-3.5 text-primary" />
+              )}
+            </div>
+            Asset Visibility
+          </label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => onAssetVisibilityChange("public")}
+              className={`flex-1 px-4 py-2.5 rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                assetVisibility === "public"
+                  ? "bg-primary/10 border-primary text-primary font-medium"
+                  : "bg-bg-secondary border-border-primary text-text-secondary hover:border-primary/50"
+              }`}
+            >
+              <Eye className="w-4 h-4" />
+              Public
+            </button>
+            <button
+              type="button"
+              onClick={() => onAssetVisibilityChange("private")}
+              className={`flex-1 px-4 py-2.5 rounded-lg border transition-all flex items-center justify-center gap-2 ${
+                assetVisibility === "private"
+                  ? "bg-primary/10 border-primary text-primary font-medium"
+                  : "bg-bg-secondary border-border-primary text-text-secondary hover:border-primary/50"
+              }`}
+            >
+              <EyeOff className="w-4 h-4" />
+              Private
+            </button>
+          </div>
+          <div className="px-3 py-2 bg-primary/5 border border-primary/10 rounded-lg">
+            <p className="text-xs text-text-secondary">
+              {assetVisibility === "public"
+                ? "Anyone can view this asset"
+                : "Only you can view this asset"}
+            </p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -11,6 +11,8 @@
 
 import "dotenv/config";
 import { Elysia, t } from "elysia";
+
+console.log("[Startup] api-elysia.ts loaded, initializing server...");
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { serverTiming } from "@elysiajs/server-timing";
@@ -904,15 +906,28 @@ const app = new Elysia()
       set.status = 500;
       return null;
     }
-  })
+  });
 
+try {
   // Start server with production configuration
-  .listen({
+  app.listen({
     port: Number(API_PORT),
     hostname: "0.0.0.0", // Bind to all interfaces for Railway/Docker
     maxRequestBodySize: 100 * 1024 * 1024, // 100MB limit (below 128MB default)
     development: process.env.NODE_ENV !== "production", // Disable detailed errors in prod
   });
+
+  console.log(
+    `[Startup] Server listen() completed successfully on port ${API_PORT}`,
+  );
+} catch (error) {
+  console.error("[Startup] FATAL: Failed to start server:", error);
+  console.error(
+    "[Startup] Error details:",
+    error instanceof Error ? error.stack : String(error),
+  );
+  process.exit(1);
+}
 
 // Startup banner
 console.log("\n" + "=".repeat(60));
