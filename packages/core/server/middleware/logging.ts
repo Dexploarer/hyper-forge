@@ -63,6 +63,7 @@ export const loggingMiddleware = new Elysia({ name: "logging" })
       const logLevel =
         statusCode >= 500 ? "error" : statusCode >= 400 ? "warn" : "info";
 
+      // Enhanced logging with performance metrics
       requestLogger[logLevel](
         {
           method: request.method,
@@ -70,12 +71,35 @@ export const loggingMiddleware = new Elysia({ name: "logging" })
           status: statusCode,
           duration,
           responseTime: `${duration}ms`,
+          // Track slow requests (> 1 second)
+          slow: duration > 1000,
         },
-        `Request completed - ${statusCode} in ${duration}ms`,
+        `Request completed - ${statusCode} in ${duration}ms${duration > 1000 ? " (SLOW)" : ""}`,
       );
+
+      // Log warning for slow requests
+      if (duration > 1000) {
+        requestLogger.warn(
+          {
+            method: request.method,
+            path: url.pathname,
+            duration,
+          },
+          `Slow request detected: ${url.pathname} took ${duration}ms`,
+        );
+      }
     }
 
-    // Add response headers for client-side correlation
+    // Add response headers for client-side correlation and performance monitoring
     set.headers["x-request-id"] = requestID || "unknown";
     set.headers["server-timing"] = `total;dur=${duration}`;
+
+    // Add timing breakdown if available (will be populated by other middleware)
+    if ((context as any).timings) {
+      const timings = (context as any).timings;
+      const serverTiming = Object.entries(timings)
+        .map(([name, dur]) => `${name};dur=${dur}`)
+        .join(", ");
+      set.headers["server-timing"] = `${serverTiming}, total;dur=${duration}`;
+    }
   });

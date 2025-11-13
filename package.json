@@ -43,7 +43,8 @@
     "db:generate": "cd packages/core && bun run db:generate",
     "db:migrate": "cd packages/core && bun run db:migrate",
     "db:push": "cd packages/core && bun run db:push",
-    "db:studio": "cd packages/core && bun run db:studio"
+    "db:studio": "cd packages/core && bun run db:studio",
+    "prepare": "husky"
   },
   "dependencies": {
     "jszip": "^3.10.1",
@@ -51,7 +52,10 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@types/autocannon": "^7.12.7",
     "@types/node": "^24.10.0",
+    "autocannon": "^8.0.0",
+    "husky": "^9.1.7",
     "prettier": "^3.6.2",
     "turbo": "^2.5.5",
     "typescript": "^5.3.3"

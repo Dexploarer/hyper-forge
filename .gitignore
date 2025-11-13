@@ -61,6 +61,10 @@ playwright-report/
 playwright/.cache/
 test-*.json
 test-*.png
+pacts/
+.test-performance/
+reports/
+.stryker-tmp/
 
 # Temporary files
 temp/

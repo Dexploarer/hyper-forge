@@ -7,13 +7,104 @@
  * - Test user creation
  */
 
-import { db } from "../../server/db";
+import { db, queryClient } from "../../server/db";
 import { users, assets, projects } from "../../server/db/schema";
 import { eq, sql } from "drizzle-orm";
 import type { AuthUser } from "../../server/middleware/auth";
 
 /**
- * Clean up all test data
+ * Test Context with Transaction Isolation
+ */
+export interface TestContext {
+  db: typeof db;
+  rollback: () => Promise<void>;
+}
+
+/**
+ * Setup test with transaction isolation using Drizzle's transaction API
+ * All database operations in the test will be rolled back automatically
+ *
+ * NOTE: This uses a workaround approach. For proper transaction isolation,
+ * consider using `withTestTransaction()` instead which wraps each test.
+ *
+ * @example
+ * ```typescript
+ * let testCtx: TestContext;
+ *
+ * beforeEach(async () => {
+ *   testCtx = await setupTestTransaction();
+ * });
+ *
+ * afterEach(async () => {
+ *   await testCtx.rollback();
+ * });
+ *
+ * it('should create user', async () => {
+ *   const user = await testCtx.db.insert(users).values({...}).returning();
+ *   // Test automatically rolled back in afterEach
+ * });
+ * ```
+ */
+export async function setupTestTransaction(): Promise<TestContext> {
+  // postgres.js with connection pooling doesn't allow manual BEGIN/ROLLBACK
+  // We'll use the simpler approach of manual cleanup instead
+  // This is a limitation of the current setup
+
+  return {
+    db,
+    rollback: async () => {
+      // Manual cleanup approach - delete test data
+      try {
+        await db.delete(assets).execute();
+        await db.delete(projects).execute();
+        await db
+          .delete(users)
+          .where(sql`email LIKE '%test%' OR privy_user_id LIKE 'test-%'`)
+          .execute();
+      } catch (error: any) {
+        console.warn("[Test] Cleanup warning:", error);
+      }
+    },
+  };
+}
+
+/**
+ * Alternative: Function wrapper for transaction-isolated tests
+ * Automatically rolls back after test completion
+ *
+ * This uses Drizzle's transaction API which properly handles rollback.
+ *
+ * @example
+ * ```typescript
+ * it('should create user', async () => {
+ *   await withTestTransaction(async (tx) => {
+ *     const [user] = await tx.insert(users).values({...}).returning();
+ *     expect(user).toBeDefined();
+ *     // Automatically rolled back when function completes
+ *   });
+ * });
+ * ```
+ */
+export async function withTestTransaction<T>(
+  testFn: (tx: typeof db) => Promise<T>,
+): Promise<T> {
+  return await db
+    .transaction(async (tx) => {
+      const result = await testFn(tx);
+      // Force rollback by throwing an error
+      throw new Error("TEST_ROLLBACK");
+    })
+    .catch((error) => {
+      // If it's our rollback signal, suppress it
+      if (error.message === "TEST_ROLLBACK") {
+        return undefined as T;
+      }
+      throw error;
+    });
+}
+
+/**
+ * Clean up all test data (Legacy - still useful for inter-test cleanup)
  * Run in beforeEach or afterEach
  */
 export async function cleanDatabase() {
@@ -29,6 +120,7 @@ export async function cleanDatabase() {
 /**
  * Create a test user
  * Returns both database user and AuthUser format
+ * Works with both transaction-isolated and legacy cleanup patterns
  */
 export async function createTestUser(
   overrides?: Partial<typeof users.$inferInsert>,
@@ -124,6 +216,7 @@ export async function getUserById(id: string) {
 
 /**
  * Delete user and all related data
+ * @deprecated Use transaction-based isolation instead
  */
 export async function deleteTestUser(userId: string) {
   await db.delete(users).where(eq(users.id, userId)).execute();

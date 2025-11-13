@@ -10,18 +10,12 @@
  */
 
 import "dotenv/config";
-import { Elysia } from "elysia";
+import { Elysia, t } from "elysia";
 import { cors } from "@elysiajs/cors";
 import { swagger } from "@elysiajs/swagger";
 import { serverTiming } from "@elysiajs/server-timing";
 import { rateLimit } from "elysia-rate-limit";
-// ❌ COMPRESSION PLUGINS INCOMPATIBLE WITH ELYSIA 1.4.15:
-// - @labzzhq/compressor: Requires mapResponse export (not available)
-// - elysia-compress: Same issue - requires mapResponse export
-// - mapResponse is internal to Elysia adapter, not part of public API
-// TODO: Wait for plugin updates or implement custom compression middleware
-import { etag } from "@bogeychan/elysia-etag"; // ⚠️ Installs but doesn't generate ETag headers
-import { requestID } from "elysia-requestid"; // ✅ Working - generates X-Request-ID headers
+import { requestID } from "elysia-requestid";
 import prometheus from "elysia-prometheus";
 import path from "path";
 import fs from "fs";
@@ -35,6 +29,7 @@ import { GenerationService } from "./services/GenerationService";
 // Middleware
 import { errorHandler } from "./middleware/errorHandler";
 import { loggingMiddleware } from "./middleware/logging";
+import { cachingMiddleware } from "./middleware/caching";
 import { optionalAuth } from "./middleware/auth";
 import {
   extractAssetIdFromPath,
@@ -46,6 +41,7 @@ import {
 import { securityHeaders } from "./plugins/security-headers";
 import { gracefulShutdown } from "./plugins/graceful-shutdown";
 import { performanceTracing } from "./plugins/performance-tracing";
+import { compression } from "./plugins/compression";
 
 // Routes
 import { healthRoutes } from "./routes/health";
@@ -116,6 +112,80 @@ const generationService = new GenerationService();
 // Create Elysia app with full type inference for Eden Treaty
 // @ts-ignore TS2742 - croner module reference from cron plugin is non-portable (doesn't affect runtime)
 const app = new Elysia()
+  // ==================== SHARED RESPONSE MODELS ====================
+  // Define common response schemas for reusability across all routes
+  // Use t.Ref('model.name') in route handlers to reference these schemas
+  .model({
+    // Success responses
+    "success.basic": t.Object({
+      success: t.Boolean(),
+      message: t.String(),
+    }),
+
+    // Error responses with consistent structure
+    "error.validation": t.Object({
+      error: t.Literal("VALIDATION_ERROR"),
+      message: t.String(),
+      fields: t.Optional(
+        t.Array(
+          t.Object({
+            field: t.String(),
+            message: t.String(),
+            expected: t.Optional(t.String()),
+            received: t.Optional(t.String()),
+          }),
+        ),
+      ),
+      requestId: t.Optional(t.String()),
+    }),
+
+    "error.unauthorized": t.Object({
+      error: t.Union([t.Literal("UNAUTHORIZED"), t.String()]),
+      message: t.String(),
+      requestId: t.Optional(t.String()),
+    }),
+
+    "error.forbidden": t.Object({
+      error: t.Union([
+        t.Literal("FORBIDDEN"),
+        t.Literal("Forbidden"),
+        t.String(),
+      ]),
+      message: t.String(),
+      requestId: t.Optional(t.String()),
+    }),
+
+    "error.notFound": t.Object({
+      error: t.Union([t.Literal("NOT_FOUND"), t.String()]),
+      message: t.Optional(t.String()),
+      requestId: t.Optional(t.String()),
+    }),
+
+    "error.internal": t.Object({
+      error: t.Union([t.Literal("INTERNAL_SERVER_ERROR"), t.String()]),
+      message: t.String(),
+      requestId: t.Optional(t.String()),
+      stack: t.Optional(t.String()),
+    }),
+
+    // Pagination models
+    "pagination.query": t.Object({
+      page: t.Optional(t.Number({ minimum: 1, default: 1 })),
+      limit: t.Optional(t.Number({ minimum: 1, maximum: 100, default: 20 })),
+      sortBy: t.Optional(t.String()),
+      sortOrder: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+    }),
+
+    "pagination.meta": t.Object({
+      page: t.Number(),
+      limit: t.Number(),
+      total: t.Number(),
+      totalPages: t.Number(),
+      hasNext: t.Boolean(),
+      hasPrev: t.Boolean(),
+    }),
+  })
+
   // Graceful shutdown handler
   .use(gracefulShutdown)
 
@@ -129,18 +199,14 @@ const app = new Elysia()
   // Security headers for Privy embedded wallets (applied to ALL responses)
   .use(securityHeaders)
 
-  // Response compression DISABLED - plugins incompatible with Elysia 1.4.15
-  // Both @labzzhq/compressor and elysia-compress require mapResponse export
-  // which is internal to Elysia adapter (not part of public API)
-  // TODO: Implement custom compression middleware or wait for plugin updates
-
   // Rate limiting - protect against abuse
+  // Note: elysia-rate-limit automatically adds X-RateLimit-* headers
   .use(
     rateLimit({
       duration: 60000, // 1 minute window
       max: 100, // 100 requests per minute per IP
       errorResponse: {
-        error: "Too Many Requests",
+        error: "TOO_MANY_REQUESTS",
         message: "Rate limit exceeded. Please try again later.",
       } as any,
       // Skip rate limiting for health checks
@@ -268,6 +334,8 @@ const app = new Elysia()
   // Middleware
   .use(errorHandler)
   .use(loggingMiddleware)
+  .use(cachingMiddleware)
+  .use(compression)
 
   // Cron jobs for background cleanup
   .use(
@@ -605,16 +673,24 @@ const app = new Elysia()
   .use(debugStorageRoute)
   .use(createCDNRoutes(ASSETS_DIR, CDN_URL))
 
-  // ETag generation for cache validation (after routes)
-  // Enables 304 Not Modified responses for cached content (90% bandwidth savings)
-  .use(etag())
-
   // Prometheus metrics endpoint (after all routes)
   .use(
     prometheus({
       metricsPath: "/metrics", // Prometheus scrape endpoint
     }),
   )
+
+  // Enhanced metrics endpoint with business metrics
+  .get("/metrics/business", async () => {
+    const { getBusinessMetrics } = await import("./metrics/business");
+    const metrics = await getBusinessMetrics();
+
+    return new Response(metrics, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
+  })
 
   // Debug endpoint to verify security headers
   .get("/api/debug/headers", async ({ set, request }) => {

@@ -1,0 +1,31 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Get the commit message
+commit_msg=$(cat "$1")
+
+# Check if commit message follows conventional commits format
+# Format: type(scope): subject
+# Example: feat(api): add new endpoint for user management
+if ! echo "$commit_msg" | grep -qE "^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,}$"; then
+  echo "❌ Invalid commit message format!"
+  echo ""
+  echo "Commit message must follow Conventional Commits format:"
+  echo "  <type>(<scope>): <subject>"
+  echo ""
+  echo "Types: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
+  echo ""
+  echo "Example: feat(api): add new endpoint for user management"
+  echo "Example: fix(auth): resolve token expiration issue"
+  echo ""
+  exit 1
+fi
+
+# Check commit message length (first line should be <= 72 chars)
+first_line=$(echo "$commit_msg" | head -n 1)
+if [ ${#first_line} -gt 72 ]; then
+  echo "⚠️  Warning: Commit message first line is longer than 72 characters"
+  echo "   Consider shortening to improve readability in git logs"
+fi
+
+exit 0

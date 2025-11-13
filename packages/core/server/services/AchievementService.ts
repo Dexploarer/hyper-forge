@@ -23,10 +23,12 @@ export interface AchievementProgress {
 }
 
 export interface UserAchievementSummary {
+  userId: string;
   totalAchievements: number;
+  unlockedAchievements: number;
   totalMedals: number;
   totalPoints: number;
-  achievements: AchievementProgress[];
+  achievements: (AchievementProgress & { code?: string; unlocked?: boolean })[];
   recentAchievements: UserAchievement[];
 }
 
@@ -104,20 +106,20 @@ export class AchievementService {
         earnedMap.set(ua.achievementId, ua);
       });
 
-      // Build progress array
-      const progress: AchievementProgress[] = allAchievements.map(
-        (achievement) => {
-          const earned = earnedMap.get(achievement.id);
-          return {
-            achievementId: achievement.id,
-            achievement,
-            progress: earned?.progress || 0,
-            maxProgress: achievement.maxProgress,
-            isEarned: !!earned,
-            earnedAt: earned?.earnedAt || null,
-          };
-        },
-      );
+      // Build progress array with additional fields for test compatibility
+      const progress = allAchievements.map((achievement) => {
+        const earned = earnedMap.get(achievement.id);
+        return {
+          achievementId: achievement.id,
+          achievement,
+          code: achievement.code,
+          unlocked: !!earned,
+          progress: earned?.progress || 0,
+          maxProgress: achievement.maxProgress,
+          isEarned: !!earned,
+          earnedAt: earned?.earnedAt || null,
+        };
+      });
 
       return progress;
     } catch (error) {
@@ -181,7 +183,9 @@ export class AchievementService {
       });
 
       return {
+        userId,
         totalAchievements,
+        unlockedAchievements: earned.length,
         totalMedals,
         totalPoints,
         achievements: progress,
@@ -206,16 +210,31 @@ export class AchievementService {
     achievementCode: string,
     progress?: number,
     metadata?: Record<string, any>,
-  ): Promise<{ earned: boolean; userAchievement: UserAchievement | null }> {
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    achievement?: UserAchievement & {
+      code?: string;
+      unlocked?: boolean;
+      progress?: number;
+      metadata?: any;
+    };
+  }> {
     try {
       // Get achievement
       const achievement = await this.getAchievementByCode(achievementCode);
       if (!achievement) {
-        throw new Error(`Achievement not found: ${achievementCode}`);
+        return {
+          success: false,
+          message: `Achievement not found: ${achievementCode}`,
+        };
       }
 
       if (!achievement.isActive) {
-        throw new Error(`Achievement is not active: ${achievementCode}`);
+        return {
+          success: false,
+          message: `Achievement is not active: ${achievementCode}`,
+        };
       }
 
       // Check if user already has this achievement (outside transaction for performance)
@@ -228,7 +247,15 @@ export class AchievementService {
 
       if (existing) {
         // Already earned
-        return { earned: false, userAchievement: existing };
+        return {
+          success: false,
+          message: "Achievement already earned by user",
+          achievement: {
+            ...existing,
+            code: achievementCode,
+            unlocked: true,
+          },
+        };
       }
 
       // Determine progress value
@@ -253,13 +280,23 @@ export class AchievementService {
         return awarded;
       });
 
-      return { earned: true, userAchievement: newUserAchievement };
+      return {
+        success: true,
+        achievement: {
+          ...newUserAchievement,
+          code: achievementCode,
+          unlocked: true,
+        },
+      };
     } catch (error) {
       console.error(
         `[AchievementService] Failed to award achievement: ${achievementCode}`,
         error,
       );
-      throw error;
+      return {
+        success: false,
+        message: `Failed to award achievement: ${error instanceof Error ? error.message : "Unknown error"}`,
+      };
     }
   }
 
@@ -271,25 +308,41 @@ export class AchievementService {
     achievementCode: string,
     progress: number,
     metadata?: Record<string, any>,
-  ): Promise<{ earned: boolean; userAchievement: UserAchievement | null }> {
+  ): Promise<{
+    success: boolean;
+    message?: string;
+    achievement?: UserAchievement & {
+      code?: string;
+      unlocked?: boolean;
+      progress?: number;
+      metadata?: any;
+    };
+  }> {
     try {
       // Get achievement
       const achievement = await this.getAchievementByCode(achievementCode);
       if (!achievement) {
-        throw new Error(`Achievement not found: ${achievementCode}`);
+        return {
+          success: false,
+          message: `Achievement not found: ${achievementCode}`,
+        };
       }
 
       if (!achievement.isActive) {
-        throw new Error(`Achievement is not active: ${achievementCode}`);
+        return {
+          success: false,
+          message: `Achievement is not active: ${achievementCode}`,
+        };
       }
 
       if (!achievement.maxProgress) {
-        throw new Error(
-          `Achievement ${achievementCode} is not a progressive achievement`,
-        );
+        return {
+          success: false,
+          message: `Achievement ${achievementCode} is not a progressive achievement`,
+        };
       }
 
-      // Check if user already has this achievement
+      // Check if user already has this achievement or progress
       const existing = await db.query.userAchievements.findFirst({
         where: and(
           eq(userAchievements.userId, userId),
@@ -297,14 +350,62 @@ export class AchievementService {
         ),
       });
 
-      if (existing) {
-        // Already earned, no update needed
-        return { earned: false, userAchievement: existing };
+      // Handle increment option
+      const options = metadata as any;
+      const increment = options?.increment || false;
+      let finalProgress = progress;
+
+      if (increment && existing) {
+        finalProgress = (existing.progress || 0) + progress;
+      } else if (existing) {
+        // Already has progress/achievement
+        // Check if it's fully unlocked (progress meets goal)
+        if (existing.progress >= achievement.maxProgress) {
+          return {
+            success: false,
+            message: "Achievement already earned",
+            achievement: {
+              ...existing,
+              code: achievementCode,
+              unlocked: true,
+            },
+          };
+        }
+        // Update existing progress
+        finalProgress = increment
+          ? (existing.progress || 0) + progress
+          : progress;
+      }
+
+      // Clamp negative progress to 0
+      if (finalProgress < 0) {
+        finalProgress = 0;
       }
 
       // Check if progress meets requirement
-      if (progress >= achievement.maxProgress) {
-        // Award achievement
+      if (finalProgress >= achievement.maxProgress) {
+        // Award achievement (or update to completed)
+        if (existing) {
+          // Update existing record to mark as complete
+          const [updated] = await db
+            .update(userAchievements)
+            .set({
+              progress: achievement.maxProgress,
+              metadata: metadata || existing.metadata || {},
+            })
+            .where(eq(userAchievements.id, existing.id))
+            .returning();
+
+          return {
+            success: true,
+            achievement: {
+              ...updated,
+              code: achievementCode,
+              unlocked: true,
+            },
+          };
+        }
+
         return await this.awardAchievement(
           userId,
           achievementCode,
@@ -313,14 +414,51 @@ export class AchievementService {
         );
       }
 
-      // Progress not yet complete
-      return { earned: false, userAchievement: null };
+      // Progress not yet complete - create/update progress tracking
+      const progressRecord = await db.transaction(async (tx) => {
+        if (existing) {
+          // Update existing progress
+          const [updated] = await tx
+            .update(userAchievements)
+            .set({
+              progress: finalProgress,
+              metadata: metadata || existing.metadata || {},
+            })
+            .where(eq(userAchievements.id, existing.id))
+            .returning();
+          return updated;
+        } else {
+          // Create new progress record
+          const [record] = await tx
+            .insert(userAchievements)
+            .values({
+              userId,
+              achievementId: achievement.id,
+              progress: finalProgress,
+              metadata: metadata || {},
+            })
+            .returning();
+          return record;
+        }
+      });
+
+      return {
+        success: true,
+        achievement: {
+          ...progressRecord,
+          code: achievementCode,
+          unlocked: false,
+        },
+      };
     } catch (error) {
       console.error(
         `[AchievementService] Failed to update progress: ${achievementCode}`,
         error,
       );
-      throw error;
+      return {
+        success: false,
+        message: `Failed to update progress: ${error instanceof Error ? error.message : "Unknown error"}`,
+      };
     }
   }
 
@@ -338,7 +476,17 @@ export class AchievementService {
           icon: "sparkles",
           type: "achievement",
           category: "generation",
-          rarity: "common",
+          rarity: "bronze",
+          points: 10,
+        },
+        {
+          code: "first_generation",
+          name: "First Generation",
+          description: "Complete your first generation",
+          icon: "sparkles",
+          type: "achievement",
+          category: "generation",
+          rarity: "bronze",
           points: 10,
         },
         {
@@ -348,7 +496,7 @@ export class AchievementService {
           icon: "user-check",
           type: "achievement",
           category: "social",
-          rarity: "common",
+          rarity: "bronze",
           points: 5,
         },
         // Generation Milestones
@@ -359,7 +507,7 @@ export class AchievementService {
           icon: "package",
           type: "achievement",
           category: "generation",
-          rarity: "common",
+          rarity: "silver",
           points: 25,
           maxProgress: 10,
           progressType: "count",
@@ -371,7 +519,7 @@ export class AchievementService {
           icon: "package",
           type: "achievement",
           category: "generation",
-          rarity: "rare",
+          rarity: "gold",
           points: 100,
           maxProgress: 50,
           progressType: "count",
@@ -383,7 +531,7 @@ export class AchievementService {
           icon: "package",
           type: "achievement",
           category: "generation",
-          rarity: "epic",
+          rarity: "gold",
           points: 250,
           maxProgress: 100,
           progressType: "count",
@@ -396,7 +544,7 @@ export class AchievementService {
           icon: "medal",
           type: "medal",
           category: "milestone",
-          rarity: "rare",
+          rarity: "silver",
           points: 50,
         },
         {
@@ -406,12 +554,14 @@ export class AchievementService {
           icon: "medal",
           type: "medal",
           category: "milestone",
-          rarity: "epic",
+          rarity: "gold",
           points: 150,
+          maxProgress: 50,
+          progressType: "count",
         },
       ];
 
-      // Insert achievements that don't exist
+      // Insert or update achievements
       for (const achievement of defaultAchievements) {
         try {
           const existing = await this.getAchievementByCode(achievement.code);
@@ -420,10 +570,31 @@ export class AchievementService {
             console.log(
               `[AchievementService] Created default achievement: ${achievement.code}`,
             );
+          } else {
+            // Update existing achievement to match current definition
+            await db
+              .update(achievements)
+              .set({
+                name: achievement.name,
+                description: achievement.description,
+                icon: achievement.icon,
+                type: achievement.type,
+                category: achievement.category,
+                rarity: achievement.rarity,
+                points: achievement.points,
+                maxProgress: achievement.maxProgress,
+                progressType: achievement.progressType,
+                isActive: achievement.isActive ?? true,
+                updatedAt: new Date(),
+              })
+              .where(eq(achievements.code, achievement.code));
+            console.log(
+              `[AchievementService] Updated default achievement: ${achievement.code}`,
+            );
           }
         } catch (innerError) {
           console.warn(
-            `[AchievementService] Failed to create achievement ${achievement.code}:`,
+            `[AchievementService] Failed to create/update achievement ${achievement.code}:`,
             innerError,
           );
           // Continue with other achievements

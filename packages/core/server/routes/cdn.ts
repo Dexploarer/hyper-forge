@@ -9,7 +9,11 @@ import { requireAuth } from "../middleware/auth";
 import { getAssetFromPath, canPublishAsset } from "../middleware/assetAuth";
 
 export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
-  const cdnService = new CDNPublishService(cdnUrl, assetsDir);
+  const cdnService = new CDNPublishService({
+    cdnUrl,
+    apiKey: process.env.CDN_API_KEY || "",
+    assetsDir,
+  });
 
   return (
     new Elysia({ prefix: "/api/cdn", name: "cdn" })

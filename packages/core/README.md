@@ -1,5 +1,10 @@
 # 3D Asset Forge
 
+[![Tests](https://github.com/yourorg/asset-forge/workflows/Test%20Suite/badge.svg)](https://github.com/yourorg/asset-forge/actions/workflows/test.yml)
+[![Coverage](https://img.shields.io/codecov/c/github/yourorg/asset-forge)](https://codecov.io/gh/yourorg/asset-forge)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Bun](https://img.shields.io/badge/bun-1.3.2-black)](https://bun.sh)
+
 A comprehensive React/Vite application for AI-powered 3D asset generation, rigging, and fitting. Built for the Hyperscape RPG, this system combines OpenAI's GPT-4 and DALL-E with Meshy.ai to create game-ready 3D models from text descriptions.
 
 ## Features
@@ -405,7 +410,7 @@ The system uses JSON-based configuration for:
 
 ## Documentation
 
-Comprehensive documentation is available in the `/dev-book` directory:
+Comprehensive documentation is available in the `/dev-book` directory. **[View Full Documentation Index](dev-book/README.md)**
 
 ### User Guides
 
@@ -419,11 +424,50 @@ Comprehensive documentation is available in the `/dev-book` directory:
 - [Admin API Reference](server/routes/docs/README-admin.md) - Admin API endpoints
 - [World Config Integration](dev-book/developer/world-config-integration.md) - AI context integration
 
+### Deployment & Production
+
+- **[Production Deployment Checklist](dev-book/deployment/production-checklist.md)** - Complete guide for production deployment
+  - Environment variables setup (required & optional)
+  - Database configuration and migrations
+  - Security hardening (CORS, rate limiting, authentication)
+  - Performance tuning (Bun runtime, connection pooling)
+  - Monitoring and health checks (Prometheus, logging)
+  - Infrastructure setup (Railway, load balancer, CDN)
+  - Pre-deployment testing and validation
+  - Deployment steps and verification
+  - Rollback procedures
+  - Common issues and troubleshooting
+
+- **[API Versioning Strategy](dev-book/api/versioning-strategy.md)** - API version management
+  - Current versioning approach (V1 implicit)
+  - URL path versioning strategy
+  - Breaking vs non-breaking changes
+  - Deprecation policy (6-month timeline)
+  - Migration guides and examples
+
+- **[CI/CD Pipeline](dev-book/deployment/ci-cd.md)** - Automated testing and deployment
+  - GitHub Actions workflow (unit, integration, E2E tests)
+  - Pre-commit hooks with Husky
+  - Code coverage reporting (80%+ required)
+  - Test performance monitoring
+  - Troubleshooting guide
+
+### Interactive API Documentation
+
+- **[Swagger UI](/swagger)** - Interactive API explorer (available when server is running at `http://localhost:3004/swagger`)
+  - 23+ endpoint categories with full examples
+  - Try-it-out functionality for testing
+  - Request/response schemas with validation
+  - Authentication integration
+
 ### Quick Links
 
+- **[Full Documentation Index](dev-book/README.md)** - Complete documentation table of contents
 - **Projects**: Organize your assets into manageable projects
 - **Admin Dashboard**: Full user management and activity monitoring
 - **World Configuration**: Create context-aware AI generation with custom game worlds
+- **Production Deployment**: Deploy to Railway, Docker, or Kubernetes
+- **API Versioning**: Understand breaking changes and migration paths
 
 ## Contributing
 

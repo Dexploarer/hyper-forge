@@ -1,0 +1,46 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Change to the repository root
+cd "$(git rev-parse --show-toplevel)"
+
+# 1. Run type checking
+echo "\n📝 Type checking..."
+cd packages/core && bun run typecheck || {
+  echo "❌ Type checking failed! Please fix TypeScript errors before committing."
+  exit 1
+}
+
+# Return to root
+cd ../..
+
+# 2. Run linter with auto-fix
+echo "\n🔧 Running linter..."
+cd packages/core && bun run lint || {
+  echo "❌ Linting failed! Please fix linting errors before committing."
+  exit 1
+}
+
+# Return to root
+cd ../..
+
+# 3. Format code with Prettier
+echo "\n✨ Formatting code..."
+bunx prettier --write --ignore-unknown $(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx|js|jsx|json|css|md)$') || {
+  echo "❌ Code formatting failed!"
+  exit 1
+}
+
+# Stage formatted files
+git update-index --again
+
+# 4. Run relevant tests (only unit tests for speed)
+echo "\n🧪 Running unit tests..."
+cd packages/core && bun test __tests__/unit || {
+  echo "❌ Unit tests failed! Please fix failing tests before committing."
+  exit 1
+}
+
+echo "\n✅ All pre-commit checks passed!"

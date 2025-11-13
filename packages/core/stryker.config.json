@@ -1,0 +1,49 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "_comment": "Stryker Mutation Testing Configuration for Asset-Forge",
+  "packageManager": "bun",
+  "testRunner": "command",
+  "commandRunner": {
+    "command": "bun test"
+  },
+  "mutate": [
+    "server/services/*.ts",
+    "!server/services/**/*.test.ts",
+    "!server/services/**/*.spec.ts"
+  ],
+  "checkers": ["typescript"],
+  "typescriptChecker": {
+    "prioritizePerformanceOverAccuracy": false
+  },
+  "coverageAnalysis": "perTest",
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 50
+  },
+  "reporters": ["html", "clear-text", "progress", "json"],
+  "htmlReporter": {
+    "baseDir": "reports/mutation"
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation-report.json"
+  },
+  "timeoutMS": 30000,
+  "maxConcurrentTestRunners": 4,
+  "ignorePatterns": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "__tests__",
+    "*.d.ts"
+  ],
+  "mutator": {
+    "plugins": ["@stryker-mutator/typescript-checker"],
+    "excludedMutations": []
+  },
+  "concurrency": 4,
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental.json",
+  "disableTypeChecks": false
+}

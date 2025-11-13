@@ -44,8 +44,12 @@ Default to using Bun instead of Node.js:
 
 ## Testing Standards
 
-- **NO MOCKS OR SPIES** - Use real implementations only
-- Build mini-worlds for feature tests
+- **SMART MOCKING STRATEGY**:
+  - NO MOCKS for internal code (database, HTTP handlers, business logic)
+  - SMART MOCKS for external APIs (OpenAI, Meshy, Privy) to avoid costs and ensure reliability
+  - Use real PostgreSQL database with test data isolation
+  - Use real Elysia HTTP server with test client
+- Build mini-worlds for feature tests with isolated test data
 - Use Playwright for browser automation
 - Test both data and visual output
 - 100% pass rate required before deployment

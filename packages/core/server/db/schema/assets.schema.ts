@@ -97,6 +97,14 @@ export const assets = pgTable(
     exportedToRepo: timestamp("exported_to_repo", { withTimezone: true }),
     manifestPath: varchar("manifest_path", { length: 512 }), // Path in assets repo manifest
 
+    // CDN Publishing
+    cdnUrl: varchar("cdn_url", { length: 1024 }), // Full CDN URL: https://cdn.asset-forge.com/models/asset-id/model.glb
+    cdnThumbnailUrl: varchar("cdn_thumbnail_url", { length: 1024 }), // CDN URL for thumbnail
+    cdnConceptArtUrl: varchar("cdn_concept_art_url", { length: 1024 }), // CDN URL for concept art
+    publishedToCdn: boolean("published_to_cdn").default(false), // Whether asset is on CDN
+    cdnPublishedAt: timestamp("cdn_published_at", { withTimezone: true }), // When published to CDN
+    cdnFiles: jsonb("cdn_files").$type<string[]>().default([]), // Array of CDN file URLs
+
     // Timestamps
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -131,6 +139,9 @@ export const assets = pgTable(
     projectStatusIdx: index("idx_assets_project_status").on(
       table.projectId,
       table.status,
+    ),
+    publishedToCdnIdx: index("idx_assets_published_to_cdn").on(
+      table.publishedToCdn,
     ),
   }),
 );
