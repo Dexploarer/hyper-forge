@@ -1,0 +1,5 @@
+root: "."
+gzip: "on"
+directory: "off"
+status_code:
+  404: "/index.html"

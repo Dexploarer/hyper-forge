@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <title>3D Asset Forge API Documentation</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="AI-powered 3D asset generation and management system API documentation" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+  </head>
+
+  <body>
+    <div id="app"></div>
+
+    <!-- Load Scalar from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+
+    <!-- Initialize Scalar API Reference -->
+    <script>
+      // Get API URL from environment or default to production
+      const API_URL = window.location.hostname === 'localhost'
+        ? 'http://localhost:3000'
+        : 'https://asset-forge-production.up.railway.app';
+
+      Scalar.createApiReference('#app', {
+        // Fetch OpenAPI spec from the API server
+        url: `${API_URL}/swagger/json`,
+
+        // Use Scalar's proxy to avoid CORS issues
+        proxyUrl: 'https://proxy.scalar.com',
+
+        // Customization options
+        configuration: {
+          theme: 'purple',
+          layout: 'modern',
+          darkMode: true,
+
+          // Authentication configuration
+          authentication: {
+            preferredSecurityScheme: 'BearerAuth',
+          },
+
+          // Hide Scalar branding (optional)
+          hideDarkModeToggle: false,
+          hideDownloadButton: false,
+        },
+
+        // Custom metadata
+        metaData: {
+          title: '3D Asset Forge API',
+          description: 'AI-powered 3D asset generation and management system',
+          ogDescription: 'Complete API documentation for 3D Asset Forge platform',
+        },
+      });
+    </script>
+  </body>
+</html>

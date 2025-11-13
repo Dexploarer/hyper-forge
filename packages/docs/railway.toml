@@ -1,0 +1,10 @@
+# Railway Docs Service Configuration
+# Deploys static API documentation using Scalar UI
+# Automatically detected as static site by Railway (Nixpacks StaticfileProvider)
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
