@@ -274,15 +274,15 @@ export class VRMConverter {
 
     // CRITICAL FIX: Find and bake out the Armature parent scale FIRST
     // Meshy models have an Armature with scale 0.01 that needs to be baked
-    let armature: THREE.Object3D | undefined;
+    let armature: THREE.Object3D | null = null;
     this.scene.traverse((obj) => {
       if (obj.name === "Armature" && obj !== this.skinnedMesh) {
         armature = obj;
       }
     });
 
-    if (armature && armature.parent) {
-      const armatureScale = armature.scale.x; // Assume uniform scale
+    if (armature && (armature as THREE.Object3D).parent) {
+      const armatureScale = (armature as THREE.Object3D).scale.x; // Assume uniform scale
       console.log(`   Found Armature with scale: ${armatureScale.toFixed(3)}`);
 
       if (Math.abs(armatureScale - 1.0) > 0.001) {
@@ -297,7 +297,7 @@ export class VRMConverter {
         });
 
         // Set Armature scale to 1.0 (removing the parent scale)
-        armature.scale.set(1, 1, 1);
+        (armature as THREE.Object3D).scale.set(1, 1, 1);
 
         // Update world matrices
         this.scene.updateMatrixWorld(true);
