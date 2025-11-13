@@ -46,7 +46,9 @@ export const voiceGenerationRoutes = new Elysia({
             );
           }
 
-          const voiceService = new ElevenLabsVoiceService(userApiKeys.elevenLabsApiKey);
+          const voiceService = new ElevenLabsVoiceService(
+            userApiKeys.elevenLabsApiKey,
+          );
 
           if (!voiceService.isAvailable()) {
             throw new InternalServerError(
@@ -290,12 +292,12 @@ export const voiceGenerationRoutes = new Elysia({
               createdBy: user?.id,
             });
 
-            console.log(`[Voice] Audio saved successfully: ${result.fileUrl}`);
+            console.log(`[Voice] Audio saved successfully: ${result.cdnUrl}`);
 
             return {
               success: true,
               id: result.id,
-              fileUrl: result.fileUrl,
+              fileUrl: result.cdnUrl,
             };
           },
           {

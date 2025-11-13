@@ -71,7 +71,7 @@ export class MediaStorageService {
 
     try {
       // Build directory structure: media/{type}/{entity_type}/{entity_id}/
-      const directoryParts = [type];
+      const directoryParts: string[] = [type];
       if (entityType) directoryParts.push(entityType);
       if (entityId) directoryParts.push(entityId);
 

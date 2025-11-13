@@ -291,7 +291,7 @@ export const contentGenerationRoutes = new Elysia({
               ? await getUserApiKeysWithFallback(user.id)
               : {
                   aiGatewayApiKey: process.env.AI_GATEWAY_API_KEY,
-                  meshyApiKey: process.env.MESHY_API_KEY
+                  meshyApiKey: process.env.MESHY_API_KEY,
                 };
 
             // Check if AI Gateway key is configured
@@ -302,12 +302,16 @@ export const contentGenerationRoutes = new Elysia({
             }
 
             // Initialize AI service with user's API keys
-            const imageServerBaseUrl = process.env.IMAGE_SERVER_URL || (() => {
-              if (process.env.NODE_ENV === 'production') {
-                throw new Error('IMAGE_SERVER_URL must be set in production for Meshy AI callbacks');
-              }
-              return "http://localhost:8080";
-            })();
+            const imageServerBaseUrl =
+              process.env.IMAGE_SERVER_URL ||
+              (() => {
+                if (process.env.NODE_ENV === "production") {
+                  throw new Error(
+                    "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
+                  );
+                }
+                return "http://localhost:8080";
+              })();
 
             const aiService = new AICreationService({
               openai: {
@@ -317,7 +321,8 @@ export const contentGenerationRoutes = new Elysia({
                 imageServerBaseUrl,
               },
               meshy: {
-                apiKey: userApiKeys.meshyApiKey || process.env.MESHY_API_KEY || "",
+                apiKey:
+                  userApiKeys.meshyApiKey || process.env.MESHY_API_KEY || "",
                 baseUrl: "https://api.meshy.ai",
               },
             });
@@ -383,7 +388,7 @@ export const contentGenerationRoutes = new Elysia({
               ? await getUserApiKeysWithFallback(user.id)
               : {
                   aiGatewayApiKey: process.env.AI_GATEWAY_API_KEY,
-                  meshyApiKey: process.env.MESHY_API_KEY
+                  meshyApiKey: process.env.MESHY_API_KEY,
                 };
 
             // Check if AI Gateway key is configured
@@ -394,12 +399,16 @@ export const contentGenerationRoutes = new Elysia({
             }
 
             // Initialize AI service with user's API keys
-            const imageServerBaseUrl = process.env.IMAGE_SERVER_URL || (() => {
-              if (process.env.NODE_ENV === 'production') {
-                throw new Error('IMAGE_SERVER_URL must be set in production for Meshy AI callbacks');
-              }
-              return "http://localhost:8080";
-            })();
+            const imageServerBaseUrl =
+              process.env.IMAGE_SERVER_URL ||
+              (() => {
+                if (process.env.NODE_ENV === "production") {
+                  throw new Error(
+                    "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
+                  );
+                }
+                return "http://localhost:8080";
+              })();
 
             const aiService = new AICreationService({
               openai: {
@@ -409,7 +418,8 @@ export const contentGenerationRoutes = new Elysia({
                 imageServerBaseUrl,
               },
               meshy: {
-                apiKey: userApiKeys.meshyApiKey || process.env.MESHY_API_KEY || "",
+                apiKey:
+                  userApiKeys.meshyApiKey || process.env.MESHY_API_KEY || "",
                 baseUrl: "https://api.meshy.ai",
               },
             });
@@ -1048,13 +1058,13 @@ export const contentGenerationRoutes = new Elysia({
             });
 
             console.log(
-              `[Media] Portrait saved successfully: ${result.fileUrl}`,
+              `[Media] Portrait saved successfully: ${result.cdnUrl}`,
             );
 
             return {
               success: true,
               mediaId: result.id,
-              fileUrl: result.fileUrl,
+              fileUrl: result.cdnUrl,
             };
           },
           {
@@ -1134,12 +1144,12 @@ export const contentGenerationRoutes = new Elysia({
               createdBy: body.createdBy || user?.id,
             });
 
-            console.log(`[Media] Voice saved successfully: ${result.fileUrl}`);
+            console.log(`[Media] Voice saved successfully: ${result.cdnUrl}`);
 
             return {
               success: true,
               mediaId: result.id,
-              fileUrl: result.fileUrl,
+              fileUrl: result.cdnUrl,
             };
           },
           {

@@ -286,7 +286,9 @@ export const createAssetRoutes = (
             const formData = new FormData();
 
             for (const file of filesToUpload) {
-              const blob = new Blob([file.buffer], { type: file.type });
+              // Convert Buffer to Uint8Array for Blob compatibility
+              const uint8Array = new Uint8Array(file.buffer);
+              const blob = new Blob([uint8Array], { type: file.type });
               // Store sprites in sprites/{assetId}/ directory
               formData.append("files", blob, `${id}/sprites/${file.name}`);
             }
@@ -323,6 +325,7 @@ export const createAssetRoutes = (
             return {
               success: true,
               message: `${sprites.length} sprites uploaded to CDN successfully`,
+              spritesDir: `${CDN_URL}/sprites/${id}/sprites`, // Deprecated but keep for backward compatibility
               cdnSpritesDir: `${CDN_URL}/sprites/${id}/sprites`,
               spriteFiles: sprites.map((s) => `${s.angle}deg.png`),
               cdnUrls,

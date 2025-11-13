@@ -279,7 +279,7 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
   /**
    * Get media storage health (admin only)
    * GET /api/admin/media-storage/health
-   * Check for orphaned database records and storage issues
+   * Check CDN health and media storage statistics
    */
   .get(
     "/media-storage/health",
@@ -290,27 +290,32 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
         return adminResult;
       }
 
-      const health = await mediaStorageService.verifyStorageHealth();
+      // Check CDN health and get storage statistics
+      const cdnHealth = await mediaStorageService.verifyCDNHealth();
+      const stats = await mediaStorageService.getStorageStats();
 
       return {
         success: true,
-        health: {
-          totalRecords: health.totalRecords,
-          validFiles: health.validFiles,
-          orphanedRecords: health.orphanedRecords,
+        architecture: "CDN-First",
+        cdn: {
+          healthy: cdnHealth.healthy,
+          message: cdnHealth.message,
+          url: process.env.CDN_URL,
+        },
+        statistics: {
+          totalRecords: stats.totalRecords,
+          publishedToCdn: stats.publishedToCdn,
+          notPublished: stats.notPublished,
           healthPercentage:
-            health.totalRecords > 0
-              ? Math.round((health.validFiles / health.totalRecords) * 100)
+            stats.totalRecords > 0
+              ? Math.round((stats.publishedToCdn / stats.totalRecords) * 100)
               : 100,
         },
         warning:
-          health.orphanedRecords > 0
-            ? `${health.orphanedRecords} orphaned records found. Consider running cleanup.`
+          stats.notPublished > 0
+            ? `${stats.notPublished} media assets not yet published to CDN`
             : null,
-        volumeConfigured: !!process.env.RAILWAY_VOLUME_MOUNT_PATH,
-        volumeWarning: !process.env.RAILWAY_VOLUME_MOUNT_PATH
-          ? "Railway volume not detected. Media files may be lost on deployment. See RAILWAY_VOLUME_SETUP.md"
-          : null,
+        note: "CDN-first architecture - all media uploaded directly to CDN with webhook database sync",
       };
     },
     {
@@ -318,58 +323,7 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
         tags: ["Admin"],
         summary: "Check media storage health (Admin only)",
         description:
-          "Verify media storage integrity and detect orphaned database records without corresponding files.",
-        security: [{ BearerAuth: [] }],
-      },
-    },
-  )
-
-  /**
-   * Cleanup orphaned media records (admin only)
-   * POST /api/admin/media-storage/cleanup
-   * Remove database records for files that don't exist
-   */
-  .post(
-    "/media-storage/cleanup",
-    async ({ request }) => {
-      const adminResult = await requireAdmin({ request });
-
-      if (adminResult instanceof Response) {
-        return adminResult;
-      }
-
-      const { user: adminUser } = adminResult;
-
-      console.log(
-        `[AdminRoutes] Starting media storage cleanup by admin: ${adminUser.id}`,
-      );
-
-      const result = await mediaStorageService.cleanupOrphanedRecords();
-
-      // Log activity
-      await db.insert(activityLog).values({
-        userId: adminUser.id,
-        action: "media_cleanup",
-        entityType: "system",
-        entityId: "media-storage",
-        details: {
-          removedCount: result.removedCount,
-          removedIds: result.removedIds,
-        },
-      });
-
-      return {
-        success: true,
-        message: `Removed ${result.removedCount} orphaned media records`,
-        removedCount: result.removedCount,
-      };
-    },
-    {
-      detail: {
-        tags: ["Admin"],
-        summary: "Cleanup orphaned media records (Admin only)",
-        description:
-          "Remove database records for media files that don't exist on disk. Use after checking health status.",
+          "Check CDN health and media storage statistics for CDN-first architecture.",
         security: [{ BearerAuth: [] }],
       },
     },
