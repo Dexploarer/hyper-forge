@@ -8,7 +8,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Keyboard Shortcuts", () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the app (assuming it's running on localhost:3000)
-    await page.goto("http://localhost:3000");
+    await page.goto("${process.env.FRONTEND_URL || "http://test-frontend:3000"}");
 
     // Wait for the app to load
     await page.waitForLoadState("networkidle");

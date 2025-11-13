@@ -6,7 +6,7 @@
 
 import { test, expect, type Page } from "@playwright/test";
 
-const FRONTEND_URL = "http://localhost:3000";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://test-frontend:3000";
 
 // Helper to measure FPS
 async function measureFPS(

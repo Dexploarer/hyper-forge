@@ -12,7 +12,7 @@ import path from "path";
  * - Viewer controls and UI
  */
 
-const FRONTEND_URL = "http://localhost:3000";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://test-frontend:3000";
 const SCREENSHOT_DIR = path.join(
   process.cwd(),
   "test-results",

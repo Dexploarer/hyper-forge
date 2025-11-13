@@ -7,7 +7,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import path from "path";
 
-const FRONTEND_URL = "http://localhost:3000";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://test-frontend:3000";
 const BASELINE_DIR = path.join(process.cwd(), "__tests__/e2e/baselines");
 
 // Helper to wait for 3D viewer to load

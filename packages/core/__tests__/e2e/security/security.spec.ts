@@ -12,7 +12,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Security and Access Control", () => {
   test("should show landing page when not authenticated", async ({ page }) => {
-    await page.goto("http://localhost:3000");
+    await page.goto("${process.env.FRONTEND_URL || "http://test-frontend:3000"}");
 
     // Wait for page to load
     await page.waitForLoadState("networkidle");
@@ -36,7 +36,7 @@ test.describe("Security and Access Control", () => {
     page,
   }) => {
     // Try to access admin dashboard directly without auth
-    await page.goto("http://localhost:3000/#/admin-dashboard");
+    await page.goto("${process.env.FRONTEND_URL || "http://test-frontend:3000"}/#/admin-dashboard");
 
     // Wait for redirect or auth check
     await page.waitForLoadState("networkidle");
@@ -70,7 +70,7 @@ test.describe("Security and Access Control", () => {
     page,
   }) => {
     // Try to access settings directly without auth
-    await page.goto("http://localhost:3000/#/settings");
+    await page.goto("${process.env.FRONTEND_URL || "http://test-frontend:3000"}/#/settings");
 
     // Wait for redirect or auth check
     await page.waitForLoadState("networkidle");
@@ -149,7 +149,7 @@ test.describe("Security and Access Control", () => {
     // This test would require creating a non-admin user
     // For now, we verify that admin-specific UI elements are protected
 
-    await page.goto("http://localhost:3000");
+    await page.goto("${process.env.FRONTEND_URL || "http://test-frontend:3000"}");
     await page.waitForLoadState("networkidle");
 
     // Check for admin dashboard link
@@ -175,7 +175,7 @@ test.describe("Security and Access Control", () => {
   }) => {
     // Try to access admin API endpoint directly
     const response = await page.request
-      .get("http://localhost:3004/api/users")
+      .get("${process.env.BACKEND_URL || "http://test-backend:3004"}/api/users")
       .catch(() => null);
 
     if (response) {
@@ -198,7 +198,7 @@ test.describe("Security and Access Control", () => {
   });
 
   test("should have secure headers", async ({ page }) => {
-    await page.goto("http://localhost:3000");
+    await page.goto("${process.env.FRONTEND_URL || "http://test-frontend:3000"}");
 
     // Check response headers
     const response = page.url();
@@ -237,7 +237,7 @@ test.describe("Security and Access Control", () => {
   test("should prevent XSS in user input fields", async ({ page }) => {
 
     // Navigate to a page with input fields
-    await page.goto("http://localhost:3000");
+    await page.goto("${process.env.FRONTEND_URL || "http://test-frontend:3000"}");
     await page.waitForLoadState("networkidle");
 
     // Try to inject script (this should be sanitized)
@@ -337,7 +337,7 @@ test.describe("Security and Access Control", () => {
   test("should have proper CORS configuration", async ({ page }) => {
     // Try to make a request from the frontend to backend
     const response = await page.request
-      .get("http://localhost:3004/api/health")
+      .get("${process.env.BACKEND_URL || "http://test-backend:3004"}/api/health")
       .catch(() => null);
 
     if (response) {

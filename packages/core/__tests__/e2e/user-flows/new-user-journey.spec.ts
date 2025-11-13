@@ -23,7 +23,8 @@ test("Complete new user onboarding flow", async ({ page }) => {
   // Step 1: Landing Page Load
   journey.push("Step 1: Visiting landing page");
   console.log("\n🚀 Step 1: Loading landing page...");
-  await page.goto("http://localhost:3000");
+  const frontendUrl = process.env.FRONTEND_URL || "http://test-frontend:3000";
+  await page.goto(frontendUrl);
   await page.waitForLoadState("networkidle");
   await takeScreenshot(page, "01_landing_page_initial");
 

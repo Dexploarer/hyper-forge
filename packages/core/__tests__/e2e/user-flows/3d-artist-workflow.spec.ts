@@ -2,8 +2,8 @@ import { test, expect, type Page } from "@playwright/test";
 import path from "path";
 
 // Test configuration
-const FRONTEND_URL = "http://localhost:3000";
-const BACKEND_URL = "http://localhost:3004";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://test-frontend:3000";
+const BACKEND_URL = process.env.BACKEND_URL || "http://test-backend:3004";
 const SCREENSHOT_DIR = path.join(
   process.cwd(),
   "test-results",

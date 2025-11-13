@@ -13,7 +13,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Admin Dashboard", () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to admin dashboard
-    await page.goto("http://localhost:3000/admin");
+    await page.goto("${process.env.FRONTEND_URL || "http://test-frontend:3000"}/admin");
     await page.waitForLoadState("networkidle");
   });
 
