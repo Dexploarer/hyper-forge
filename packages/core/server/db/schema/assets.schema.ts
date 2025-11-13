@@ -44,13 +44,15 @@ export const assets = pgTable(
     gameId: uuid("game_id"), // Optional game/project association
 
     // File storage (paths relative to gdd-assets directory)
-    filePath: varchar("file_path", { length: 512 }), // e.g., "asset-id/model.glb"
+    // DEPRECATED: These file path fields are deprecated in favor of CDN URLs
+    // They are kept for backward compatibility during the migration period
+    filePath: varchar("file_path", { length: 512 }), // DEPRECATED: Use cdnUrl instead
     fileSize: bigint("file_size", { mode: "number" }),
     fileType: varchar("file_type", { length: 100 }),
-    thumbnailPath: varchar("thumbnail_path", { length: 512 }),
-    conceptArtPath: varchar("concept_art_path", { length: 512 }), // Generated concept art
+    thumbnailPath: varchar("thumbnail_path", { length: 512 }), // DEPRECATED: Use cdnThumbnailUrl instead
+    conceptArtPath: varchar("concept_art_path", { length: 512 }), // DEPRECATED: Use cdnConceptArtUrl instead
     hasConceptArt: boolean("has_concept_art").default(false),
-    riggedModelPath: varchar("rigged_model_path", { length: 512 }), // Rigged/animated model
+    riggedModelPath: varchar("rigged_model_path", { length: 512 }), // DEPRECATED: Use cdnRiggedModelUrl instead
 
     // Generation metadata
     prompt: text("prompt"),
@@ -97,10 +99,11 @@ export const assets = pgTable(
     exportedToRepo: timestamp("exported_to_repo", { withTimezone: true }),
     manifestPath: varchar("manifest_path", { length: 512 }), // Path in assets repo manifest
 
-    // CDN Publishing
+    // CDN Publishing (preferred over file paths)
     cdnUrl: varchar("cdn_url", { length: 1024 }), // Full CDN URL: https://cdn.asset-forge.com/models/asset-id/model.glb
     cdnThumbnailUrl: varchar("cdn_thumbnail_url", { length: 1024 }), // CDN URL for thumbnail
     cdnConceptArtUrl: varchar("cdn_concept_art_url", { length: 1024 }), // CDN URL for concept art
+    cdnRiggedModelUrl: varchar("cdn_rigged_model_url", { length: 1024 }), // CDN URL for rigged/animated model
     publishedToCdn: boolean("published_to_cdn").default(false), // Whether asset is on CDN
     cdnPublishedAt: timestamp("cdn_published_at", { withTimezone: true }), // When published to CDN
     cdnFiles: jsonb("cdn_files").$type<string[]>().default([]), // Array of CDN file URLs

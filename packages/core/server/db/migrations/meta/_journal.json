@@ -148,6 +148,13 @@
       "when": 1763029054788,
       "tag": "0020_unique_mathemanic",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1763046785626,
+      "tag": "0021_fair_satana",
+      "breakpoints": true
     }
   ]
 }
