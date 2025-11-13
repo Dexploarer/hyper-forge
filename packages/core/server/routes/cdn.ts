@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { CDNPublishService } from "../services/CDNPublishService";
 import { requireAuth } from "../middleware/auth";
 import { getAssetFromPath, canPublishAsset } from "../middleware/assetAuth";
@@ -17,6 +17,7 @@ import {
 import { db } from "../db/db";
 import { assets } from "../db/schema";
 import { eq } from "drizzle-orm";
+import { env } from "../config/env";
 
 export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
   const cdnService = new CDNPublishService({
@@ -183,10 +184,10 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
       .post(
         "/webhook/upload",
         async ({ body, headers, set }) => {
-          const webhookEnabled = process.env.CDN_WEBHOOK_ENABLED === "true";
-          const webhookSecret = process.env.WEBHOOK_SECRET;
+          const webhookEnabled = env.CDN_WEBHOOK_ENABLED;
+          const webhookSecret = env.WEBHOOK_SECRET;
           const systemUserId =
-            process.env.WEBHOOK_SYSTEM_USER_ID ||
+            env.WEBHOOK_SYSTEM_USER_ID ||
             "00000000-0000-0000-0000-000000000000";
 
           // Check if webhook feature is enabled
@@ -222,7 +223,7 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
 
               if (
                 signatureBuffer.length !== expectedBuffer.length ||
-                !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+                !timingSafeEqual(signatureBuffer, expectedBuffer)
               ) {
                 set.status = 401;
                 return {

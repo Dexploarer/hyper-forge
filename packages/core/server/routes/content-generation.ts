@@ -286,12 +286,18 @@ export const contentGenerationRoutes = new Elysia({
             );
 
             // Initialize AI service
+            const imageServerBaseUrl = process.env.IMAGE_SERVER_URL || (() => {
+              if (process.env.NODE_ENV === 'production') {
+                throw new Error('IMAGE_SERVER_URL must be set in production for Meshy AI callbacks');
+              }
+              return "http://localhost:8080";
+            })();
+
             const aiService = new AICreationService({
               openai: {
                 apiKey: process.env.OPENAI_API_KEY || "",
                 model: "gpt-image-1",
-                imageServerBaseUrl:
-                  process.env.IMAGE_SERVER_URL || "http://localhost:8080",
+                imageServerBaseUrl,
               },
               meshy: {
                 apiKey: process.env.MESHY_API_KEY || "",
@@ -356,12 +362,18 @@ export const contentGenerationRoutes = new Elysia({
             );
 
             // Initialize AI service
+            const imageServerBaseUrl = process.env.IMAGE_SERVER_URL || (() => {
+              if (process.env.NODE_ENV === 'production') {
+                throw new Error('IMAGE_SERVER_URL must be set in production for Meshy AI callbacks');
+              }
+              return "http://localhost:8080";
+            })();
+
             const aiService = new AICreationService({
               openai: {
                 apiKey: process.env.OPENAI_API_KEY || "",
                 model: "gpt-image-1",
-                imageServerBaseUrl:
-                  process.env.IMAGE_SERVER_URL || "http://localhost:8080",
+                imageServerBaseUrl,
               },
               meshy: {
                 apiKey: process.env.MESHY_API_KEY || "",

@@ -43,6 +43,13 @@ export const users = pgTable(
     // User preferences
     settings: jsonb("settings").notNull().default({}),
 
+    // Encrypted API keys (user-provided for AI services)
+    // These are encrypted using AES-256-GCM before storage
+    meshyApiKey: text("meshy_api_key"), // Encrypted Meshy API key
+    aiGatewayApiKey: text("ai_gateway_api_key"), // Encrypted Vercel AI Gateway key
+    elevenLabsApiKey: text("elevenlabs_api_key"), // Encrypted ElevenLabs API key
+    apiKeyIv: text("api_key_iv"), // Initialization vector for encryption
+
     // Timestamps
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

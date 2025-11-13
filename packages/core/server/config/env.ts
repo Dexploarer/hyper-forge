@@ -33,9 +33,16 @@ const envSchema = z
     PRIVY_APP_SECRET: z.string().min(1, "PRIVY_APP_SECRET is required"),
 
     // =========================================
-    // AI Services (Required)
+    // API Key Encryption
     // =========================================
-    MESHY_API_KEY: z.string().min(1, "MESHY_API_KEY is required"),
+    API_KEY_ENCRYPTION_SECRET: z
+      .string()
+      .min(32, "API_KEY_ENCRYPTION_SECRET must be at least 32 characters"),
+
+    // =========================================
+    // AI Services (Optional - users can provide their own)
+    // =========================================
+    MESHY_API_KEY: z.string().optional(),
 
     // =========================================
     // AI Services (Optional - at least one required)
@@ -81,6 +88,37 @@ const envSchema = z
     FRONTEND_URL: z.string().url().optional().or(z.literal("")),
     IMAGE_SERVER_URL: z.string().url().optional().or(z.literal("")),
     API_URL: z.string().url().optional().or(z.literal("")),
+
+    // =========================================
+    // Webhook Configuration
+    // =========================================
+    /**
+     * WEBHOOK CONFIGURATION FOR RAILWAY DEPLOYMENT
+     *
+     * The CDN service fires webhooks to the main app after successful uploads.
+     * Both services must share the same WEBHOOK_SECRET for signature verification.
+     *
+     * Required Railway env vars:
+     *
+     * Main App (asset-forge):
+     * - WEBHOOK_SECRET: Shared secret for webhook signature verification (32+ chars recommended)
+     * - CDN_WEBHOOK_ENABLED: Set to "true" to enable webhook receiver endpoint
+     * - WEBHOOK_SYSTEM_USER_ID: Optional, UUID of system user for auto-created assets
+     *
+     * CDN Service (asset-forge-cdn):
+     * - ENABLE_WEBHOOK: Set to "true" to enable webhook firing
+     * - ASSET_FORGE_API_URL: Main app URL (e.g., https://hyperforge-production.up.railway.app)
+     * - WEBHOOK_SECRET: Same value as main app
+     * - WEBHOOK_RETRY_ATTEMPTS: Optional, default 3
+     * - WEBHOOK_RETRY_DELAY_MS: Optional, default 1000
+     * - WEBHOOK_TIMEOUT_MS: Optional, default 5000
+     */
+    WEBHOOK_SECRET: z.string().optional(),
+    CDN_WEBHOOK_ENABLED: z
+      .string()
+      .optional()
+      .transform((val) => val === "true"),
+    WEBHOOK_SYSTEM_USER_ID: z.string().uuid().optional(),
 
     // =========================================
     // File System
@@ -150,18 +188,7 @@ const envSchema = z
       .string()
       .optional()
       .transform((val) => val === "true"),
-  })
-  .refine(
-    (data) => {
-      // At least one of AI_GATEWAY_API_KEY or OPENAI_API_KEY must be provided
-      return !!data.AI_GATEWAY_API_KEY || !!data.OPENAI_API_KEY;
-    },
-    {
-      message:
-        "At least one of AI_GATEWAY_API_KEY or OPENAI_API_KEY must be provided",
-      path: ["AI_GATEWAY_API_KEY", "OPENAI_API_KEY"],
-    },
-  );
+  });
 
 /**
  * Validate and parse environment variables

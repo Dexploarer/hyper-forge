@@ -59,6 +59,7 @@ import { musicRoutes } from "./routes/music";
 import { soundEffectsRoutes } from "./routes/sound-effects";
 import { contentGenerationRoutes } from "./routes/content-generation";
 import { usersRoutes } from "./routes/users";
+import { userApiKeysRoutes } from "./routes/user-api-keys";
 import { adminRoutes } from "./routes/admin";
 import { projectsRoutes } from "./routes/projects";
 import { achievementsRoutes } from "./routes/achievements";
@@ -102,12 +103,32 @@ achievementService.initializeDefaultAchievements().catch((error) => {
 // Railway uses PORT, but we fallback to API_PORT for local dev
 const API_PORT = process.env.PORT || process.env.API_PORT || 3004;
 const ASSETS_DIR = process.env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
-const CDN_URL = process.env.CDN_URL || "http://localhost:3005";
+
+// CDN_URL and IMAGE_SERVER_URL must be set in production
+const CDN_URL =
+  process.env.CDN_URL ||
+  (() => {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("CDN_URL must be set in production environment");
+    }
+    return "http://localhost:3005";
+  })();
+
+const IMAGE_SERVER_URL =
+  process.env.IMAGE_SERVER_URL ||
+  (() => {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
+      );
+    }
+    return `http://localhost:${API_PORT}`;
+  })();
+
 const assetService = new AssetService(ASSETS_DIR);
 const retextureService = new RetextureService({
   meshyApiKey: process.env.MESHY_API_KEY || "",
-  imageServerBaseUrl:
-    process.env.IMAGE_SERVER_URL || `http://localhost:${API_PORT}`,
+  imageServerBaseUrl: IMAGE_SERVER_URL,
 });
 const generationService = new GenerationService();
 
@@ -655,6 +676,7 @@ const app = new Elysia()
   .use(promptRoutes)
   .use(aiVisionRoutes)
   .use(usersRoutes)
+  .use(userApiKeysRoutes)
   .use(achievementsRoutes)
   .use(adminRoutes)
   .use(projectsRoutes)
@@ -879,7 +901,7 @@ const app = new Elysia()
       return new Response("Internal Server Error", { status: 500 });
     }
   })
-  .head("/*", async ({ set }) => {
+  .head("/*", async () => {
     try {
       const indexPath = path.join(ROOT_DIR, "dist", "index.html");
       const file = Bun.file(indexPath);
@@ -888,13 +910,13 @@ const app = new Elysia()
         console.warn(`[HEAD /*] Frontend not found at: ${indexPath}`);
         console.warn(`   Current working directory: ${process.cwd()}`);
         console.warn(`   ROOT_DIR: ${ROOT_DIR}`);
-        set.status = 404;
-        return null;
+        return new Response(null, { status: 404 });
       }
 
-      set.status = 200;
-      set.headers["Content-Type"] = "text/html; charset=utf-8";
-      return null;
+      return new Response(null, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
     } catch (error) {
       console.error("[HEAD /*] Error checking SPA:", error);
       console.error(`   ROOT_DIR: ${ROOT_DIR}`);
@@ -903,8 +925,7 @@ const app = new Elysia()
         `   Error details:`,
         error instanceof Error ? error.message : String(error),
       );
-      set.status = 500;
-      return null;
+      return new Response(null, { status: 500 });
     }
   });
 
@@ -935,14 +956,27 @@ console.log("🚀 ASSET-FORGE API SERVER - ELYSIA + BUN");
 console.log("=".repeat(60));
 
 // Server info
+// Get Railway public URL or fallback to localhost for dev
+const publicUrl =
+  process.env.RAILWAY_STATIC_URL ||
+  process.env.RAILWAY_PUBLIC_DOMAIN ||
+  `http://localhost:${API_PORT}`;
+
 console.log("\n📍 SERVER ENDPOINTS:");
-console.log(`   🌐 Server:      http://localhost:${API_PORT}`);
-console.log(`   🎨 Frontend:    http://localhost:${API_PORT}/`);
-console.log(`   📊 Health:      http://localhost:${API_PORT}/api/health`);
-console.log(`   📚 API Docs:    http://localhost:${API_PORT}/swagger`);
-console.log(`   🖼️  Assets:      http://localhost:${API_PORT}/gdd-assets/`);
-console.log(`   🔄 Proxy:       http://localhost:${API_PORT}/api/proxy/image`);
+console.log(`   🌐 Server:      ${publicUrl}`);
+console.log(`   🎨 Frontend:    ${publicUrl}/`);
+console.log(`   📊 Health:      ${publicUrl}/api/health`);
+console.log(`   📚 API Docs:    ${publicUrl}/swagger`);
+console.log(`   🖼️  Assets:      ${publicUrl}/gdd-assets/`);
+console.log(`   🔄 Proxy:       ${publicUrl}/api/proxy/image`);
 console.log(`   ✨ Performance: 22x faster than Express (2.4M req/s)`);
+
+// Show environment info
+if (process.env.NODE_ENV === "production") {
+  console.log(`   🚀 Environment: Production (Railway)`);
+} else {
+  console.log(`   🔧 Environment: Development (Local)`);
+}
 
 // Configuration status
 console.log("\n🔧 CONFIGURATION STATUS:");
@@ -983,6 +1017,13 @@ const configs = [
     icon: "🔍",
     key: "QDRANT_URL",
     enabled: !!process.env.QDRANT_URL,
+  },
+  {
+    name: "Queue System (Redis)",
+    icon: "⚡",
+    key: "REDIS_URL",
+    enabled: !!process.env.REDIS_URL,
+    optional: true,
   },
   {
     name: "Image Hosting (Imgur)",

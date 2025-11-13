@@ -16,6 +16,7 @@ import {
   Zap,
   Package,
   Target,
+  Key,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
@@ -39,8 +40,9 @@ import {
 } from "@/components/common";
 import { cn } from "@/styles";
 import { notify } from "@/utils/notify";
+import { ApiKeySettings } from "@/components/settings/ApiKeySettings";
 
-type SettingsTab = "profile" | "preferences" | "generation" | "prompts";
+type SettingsTab = "profile" | "preferences" | "apiKeys" | "generation" | "prompts";
 
 type PromptCategory =
   | "gameStyles"
@@ -291,6 +293,7 @@ export const SettingsPage: React.FC = () => {
   const tabs = [
     { id: "profile" as SettingsTab, label: "Profile", icon: UserIcon },
     { id: "preferences" as SettingsTab, label: "Preferences", icon: Palette },
+    { id: "apiKeys" as SettingsTab, label: "API Keys", icon: Key },
     { id: "generation" as SettingsTab, label: "Generation", icon: Sparkles },
     { id: "prompts" as SettingsTab, label: "System Prompts", icon: FileText },
   ];
@@ -775,6 +778,9 @@ export const SettingsPage: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* API Keys Tab */}
+            {activeTab === "apiKeys" && <ApiKeySettings />}
 
             {/* Generation Tab */}
             {activeTab === "generation" && (

@@ -7,6 +7,36 @@
  * Usage:
  *   logger.info({ userId, projectId, action: 'create' }, 'Project created');
  *   logger.error({ err, userId }, 'Failed to create project');
+ *
+ * ============================================================================
+ * LOGGING MIGRATION GUIDE
+ * ============================================================================
+ *
+ * Migrate console.log/error/warn to structured Pino logging:
+ *
+ * BEFORE:
+ * console.log(`[Upload] Saved file: ${filename}`);
+ * console.error("Upload failed:", error);
+ *
+ * AFTER:
+ * const logger = createChildLogger('Upload');
+ * logger.info({ filename, size: file.size }, 'File saved');
+ * logger.error({ error }, 'Upload failed');
+ *
+ * PRIORITY FILES FOR MIGRATION:
+ * 1. asset-forge-cdn/src/middleware/auth.ts (142 console calls)
+ * 2. asset-forge-cdn/src/utils/file-helpers.ts
+ * 3. asset-forge-cdn/src/routes/upload.ts
+ * 4. packages/core/server/db/db.ts (database operations)
+ * 5. packages/core/server/services/* (service files)
+ *
+ * BENEFITS:
+ * - Structured data for log aggregation (Railway, Datadog)
+ * - Request correlation IDs
+ * - Proper log levels for filtering
+ * - Production-safe (no sensitive data leaks)
+ *
+ * ============================================================================
  */
 
 import pino from "pino";

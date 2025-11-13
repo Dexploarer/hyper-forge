@@ -18,6 +18,8 @@ import {
   ChevronDown,
   Filter,
   Clock,
+  Copy,
+  Check,
 } from "lucide-react";
 import React, {
   useEffect,
@@ -237,6 +239,9 @@ export const AdminDashboardPage: React.FC = () => {
   const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Copy token state
+  const [tokenCopied, setTokenCopied] = useState(false);
+
   // Activity log state
   const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
@@ -444,6 +449,23 @@ export const AdminDashboardPage: React.FC = () => {
     setStatusFilter("all");
   };
 
+  const handleCopyAccessToken = async () => {
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        alert("No access token available. Please log in.");
+        return;
+      }
+
+      await navigator.clipboard.writeText(accessToken);
+      setTokenCopied(true);
+      setTimeout(() => setTokenCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy token:", err);
+      alert("Failed to copy access token to clipboard");
+    }
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "Never";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -530,18 +552,36 @@ export const AdminDashboardPage: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
-              <Users className="w-6 h-6 text-primary" />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-text-primary">
+                  Admin Dashboard
+                </h1>
+                <p className="text-text-secondary">
+                  Manage users and view system statistics
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-text-primary">
-                Admin Dashboard
-              </h1>
-              <p className="text-text-secondary">
-                Manage users and view system statistics
-              </p>
-            </div>
+            <button
+              onClick={handleCopyAccessToken}
+              className="px-4 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 transition-colors flex items-center gap-2"
+            >
+              {tokenCopied ? (
+                <>
+                  <Check className="w-4 h-4" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4" />
+                  Copy Access Token
+                </>
+              )}
+            </button>
           </div>
         </div>
 

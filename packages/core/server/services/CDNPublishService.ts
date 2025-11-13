@@ -48,7 +48,13 @@ export class CDNPublishService {
    * Create from environment variables
    */
   static fromEnv(assetsDir: string): CDNPublishService {
-    const cdnUrl = process.env.CDN_URL || "http://localhost:3005";
+    const cdnUrl = process.env.CDN_URL || (() => {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('CDN_URL must be set in production environment');
+      }
+      return "http://localhost:3005";
+    })();
+
     const apiKey = process.env.CDN_API_KEY || "";
 
     if (!apiKey) {

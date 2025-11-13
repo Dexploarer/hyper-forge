@@ -141,6 +141,13 @@
       "when": 1763015589002,
       "tag": "0019_cool_madame_masque",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1763029054788,
+      "tag": "0020_unique_mathemanic",
+      "breakpoints": true
     }
   ]
 }
