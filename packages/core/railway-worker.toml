@@ -1,0 +1,80 @@
+# Railway Configuration for Asset-Forge Workers
+# This configuration file deploys a separate worker service for background job processing
+# Workers process generation jobs from Redis queues independently from the API service
+# Uses Railpack with railpack.json for build configuration
+#
+# PORT CONFIGURATION (November 2025):
+# Workers DO NOT need PORT environment variable - they are HTTP-free
+# Workers only process Redis queue jobs with no HTTP endpoints
+# Railway monitors the process directly without health checks
+
+[build]
+builder = "RAILPACK"
+# Explicit build command using Bun to bypass Railpack auto-detection
+# Workers don't need a frontend build, just install dependencies
+# Must cd into packages/core since Railway runs from repo root
+buildCommand = "cd packages/core && bun install --frozen-lockfile"
+# Watch paths for automatic rebuilds - absolute from repo root
+# These paths trigger redeployments when changed
+watchPatterns = [
+  "packages/core/server/workers/**",
+  "packages/core/server/services/**",
+  "packages/core/server/db/**",
+  "packages/core/package.json",
+  "packages/core/bun.lock",
+  "packages/core/railpack.json",
+  "packages/core/railway-worker.toml"
+]
+
+[deploy]
+# Start command - explicitly use Bun to run workers
+# Must cd into packages/core since Railway runs from repo root
+startCommand = "cd packages/core && bun run start:workers"
+# Restart policy - restart on failure with more retries for workers
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 20
+
+# No health check for workers (they don't expose HTTP endpoints)
+# Railway will monitor the process directly
+
+# Production environment configuration
+[environments.production]
+# Link to main branch
+branch = "main"
+
+# Production-specific settings for workers
+[environments.production.variables]
+NODE_ENV = "production"
+LOG_LEVEL = "info"
+# Number of concurrent workers to run (default: 3, can be overridden via Railway env vars)
+WORKER_CONCURRENCY = "3"
+# Maximum job retry attempts (default: 3)
+MAX_JOB_RETRIES = "3"
+# Queue poll timeout in seconds (how long workers wait for jobs)
+QUEUE_POLL_TIMEOUT = "5"
+
+# Staging environment configuration
+[environments.staging]
+# Link to staging branch
+branch = "staging"
+
+# Staging-specific settings
+[environments.staging.variables]
+NODE_ENV = "staging"
+LOG_LEVEL = "debug"
+WORKER_CONCURRENCY = "2"
+MAX_JOB_RETRIES = "2"
+QUEUE_POLL_TIMEOUT = "5"
+
+# Development environment configuration (optional)
+[environments.development]
+# Link to dev branch (if you want a dev worker environment on Railway)
+branch = "dev"
+
+[environments.development.variables]
+NODE_ENV = "development"
+LOG_LEVEL = "debug"
+WORKER_CONCURRENCY = "1"
+MAX_JOB_RETRIES = "1"
+QUEUE_POLL_TIMEOUT = "3"
+
