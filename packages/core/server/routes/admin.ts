@@ -339,10 +339,16 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
   .post(
     "/import-cdn-assets",
     async ({ request, headers, set }) => {
-      const adminResult = await requireAdmin({ request, headers });
+      // Allow either admin auth OR system API key for one-time import
+      const apiKey = headers["x-api-key"];
+      const isSystemKey = apiKey === process.env.CDN_API_KEY;
 
-      if (adminResult instanceof Response) {
-        return adminResult;
+      if (!isSystemKey) {
+        const adminResult = await requireAdmin({ request, headers });
+
+        if (adminResult instanceof Response) {
+          return adminResult;
+        }
       }
 
       try {
@@ -374,7 +380,7 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
         tags: ["Admin"],
         summary: "Import CDN assets to database (Admin only)",
         description:
-          "Scans CDN for assets and creates database records for any missing assets. This fixes the issue where assets exist on CDN but not in database.",
+          "Scans CDN for assets and creates database records for any missing assets. This fixes the issue where assets exist on CDN but not in database. Can be called with admin auth OR X-API-Key header.",
         security: [{ BearerAuth: [] }],
       },
     },
