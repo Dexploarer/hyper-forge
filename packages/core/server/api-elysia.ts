@@ -191,6 +191,30 @@ const app = new Elysia()
       );
     }
 
+    // Run startup health checks (after a brief delay to ensure server is ready)
+    setTimeout(async () => {
+      const { runStartupHealthCheck, testFrontendConnectivity } = await import(
+        "./utils/startup-health-check"
+      );
+
+      const baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
+        ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+        : process.env.RAILWAY_STATIC_URL || `http://localhost:${API_PORT}`;
+
+      try {
+        // Test all API endpoints
+        await runStartupHealthCheck(baseUrl);
+
+        // Test frontend-to-backend connectivity
+        await testFrontendConnectivity(baseUrl);
+      } catch (error) {
+        logger.error(
+          { err: error },
+          "[Startup] Health check failed (non-fatal):",
+        );
+      }
+    }, 2000); // Wait 2 seconds for server to fully start
+
     // Check if we should run workers embedded in API process (dev mode)
     if (process.env.ENABLE_EMBEDDED_WORKERS === "true" && env.REDIS_URL) {
       const WORKER_CONCURRENCY = env.WORKER_CONCURRENCY || 2;
