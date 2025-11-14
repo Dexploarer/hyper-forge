@@ -25,11 +25,7 @@ async function importCDNAssets() {
     }
 
     // List all assets from CDN
-    const response = await fetch(`${CDN_URL}/api/files`, {
-      headers: {
-        "X-API-Key": CDN_API_KEY,
-      },
-    });
+    const response = await fetch(`${CDN_URL}/api/files`);
 
     if (!response.ok) {
       throw new Error(
