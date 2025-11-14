@@ -607,6 +607,60 @@ const app = new Elysia()
     ),
   )
 
+  // Strict rate limiting for expensive AI endpoints
+  .group("/api/generation", (app) =>
+    app.use(
+      rateLimit({
+        duration: 60000, // 1 minute window
+        max: 10, // Only 10 generation requests per minute
+        errorResponse: {
+          error: "TOO_MANY_REQUESTS",
+          message:
+            "Generation rate limit exceeded. Please wait before generating more assets.",
+        } as any,
+      }),
+    ),
+  )
+  .group("/api/music", (app) =>
+    app.use(
+      rateLimit({
+        duration: 60000,
+        max: 20, // 20 music generations per minute
+        errorResponse: {
+          error: "TOO_MANY_REQUESTS",
+          message:
+            "Music generation rate limit exceeded. Please try again later.",
+        } as any,
+      }),
+    ),
+  )
+  .group("/api/sfx", (app) =>
+    app.use(
+      rateLimit({
+        duration: 60000,
+        max: 30, // 30 SFX generations per minute
+        errorResponse: {
+          error: "TOO_MANY_REQUESTS",
+          message:
+            "Sound effect generation rate limit exceeded. Please try again later.",
+        } as any,
+      }),
+    ),
+  )
+  .group("/api/voice", (app) =>
+    app.use(
+      rateLimit({
+        duration: 60000,
+        max: 20, // 20 voice generations per minute
+        errorResponse: {
+          error: "TOO_MANY_REQUESTS",
+          message:
+            "Voice generation rate limit exceeded. Please try again later.",
+        } as any,
+      }),
+    ),
+  )
+
   // Cron jobs for background cleanup
   .use(
     cron({

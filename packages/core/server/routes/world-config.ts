@@ -7,6 +7,7 @@ import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
 import { WorldConfigService } from "../services/WorldConfigService";
 import * as Models from "../models";
+import { requireAuth } from "../middleware/auth";
 
 const worldConfigService = new WorldConfigService();
 
@@ -240,7 +241,14 @@ export const worldConfigRoutes = new Elysia({
       // DELETE /api/world-config/:id - Delete configuration
       .delete(
         "/:id",
-        async ({ params }) => {
+        async ({ params, request, headers }) => {
+          // Require authentication (any authenticated user can delete)
+          const authResult = await requireAuth({ request, headers });
+          if (authResult instanceof Response) {
+            set.status = 401;
+            return { error: "Unauthorized - authentication required" };
+          }
+
           try {
             await worldConfigService.deleteConfiguration(params.id);
 
@@ -642,7 +650,14 @@ export const worldConfigRoutes = new Elysia({
       // DELETE /api/world-config/:id/races/:raceId - Delete race
       .delete(
         "/:id/races/:raceId",
-        async ({ params }) => {
+        async ({ params, request, headers }) => {
+          // Require authentication (any authenticated user can delete)
+          const authResult = await requireAuth({ request, headers });
+          if (authResult instanceof Response) {
+            set.status = 401;
+            return { error: "Unauthorized - authentication required" };
+          }
+
           const config = await worldConfigService.getConfiguration(params.id);
           if (!config) {
             return new Response(
@@ -870,7 +885,14 @@ export const worldConfigRoutes = new Elysia({
       // DELETE /api/world-config/:id/factions/:factionId - Delete faction
       .delete(
         "/:id/factions/:factionId",
-        async ({ params }) => {
+        async ({ params, request, headers }) => {
+          // Require authentication (any authenticated user can delete)
+          const authResult = await requireAuth({ request, headers });
+          if (authResult instanceof Response) {
+            set.status = 401;
+            return { error: "Unauthorized - authentication required" };
+          }
+
           const config = await worldConfigService.getConfiguration(params.id);
           if (!config) {
             return new Response(
@@ -1099,7 +1121,14 @@ export const worldConfigRoutes = new Elysia({
       // DELETE /api/world-config/:id/skills/:skillId - Delete skill
       .delete(
         "/:id/skills/:skillId",
-        async ({ params }) => {
+        async ({ params, request, headers }) => {
+          // Require authentication (any authenticated user can delete)
+          const authResult = await requireAuth({ request, headers });
+          if (authResult instanceof Response) {
+            set.status = 401;
+            return { error: "Unauthorized - authentication required" };
+          }
+
           const config = await worldConfigService.getConfiguration(params.id);
           if (!config) {
             return new Response(

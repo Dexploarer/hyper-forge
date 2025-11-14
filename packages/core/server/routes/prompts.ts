@@ -9,6 +9,7 @@ import { db } from "../db";
 import { prompts } from "../db/schema/prompts.schema";
 import { eq, and, or, desc } from "drizzle-orm";
 import { logger } from "../utils/logger";
+import { requireAuth } from "../middleware/auth";
 
 export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
   // Get all prompts of a specific type
@@ -407,7 +408,14 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
   // Delete custom prompt
   .delete(
     "/custom/:id",
-    async ({ params, set }) => {
+    async ({ params, set, request, headers }) => {
+      // Require authentication (any authenticated user can delete)
+      const authResult = await requireAuth({ request, headers });
+      if (authResult instanceof Response) {
+        set.status = 401;
+        return { error: "Unauthorized - authentication required" };
+      }
+
       try {
         const [deletedPrompt] = await db
           .delete(prompts)
@@ -445,7 +453,14 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
   // List all custom prompts for a user
   .get(
     "/custom/user/:userId",
-    async ({ params, set }) => {
+    async ({ params, set, request, headers }) => {
+      // Require authentication (any authenticated user can delete)
+      const authResult = await requireAuth({ request, headers });
+      if (authResult instanceof Response) {
+        set.status = 401;
+        return { error: "Unauthorized - authentication required" };
+      }
+
       try {
         const userPrompts = await db
           .select()

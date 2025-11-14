@@ -10,6 +10,7 @@ import { materialPresets } from "../db/schema/material-presets.schema";
 import { eq, and, or, desc, sql } from "drizzle-orm";
 import { logger } from "../utils/logger";
 import * as Models from "../models";
+import { requireAuth } from "../middleware/auth";
 
 export const createMaterialRoutes = (rootDir: string) => {
   return (
@@ -255,7 +256,14 @@ export const createMaterialRoutes = (rootDir: string) => {
       // Delete material preset
       .delete(
         "/material-presets/:id",
-        async ({ params, set }) => {
+        async ({ params, set, request, headers }) => {
+          // Require authentication (any authenticated user can delete)
+          const authResult = await requireAuth({ request, headers });
+          if (authResult instanceof Response) {
+            set.status = 401;
+            return { error: "Unauthorized - authentication required" };
+          }
+
           try {
             const [deletedPreset] = await db
               .delete(materialPresets)
@@ -300,7 +308,14 @@ export const createMaterialRoutes = (rootDir: string) => {
       // List user's custom material presets
       .get(
         "/material-presets/user/:userId",
-        async ({ params, set }) => {
+        async ({ params, set, request, headers }) => {
+          // Require authentication (any authenticated user can delete)
+          const authResult = await requireAuth({ request, headers });
+          if (authResult instanceof Response) {
+            set.status = 401;
+            return { error: "Unauthorized - authentication required" };
+          }
+
           try {
             const userPresets = await db
               .select()

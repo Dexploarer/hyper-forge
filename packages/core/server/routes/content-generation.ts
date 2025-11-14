@@ -14,6 +14,7 @@ import { optionalAuth } from "../middleware/auth";
 import { NotFoundError, InternalServerError, ForbiddenError } from "../errors";
 import { createChildLogger } from "../utils/logger";
 import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
+import { requireAuth } from "../middleware/auth";
 
 const logger = createChildLogger("ContentGenerationRoutes");
 
@@ -589,7 +590,14 @@ export const contentGenerationRoutes = new Elysia({
         // DELETE /api/content/npcs/:id
         .delete(
           "/npcs/:id",
-          async ({ params }) => {
+          async ({ params, request, headers }) => {
+            // Require authentication (any authenticated user can delete)
+            const authResult = await requireAuth({ request, headers });
+            if (authResult instanceof Response) {
+              set.status = 401;
+              return { error: "Unauthorized - authentication required" };
+            }
+
             await contentDatabaseService.deleteNPC(params.id);
             return { success: true, message: "NPC deleted" };
           },
@@ -735,7 +743,14 @@ export const contentGenerationRoutes = new Elysia({
         // DELETE /api/content/quests/:id
         .delete(
           "/quests/:id",
-          async ({ params }) => {
+          async ({ params, request, headers }) => {
+            // Require authentication (any authenticated user can delete)
+            const authResult = await requireAuth({ request, headers });
+            if (authResult instanceof Response) {
+              set.status = 401;
+              return { error: "Unauthorized - authentication required" };
+            }
+
             await contentDatabaseService.deleteQuest(params.id);
             return { success: true, message: "Quest deleted" };
           },
@@ -861,7 +876,14 @@ export const contentGenerationRoutes = new Elysia({
         // DELETE /api/content/dialogues/:id
         .delete(
           "/dialogues/:id",
-          async ({ params }) => {
+          async ({ params, request, headers }) => {
+            // Require authentication (any authenticated user can delete)
+            const authResult = await requireAuth({ request, headers });
+            if (authResult instanceof Response) {
+              set.status = 401;
+              return { error: "Unauthorized - authentication required" };
+            }
+
             await contentDatabaseService.deleteDialogue(params.id);
             return { success: true, message: "Dialogue deleted" };
           },
@@ -997,7 +1019,14 @@ export const contentGenerationRoutes = new Elysia({
         // DELETE /api/content/lores/:id
         .delete(
           "/lores/:id",
-          async ({ params }) => {
+          async ({ params, request, headers }) => {
+            // Require authentication (any authenticated user can delete)
+            const authResult = await requireAuth({ request, headers });
+            if (authResult instanceof Response) {
+              set.status = 401;
+              return { error: "Unauthorized - authentication required" };
+            }
+
             await contentDatabaseService.deleteLore(params.id);
             return { success: true, message: "Lore deleted" };
           },

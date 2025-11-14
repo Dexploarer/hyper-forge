@@ -6,6 +6,7 @@
 import { Elysia, t } from "elysia";
 import { generationJobService } from "../services/GenerationJobService";
 import { redisQueueService } from "../services/RedisQueueService";
+import { requireAuth } from "../middleware/auth";
 
 export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
   /**
@@ -138,7 +139,14 @@ export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
    */
   .delete(
     "/jobs/:pipelineId",
-    async ({ params: { pipelineId }, set }) => {
+    async ({ params: { pipelineId }, set, request, headers }) => {
+      // Require authentication (any authenticated user can cancel)
+      const authResult = await requireAuth({ request, headers });
+      if (authResult instanceof Response) {
+        set.status = 401;
+        return { error: "Unauthorized - authentication required" };
+      }
+
       const job = await generationJobService.getJobByPipelineId(pipelineId);
 
       if (!job) {
