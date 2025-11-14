@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
+import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
@@ -236,6 +237,7 @@ function App() {
         appearance: {
           theme: "dark",
           accentColor: "#8b5cf6",
+          walletChainType: "ethereum-and-solana",
         },
         embeddedWallets: {
           ethereum: {
@@ -245,8 +247,13 @@ function App() {
             createOnLogin: "users-without-wallets",
           },
         },
-        // Note: Solana external wallet warning is safe to ignore
-        // Only affects external wallets like Phantom, not embedded wallets
+        externalWallets: {
+          solana: {
+            connectors: toSolanaWalletConnectors({
+              shouldAutoConnect: false, // Prevent extension popups on page load
+            }),
+          },
+        },
       }}
     >
       <QueryClientProvider client={queryClient}>
