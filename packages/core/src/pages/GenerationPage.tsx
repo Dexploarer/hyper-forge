@@ -485,10 +485,8 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
             type: asset.type,
             status: "completed",
             hasModel: asset.hasModel,
-            modelUrl: asset.hasModel
-              ? `/api/assets/${asset.id}/model`
-              : undefined,
-            conceptArtUrl: `/api/assets/${asset.id}/concept-art.png`,
+            modelUrl: asset.cdnUrl,
+            conceptArtUrl: asset.cdnConceptArtUrl,
             variants: Array.isArray((asset as any).metadata?.variants)
               ? ((asset.metadata as any).variants as {
                   name: string;
@@ -537,8 +535,8 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
         type: asset.type,
         status: "completed",
         hasModel: asset.hasModel,
-        modelUrl: asset.hasModel ? `/api/assets/${asset.id}/model` : undefined,
-        conceptArtUrl: `/api/assets/${asset.id}/concept-art.png`,
+        modelUrl: asset.cdnUrl,
+        conceptArtUrl: asset.cdnConceptArtUrl,
         variants: Array.isArray((asset as any).metadata?.variants)
           ? ((asset.metadata as any).variants as {
               name: string;

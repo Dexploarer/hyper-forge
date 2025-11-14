@@ -185,13 +185,13 @@ export const UnifiedEquipmentPage: React.FC = () => {
                   <EquipmentViewer
                     ref={weaponViewerRef}
                     avatarUrl={
-                      selectedAvatar?.hasModel
-                        ? `/api/assets/${selectedAvatar.id}/model`
+                      selectedAvatar?.hasModel && selectedAvatar.cdnUrl
+                        ? selectedAvatar.cdnUrl
                         : undefined
                     }
                     equipmentUrl={
-                      selectedWeapon?.hasModel
-                        ? `/api/assets/${selectedWeapon.id}/model`
+                      selectedWeapon?.hasModel && selectedWeapon.cdnUrl
+                        ? selectedWeapon.cdnUrl
                         : undefined
                     }
                     equipmentSlot={equipmentSlot}
@@ -218,23 +218,23 @@ export const UnifiedEquipmentPage: React.FC = () => {
                   <ArmorFittingViewer
                     ref={armorViewerRef}
                     avatarUrl={
-                      selectedAvatar?.hasModel
-                        ? `/api/assets/${selectedAvatar.id}/model`
+                      selectedAvatar?.hasModel && selectedAvatar.cdnUrl
+                        ? selectedAvatar.cdnUrl
                         : undefined
                     }
                     armorUrl={
-                      selectedArmor?.hasModel
-                        ? `/api/assets/${selectedArmor.id}/model`
+                      selectedArmor?.hasModel && selectedArmor.cdnUrl
+                        ? selectedArmor.cdnUrl
                         : undefined
                     }
                     helmetUrl={
-                      selectedHelmet?.hasModel
-                        ? `/api/assets/${selectedHelmet.id}/model`
+                      selectedHelmet?.hasModel && selectedHelmet.cdnUrl
+                        ? selectedHelmet.cdnUrl
                         : undefined
                     }
                     weaponUrl={
-                      selectedWeapon?.hasModel
-                        ? `/api/assets/${selectedWeapon.id}/model`
+                      selectedWeapon?.hasModel && selectedWeapon.cdnUrl
+                        ? selectedWeapon.cdnUrl
                         : undefined
                     }
                     showWireframe={showWireframe}

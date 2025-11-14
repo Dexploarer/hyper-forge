@@ -210,89 +210,11 @@ describe("Asset Routes", () => {
     });
   });
 
-  describe("GET /api/assets/:id/model", () => {
-    it("should return 404 for non-existent model file", async () => {
-      const response = await app.handle(
-        new Request("http://localhost/api/assets/test-asset-1/model"),
-      );
-
-      // File doesn't exist in /tmp
-      expect(response.status).toBe(404);
-      const data = await response.json();
-      expect(data.error).toContain("Model not found");
-    });
-
-    it("should handle model retrieval for valid asset", async () => {
-      // This test would pass if we created the actual file
-      const response = await app.handle(
-        new Request("http://localhost/api/assets/test-asset-1/model"),
-      );
-
-      // Without actual file, should be 404
-      expect([200, 404]).toContain(response.status);
-    });
-  });
-
-  describe("HEAD /api/assets/:id/model", () => {
-    // FIXME: Elysia v1.4.15 has a bug with HEAD request handling
-    // Error: TypeError: undefined is not an object (evaluating '_res.headers.set')
-    // See: https://github.com/elysiajs/elysia/issues (pending bug report)
-    it.skip("should return 404 for non-existent model", async () => {
-      const response = await app.handle(
-        new Request("http://localhost/api/assets/test-asset-1/model", {
-          method: "HEAD",
-        }),
-      );
-
-      // Elysia HEAD handling may have issues, accept both
-      expect([200, 404]).toContain(response.status);
-    });
-
-    it.skip("should not return body for HEAD request", async () => {
-      const response = await app.handle(
-        new Request("http://localhost/api/assets/test-asset-1/model", {
-          method: "HEAD",
-        }),
-      );
-
-      // HEAD requests may return empty body or error
-      expect([200, 404]).toContain(response.status);
-    });
-  });
-
-  describe("GET /api/assets/:id/*", () => {
-    it("should block directory traversal attacks", async () => {
-      const response = await app.handle(
-        new Request(
-          "http://localhost/api/assets/test-asset-1/../../etc/passwd",
-        ),
-      );
-
-      // Path normalization may result in 404 (file not found) rather than 403
-      expect([403, 404]).toContain(response.status);
-    });
-
-    it("should return 404 for non-existent files", async () => {
-      const response = await app.handle(
-        new Request("http://localhost/api/assets/test-asset-1/nonexistent.png"),
-      );
-
-      expect(response.status).toBe(404);
-      const data = await response.json();
-      expect(data.error).toBe("File not found");
-    });
-
-    it("should handle nested paths correctly", async () => {
-      const response = await app.handle(
-        new Request(
-          "http://localhost/api/assets/test-asset-1/sprites/0deg.png",
-        ),
-      );
-
-      // File was created by previous test, may exist or not
-      expect([200, 404]).toContain(response.status);
-    });
-  });
+  // NOTE: The following endpoints were removed during CDN migration:
+  // - GET /api/assets/:id/model (assets served from CDN via asset.cdnUrl)
+  // - HEAD /api/assets/:id/model (assets served from CDN)
+  // - GET /api/assets/:id/* (all files served from CDN)
+  // See: packages/core/dev-book/CDN_PRIMARY_STORAGE.md
 
   describe("DELETE /api/assets/:id", () => {
     it("should delete asset when user owns it", async () => {

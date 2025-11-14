@@ -150,11 +150,8 @@ export function usePipelineStatus({
                 type: config.type || assetType,
                 pipelineId: currentPipelineId,
                 status: "completed",
-                modelUrl:
-                  results.image3D?.localPath || results.rigging?.localPath
-                    ? `/api/assets/${baseAssetId}/model`
-                    : undefined,
-                conceptArtUrl: `/api/assets/${baseAssetId}/concept-art.png`,
+                modelUrl: results.image3D?.cdnUrl || results.rigging?.cdnUrl,
+                conceptArtUrl: results.conceptArt?.cdnUrl,
                 variants: results.textureGeneration?.variants || [],
                 hasSpriteMetadata:
                   results.spriteGeneration?.status === "metadata_created" ||

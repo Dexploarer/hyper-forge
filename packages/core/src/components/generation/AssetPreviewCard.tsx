@@ -1,31 +1,48 @@
-import { Box, Download } from 'lucide-react'
-import React from 'react'
+import { Box, Download } from "lucide-react";
+import React from "react";
 
-import { GeneratedAsset, hasAnimations } from '../../types'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../common'
-import { AnimationPlayer } from '../shared/AnimationPlayer'
-import ThreeViewer from '../shared/ThreeViewer'
+import { GeneratedAsset, hasAnimations } from "../../types";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "../common";
+import { AnimationPlayer } from "../shared/AnimationPlayer";
+import ThreeViewer from "../shared/ThreeViewer";
 
 interface AssetPreviewCardProps {
-  selectedAsset: GeneratedAsset | null
-  generationType: 'item' | 'avatar' | 'building' | 'environment' | 'prop' | undefined
+  selectedAsset: GeneratedAsset | null;
+  generationType:
+    | "item"
+    | "avatar"
+    | "building"
+    | "environment"
+    | "prop"
+    | undefined;
 }
 
 export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
   selectedAsset,
-  generationType
+  generationType,
 }) => {
-  if (!selectedAsset) return null
+  if (!selectedAsset) return null;
 
-  const hasModel = selectedAsset.hasModel || selectedAsset.modelUrl || selectedAsset.metadata?.hasModel
-  const modelUrl = selectedAsset.modelUrl || `/api/assets/${selectedAsset.id}/model`
-  
-  const isRiggedAvatar = generationType === 'avatar' && 
-    selectedAsset && 
-    'isRigged' in selectedAsset.metadata && 
-    selectedAsset.metadata.isRigged && 
-    'animations' in selectedAsset.metadata && 
-    selectedAsset.metadata.animations
+  const hasModel =
+    selectedAsset.hasModel ||
+    selectedAsset.modelUrl ||
+    selectedAsset.metadata?.hasModel;
+  const modelUrl = selectedAsset.modelUrl; // CDN URL should be set from pipeline or asset data
+
+  const isRiggedAvatar =
+    generationType === "avatar" &&
+    selectedAsset &&
+    "isRigged" in selectedAsset.metadata &&
+    selectedAsset.metadata.isRigged &&
+    "animations" in selectedAsset.metadata &&
+    selectedAsset.metadata.animations;
 
   return (
     <Card className="overflow-hidden shadow-xl hover:shadow-2xl transition-shadow">
@@ -41,7 +58,9 @@ export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
                 <AnimationPlayer
                   modelUrl={modelUrl}
                   animations={
-                    hasAnimations(selectedAsset) ? selectedAsset.metadata.animations : { basic: {} }
+                    hasAnimations(selectedAsset)
+                      ? selectedAsset.metadata.animations
+                      : { basic: {} }
                   }
                   assetId={selectedAsset.id}
                   className="w-full h-full"
@@ -51,7 +70,7 @@ export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
                   modelUrl={modelUrl}
                   assetInfo={{
                     name: selectedAsset.name,
-                    type: selectedAsset.type || 'character'
+                    type: selectedAsset.type || "character",
                   }}
                 />
               )}
@@ -79,7 +98,7 @@ export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
         </CardFooter>
       )}
     </Card>
-  )
-}
+  );
+};
 
-export default AssetPreviewCard 
+export default AssetPreviewCard;

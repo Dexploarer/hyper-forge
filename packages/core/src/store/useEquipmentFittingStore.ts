@@ -790,7 +790,13 @@ export const useEquipmentFittingStore = create<EquipmentFittingStore>()(
 
             try {
               const detector = new WeaponHandleDetector();
-              const modelUrl = `/api/assets/${weaponAsset.id}/model`;
+              // Use CDN URL if available, error if not
+              if (!weaponAsset.cdnUrl) {
+                throw new Error(
+                  `Weapon asset ${weaponAsset.id} does not have a CDN URL`,
+                );
+              }
+              const modelUrl = weaponAsset.cdnUrl;
               const result = await detector.detectHandleArea(modelUrl, true);
 
               set((state) => {
