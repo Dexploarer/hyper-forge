@@ -184,6 +184,12 @@ export const AssetResponse = t.Object({
   hasModel: t.Boolean(),
   modelFile: t.Optional(t.String()),
   generatedAt: t.Optional(t.String()),
+  // CDN URLs for asset files
+  cdnUrl: t.Optional(t.Union([t.String(), t.Null()])),
+  cdnThumbnailUrl: t.Optional(t.Union([t.String(), t.Null()])),
+  cdnConceptArtUrl: t.Optional(t.Union([t.String(), t.Null()])),
+  cdnRiggedModelUrl: t.Optional(t.Union([t.String(), t.Null()])),
+  cdnFiles: t.Optional(t.Array(t.String())),
 });
 
 export const AssetListResponse = t.Array(AssetResponse);
