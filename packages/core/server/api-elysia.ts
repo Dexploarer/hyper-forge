@@ -1148,6 +1148,26 @@ const app = new Elysia()
     });
   })
 
+  // Handle HEAD request for root path first (Coinbase Wallet CORS check)
+  .head("/", async () => {
+    try {
+      const indexPath = path.join(ROOT_DIR, "dist", "index.html");
+      const file = Bun.file(indexPath);
+
+      if (!(await file.exists())) {
+        return new Response(null, { status: 404 });
+      }
+
+      return new Response(null, {
+        status: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+      });
+    } catch (error) {
+      logger.error({ err: error }, "[HEAD /] Error checking SPA:");
+      return new Response(null, { status: 500 });
+    }
+  })
+
   // SPA fallback - serve index.html for all non-API routes
   // This must be LAST to allow API routes and static assets to match first
   .get("/*", async ({ set }) => {
