@@ -14,7 +14,7 @@ const CDN_API_KEY = process.env.CDN_API_KEY;
 interface CDNAsset {
   path: string;
   size: number;
-  lastModified: string;
+  modified: string;
 }
 
 async function importCDNAssets() {
@@ -131,7 +131,7 @@ async function importCDNAssets() {
             cdnAssetId: assetId, // Store original directory name
           },
           isPublic: true, // Make imported assets public by default
-          createdAt: new Date(modelFile.lastModified),
+          createdAt: new Date(modelFile.modified),
           updatedAt: new Date(),
         });
 
