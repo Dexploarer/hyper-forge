@@ -1093,9 +1093,9 @@ const app = new Elysia()
       const indexPath = path.join(ROOT_DIR, "dist", "index.html");
       const file = Bun.file(indexPath);
       if (!(await file.exists())) {
-        logger.error({}, "❌ Frontend not found at: ${indexPath}");
-        logger.error({}, "   Current working directory: ${process.cwd()}");
-        logger.error({}, "   ROOT_DIR: ${ROOT_DIR}");
+        logger.error({}, `❌ Frontend not found at: ${indexPath}`);
+        logger.error({}, `   Current working directory: ${process.cwd()}`);
+        logger.error({}, `   ROOT_DIR: ${ROOT_DIR}`);
         set.status = 404;
         return new Response(
           "Frontend build not found. Please run 'bun run build'.",
@@ -1118,9 +1118,9 @@ const app = new Elysia()
       const file = Bun.file(indexPath);
 
       if (!(await file.exists())) {
-        logger.warn({}, "[HEAD /*] Frontend not found at: ${indexPath}");
-        logger.warn({}, "   Current working directory: ${process.cwd()}");
-        logger.warn({}, "   ROOT_DIR: ${ROOT_DIR}");
+        logger.warn({}, `[HEAD /*] Frontend not found at: ${indexPath}`);
+        logger.warn({}, `   Current working directory: ${process.cwd()}`);
+        logger.warn({}, `   ROOT_DIR: ${ROOT_DIR}`);
         return new Response(null, { status: 404 });
       }
 
@@ -1130,8 +1130,8 @@ const app = new Elysia()
       });
     } catch (error) {
       logger.error({ err: error }, "[HEAD /*] Error checking SPA:");
-      logger.error({}, "   ROOT_DIR: ${ROOT_DIR}");
-      logger.error({}, "   cwd: ${process.cwd()}");
+      logger.error({}, `   ROOT_DIR: ${ROOT_DIR}`);
+      logger.error({}, `   cwd: ${process.cwd()}`);
       console.error(
         `   Error details:`,
         error instanceof Error ? error.message : String(error),
