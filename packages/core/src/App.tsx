@@ -35,11 +35,6 @@ const PlaytesterSwarmPage = lazy(() =>
     default: module.PlaytesterSwarmPage,
   })),
 );
-const RetargetAnimatePage = lazy(() =>
-  import("./pages/RetargetAnimatePage").then((module) => ({
-    default: module.RetargetAnimatePage,
-  })),
-);
 const WorldConfigPage = lazy(() =>
   import("./pages/WorldConfigPage").then((module) => ({
     default: module.WorldConfigPage,
@@ -195,9 +190,6 @@ function AppContent() {
             <UnifiedEquipmentPage />
           )}
           {currentView === NAVIGATION_VIEWS.HAND_RIGGING && <HandRiggingPage />}
-          {currentView === NAVIGATION_VIEWS.RETARGET_ANIMATE && (
-            <RetargetAnimatePage />
-          )}
           {currentView === NAVIGATION_VIEWS.WORLD_CONFIG && <WorldConfigPage />}
 
           {/* System */}

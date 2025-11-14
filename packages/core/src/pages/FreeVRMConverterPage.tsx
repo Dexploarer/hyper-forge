@@ -6,6 +6,7 @@ import { ArrowLeft, Upload, Download, CheckCircle } from "lucide-react";
 import ThreeViewer, {
   type ThreeViewerRef,
 } from "../components/shared/ThreeViewer";
+import { VRMTestViewer } from "../components/VRMTestViewer";
 import { convertGLBToVRM } from "../services/retargeting/VRMConverter";
 
 /**
@@ -25,6 +26,7 @@ export const FreeVRMConverterPage: React.FC = () => {
   const [conversionWarnings, setConversionWarnings] = useState<string[]>([]);
   const [loadingState, setLoadingState] = useState<string>("");
   const [showBones, setShowBones] = useState(false);
+  const [showVRMTestViewer, setShowVRMTestViewer] = useState(false);
 
   // Handle file upload
   const handleFileUpload = (file: File) => {
@@ -296,6 +298,17 @@ export const FreeVRMConverterPage: React.FC = () => {
                       <li>✓ Ready for VR/game engines</li>
                     </ul>
                   </div>
+
+                  <button
+                    className="w-full px-4 py-3 rounded-md bg-primary text-white hover:bg-primary/90 font-medium"
+                    onClick={() => setShowVRMTestViewer(true)}
+                  >
+                    🎭 Test VRM with Animations
+                  </button>
+                  <p className="text-xs text-text-tertiary">
+                    Opens the VRM Test Viewer with Idle, Walk, Run, and Jump
+                    animations to verify your conversion.
+                  </p>
                 </section>
               )}
 
@@ -325,7 +338,15 @@ export const FreeVRMConverterPage: React.FC = () => {
           <div className="lg:col-span-8 space-y-4">
             <section className="relative rounded-xl overflow-hidden h-[600px] lg:h-[calc(100vh-120px)]">
               {/* Viewer Controls */}
-              <div className="absolute top-4 right-4 z-10">
+              <div className="absolute top-4 right-4 z-10 flex gap-2">
+                {vrmConverted && vrmUrl && (
+                  <button
+                    onClick={() => setShowVRMTestViewer(!showVRMTestViewer)}
+                    className="px-3 py-2 rounded-md bg-bg-primary border border-border-primary text-text-primary hover:bg-bg-tertiary transition-colors text-sm"
+                  >
+                    {showVRMTestViewer ? "🎨 GLB Viewer" : "🎭 VRM Tester"}
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     setShowBones(!showBones);
@@ -337,26 +358,32 @@ export const FreeVRMConverterPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* 3D Viewer */}
-              <ThreeViewer
-                ref={viewerRef}
-                modelUrl={modelUrl || undefined}
-                isAnimationPlayer={false}
-              />
+              {/* 3D Viewers */}
+              {showVRMTestViewer && vrmConverted && vrmUrl ? (
+                <VRMTestViewer vrmUrl={vrmUrl} />
+              ) : (
+                <>
+                  <ThreeViewer
+                    ref={viewerRef}
+                    modelUrl={modelUrl || undefined}
+                    isAnimationPlayer={false}
+                  />
 
-              {/* Empty State */}
-              {!modelUrl && (
-                <div className="absolute inset-0 flex items-center justify-center bg-bg-secondary/50 backdrop-blur-sm">
-                  <div className="text-center">
-                    <Upload className="w-16 h-16 text-text-tertiary mx-auto mb-4" />
-                    <p className="text-lg text-text-primary font-medium">
-                      No model loaded
-                    </p>
-                    <p className="text-sm text-text-tertiary mt-2">
-                      Upload a GLB/GLTF file to get started
-                    </p>
-                  </div>
-                </div>
+                  {/* Empty State */}
+                  {!modelUrl && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-bg-secondary/50 backdrop-blur-sm">
+                      <div className="text-center">
+                        <Upload className="w-16 h-16 text-text-tertiary mx-auto mb-4" />
+                        <p className="text-lg text-text-primary font-medium">
+                          No model loaded
+                        </p>
+                        <p className="text-sm text-text-tertiary mt-2">
+                          Upload a GLB/GLTF file to get started
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </section>
           </div>
