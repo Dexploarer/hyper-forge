@@ -68,10 +68,17 @@ export class AssetService {
         description: asset.description || "",
         type: asset.type,
         metadata: asset.metadata as AssetMetadataType,
-        hasModel: !!asset.cdnUrl,
-        modelFile: asset.cdnUrl ? path.basename(asset.cdnUrl) : undefined,
+        hasModel: !!(asset.cdnUrl || asset.filePath), // Check BOTH CDN and legacy paths
+        modelFile: asset.cdnUrl
+          ? path.basename(asset.cdnUrl)
+          : asset.filePath
+            ? "model.glb"
+            : undefined,
         generatedAt: asset.createdAt.toISOString(),
-        cdnUrl: asset.cdnUrl,
+        // Return cdnUrl directly if available, otherwise construct API fallback URL for legacy assets
+        cdnUrl:
+          asset.cdnUrl ||
+          (asset.filePath ? `/api/assets/${asset.id}/model` : null),
         cdnThumbnailUrl: asset.cdnThumbnailUrl,
         cdnConceptArtUrl: asset.cdnConceptArtUrl,
         // Access control fields for route-level filtering
@@ -212,12 +219,18 @@ export class AssetService {
           description: updatedAsset.description || "",
           type: updatedAsset.type,
           metadata: updatedAsset.metadata as AssetMetadataType,
-          hasModel: !!updatedAsset.cdnUrl,
+          hasModel: !!(updatedAsset.cdnUrl || updatedAsset.filePath),
           modelFile: updatedAsset.cdnUrl
             ? path.basename(updatedAsset.cdnUrl)
-            : undefined,
+            : updatedAsset.filePath
+              ? "model.glb"
+              : undefined,
           generatedAt: updatedAsset.createdAt.toISOString(),
-          cdnUrl: updatedAsset.cdnUrl,
+          cdnUrl:
+            updatedAsset.cdnUrl ||
+            (updatedAsset.filePath
+              ? `/api/assets/${updatedAsset.id}/model`
+              : null),
           cdnThumbnailUrl: updatedAsset.cdnThumbnailUrl,
           cdnConceptArtUrl: updatedAsset.cdnConceptArtUrl,
         };
@@ -245,12 +258,18 @@ export class AssetService {
           description: updatedAsset.description || "",
           type: updatedAsset.type,
           metadata: updatedAsset.metadata as AssetMetadataType,
-          hasModel: !!updatedAsset.cdnUrl,
+          hasModel: !!(updatedAsset.cdnUrl || updatedAsset.filePath),
           modelFile: updatedAsset.cdnUrl
             ? path.basename(updatedAsset.cdnUrl)
-            : undefined,
+            : updatedAsset.filePath
+              ? "model.glb"
+              : undefined,
           generatedAt: updatedAsset.createdAt.toISOString(),
-          cdnUrl: updatedAsset.cdnUrl,
+          cdnUrl:
+            updatedAsset.cdnUrl ||
+            (updatedAsset.filePath
+              ? `/api/assets/${updatedAsset.id}/model`
+              : null),
           cdnThumbnailUrl: updatedAsset.cdnThumbnailUrl,
           cdnConceptArtUrl: updatedAsset.cdnConceptArtUrl,
         };
