@@ -45,10 +45,6 @@ export default defineConfig({
         target: "http://localhost:3004",
         changeOrigin: true,
       },
-      "/gdd-assets": {
-        target: "http://localhost:3004",
-        changeOrigin: true,
-      },
     },
   },
   build: {

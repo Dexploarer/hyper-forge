@@ -112,41 +112,30 @@ class AssetServiceClass {
   getModelUrl(asset: Asset | string): string {
     // Handle string input for backward compatibility
     if (typeof asset === "string") {
-      return `/gdd-assets/${asset}/${asset}.glb`;
+      throw new Error(
+        "Asset ID string not supported - asset must have CDN URL",
+      );
     }
 
-    // Priority 1: Use CDN URL if available
+    // Use CDN URL (required)
     if (asset.cdnUrl) {
       return asset.cdnUrl;
     }
 
-    // Priority 2: Fallback to local path
-    return `/gdd-assets/${asset.id}/${asset.id}.glb`;
+    throw new Error(`Asset ${asset.id} does not have a CDN URL`);
   }
 
   /**
    * Get T-pose model URL for retargeting workflow
-   * Tries to load t-pose.glb, falls back to regular model if not found
+   * Tries to load t-pose.glb from CDN, falls back to regular model if not found
    */
   async getTPoseUrl(assetId: string): Promise<string> {
-    // Try gdd-assets first (for any asset that might be in that folder)
-    const gddTposeUrl = `/gdd-assets/${assetId}/t-pose.glb`;
-    try {
-      const response = await fetch(gddTposeUrl, { method: "HEAD" });
-      if (response.ok) {
-        console.log(`[AssetService] T-pose found in gdd-assets: ${assetId}`);
-        return gddTposeUrl;
-      }
-    } catch (error) {
-      // Silently continue to next check
-    }
-
-    // Try to load t-pose.glb from user assets via API
+    // Try to load t-pose.glb from CDN via API
     const apiTposeUrl = `/api/assets/${assetId}/t-pose.glb`;
     try {
       const response = await fetch(apiTposeUrl, { method: "HEAD" });
       if (response.ok) {
-        console.log(`[AssetService] T-pose found via API for ${assetId}`);
+        console.log(`[AssetService] T-pose found on CDN for ${assetId}`);
         return apiTposeUrl;
       }
     } catch (error) {
@@ -156,62 +145,52 @@ class AssetServiceClass {
     console.log(
       `[AssetService] No T-pose found for ${assetId}, using regular model`,
     );
-    // Fall back to regular model
-    return this.getModelUrl(assetId);
+
+    // Fall back to regular model - must fetch asset to get CDN URL
+    const assets = await this.listAssets();
+    const asset = assets.find((a) => a.id === assetId);
+    if (!asset) {
+      throw new Error(`Asset ${assetId} not found`);
+    }
+    return this.getModelUrl(asset);
   }
 
   /**
-   * Get concept art URL - uses CDN URL if available, falls back to local
-   * @param asset - Asset object with CDN URL fields (preferred)
-   * @param assetId - Asset ID for backward compatibility fallback
+   * Get concept art URL from CDN
+   * @param asset - Asset object with CDN URL fields (required)
    */
   getConceptArtUrl(asset: Asset | string): string {
     // Handle string input for backward compatibility
     if (typeof asset === "string") {
-      return `/gdd-assets/${asset}/concept-art.png`;
+      throw new Error(
+        "Asset ID string not supported - asset must have CDN URL",
+      );
     }
 
-    // Priority 1: Use CDN concept art URL if available
+    // Use CDN concept art URL (required)
     if (asset.cdnConceptArtUrl) {
       return asset.cdnConceptArtUrl;
     }
 
-    // Priority 2: Fallback to local path
-    return `/gdd-assets/${asset.id}/concept-art.png`;
+    throw new Error(`Asset ${asset.id} does not have a CDN concept art URL`);
   }
 
   /**
-   * Get preview image URL for an asset
+   * Get preview image URL for an asset from CDN
    * Returns thumbnail, concept art, or null if no preview available
-   * Prioritizes CDN URLs when available
    */
   getPreviewImageUrl(asset: Asset): string | null {
-    // Priority 1: CDN thumbnail URL if available
+    // Priority 1: CDN thumbnail URL
     if (asset.cdnThumbnailUrl) {
       return asset.cdnThumbnailUrl;
     }
 
-    // Priority 2: CDN concept art URL if available
+    // Priority 2: CDN concept art URL
     if (asset.cdnConceptArtUrl) {
       return asset.cdnConceptArtUrl;
     }
 
-    // Priority 3: Local thumbnail (sprite or PFP)
-    if (asset.thumbnailPath) {
-      return `/gdd-assets/${asset.id}/${asset.thumbnailPath}`;
-    }
-
-    // Priority 4: Local concept art from metadata
-    if (asset.metadata?.hasConceptArt && asset.metadata?.conceptArtPath) {
-      return `/gdd-assets/${asset.id}/${asset.metadata.conceptArtPath}`;
-    }
-
-    // Priority 5: Local concept art from conceptArtPath field
-    if (asset.conceptArtPath) {
-      return `/gdd-assets/${asset.id}/${asset.conceptArtPath}`;
-    }
-
-    // No preview available
+    // No preview available on CDN
     return null;
   }
 
@@ -246,53 +225,36 @@ class AssetServiceClass {
   }
 
   /**
-   * Get VRM model URL if it exists
-   * Note: This returns a URL path, but doesn't guarantee the file exists
-   * Calling code should handle 404 errors gracefully
+   * Get VRM model URL from CDN via API endpoint
    */
   getVRMUrl(assetId: string): string {
-    // Try gdd-assets path first (for any assets stored there)
-    // If not found, the calling code should fall back to API path
-    return `/gdd-assets/${assetId}/${assetId}.vrm`;
+    return `/api/assets/${assetId}/${assetId}.vrm`;
   }
 
   /**
-   * Get VRM model URL from API endpoint
-   */
-  getAPIVRMUrl(assetId: string): string {
-    return `/assets/${assetId}/${assetId}.vrm`;
-  }
-
-  /**
-   * Get rigged model URL - uses CDN URL if available, falls back to local
+   * Get rigged model URL from CDN
    * Used for characters with rigged/animated models
    */
   getRiggedModelUrl(
     asset: Asset,
     riggedModelPath?: string,
   ): string | undefined {
-    // Priority 1: Use CDN rigged model URL if available
+    // Priority 1: Use CDN rigged model URL
     if (asset.cdnRiggedModelUrl) {
       return asset.cdnRiggedModelUrl;
     }
 
-    // Priority 2: Use provided rigged model path (from metadata)
-    if (riggedModelPath) {
-      // Try CDN files array first
-      if (asset.cdnFiles && asset.cdnFiles.length > 0) {
-        const riggedFile = asset.cdnFiles.find((url) =>
-          url.includes(riggedModelPath),
-        );
-        if (riggedFile) {
-          return riggedFile;
-        }
+    // Priority 2: Search CDN files array for rigged model path
+    if (riggedModelPath && asset.cdnFiles && asset.cdnFiles.length > 0) {
+      const riggedFile = asset.cdnFiles.find((url) =>
+        url.includes(riggedModelPath),
+      );
+      if (riggedFile) {
+        return riggedFile;
       }
-
-      // Fall back to local path
-      return `/gdd-assets/${asset.id}/${riggedModelPath}`;
     }
 
-    // No rigged model available
+    // No rigged model available on CDN
     return undefined;
   }
 

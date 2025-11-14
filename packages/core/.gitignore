@@ -160,9 +160,7 @@ auto-generated/
 *_backup.*
 backup/
 
-# Asset directories - ignore contents but keep directories
-gdd-assets/*
-!gdd-assets/.gitkeep
+# Temporary images directory
 temp-images/*
 !temp-images/.gitkeep
 

@@ -103,10 +103,11 @@ initializeQdrantCollections().catch((error) => {
 // Initialize services
 const API_PORT = env.PORT || env.API_PORT;
 
-// Railway volume path takes priority, then ASSETS_DIR env var, then local default
+// DEPRECATED: Local asset storage - all assets are now on CDN
+// Kept for backward compatibility with legacy code only
 const ASSETS_DIR = env.RAILWAY_VOLUME_MOUNT_PATH
-  ? path.join(env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
-  : env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
+  ? path.join(env.RAILWAY_VOLUME_MOUNT_PATH, "assets-legacy")
+  : env.ASSETS_DIR || path.join(ROOT_DIR, "assets-legacy");
 
 // Validate required environment variables for API server
 // Note: Workers don't need these, so they're optional in env.ts schema
@@ -989,11 +990,11 @@ const app = new Elysia()
       cwd: process.cwd(),
       __dirname,
       ROOT_DIR,
-      gddAssetsPath: assetsPath,
-      gddAssetsExists: await pathExists(assetsPath),
+      legacyAssetsPath: assetsPath,
+      legacyAssetsExists: await pathExists(assetsPath),
       bowBaseExists: await pathExists(bowBasePath),
       modelGlbExists: await modelFile.exists(),
-      filesInGddAssets: files,
+      filesInLegacyAssets: files,
       filesInBowBase: bowBaseFiles,
     };
   })
@@ -1025,7 +1026,7 @@ const app = new Elysia()
         return { error: "No URL provided" };
       }
 
-      const tarPath = path.join(ROOT_DIR, "gdd-assets.tar.gz");
+      const tarPath = path.join(ROOT_DIR, "assets-legacy.tar.gz");
       const assetsDir = ASSETS_DIR;
 
       logger.info({}, `📥 Downloading from ${url}...`);

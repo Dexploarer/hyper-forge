@@ -216,12 +216,9 @@ asset-forge/
 ├── server/                # Elysia backend
 │   ├── api-elysia.ts     # Elysia API server (type-safe)
 │   └── services/         # Backend services
-├── gdd-assets/           # Generated 3D assets [[memory:3843922]]
-│   └── [asset-name]/     # Individual asset folders
-│       ├── *.glb         # 3D model files
-│       ├── concept-art.png
-│       └── metadata.json
 └── scripts/              # Utility scripts
+
+Note: All generated 3D assets are stored on CDN, not locally
 ```
 
 ## Main Features
