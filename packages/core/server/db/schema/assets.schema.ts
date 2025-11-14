@@ -35,9 +35,10 @@ export const assets = pgTable(
     category: varchar("category", { length: 100 }),
 
     // Ownership (for organization, not access control)
-    ownerId: uuid("owner_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    // Optional - CDN imported assets may not have an owner
+    ownerId: uuid("owner_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
     projectId: uuid("project_id").references(() => projects.id, {
       onDelete: "set null",
     }),

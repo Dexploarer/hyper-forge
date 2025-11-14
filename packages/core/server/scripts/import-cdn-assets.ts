@@ -19,7 +19,10 @@ interface CDNAsset {
 
 async function importCDNAssets() {
   try {
-    logger.info({ context: "CDN Import" }, "Starting CDN asset import...");
+    logger.info(
+      { context: "CDN Import", version: "v2-subdirs-fix" },
+      "Starting CDN asset import...",
+    );
 
     if (!CDN_API_KEY) {
       throw new Error("CDN_API_KEY is required");
