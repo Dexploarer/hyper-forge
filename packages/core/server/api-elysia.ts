@@ -726,9 +726,75 @@ const app = new Elysia()
     }),
   )
 
-  // NOTE: /gdd-assets/* is NOT served from main app
-  // Assets are published to and served from the CDN service
-  // Database stores CDN URLs: asset.cdnUrl = https://cdn.../models/{id}/{file}
+  // NOTE: Media assets stored in gdd-assets volume
+  // Serve media files (voice, music, sfx, portraits, banners) from Railway volume
+  // Migration to CDN in progress - this endpoint provides fallback access
+  .get("/gdd-assets/*", async ({ params, set }) => {
+    const relativePath = (params as any)["*"] || "";
+    // Media files are stored at gdd-assets/, not assets-legacy/
+    const GDD_ASSETS_DIR = env.RAILWAY_VOLUME_MOUNT_PATH
+      ? path.join(env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
+      : env.ASSETS_DIR
+        ? path.join(path.dirname(env.ASSETS_DIR), "gdd-assets")
+        : path.join(ROOT_DIR, "gdd-assets");
+    const filePath = path.join(GDD_ASSETS_DIR, relativePath);
+    const file = Bun.file(filePath);
+
+    if (!(await file.exists())) {
+      set.status = 404;
+      return new Response("File not found", { status: 404 });
+    }
+
+    // Set appropriate content type based on file extension
+    const ext = path.extname(relativePath).toLowerCase();
+    const contentType =
+      ext === ".mp3"
+        ? "audio/mpeg"
+        : ext === ".wav"
+          ? "audio/wav"
+          : ext === ".ogg"
+            ? "audio/ogg"
+            : ext === ".png"
+              ? "image/png"
+              : "application/octet-stream";
+
+    return new Response(file, {
+      headers: { "Content-Type": contentType },
+    });
+  })
+  .head("/gdd-assets/*", async ({ params }) => {
+    const relativePath = (params as any)["*"] || "";
+    // Media files are stored at gdd-assets/, not assets-legacy/
+    const GDD_ASSETS_DIR = env.RAILWAY_VOLUME_MOUNT_PATH
+      ? path.join(env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
+      : env.ASSETS_DIR
+        ? path.join(path.dirname(env.ASSETS_DIR), "gdd-assets")
+        : path.join(ROOT_DIR, "gdd-assets");
+    const filePath = path.join(GDD_ASSETS_DIR, relativePath);
+    const file = Bun.file(filePath);
+
+    if (!(await file.exists())) {
+      return new Response(null, { status: 404 });
+    }
+
+    // Set appropriate content type based on file extension
+    const ext = path.extname(relativePath).toLowerCase();
+    const contentType =
+      ext === ".mp3"
+        ? "audio/mpeg"
+        : ext === ".wav"
+          ? "audio/wav"
+          : ext === ".ogg"
+            ? "audio/ogg"
+            : ext === ".png"
+              ? "image/png"
+              : "application/octet-stream";
+
+    return new Response(null, {
+      status: 200,
+      headers: { "Content-Type": contentType },
+    });
+  })
 
   .get("/temp-images/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";

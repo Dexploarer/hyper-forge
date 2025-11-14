@@ -59,15 +59,37 @@ export const ViewportSection: React.FC<ViewportSectionProps> = ({
       ? selectedAvatar.metadata.animations?.basic
       : undefined;
 
-    // Use animation files when available
-    let url = `/api/assets/${selectedAvatar.id}/model`; // Default to base model
+    // Use CDN URL for base model
+    let url = selectedAvatar.cdnUrl;
 
-    if (currentAnimation === "walking" && animations?.walking) {
-      url = `/api/assets/${selectedAvatar.id}/${animations.walking}`;
-    } else if (currentAnimation === "running" && animations?.running) {
-      url = `/api/assets/${selectedAvatar.id}/${animations.running}`;
-    } else if (currentAnimation === "tpose" && animations?.tpose) {
-      url = `/api/assets/${selectedAvatar.id}/${animations.tpose}`;
+    // Check if asset has CDN URL
+    if (!url) {
+      console.error(`❌ Asset ${selectedAvatar.id} does not have a CDN URL`);
+      return undefined;
+    }
+
+    // For animations, try to find the animation file in cdnFiles array
+    if (
+      selectedAvatar.cdnFiles &&
+      selectedAvatar.cdnFiles.length > 0 &&
+      animations
+    ) {
+      if (currentAnimation === "walking" && animations.walking) {
+        const walkingFile = selectedAvatar.cdnFiles.find((file) =>
+          file.includes(animations.walking!),
+        );
+        if (walkingFile) url = walkingFile;
+      } else if (currentAnimation === "running" && animations.running) {
+        const runningFile = selectedAvatar.cdnFiles.find((file) =>
+          file.includes(animations.running!),
+        );
+        if (runningFile) url = runningFile;
+      } else if (currentAnimation === "tpose" && animations.tpose) {
+        const tposeFile = selectedAvatar.cdnFiles.find((file) =>
+          file.includes(animations.tpose!),
+        );
+        if (tposeFile) url = tposeFile;
+      }
     }
 
     console.log(`🎮 Avatar URL for animation '${currentAnimation}':`, url);
@@ -84,8 +106,10 @@ export const ViewportSection: React.FC<ViewportSectionProps> = ({
               ref={viewerRef}
               avatarUrl={getAvatarUrl()}
               equipmentUrl={
-                selectedEquipment && selectedEquipment.hasModel
-                  ? `/api/assets/${selectedEquipment.id}/model`
+                selectedEquipment &&
+                selectedEquipment.hasModel &&
+                selectedEquipment.cdnUrl
+                  ? selectedEquipment.cdnUrl
                   : undefined
               }
               equipmentSlot={equipmentSlot}

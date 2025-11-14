@@ -98,7 +98,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
           (asset: any) => asset.type === "portrait",
         );
         if (portrait) {
-          setPortraitUrl(portrait.fileUrl);
+          // Prefer CDN URL, fallback to fileUrl
+          setPortraitUrl(portrait.cdnUrl || portrait.fileUrl);
         }
       }
     } catch (error) {
@@ -118,7 +119,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
           (asset: any) => asset.type === "banner",
         );
         if (banner) {
-          setBannerUrl(banner.fileUrl);
+          // Prefer CDN URL, fallback to fileUrl
+          setBannerUrl(banner.cdnUrl || banner.fileUrl);
         }
       }
     } catch (error) {
