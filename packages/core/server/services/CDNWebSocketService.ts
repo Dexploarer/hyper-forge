@@ -132,6 +132,12 @@ export class CDNWebSocketService {
       return;
     }
 
+    // Handle echo/pong responses (CDN sends "echo" instead of "pong")
+    if (message.type === "echo" || message.type === "pong") {
+      logger.debug({ context: "CDN WebSocket" }, "Heartbeat response received");
+      return;
+    }
+
     // Handle other message types if needed
     logger.info(
       { context: "CDN WebSocket", messageType: message.type },
