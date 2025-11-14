@@ -67,55 +67,127 @@ async function uploadFileToCDN(
 }
 
 export const migrateMediaRoute = new Elysia({ prefix: "/api/admin" })
-  .get("/check-volume", async () => {
-    try {
-      // Check what's in ASSETS_DIR
-      const volumePath = env.RAILWAY_VOLUME_MOUNT_PATH || "/data";
-      const assetsPath = ASSETS_DIR;
-
-      async function listDir(dirPath: string): Promise<any> {
-        try {
-          const entries = await fs.readdir(dirPath, { withFileTypes: true });
-          const result: any = {};
-          for (const entry of entries) {
-            if (entry.isDirectory()) {
-              result[entry.name] = await listDir(
-                path.join(dirPath, entry.name),
-              );
-            } else {
-              result[entry.name] = "file";
-            }
-          }
-          return result;
-        } catch (err) {
-          return { error: err instanceof Error ? err.message : String(err) };
-        }
+  .post(
+    "/cleanup-missing-media",
+    async ({ set }) => {
+      // Security check
+      const adminToken = process.env.ADMIN_UPLOAD_TOKEN;
+      if (
+        !adminToken ||
+        adminToken === "CHANGEME_GENERATE_WITH_OPENSSL_RAND_HEX_32"
+      ) {
+        set.status = 503;
+        return { error: "Admin endpoint not configured" };
       }
 
-      const volumeContents = await listDir(volumePath);
-      const assetsContents = await listDir(assetsPath);
+      try {
+        const connectionString = env.DATABASE_URL;
+        if (!connectionString) {
+          set.status = 500;
+          return { error: "DATABASE_URL not set" };
+        }
 
-      return {
-        env: {
-          RAILWAY_VOLUME_MOUNT_PATH: env.RAILWAY_VOLUME_MOUNT_PATH,
-          ASSETS_DIR: env.ASSETS_DIR,
-        },
-        computed: {
-          volumePath,
-          assetsPath: ASSETS_DIR,
-        },
-        contents: {
-          volumePath: volumeContents,
-          assetsPath: assetsContents,
-        },
-      };
-    } catch (error) {
-      return {
-        error: "Check failed",
-        details: error instanceof Error ? error.message : String(error),
-      };
-    }
-  })
+        const sql = postgres(connectionString);
+        const db = drizzle(sql);
+
+        // Fetch all media assets without cdnUrl (these would be volume-based)
+        const assetsToCheck = await sql`
+        SELECT id, type, file_url
+        FROM media_assets
+        WHERE cdn_url IS NULL
+        AND file_url LIKE '/gdd-assets%'
+        ORDER BY type, created_at;
+      `;
+
+        logger.info(
+          {},
+          `Found ${assetsToCheck.length} media assets to check for cleanup`,
+        );
+
+        if (assetsToCheck.length === 0) {
+          await sql.end();
+          return {
+            success: true,
+            message: "No media assets to clean up",
+            stats: { deleted: 0, total: 0 },
+          };
+        }
+
+        const GDD_ASSETS_DIR = env.RAILWAY_VOLUME_MOUNT_PATH
+          ? path.join(env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
+          : env.ASSETS_DIR
+            ? path.join(path.dirname(env.ASSETS_DIR), "gdd-assets")
+            : path.join(process.cwd(), "gdd-assets");
+
+        let deleted = 0;
+        const deletedAssets = [];
+
+        for (const asset of assetsToCheck) {
+          const fileUrl = asset.file_url || asset.fileUrl;
+          const relativePath = fileUrl.replace("/gdd-assets/", "");
+          const localPath = path.join(GDD_ASSETS_DIR, relativePath);
+
+          // Check if file exists
+          try {
+            await fs.access(localPath);
+            // File exists, keep it
+            logger.info({}, `File exists, keeping: ${asset.id}`);
+          } catch {
+            // File doesn't exist, delete from database
+            logger.info(
+              {},
+              `File not found, deleting: ${asset.id} (${asset.type})`,
+            );
+
+            try {
+              await db.delete(mediaAssets).where(eq(mediaAssets.id, asset.id));
+
+              deleted++;
+              deletedAssets.push({
+                id: asset.id,
+                type: asset.type,
+                fileUrl: asset.file_url,
+              });
+            } catch (error) {
+              logger.error({ err: error }, `Failed to delete ${asset.id}`);
+            }
+          }
+        }
+
+        await sql.end();
+
+        logger.info(
+          {},
+          `Cleanup complete: ${deleted} orphaned media assets deleted`,
+        );
+
+        return {
+          success: true,
+          message: "Cleanup completed",
+          stats: {
+            deleted,
+            total: assetsToCheck.length,
+          },
+          deletedAssets,
+        };
+      } catch (error) {
+        logger.error({ err: error }, "Cleanup error");
+        set.status = 500;
+        return {
+          error: "Cleanup failed",
+          details: error instanceof Error ? error.message : String(error),
+        };
+      }
+    },
+    {
+      detail: {
+        tags: ["Admin"],
+        summary: "Delete media assets with missing files",
+        description:
+          "Remove media asset records from database where the files don't exist on volume",
+      },
+    },
+  )
   .post(
     "/migrate-media-to-cdn",
     async ({ set }) => {
