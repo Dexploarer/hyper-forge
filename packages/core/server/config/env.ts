@@ -123,6 +123,11 @@ const envSchema = z.object({
       { message: "Must be a valid URL if provided" },
     ),
   CDN_API_KEY: z.string().optional(),
+  AUTO_PUBLISH_TO_CDN: z
+    .string()
+    .optional()
+    .default("true")
+    .transform((val) => val === "true"),
   FRONTEND_URL: z
     .string()
     .optional()
