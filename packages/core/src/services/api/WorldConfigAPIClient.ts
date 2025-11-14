@@ -1,4 +1,5 @@
 /**
+import { apiFetch } from "@/utils/api";
  * World Configuration API Client
  * Client for managing world configurations, templates, and AI context
  */
@@ -340,7 +341,7 @@ export class WorldConfigAPIClient {
       }
 
       const url = `${API_BASE}${queryParams.toString() ? `?${queryParams}` : ""}`;
-      const response = await fetch(url);
+      const response = await apiFetch(url);
 
       if (!response.ok) {
         // World config is optional - return empty array instead of throwing
@@ -376,7 +377,7 @@ export class WorldConfigAPIClient {
   async getConfiguration(
     id: string,
   ): Promise<{ success: boolean; configuration: WorldConfigurationData }> {
-    const response = await fetch(`${API_BASE}/${id}`);
+    const response = await apiFetch(`${API_BASE}/${id}`);
 
     if (!response.ok) {
       throw new Error(`Failed to get configuration: ${response.statusText}`);
@@ -394,7 +395,7 @@ export class WorldConfigAPIClient {
     config: WorldConfigurationData | null;
   }> {
     try {
-      const response = await fetch(`${API_BASE}/active`);
+      const response = await apiFetch(`${API_BASE}/active`);
 
       if (!response.ok) {
         // World config is optional - return null instead of throwing
@@ -429,7 +430,7 @@ export class WorldConfigAPIClient {
   async createConfiguration(
     data: CreateWorldConfigParams,
   ): Promise<{ success: boolean; configuration: WorldConfigurationData }> {
-    const response = await fetch(API_BASE, {
+    const response = await apiFetch(API_BASE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -449,7 +450,7 @@ export class WorldConfigAPIClient {
     id: string,
     data: UpdateWorldConfigParams,
   ): Promise<{ success: boolean; configuration: WorldConfigurationData }> {
-    const response = await fetch(`${API_BASE}/${id}`, {
+    const response = await apiFetch(`${API_BASE}/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -470,7 +471,7 @@ export class WorldConfigAPIClient {
     section: string,
     data: any,
   ): Promise<{ success: boolean; configuration: WorldConfigurationData }> {
-    const response = await fetch(`${API_BASE}/${id}/${section}`, {
+    const response = await apiFetch(`${API_BASE}/${id}/${section}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -489,7 +490,7 @@ export class WorldConfigAPIClient {
   async deleteConfiguration(
     id: string,
   ): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE}/${id}`, {
+    const response = await apiFetch(`${API_BASE}/${id}`, {
       method: "DELETE",
     });
 
@@ -508,7 +509,7 @@ export class WorldConfigAPIClient {
   async activateConfiguration(
     id: string,
   ): Promise<{ success: boolean; configuration: WorldConfigurationData }> {
-    const response = await fetch(`${API_BASE}/${id}/activate`, {
+    const response = await apiFetch(`${API_BASE}/${id}/activate`, {
       method: "POST",
     });
 
@@ -527,7 +528,7 @@ export class WorldConfigAPIClient {
    * Validate a configuration
    */
   async validateConfiguration(id: string): Promise<ValidationResult> {
-    const response = await fetch(`${API_BASE}/${id}/validate`);
+    const response = await apiFetch(`${API_BASE}/${id}/validate`);
 
     if (!response.ok) {
       throw new Error(
@@ -542,7 +543,7 @@ export class WorldConfigAPIClient {
    * Build AI context from configuration
    */
   async buildAIContext(id: string): Promise<AIContextResponse> {
-    const response = await fetch(`${API_BASE}/${id}/ai-context`);
+    const response = await apiFetch(`${API_BASE}/${id}/ai-context`);
 
     if (!response.ok) {
       throw new Error(`Failed to build AI context: ${response.statusText}`);
@@ -560,7 +561,7 @@ export class WorldConfigAPIClient {
     success: boolean;
     templates: WorldConfigurationData[];
   }> {
-    const response = await fetch(`${API_BASE}/templates/list`);
+    const response = await apiFetch(`${API_BASE}/templates/list`);
 
     if (!response.ok) {
       throw new Error(`Failed to list templates: ${response.statusText}`);
@@ -576,7 +577,7 @@ export class WorldConfigAPIClient {
     templateId: string,
     customizations?: Partial<CreateWorldConfigParams>,
   ): Promise<{ success: boolean; configuration: WorldConfigurationData }> {
-    const response = await fetch(`${API_BASE}/from-template/${templateId}`, {
+    const response = await apiFetch(`${API_BASE}/from-template/${templateId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(customizations || {}),
@@ -598,7 +599,7 @@ export class WorldConfigAPIClient {
     id: string,
     newName?: string,
   ): Promise<{ success: boolean; configuration: WorldConfigurationData }> {
-    const response = await fetch(`${API_BASE}/clone`, {
+    const response = await apiFetch(`${API_BASE}/clone`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sourceId: id, newName }),
@@ -619,7 +620,7 @@ export class WorldConfigAPIClient {
   async exportConfiguration(
     id: string,
   ): Promise<{ success: boolean; data: any; filename: string }> {
-    const response = await fetch(`${API_BASE}/export/${id}`);
+    const response = await apiFetch(`${API_BASE}/export/${id}`);
 
     if (!response.ok) {
       throw new Error(`Failed to export configuration: ${response.statusText}`);
@@ -634,7 +635,7 @@ export class WorldConfigAPIClient {
   async importConfiguration(
     data: any,
   ): Promise<{ success: boolean; configuration: WorldConfigurationData }> {
-    const response = await fetch(`${API_BASE}/import`, {
+    const response = await apiFetch(`${API_BASE}/import`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data }),
@@ -669,7 +670,7 @@ export class WorldConfigAPIClient {
       createdAt: Date;
     }>;
   }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE}/${id}/history?limit=${limit}&offset=${offset}`,
     );
 
@@ -689,7 +690,7 @@ export class WorldConfigAPIClient {
     id: string,
     race: Omit<WorldRace, "id" | "createdAt">,
   ): Promise<{ success: boolean; race: WorldRace }> {
-    const response = await fetch(`${API_BASE}/${id}/races`, {
+    const response = await apiFetch(`${API_BASE}/${id}/races`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(race),
@@ -710,7 +711,7 @@ export class WorldConfigAPIClient {
     raceId: string,
     updates: Partial<WorldRace>,
   ): Promise<{ success: boolean; race: WorldRace }> {
-    const response = await fetch(`${API_BASE}/${configId}/races/${raceId}`, {
+    const response = await apiFetch(`${API_BASE}/${configId}/races/${raceId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
@@ -730,7 +731,7 @@ export class WorldConfigAPIClient {
     configId: string,
     raceId: string,
   ): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE}/${configId}/races/${raceId}`, {
+    const response = await apiFetch(`${API_BASE}/${configId}/races/${raceId}`, {
       method: "DELETE",
     });
 
@@ -748,7 +749,7 @@ export class WorldConfigAPIClient {
     id: string,
     faction: Omit<WorldFaction, "id" | "createdAt">,
   ): Promise<{ success: boolean; faction: WorldFaction }> {
-    const response = await fetch(`${API_BASE}/${id}/factions`, {
+    const response = await apiFetch(`${API_BASE}/${id}/factions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(faction),
@@ -769,7 +770,7 @@ export class WorldConfigAPIClient {
     factionId: string,
     updates: Partial<WorldFaction>,
   ): Promise<{ success: boolean; faction: WorldFaction }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE}/${configId}/factions/${factionId}`,
       {
         method: "PUT",
@@ -792,7 +793,7 @@ export class WorldConfigAPIClient {
     configId: string,
     factionId: string,
   ): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE}/${configId}/factions/${factionId}`,
       {
         method: "DELETE",
@@ -813,7 +814,7 @@ export class WorldConfigAPIClient {
     id: string,
     skill: Omit<WorldSkill, "id" | "createdAt">,
   ): Promise<{ success: boolean; skill: WorldSkill }> {
-    const response = await fetch(`${API_BASE}/${id}/skills`, {
+    const response = await apiFetch(`${API_BASE}/${id}/skills`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(skill),
@@ -834,7 +835,7 @@ export class WorldConfigAPIClient {
     skillId: string,
     updates: Partial<WorldSkill>,
   ): Promise<{ success: boolean; skill: WorldSkill }> {
-    const response = await fetch(`${API_BASE}/${configId}/skills/${skillId}`, {
+    const response = await apiFetch(`${API_BASE}/${configId}/skills/${skillId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
@@ -854,7 +855,7 @@ export class WorldConfigAPIClient {
     configId: string,
     skillId: string,
   ): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE}/${configId}/skills/${skillId}`, {
+    const response = await apiFetch(`${API_BASE}/${configId}/skills/${skillId}`, {
       method: "DELETE",
     });
 

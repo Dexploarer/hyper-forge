@@ -13,6 +13,7 @@ import type {
   GenerateDialogueParams,
   GenerateLoreParams,
 } from "@/types/content";
+import { apiFetch } from "@/utils/api";
 
 const API_BASE = "/api";
 
@@ -26,7 +27,7 @@ export class ContentAPIClient {
     npc: NPCData & { id: string; metadata: any };
     rawResponse: string;
   }> {
-    const response = await fetch(`${API_BASE}/content/generate-npc`, {
+    const response = await apiFetch(`${API_BASE}/content/generate-npc`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -52,7 +53,7 @@ export class ContentAPIClient {
     imageUrl: string;
     prompt: string;
   }> {
-    const response = await fetch(`${API_BASE}/content/generate-npc-portrait`, {
+    const response = await apiFetch(`${API_BASE}/content/generate-npc-portrait`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -80,7 +81,7 @@ export class ContentAPIClient {
     imageUrl: string;
     prompt: string;
   }> {
-    const response = await fetch(`${API_BASE}/content/generate-quest-banner`, {
+    const response = await apiFetch(`${API_BASE}/content/generate-quest-banner`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -109,7 +110,7 @@ export class ContentAPIClient {
     };
     rawResponse: string;
   }> {
-    const response = await fetch(`${API_BASE}/content/generate-quest`, {
+    const response = await apiFetch(`${API_BASE}/content/generate-quest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -131,7 +132,7 @@ export class ContentAPIClient {
     nodes: DialogueNode[];
     rawResponse: string;
   }> {
-    const response = await fetch(`${API_BASE}/content/generate-dialogue`, {
+    const response = await apiFetch(`${API_BASE}/content/generate-dialogue`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -153,7 +154,7 @@ export class ContentAPIClient {
     lore: LoreData & { id: string; metadata: any };
     rawResponse: string;
   }> {
-    const response = await fetch(`${API_BASE}/content/generate-lore`, {
+    const response = await apiFetch(`${API_BASE}/content/generate-lore`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -175,7 +176,7 @@ export class ContentAPIClient {
     limit = 50,
     offset = 0,
   ): Promise<{ success: boolean; npcs: any[] }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE}/content/npcs?limit=${limit}&offset=${offset}`,
     );
 
@@ -190,7 +191,7 @@ export class ContentAPIClient {
    * Get NPC by ID
    */
   async getNPC(id: string): Promise<{ success: boolean; npc: any }> {
-    const response = await fetch(`${API_BASE}/content/npcs/${id}`);
+    const response = await apiFetch(`${API_BASE}/content/npcs/${id}`);
 
     if (!response.ok) {
       throw new Error(`Failed to get NPC: ${response.statusText}`);
@@ -203,7 +204,7 @@ export class ContentAPIClient {
    * Delete NPC by ID
    */
   async deleteNPC(id: string): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE}/content/npcs/${id}`, {
+    const response = await apiFetch(`${API_BASE}/content/npcs/${id}`, {
       method: "DELETE",
     });
 
@@ -223,7 +224,7 @@ export class ContentAPIClient {
     limit = 50,
     offset = 0,
   ): Promise<{ success: boolean; quests: any[] }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE}/content/quests?limit=${limit}&offset=${offset}`,
     );
 
@@ -238,7 +239,7 @@ export class ContentAPIClient {
    * Get quest by ID
    */
   async getQuest(id: string): Promise<{ success: boolean; quest: any }> {
-    const response = await fetch(`${API_BASE}/content/quests/${id}`);
+    const response = await apiFetch(`${API_BASE}/content/quests/${id}`);
 
     if (!response.ok) {
       throw new Error(`Failed to get quest: ${response.statusText}`);
@@ -253,7 +254,7 @@ export class ContentAPIClient {
   async deleteQuest(
     id: string,
   ): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE}/content/quests/${id}`, {
+    const response = await apiFetch(`${API_BASE}/content/quests/${id}`, {
       method: "DELETE",
     });
 
@@ -273,7 +274,7 @@ export class ContentAPIClient {
     limit = 50,
     offset = 0,
   ): Promise<{ success: boolean; dialogues: any[] }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE}/content/dialogues?limit=${limit}&offset=${offset}`,
     );
 
@@ -288,7 +289,7 @@ export class ContentAPIClient {
    * Get dialogue by ID
    */
   async getDialogue(id: string): Promise<{ success: boolean; dialogue: any }> {
-    const response = await fetch(`${API_BASE}/content/dialogues/${id}`);
+    const response = await apiFetch(`${API_BASE}/content/dialogues/${id}`);
 
     if (!response.ok) {
       throw new Error(`Failed to get dialogue: ${response.statusText}`);
@@ -303,7 +304,7 @@ export class ContentAPIClient {
   async deleteDialogue(
     id: string,
   ): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE}/content/dialogues/${id}`, {
+    const response = await apiFetch(`${API_BASE}/content/dialogues/${id}`, {
       method: "DELETE",
     });
 
@@ -323,7 +324,7 @@ export class ContentAPIClient {
     limit = 50,
     offset = 0,
   ): Promise<{ success: boolean; lores: any[] }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE}/content/lores?limit=${limit}&offset=${offset}`,
     );
 
@@ -338,7 +339,7 @@ export class ContentAPIClient {
    * Get lore by ID
    */
   async getLore(id: string): Promise<{ success: boolean; lore: any }> {
-    const response = await fetch(`${API_BASE}/content/lores/${id}`);
+    const response = await apiFetch(`${API_BASE}/content/lores/${id}`);
 
     if (!response.ok) {
       throw new Error(`Failed to get lore: ${response.statusText}`);
@@ -351,7 +352,7 @@ export class ContentAPIClient {
    * Delete lore by ID
    */
   async deleteLore(id: string): Promise<{ success: boolean; message: string }> {
-    const response = await fetch(`${API_BASE}/content/lores/${id}`, {
+    const response = await apiFetch(`${API_BASE}/content/lores/${id}`, {
       method: "DELETE",
     });
 
@@ -371,7 +372,7 @@ export class ContentAPIClient {
     id: string,
     updates: Partial<NPCData>,
   ): Promise<{ success: boolean; npc: any }> {
-    const response = await fetch(`${API_BASE}/content/npcs/${id}`, {
+    const response = await apiFetch(`${API_BASE}/content/npcs/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
@@ -391,7 +392,7 @@ export class ContentAPIClient {
     id: string,
     updates: Partial<QuestData>,
   ): Promise<{ success: boolean; quest: any }> {
-    const response = await fetch(`${API_BASE}/content/quests/${id}`, {
+    const response = await apiFetch(`${API_BASE}/content/quests/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
@@ -411,7 +412,7 @@ export class ContentAPIClient {
     id: string,
     updates: Partial<DialogueNode[]>,
   ): Promise<{ success: boolean; dialogue: any }> {
-    const response = await fetch(`${API_BASE}/content/dialogues/${id}`, {
+    const response = await apiFetch(`${API_BASE}/content/dialogues/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
@@ -431,7 +432,7 @@ export class ContentAPIClient {
     id: string,
     updates: Partial<LoreData>,
   ): Promise<{ success: boolean; lore: any }> {
-    const response = await fetch(`${API_BASE}/content/lores/${id}`, {
+    const response = await apiFetch(`${API_BASE}/content/lores/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
@@ -462,7 +463,7 @@ export class ContentAPIClient {
     mediaId: string;
     fileUrl: string;
   }> {
-    const response = await fetch(`${API_BASE}/content/media/save-portrait`, {
+    const response = await apiFetch(`${API_BASE}/content/media/save-portrait`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -492,7 +493,7 @@ export class ContentAPIClient {
     mediaId: string;
     fileUrl: string;
   }> {
-    const response = await fetch(`${API_BASE}/content/media/save-voice`, {
+    const response = await apiFetch(`${API_BASE}/content/media/save-voice`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -515,7 +516,7 @@ export class ContentAPIClient {
     success: boolean;
     media: any[];
   }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE}/content/media/${entityType}/${entityId}`,
     );
 
@@ -547,7 +548,7 @@ export class ContentAPIClient {
     questId: string;
     relationship: any;
   }> {
-    const response = await fetch(`${API_BASE}/content/generate-quest-for-npc`, {
+    const response = await apiFetch(`${API_BASE}/content/generate-quest-for-npc`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -580,7 +581,7 @@ export class ContentAPIClient {
     loreId: string;
     relationship: any;
   }> {
-    const response = await fetch(`${API_BASE}/content/generate-lore-for-npc`, {
+    const response = await apiFetch(`${API_BASE}/content/generate-lore-for-npc`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),

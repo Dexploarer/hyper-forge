@@ -1,4 +1,5 @@
 /**
+import { apiFetch } from "@/utils/api";
  * Public Profile API Client
  * Client for accessing public user profile endpoints
  */
@@ -65,7 +66,7 @@ export class PublicProfileAPIClient {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE}/${userId}/profile`, {
+    const response = await apiFetch(`${API_BASE}/${userId}/profile`, {
       headers,
     });
 
@@ -93,7 +94,7 @@ export class PublicProfileAPIClient {
       ? `${API_BASE}/${userId}/assets?type=${encodeURIComponent(type)}`
       : `${API_BASE}/${userId}/assets`;
 
-    const response = await fetch(url, { headers });
+    const response = await apiFetch(url, { headers });
 
     if (!response.ok) {
       throw new Error(`Failed to get public assets: ${response.statusText}`);
@@ -112,7 +113,7 @@ export class PublicProfileAPIClient {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE}/${userId}/projects`, {
+    const response = await apiFetch(`${API_BASE}/${userId}/projects`, {
       headers,
     });
 
@@ -135,7 +136,7 @@ export class PublicProfileAPIClient {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE}/${userId}/achievements`, {
+    const response = await apiFetch(`${API_BASE}/${userId}/achievements`, {
       headers,
     });
 
@@ -160,7 +161,7 @@ export class PublicProfileAPIClient {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    const response = await fetch(`${API_BASE}/${userId}/stats`, {
+    const response = await apiFetch(`${API_BASE}/${userId}/stats`, {
       headers,
     });
 

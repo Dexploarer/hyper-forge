@@ -1,4 +1,5 @@
 /**
+import { apiFetch } from "@/utils/api";
  * Users API Client
  * Client for user profile management and authentication
  */
@@ -45,7 +46,7 @@ export class UsersAPIClient {
    * Get current user profile (creates if doesn't exist)
    */
   async getCurrentUser(sessionId: string): Promise<GetCurrentUserResponse> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE}/me?sessionId=${encodeURIComponent(sessionId)}`,
     );
 
@@ -63,7 +64,7 @@ export class UsersAPIClient {
     sessionId: string,
     profile: UserProfileUpdate,
   ): Promise<CompleteProfileResponse> {
-    const response = await fetch(`${API_BASE}/complete-profile`, {
+    const response = await apiFetch(`${API_BASE}/complete-profile`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -90,7 +91,7 @@ export class UsersAPIClient {
    * Get all users (admin only)
    */
   async getAllUsers(): Promise<GetAllUsersResponse> {
-    const response = await fetch(`${API_BASE}/`);
+    const response = await apiFetch(`${API_BASE}/`);
 
     if (!response.ok) {
       throw new Error(`Failed to get all users: ${response.statusText}`);
@@ -134,7 +135,7 @@ export class UsersAPIClient {
    */
   async updateSettings(settings: Record<string, any>): Promise<{ user: User }> {
     const token = this.getAuthToken();
-    const response = await fetch(`${API_BASE}/settings`, {
+    const response = await apiFetch(`${API_BASE}/settings`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

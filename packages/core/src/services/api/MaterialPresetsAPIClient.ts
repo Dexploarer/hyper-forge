@@ -1,4 +1,5 @@
 /**
+import { apiFetch } from "@/utils/api";
  * Material Presets API Client
  * Client for managing material preset configurations
  */
@@ -28,7 +29,7 @@ export class MaterialPresetsAPIClient {
    * Get all material presets
    */
   async getMaterialPresets(): Promise<MaterialPresetList> {
-    const response = await fetch(`${API_BASE}/material-presets`)
+    const response = await apiFetch(`${API_BASE}/material-presets`)
 
     if (!response.ok) {
       throw new Error(`Failed to get material presets: ${response.statusText}`)
@@ -41,7 +42,7 @@ export class MaterialPresetsAPIClient {
    * Save material presets (overwrites entire list)
    */
   async saveMaterialPresets(presets: MaterialPresetList): Promise<MaterialPresetSaveResponse> {
-    const response = await fetch(`${API_BASE}/material-presets`, {
+    const response = await apiFetch(`${API_BASE}/material-presets`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

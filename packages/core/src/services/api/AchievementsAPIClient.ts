@@ -1,4 +1,5 @@
 /**
+import { apiFetch } from "@/utils/api";
  * Achievements API Client
  * Client for user achievements and medals management
  */
@@ -83,7 +84,7 @@ export class AchievementsAPIClient {
    * Get all available achievements
    */
   async getAllAchievements(): Promise<GetAllAchievementsResponse> {
-    const response = await fetch(`${API_BASE}/`);
+    const response = await apiFetch(`${API_BASE}/`);
 
     if (!response.ok) {
       throw new Error(`Failed to get achievements: ${response.statusText}`);
@@ -97,7 +98,7 @@ export class AchievementsAPIClient {
    */
   async getUserAchievements(): Promise<UserAchievementSummary> {
     const token = this.getAuthToken();
-    const response = await fetch(`${API_BASE}/me`, {
+    const response = await apiFetch(`${API_BASE}/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -119,7 +120,7 @@ export class AchievementsAPIClient {
     userId: string,
   ): Promise<UserAchievementSummary> {
     const token = this.getAuthToken();
-    const response = await fetch(`${API_BASE}/user/${userId}`, {
+    const response = await apiFetch(`${API_BASE}/user/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -144,7 +145,7 @@ export class AchievementsAPIClient {
     metadata?: Record<string, any>,
   ): Promise<AwardAchievementResponse> {
     const token = this.getAuthToken();
-    const response = await fetch(`${API_BASE}/award`, {
+    const response = await apiFetch(`${API_BASE}/award`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -179,7 +180,7 @@ export class AchievementsAPIClient {
     metadata?: Record<string, any>,
   ): Promise<UpdateProgressResponse> {
     const token = this.getAuthToken();
-    const response = await fetch(`${API_BASE}/progress`, {
+    const response = await apiFetch(`${API_BASE}/progress`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

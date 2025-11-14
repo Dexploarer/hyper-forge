@@ -1,4 +1,5 @@
 /**
+import { apiFetch } from "@/utils/api";
  * Voice Status API Client
  * Client for monitoring ElevenLabs voice generation service status
  */
@@ -96,7 +97,7 @@ export class VoiceStatusAPIClient {
    * Get ElevenLabs subscription information
    */
   async getSubscription(): Promise<VoiceSubscriptionInfo> {
-    const response = await fetch(`${API_BASE}/subscription`);
+    const response = await apiFetch(`${API_BASE}/subscription`);
 
     if (!response.ok) {
       throw new Error(
@@ -112,7 +113,7 @@ export class VoiceStatusAPIClient {
    * Get rate limit information
    */
   async getRateLimit(): Promise<VoiceRateLimitInfo> {
-    const response = await fetch(`${API_BASE}/rate-limit`);
+    const response = await apiFetch(`${API_BASE}/rate-limit`);
 
     if (!response.ok) {
       throw new Error(`Failed to get rate limit info: ${response.statusText}`);
@@ -125,7 +126,7 @@ export class VoiceStatusAPIClient {
    * Get voice library (available voices)
    */
   async getVoiceLibrary(): Promise<VoiceLibrary> {
-    const response = await fetch(`${API_BASE}/library`);
+    const response = await apiFetch(`${API_BASE}/library`);
 
     if (!response.ok) {
       throw new Error(`Failed to get voice library: ${response.statusText}`);
@@ -138,7 +139,7 @@ export class VoiceStatusAPIClient {
    * Get available TTS models
    */
   async getModels(): Promise<VoiceModels> {
-    const response = await fetch(`${API_BASE}/models`);
+    const response = await apiFetch(`${API_BASE}/models`);
 
     if (!response.ok) {
       throw new Error(`Failed to get voice models: ${response.statusText}`);

@@ -1,4 +1,5 @@
 /**
+import { apiFetch } from "@/utils/api";
  * Playtester Swarm API Client
  * Client for AI playtester swarm testing
  */
@@ -16,7 +17,7 @@ export class PlaytesterAPIClient {
    * Get available AI playtester personas
    */
   async getAvailablePersonas(): Promise<AvailablePersonasResponse> {
-    const response = await fetch(`${API_BASE}/playtester-swarm`)
+    const response = await apiFetch(`${API_BASE}/playtester-swarm`)
 
     if (!response.ok) {
       throw new Error(`Failed to get available personas: ${response.statusText}`)
@@ -29,7 +30,7 @@ export class PlaytesterAPIClient {
    * Run AI playtester swarm on game content
    */
   async runPlaytest(params: RunPlaytestParams): Promise<PlaytestResult> {
-    const response = await fetch(`${API_BASE}/playtester-swarm`, {
+    const response = await apiFetch(`${API_BASE}/playtester-swarm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),

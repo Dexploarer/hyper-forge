@@ -1,4 +1,5 @@
 /**
+import { apiFetch } from "@/utils/api";
  * Project API Service
  * Type-safe wrapper for project API endpoints
  */
@@ -65,7 +66,7 @@ class ProjectServiceClass {
   ): Promise<T> {
     const token = this.getAuthToken();
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await apiFetch(`${this.baseUrl}${endpoint}`, {
       ...options,
       headers: {
         "Content-Type": "application/json",

@@ -1,4 +1,5 @@
 /**
+import { apiFetch } from "@/utils/api";
  * Audio API Client
  * Client for ElevenLabs voice, sound effects, and music generation
  */
@@ -25,7 +26,7 @@ export class AudioAPIClient {
    * Get available voices from library
    */
   async getVoiceLibrary(): Promise<Voice[]> {
-    const response = await fetch(`${API_BASE}/voice/library`);
+    const response = await apiFetch(`${API_BASE}/voice/library`);
     if (!response.ok) {
       throw new Error(`Failed to get voice library: ${response.statusText}`);
     }
@@ -45,7 +46,7 @@ export class AudioAPIClient {
    * Generate voice from text (TTS)
    */
   async generateVoice(params: GenerateVoiceParams): Promise<string> {
-    const response = await fetch(`${API_BASE}/voice/generate`, {
+    const response = await apiFetch(`${API_BASE}/voice/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -69,7 +70,7 @@ export class AudioAPIClient {
   async designVoice(
     params: DesignVoiceParams,
   ): Promise<{ previews: VoicePreview[]; prompt: string }> {
-    const response = await fetch(`${API_BASE}/voice/design`, {
+    const response = await apiFetch(`${API_BASE}/voice/design`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -86,7 +87,7 @@ export class AudioAPIClient {
    * Create (save) a designed voice to library
    */
   async createVoiceFromPreview(params: CreateVoiceParams): Promise<Voice> {
-    const response = await fetch(`${API_BASE}/voice/create`, {
+    const response = await apiFetch(`${API_BASE}/voice/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -120,7 +121,7 @@ export class AudioAPIClient {
       error?: string;
     }>
   > {
-    const response = await fetch(`${API_BASE}/voice/batch`, {
+    const response = await apiFetch(`${API_BASE}/voice/batch`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -143,7 +144,7 @@ export class AudioAPIClient {
    * Returns audio file blob
    */
   async generateSFX(params: GenerateSFXParams): Promise<Blob> {
-    const response = await fetch(`${API_BASE}/sfx/generate`, {
+    const response = await apiFetch(`${API_BASE}/sfx/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -180,7 +181,7 @@ export class AudioAPIClient {
     successful: number;
     total: number;
   }> {
-    const response = await fetch(`${API_BASE}/sfx/batch`, {
+    const response = await apiFetch(`${API_BASE}/sfx/batch`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ effects }),
@@ -201,7 +202,7 @@ export class AudioAPIClient {
       ? `${API_BASE}/sfx/estimate?duration=${duration}`
       : `${API_BASE}/sfx/estimate`;
 
-    const response = await fetch(url);
+    const response = await apiFetch(url);
     if (!response.ok) {
       throw new Error(`Failed to estimate SFX cost: ${response.statusText}`);
     }
@@ -216,7 +217,7 @@ export class AudioAPIClient {
    * Returns audio file blob
    */
   async generateMusic(params: GenerateMusicParams): Promise<Blob> {
-    const response = await fetch(`${API_BASE}/music/generate`, {
+    const response = await apiFetch(`${API_BASE}/music/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -238,7 +239,7 @@ export class AudioAPIClient {
     metadata: any;
     format: string;
   }> {
-    const response = await fetch(`${API_BASE}/music/generate-detailed`, {
+    const response = await apiFetch(`${API_BASE}/music/generate-detailed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -258,7 +259,7 @@ export class AudioAPIClient {
     prompt: string;
     musicLengthMs?: number;
   }): Promise<CompositionPlan> {
-    const response = await fetch(`${API_BASE}/music/plan`, {
+    const response = await apiFetch(`${API_BASE}/music/plan`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
@@ -287,7 +288,7 @@ export class AudioAPIClient {
     successful: number;
     failed: number;
   }> {
-    const response = await fetch(`${API_BASE}/music/batch`, {
+    const response = await apiFetch(`${API_BASE}/music/batch`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tracks }),
@@ -310,7 +311,7 @@ export class AudioAPIClient {
     maxDuration: number;
     formats: string[];
   }> {
-    const response = await fetch(`${API_BASE}/music/status`);
+    const response = await apiFetch(`${API_BASE}/music/status`);
     if (!response.ok) {
       throw new Error(`Failed to get music status: ${response.statusText}`);
     }
