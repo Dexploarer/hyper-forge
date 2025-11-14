@@ -80,11 +80,12 @@ class AssetServiceClass {
 
     // Transform backend response to include modelUrl for backward compatibility
     // Backend returns cdnUrl, but frontend components expect modelUrl
+    // Use getModelUrl() to properly construct URL with fallbacks
     const assets = data as Asset[];
     return assets.map((asset) => ({
       ...asset,
-      // Set modelUrl from cdnUrl for backward compatibility with components
-      modelUrl: asset.cdnUrl || undefined,
+      // Set modelUrl using getModelUrl which has fallback logic
+      modelUrl: this.getModelUrl(asset),
     }));
   }
 
