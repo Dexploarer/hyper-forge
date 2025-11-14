@@ -105,24 +105,27 @@ class AssetServiceClass {
   }
 
   /**
-   * Get model URL - uses CDN URL if available, falls back to local
-   * @param asset - Asset object with CDN URL fields (preferred)
-   * @param assetId - Asset ID for backward compatibility fallback
+   * Get model URL - uses CDN URL if available, falls back to API endpoint
+   * @param asset - Asset object with CDN URL fields (preferred) or asset ID string
    */
   getModelUrl(asset: Asset | string): string {
     // Handle string input for backward compatibility
     if (typeof asset === "string") {
-      throw new Error(
-        "Asset ID string not supported - asset must have CDN URL",
-      );
+      // Fallback to API endpoint for legacy assets
+      console.warn(`[AssetService] Using API fallback for asset ID: ${asset}`);
+      return `/api/assets/${asset}/model`;
     }
 
-    // Use CDN URL (required)
+    // Priority 1: Use CDN URL (preferred for new assets)
     if (asset.cdnUrl) {
       return asset.cdnUrl;
     }
 
-    throw new Error(`Asset ${asset.id} does not have a CDN URL`);
+    // Priority 2: Fallback to API endpoint (for legacy assets without CDN URL)
+    console.warn(
+      `[AssetService] Asset ${asset.id} has no CDN URL, using API fallback`,
+    );
+    return `/api/assets/${asset.id}/model`;
   }
 
   /**
@@ -156,23 +159,33 @@ class AssetServiceClass {
   }
 
   /**
-   * Get concept art URL from CDN
-   * @param asset - Asset object with CDN URL fields (required)
+   * Get concept art URL from CDN or fallback path
+   * @param asset - Asset object with CDN URL fields or asset ID
    */
-  getConceptArtUrl(asset: Asset | string): string {
+  getConceptArtUrl(asset: Asset | string): string | null {
     // Handle string input for backward compatibility
     if (typeof asset === "string") {
-      throw new Error(
-        "Asset ID string not supported - asset must have CDN URL",
+      // No reliable fallback for concept art with just ID
+      console.warn(
+        `[AssetService] Cannot get concept art URL from asset ID: ${asset}`,
       );
+      return null;
     }
 
-    // Use CDN concept art URL (required)
+    // Priority 1: Use CDN concept art URL
     if (asset.cdnConceptArtUrl) {
       return asset.cdnConceptArtUrl;
     }
 
-    throw new Error(`Asset ${asset.id} does not have a CDN concept art URL`);
+    // Priority 2: Check legacy concept art path
+    if (asset.conceptArtPath) {
+      console.warn(
+        `[AssetService] Asset ${asset.id} using legacy concept art path`,
+      );
+      return `/gdd-assets/${asset.id}/${asset.conceptArtPath}`;
+    }
+
+    return null;
   }
 
   /**
