@@ -108,6 +108,23 @@ const ASSETS_DIR = env.RAILWAY_VOLUME_MOUNT_PATH
   ? path.join(env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
   : env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
 
+// Validate required environment variables for API server
+// Note: Workers don't need these, so they're optional in env.ts schema
+
+// Authentication is REQUIRED for API server
+if (!env.PRIVY_APP_ID || !env.PRIVY_APP_SECRET) {
+  throw new Error(
+    "PRIVY_APP_ID and PRIVY_APP_SECRET are required for API server. Workers don't need these.",
+  );
+}
+
+// API key encryption is REQUIRED for API server
+if (!env.API_KEY_ENCRYPTION_SECRET) {
+  throw new Error(
+    "API_KEY_ENCRYPTION_SECRET is required for API server. Workers don't need this.",
+  );
+}
+
 // CDN_URL and IMAGE_SERVER_URL must be set in production
 const CDN_URL =
   env.CDN_URL ||

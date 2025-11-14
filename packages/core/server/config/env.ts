@@ -27,17 +27,15 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid PostgreSQL URL"),
 
   // =========================================
-  // Authentication
+  // Authentication (Required for API server, optional for workers)
   // =========================================
-  PRIVY_APP_ID: z.string().min(1, "PRIVY_APP_ID is required"),
-  PRIVY_APP_SECRET: z.string().min(1, "PRIVY_APP_SECRET is required"),
+  PRIVY_APP_ID: z.string().optional(),
+  PRIVY_APP_SECRET: z.string().optional(),
 
   // =========================================
-  // API Key Encryption
+  // API Key Encryption (Required for API server, optional for workers)
   // =========================================
-  API_KEY_ENCRYPTION_SECRET: z
-    .string()
-    .min(32, "API_KEY_ENCRYPTION_SECRET must be at least 32 characters"),
+  API_KEY_ENCRYPTION_SECRET: z.string().optional(),
 
   // =========================================
   // AI Services (Optional - users can provide their own)
