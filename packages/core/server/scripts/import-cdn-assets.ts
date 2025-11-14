@@ -25,7 +25,7 @@ async function importCDNAssets() {
     }
 
     // List all assets from CDN
-    const response = await fetch(`${CDN_URL}/api/list?directory=models`, {
+    const response = await fetch(`${CDN_URL}/api/files`, {
       headers: {
         "X-API-Key": CDN_API_KEY,
       },
@@ -37,19 +37,22 @@ async function importCDNAssets() {
       );
     }
 
-    const cdnFiles: CDNAsset[] = await response.json();
+    const data = await response.json();
+    const cdnFiles: CDNAsset[] = data.files || [];
     logger.info(
       { context: "CDN Import", fileCount: cdnFiles.length },
       "Found files on CDN",
     );
 
     // Group files by asset ID (directory name)
+    // Files from CDN are in format like "models/assetId/file.glb"
     const assetMap = new Map<string, CDNAsset[]>();
     for (const file of cdnFiles) {
       const parts = file.path.split("/");
-      if (parts.length < 2) continue;
+      // Expected format: models/assetId/file.ext
+      if (parts.length < 3 || parts[0] !== "models") continue;
 
-      const assetId = parts[0]; // First part is the asset ID
+      const assetId = parts[1]; // Second part is the asset ID (after 'models/')
       if (!assetMap.has(assetId)) {
         assetMap.set(assetId, []);
       }
@@ -102,12 +105,13 @@ async function importCDNAssets() {
         );
 
         // Create database record
-        const cdnUrl = `${CDN_URL}/models/${modelFile.path}`;
+        // Note: file.path already includes "models/" prefix
+        const cdnUrl = `${CDN_URL}/${modelFile.path}`;
         const cdnThumbnailUrl = thumbnailFile
-          ? `${CDN_URL}/models/${thumbnailFile.path}`
+          ? `${CDN_URL}/${thumbnailFile.path}`
           : undefined;
         const cdnConceptArtUrl = conceptArtFile
-          ? `${CDN_URL}/models/${conceptArtFile.path}`
+          ? `${CDN_URL}/${conceptArtFile.path}`
           : undefined;
 
         await db.insert(assets).values({
@@ -118,7 +122,7 @@ async function importCDNAssets() {
           cdnUrl,
           cdnThumbnailUrl,
           cdnConceptArtUrl,
-          cdnFiles: files.map((f) => `${CDN_URL}/models/${f.path}`),
+          cdnFiles: files.map((f) => `${CDN_URL}/${f.path}`),
           metadata: {
             importedFromCDN: true,
             importedAt: new Date().toISOString(),
