@@ -29,12 +29,6 @@ export default defineConfig({
       "@react-three/drei",
       "three/addons/controls/OrbitControls.js",
       "three/examples/jsm/loaders/GLTFLoader.js",
-      // Solana packages for Privy wallet support
-      "@solana/web3.js",
-      "@solana/kit",
-      "@solana-program/memo",
-      "@solana-program/system",
-      "@solana-program/token",
     ],
     esbuildOptions: {
       resolveExtensions: [".mjs", ".js", ".jsx", ".json", ".ts", ".tsx"],
@@ -107,15 +101,8 @@ export default defineConfig({
             "@tanstack/react-query-devtools",
           ],
 
-          // Auth (including Solana wallet support)
-          auth: [
-            "@privy-io/react-auth",
-            "@solana/web3.js",
-            "@solana/kit",
-            "@solana-program/memo",
-            "@solana-program/system",
-            "@solana-program/token",
-          ],
+          // Auth
+          auth: ["@privy-io/react-auth"],
 
           // AI SDK
           "ai-sdk": [

@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
@@ -230,11 +229,6 @@ function AppContent() {
 }
 
 function App() {
-  // Configure Solana wallet connectors
-  const solanaConnectors = toSolanaWalletConnectors({
-    shouldAutoConnect: true,
-  });
-
   return (
     <PrivyProvider
       appId={import.meta.env.VITE_PRIVY_APP_ID || ""}
@@ -250,11 +244,6 @@ function App() {
           },
           solana: {
             createOnLogin: "users-without-wallets",
-          },
-        },
-        externalWallets: {
-          solana: {
-            connectors: solanaConnectors,
           },
         },
       }}
