@@ -74,6 +74,7 @@ import { publicProfilesRoutes } from "./routes/public-profiles";
 import { debugStorageRoute } from "./routes/debug-storage";
 import { createCDNRoutes } from "./routes/cdn";
 import { errorMonitoringRoutes } from "./routes/error-monitoring";
+import { migrateMediaRoute } from "./routes/migrate-media";
 
 // Cron and job cleanup
 import { cron } from "@elysiajs/cron";
@@ -1024,6 +1025,7 @@ const app = new Elysia()
   .use(debugStorageRoute)
   .use(createCDNRoutes(ASSETS_DIR, CDN_URL))
   .use(errorMonitoringRoutes)
+  .use(migrateMediaRoute)
 
   // Prometheus metrics endpoint (after all routes)
   .use(
