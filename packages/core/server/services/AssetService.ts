@@ -1,6 +1,7 @@
 /**
  * Asset Service
  * Handles asset listing and retrieval
+ * Version: 2.0 - CDN URL fields added
  */
 
 import path from "path";
