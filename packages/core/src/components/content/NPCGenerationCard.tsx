@@ -5,6 +5,8 @@ import {
   Shield,
   Sparkles,
   TestTube2,
+  Save,
+  FolderOpen,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
@@ -20,8 +22,10 @@ import {
   SelectOrCustom,
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
+import { SavePromptModal, PromptLibraryModal } from "../prompts";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
 import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
+import { usePromptLibrary } from "@/hooks/usePromptLibrary";
 import { notify } from "@/utils/notify";
 import { useNavigation } from "@/hooks/useNavigation";
 import type { NPCData, QualityLevel } from "@/types/content";
@@ -68,6 +72,11 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
     (NPCData & { id: string; metadata: any }) | null
   >(null);
 
+  // Prompt library
+  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+
   // Fetch world config options
   const worldConfigOptions = useWorldConfigOptions(worldConfigId);
 
@@ -105,20 +114,77 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
     }
   };
 
+  const handleSavePrompt = async (data: {
+    name: string;
+    description?: string;
+    isPublic?: boolean;
+  }) => {
+    await savePrompt({
+      type: "npc",
+      name: data.name,
+      content: {
+        prompt,
+        archetype: archetype || undefined,
+        context: context || undefined,
+      },
+      description: data.description,
+      isPublic: data.isPublic,
+      metadata: {
+        quality,
+        worldConfigId: worldConfigId || undefined,
+      },
+    });
+    setShowSavePrompt(false);
+  };
+
+  const handleLoadPrompt = (loadedPrompt: any) => {
+    setPrompt(loadedPrompt.content.prompt || "");
+    setArchetype(loadedPrompt.content.archetype || "");
+    setContext(loadedPrompt.content.context || "");
+    if (loadedPrompt.metadata?.quality) {
+      setQuality(loadedPrompt.metadata.quality);
+    }
+    if (loadedPrompt.metadata?.worldConfigId) {
+      setWorldConfigId(loadedPrompt.metadata.worldConfigId);
+    }
+    notify.success(`Loaded prompt: ${loadedPrompt.name}`);
+  };
+
   return (
     <Card className="bg-gradient-to-br from-bg-primary via-bg-secondary to-blue-500/5 border-border-primary shadow-lg">
       <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-blue-500/10 rounded-xl">
-            <BookOpen className="w-5 h-5 text-blue-500" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-blue-500/10 rounded-xl">
+              <BookOpen className="w-5 h-5 text-blue-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-semibold">
+                NPC Character Generation
+              </CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Create complete NPCs with AI
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-lg font-semibold">
-              NPC Character Generation
-            </CardTitle>
-            <CardDescription className="text-xs mt-0.5">
-              Create complete NPCs with AI
-            </CardDescription>
+
+          {/* Prompt Library Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowLoadPrompt(true)}
+              className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all"
+              title="Load saved prompt"
+            >
+              <FolderOpen className="w-4 h-4 text-text-secondary hover:text-primary" />
+            </button>
+            <button
+              onClick={() => setShowSavePrompt(true)}
+              disabled={!prompt}
+              className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Save current prompt"
+            >
+              <Save className="w-4 h-4 text-text-secondary hover:text-primary" />
+            </button>
           </div>
         </div>
       </CardHeader>
@@ -259,6 +325,27 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
           )}
         </div>
       </CardContent>
+
+      {/* Prompt Library Modals */}
+      <SavePromptModal
+        open={showSavePrompt}
+        onClose={() => setShowSavePrompt(false)}
+        onSave={handleSavePrompt}
+        promptType="npc"
+        currentContent={{
+          prompt,
+          archetype: archetype || undefined,
+          context: context || undefined,
+        }}
+        loading={isSavingPrompt}
+      />
+
+      <PromptLibraryModal
+        open={showLoadPrompt}
+        onClose={() => setShowLoadPrompt(false)}
+        onLoad={handleLoadPrompt}
+        promptType="npc"
+      />
     </Card>
   );
 };
