@@ -22,8 +22,11 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-// Migration connection
-const migrationClient = postgres(process.env.DATABASE_URL, { max: 1 });
+// Migration connection with NOTICE suppression
+const migrationClient = postgres(process.env.DATABASE_URL, {
+  max: 1,
+  onnotice: () => {}, // Suppress PostgreSQL NOTICE messages (e.g., "already exists, skipping")
+});
 const db = drizzle(migrationClient);
 
 // Run migrations

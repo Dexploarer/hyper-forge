@@ -151,9 +151,14 @@ const retextureService = new RetextureService({
   meshyApiKey: env.MESHY_API_KEY || "",
   imageServerBaseUrl: IMAGE_SERVER_URL,
 });
-const generationService = new GenerationService();
+
+// Initialize GenerationService with database repository
+import { generationPipelineRepository } from "./repositories/GenerationPipelineRepository";
+const generationService = new GenerationService({
+  pipelineRepo: generationPipelineRepository,
+});
 // Note: GenerationService uses env vars for now - refactoring to user keys requires
-// architectural changes due to stateful pipeline storage in memory
+// architectural changes due to stateful pipeline storage
 
 // Create Elysia app with full type inference for Eden Treaty
 // @ts-ignore TS2742 - croner module reference from cron plugin is non-portable (doesn't affect runtime)
