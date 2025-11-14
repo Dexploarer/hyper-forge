@@ -17,6 +17,7 @@ export default defineConfig({
       ),
       // Remove three alias - let Bun/Vite resolve it naturally
     },
+    conditions: ["browser"],
   },
   optimizeDeps: {
     include: [
