@@ -80,9 +80,17 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showActions, setShowActions] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const colors = getAudioTypeColors(audioFile.type);
   const Icon = colors.icon;
+
+  // Check if URL is valid (not null and not a /gdd-assets path)
+  const audioUrl =
+    audioFile.cdnUrl ||
+    (audioFile.fileUrl && !audioFile.fileUrl.startsWith("/gdd-assets")
+      ? audioFile.fileUrl
+      : null);
 
   useEffect(() => {
     const audioEl = audioRef.current;
@@ -91,17 +99,23 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
     const updateTime = () => setCurrentTime(audioEl.currentTime);
     const updateDuration = () => setDuration(audioEl.duration);
     const handleEnded = () => setIsPlaying(false);
+    const handleError = () => {
+      setHasError(true);
+      setIsPlaying(false);
+    };
 
     audioEl.addEventListener("timeupdate", updateTime);
     audioEl.addEventListener("loadedmetadata", updateDuration);
     audioEl.addEventListener("ended", handleEnded);
+    audioEl.addEventListener("error", handleError);
 
     return () => {
       audioEl.removeEventListener("timeupdate", updateTime);
       audioEl.removeEventListener("loadedmetadata", updateDuration);
       audioEl.removeEventListener("ended", handleEnded);
+      audioEl.removeEventListener("error", handleError);
     };
-  }, [audioFile.cdnUrl || audioFile.fileUrl]);
+  }, [audioUrl]);
 
   const togglePlayPause = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -141,8 +155,6 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
-
-  const audioUrl = audioFile.cdnUrl || audioFile.fileUrl;
 
   return (
     <div
@@ -292,7 +304,12 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
             {item.createdAt.toLocaleDateString()}
           </div>
           {!audioUrl && (
-            <span className="text-amber-400">No file available</span>
+            <span className="text-amber-400 text-xs">
+              File not migrated to CDN
+            </span>
+          )}
+          {hasError && audioUrl && (
+            <span className="text-red-400 text-xs">Failed to load audio</span>
           )}
         </div>
       </div>
