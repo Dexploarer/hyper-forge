@@ -230,6 +230,11 @@ function AppContent() {
 }
 
 function App() {
+  // Configure Solana wallet connectors
+  const solanaConnectors = toSolanaWalletConnectors({
+    shouldAutoConnect: true,
+  });
+
   return (
     <PrivyProvider
       appId={import.meta.env.VITE_PRIVY_APP_ID || ""}
@@ -245,6 +250,11 @@ function App() {
           },
           solana: {
             createOnLogin: "users-without-wallets",
+          },
+        },
+        externalWallets: {
+          solana: {
+            connectors: solanaConnectors,
           },
         },
       }}

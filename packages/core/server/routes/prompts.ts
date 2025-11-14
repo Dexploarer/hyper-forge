@@ -1,31 +1,98 @@
 /**
  * Prompts Routes
- * Serves prompt configuration files from public/prompts directory
+ * CRUD operations for AI generation prompts
+ * Supports both system prompts (from database) and user-created custom prompts
  */
 
 import { Elysia, t } from "elysia";
+import { db } from "../db";
+import { prompts } from "../db/schema/prompts.schema";
+import { eq, and, or, desc } from "drizzle-orm";
 import { logger } from "../utils/logger";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const ROOT_DIR = path.join(__dirname, "..", "..");
-const PROMPTS_DIR = path.join(ROOT_DIR, "public", "prompts");
 
 export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
-  // Get game style prompts
+  // Get all prompts of a specific type
+  .get(
+    "/:type",
+    async ({ params, query, set }) => {
+      try {
+        const { type } = params;
+        const { includeInactive = "false" } = query;
+
+        // Build query conditions
+        const conditions = [eq(prompts.type, type)];
+
+        if (includeInactive !== "true") {
+          conditions.push(eq(prompts.isActive, true));
+        }
+
+        const results = await db
+          .select()
+          .from(prompts)
+          .where(and(...conditions))
+          .orderBy(desc(prompts.createdAt));
+
+        // Return the first result for system prompts (there should only be one per type)
+        // For user prompts, return all matching
+        const systemPrompt = results.find((p) => p.isSystem);
+
+        if (systemPrompt) {
+          return {
+            ...systemPrompt.content,
+            _metadata: {
+              id: systemPrompt.id,
+              version: systemPrompt.version,
+              isSystem: systemPrompt.isSystem,
+            },
+          };
+        }
+
+        set.status = 404;
+        return { error: `No prompts found for type: ${type}` };
+      } catch (error) {
+        logger.error(
+          { context: "Prompts", err: error },
+          `Error loading prompts for type: ${params.type}`,
+        );
+        set.status = 500;
+        return { error: "Failed to load prompts" };
+      }
+    },
+    {
+      params: t.Object({
+        type: t.String(),
+      }),
+      query: t.Object({
+        includeInactive: t.Optional(t.String()),
+      }),
+      detail: {
+        tags: ["Prompts"],
+        summary: "Get prompts by type",
+        description:
+          "Retrieve prompt templates by type (generation, asset-type, game-style, material, etc.)",
+      },
+    },
+  )
+
+  // Backward compatibility routes for existing frontend code
   .get(
     "/game-styles",
     async ({ set }) => {
-      const file = Bun.file(path.join(PROMPTS_DIR, "game-style-prompts.json"));
-      if (!(await file.exists())) {
-        set.status = 404;
-        return { error: "Game style prompts file not found" };
-      }
       try {
-        const data = await file.json();
-        return data;
+        const result = await db
+          .select()
+          .from(prompts)
+          .where(
+            and(eq(prompts.type, "game-style"), eq(prompts.isActive, true)),
+          )
+          .limit(1);
+
+        if (result.length === 0) {
+          set.status = 404;
+          return { error: "Game style prompts not found" };
+        }
+
+        return result[0].content;
       } catch (error) {
         logger.error(
           { context: "Prompts", err: error },
@@ -45,18 +112,24 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
     },
   )
 
-  // Get asset type prompts
   .get(
     "/asset-types",
     async ({ set }) => {
-      const file = Bun.file(path.join(PROMPTS_DIR, "asset-type-prompts.json"));
-      if (!(await file.exists())) {
-        set.status = 404;
-        return { error: "Asset type prompts file not found" };
-      }
       try {
-        const data = await file.json();
-        return data;
+        const result = await db
+          .select()
+          .from(prompts)
+          .where(
+            and(eq(prompts.type, "asset-type"), eq(prompts.isActive, true)),
+          )
+          .limit(1);
+
+        if (result.length === 0) {
+          set.status = 404;
+          return { error: "Asset type prompts not found" };
+        }
+
+        return result[0].content;
       } catch (error) {
         logger.error(
           { context: "Prompts", err: error },
@@ -76,18 +149,22 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
     },
   )
 
-  // Get material prompts
   .get(
     "/materials",
     async ({ set }) => {
-      const file = Bun.file(path.join(PROMPTS_DIR, "material-prompts.json"));
-      if (!(await file.exists())) {
-        set.status = 404;
-        return { error: "Material prompts file not found" };
-      }
       try {
-        const data = await file.json();
-        return data;
+        const result = await db
+          .select()
+          .from(prompts)
+          .where(and(eq(prompts.type, "material"), eq(prompts.isActive, true)))
+          .limit(1);
+
+        if (result.length === 0) {
+          set.status = 404;
+          return { error: "Material prompts not found" };
+        }
+
+        return result[0].content;
       } catch (error) {
         logger.error(
           { context: "Prompts", err: error },
@@ -106,18 +183,24 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
     },
   )
 
-  // Get generation prompts
   .get(
     "/generation",
     async ({ set }) => {
-      const file = Bun.file(path.join(PROMPTS_DIR, "generation-prompts.json"));
-      if (!(await file.exists())) {
-        set.status = 404;
-        return { error: "Generation prompts file not found" };
-      }
       try {
-        const data = await file.json();
-        return data;
+        const result = await db
+          .select()
+          .from(prompts)
+          .where(
+            and(eq(prompts.type, "generation"), eq(prompts.isActive, true)),
+          )
+          .limit(1);
+
+        if (result.length === 0) {
+          set.status = 404;
+          return { error: "Generation prompts not found" };
+        }
+
+        return result[0].content;
       } catch (error) {
         logger.error(
           { context: "Prompts", err: error },
@@ -136,20 +219,27 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
     },
   )
 
-  // Get GPT-4 enhancement prompts
   .get(
     "/gpt4-enhancement",
     async ({ set }) => {
-      const file = Bun.file(
-        path.join(PROMPTS_DIR, "gpt4-enhancement-prompts.json"),
-      );
-      if (!(await file.exists())) {
-        set.status = 404;
-        return { error: "GPT-4 enhancement prompts file not found" };
-      }
       try {
-        const data = await file.json();
-        return data;
+        const result = await db
+          .select()
+          .from(prompts)
+          .where(
+            and(
+              eq(prompts.type, "gpt4-enhancement"),
+              eq(prompts.isActive, true),
+            ),
+          )
+          .limit(1);
+
+        if (result.length === 0) {
+          set.status = 404;
+          return { error: "GPT-4 enhancement prompts not found" };
+        }
+
+        return result[0].content;
       } catch (error) {
         logger.error(
           { context: "Prompts", err: error },
@@ -168,50 +258,27 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
     },
   )
 
-  // Get material presets
-  .get(
-    "/material-presets",
-    async ({ set }) => {
-      const file = Bun.file(path.join(PROMPTS_DIR, "material-presets.json"));
-      if (!(await file.exists())) {
-        set.status = 404;
-        return { error: "Material presets file not found" };
-      }
-      try {
-        const data = await file.json();
-        return data;
-      } catch (error) {
-        logger.error(
-          { context: "Prompts", err: error },
-          "Error loading material presets",
-        );
-        set.status = 500;
-        return { error: "Failed to load material presets" };
-      }
-    },
-    {
-      detail: {
-        tags: ["Prompts"],
-        summary: "Get material presets",
-        description: "Retrieve material preset configurations",
-      },
-    },
-  )
-
-  // Get weapon detection prompts
   .get(
     "/weapon-detection",
     async ({ set }) => {
-      const file = Bun.file(
-        path.join(PROMPTS_DIR, "weapon-detection-prompts.json"),
-      );
-      if (!(await file.exists())) {
-        set.status = 404;
-        return { error: "Weapon detection prompts file not found" };
-      }
       try {
-        const data = await file.json();
-        return data;
+        const result = await db
+          .select()
+          .from(prompts)
+          .where(
+            and(
+              eq(prompts.type, "weapon-detection"),
+              eq(prompts.isActive, true),
+            ),
+          )
+          .limit(1);
+
+        if (result.length === 0) {
+          set.status = 404;
+          return { error: "Weapon detection prompts not found" };
+        }
+
+        return result[0].content;
       } catch (error) {
         logger.error(
           { context: "Prompts", err: error },
@@ -226,6 +293,189 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
         tags: ["Prompts"],
         summary: "Get weapon detection prompts",
         description: "Retrieve weapon detection prompt templates for AI vision",
+      },
+    },
+  )
+
+  // Create custom prompt (user-created)
+  .post(
+    "/custom",
+    async ({ body, set }) => {
+      try {
+        const promptId = `user-${body.type}-${Date.now()}`;
+
+        const [newPrompt] = await db
+          .insert(prompts)
+          .values({
+            id: promptId,
+            type: body.type,
+            name: body.name,
+            content: body.content,
+            description: body.description || null,
+            version: "1.0",
+            isSystem: false,
+            isActive: true,
+            isPublic: body.isPublic || false,
+            createdBy: body.createdBy || null,
+            metadata: body.metadata || {},
+          })
+          .returning();
+
+        set.status = 201;
+        return newPrompt;
+      } catch (error) {
+        logger.error(
+          { context: "Prompts", err: error },
+          "Error creating custom prompt",
+        );
+        set.status = 500;
+        return { error: "Failed to create custom prompt" };
+      }
+    },
+    {
+      body: t.Object({
+        type: t.String(),
+        name: t.String(),
+        content: t.Any(), // JSONB content
+        description: t.Optional(t.String()),
+        isPublic: t.Optional(t.Boolean()),
+        createdBy: t.Optional(t.String()),
+        metadata: t.Optional(t.Any()),
+      }),
+      detail: {
+        tags: ["Prompts"],
+        summary: "Create custom prompt",
+        description: "Create a new user-defined custom prompt template",
+      },
+    },
+  )
+
+  // Update custom prompt
+  .put(
+    "/custom/:id",
+    async ({ params, body, set }) => {
+      try {
+        const [updatedPrompt] = await db
+          .update(prompts)
+          .set({
+            name: body.name,
+            content: body.content,
+            description: body.description || null,
+            isActive: body.isActive !== undefined ? body.isActive : true,
+            isPublic: body.isPublic !== undefined ? body.isPublic : false,
+            metadata: body.metadata || {},
+            updatedAt: new Date(),
+          })
+          .where(and(eq(prompts.id, params.id), eq(prompts.isSystem, false)))
+          .returning();
+
+        if (!updatedPrompt) {
+          set.status = 404;
+          return { error: "Custom prompt not found or is a system prompt" };
+        }
+
+        return updatedPrompt;
+      } catch (error) {
+        logger.error(
+          { context: "Prompts", err: error },
+          `Error updating custom prompt: ${params.id}`,
+        );
+        set.status = 500;
+        return { error: "Failed to update custom prompt" };
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      body: t.Object({
+        name: t.String(),
+        content: t.Any(),
+        description: t.Optional(t.String()),
+        isActive: t.Optional(t.Boolean()),
+        isPublic: t.Optional(t.Boolean()),
+        metadata: t.Optional(t.Any()),
+      }),
+      detail: {
+        tags: ["Prompts"],
+        summary: "Update custom prompt",
+        description: "Update an existing user-defined custom prompt",
+      },
+    },
+  )
+
+  // Delete custom prompt
+  .delete(
+    "/custom/:id",
+    async ({ params, set }) => {
+      try {
+        const [deletedPrompt] = await db
+          .delete(prompts)
+          .where(and(eq(prompts.id, params.id), eq(prompts.isSystem, false)))
+          .returning();
+
+        if (!deletedPrompt) {
+          set.status = 404;
+          return { error: "Custom prompt not found or is a system prompt" };
+        }
+
+        return { success: true, id: params.id };
+      } catch (error) {
+        logger.error(
+          { context: "Prompts", err: error },
+          `Error deleting custom prompt: ${params.id}`,
+        );
+        set.status = 500;
+        return { error: "Failed to delete custom prompt" };
+      }
+    },
+    {
+      params: t.Object({
+        id: t.String(),
+      }),
+      detail: {
+        tags: ["Prompts"],
+        summary: "Delete custom prompt",
+        description:
+          "Delete a user-defined custom prompt (system prompts cannot be deleted)",
+      },
+    },
+  )
+
+  // List all custom prompts for a user
+  .get(
+    "/custom/user/:userId",
+    async ({ params, set }) => {
+      try {
+        const userPrompts = await db
+          .select()
+          .from(prompts)
+          .where(
+            and(
+              eq(prompts.createdBy, params.userId),
+              eq(prompts.isSystem, false),
+            ),
+          )
+          .orderBy(desc(prompts.createdAt));
+
+        return userPrompts;
+      } catch (error) {
+        logger.error(
+          { context: "Prompts", err: error },
+          `Error loading user prompts for: ${params.userId}`,
+        );
+        set.status = 500;
+        return { error: "Failed to load user prompts" };
+      }
+    },
+    {
+      params: t.Object({
+        userId: t.String(),
+      }),
+      detail: {
+        tags: ["Prompts"],
+        summary: "List user's custom prompts",
+        description: "Get all custom prompts created by a specific user",
       },
     },
   );

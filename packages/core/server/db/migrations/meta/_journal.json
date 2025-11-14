@@ -169,6 +169,20 @@
       "when": 1763075696024,
       "tag": "0023_loud_shen",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1763108772534,
+      "tag": "0024_lyrical_black_tom",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1763109375525,
+      "tag": "0025_cuddly_vision",
+      "breakpoints": true
     }
   ]
 }

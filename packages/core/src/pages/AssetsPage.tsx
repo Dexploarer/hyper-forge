@@ -7,8 +7,8 @@ import React, {
   useMemo,
 } from "react";
 
-import { API_ENDPOINTS } from "../constants";
 import { useAssetsStore } from "../store";
+import { AssetService } from "@/services/api/AssetService";
 
 import {
   AssetDetailsPanel,
@@ -209,7 +209,7 @@ export const AssetsPage: React.FC = () => {
                     ref={viewerRef}
                     modelUrl={
                       selectedAsset.hasModel
-                        ? `${API_ENDPOINTS.ASSET_MODEL(selectedAsset.id)}`
+                        ? AssetService.getModelUrl(selectedAsset)
                         : undefined
                     }
                     isWireframe={isWireframe}
@@ -233,17 +233,16 @@ export const AssetsPage: React.FC = () => {
                   <AnimationPlayer
                     modelUrl={
                       selectedAsset.hasModel
-                        ? `${API_ENDPOINTS.ASSET_MODEL(selectedAsset.id)}`
+                        ? AssetService.getModelUrl(selectedAsset)
                         : ""
                     }
                     animations={
                       selectedAsset.metadata?.animations || { basic: {} }
                     }
-                    riggedModelPath={
-                      selectedAsset.metadata?.riggedModelPath
-                        ? `${API_ENDPOINTS.ASSET_FILE(selectedAsset.id, selectedAsset.metadata.riggedModelPath)}`
-                        : undefined
-                    }
+                    riggedModelPath={AssetService.getRiggedModelUrl(
+                      selectedAsset,
+                      selectedAsset.metadata?.riggedModelPath,
+                    )}
                     characterHeight={selectedAsset.metadata?.characterHeight}
                     className="w-full h-full"
                   />

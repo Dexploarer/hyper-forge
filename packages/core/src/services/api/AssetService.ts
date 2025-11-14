@@ -39,6 +39,7 @@ export interface Asset {
   cdnUrl?: string; // Full CDN URL for main model file
   cdnThumbnailUrl?: string; // CDN URL for thumbnail
   cdnConceptArtUrl?: string; // CDN URL for concept art
+  cdnRiggedModelUrl?: string; // CDN URL for rigged/animated model
   cdnFiles?: string[]; // Array of all CDN file URLs
 }
 
@@ -260,6 +261,39 @@ class AssetServiceClass {
    */
   getAPIVRMUrl(assetId: string): string {
     return `/assets/${assetId}/${assetId}.vrm`;
+  }
+
+  /**
+   * Get rigged model URL - uses CDN URL if available, falls back to local
+   * Used for characters with rigged/animated models
+   */
+  getRiggedModelUrl(
+    asset: Asset,
+    riggedModelPath?: string,
+  ): string | undefined {
+    // Priority 1: Use CDN rigged model URL if available
+    if (asset.cdnRiggedModelUrl) {
+      return asset.cdnRiggedModelUrl;
+    }
+
+    // Priority 2: Use provided rigged model path (from metadata)
+    if (riggedModelPath) {
+      // Try CDN files array first
+      if (asset.cdnFiles && asset.cdnFiles.length > 0) {
+        const riggedFile = asset.cdnFiles.find((url) =>
+          url.includes(riggedModelPath),
+        );
+        if (riggedFile) {
+          return riggedFile;
+        }
+      }
+
+      // Fall back to local path
+      return `/gdd-assets/${asset.id}/${riggedModelPath}`;
+    }
+
+    // No rigged model available
+    return undefined;
   }
 
   /**

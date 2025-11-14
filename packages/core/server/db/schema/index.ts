@@ -33,6 +33,15 @@ export * from "./asset-variants.schema";
 // API Errors
 export * from "./api-errors.schema";
 
+// Prompts
+export * from "./prompts.schema";
+
+// Material Presets
+export * from "./material-presets.schema";
+
+// Static Assets
+export * from "./static-assets.schema";
+
 // Re-export everything for drizzle
 import * as usersSchema from "./users.schema";
 import * as assetsSchema from "./assets.schema";
@@ -44,6 +53,9 @@ import * as achievementsSchema from "./achievements.schema";
 import * as generationPipelinesSchema from "./generation-pipelines.schema";
 import * as assetVariantsSchema from "./asset-variants.schema";
 import * as apiErrorsSchema from "./api-errors.schema";
+import * as promptsSchema from "./prompts.schema";
+import * as materialPresetsSchema from "./material-presets.schema";
+import * as staticAssetsSchema from "./static-assets.schema";
 
 export const schema = {
   ...usersSchema,
@@ -56,4 +68,7 @@ export const schema = {
   ...generationPipelinesSchema,
   ...assetVariantsSchema,
   ...apiErrorsSchema,
+  ...promptsSchema,
+  ...materialPresetsSchema,
+  ...staticAssetsSchema,
 };

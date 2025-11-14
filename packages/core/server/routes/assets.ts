@@ -70,6 +70,7 @@ export const createAssetRoutes = (
                   cdnUrl: dbAsset.cdnUrl,
                   cdnThumbnailUrl: dbAsset.cdnThumbnailUrl,
                   cdnConceptArtUrl: dbAsset.cdnConceptArtUrl,
+                  cdnRiggedModelUrl: dbAsset.cdnRiggedModelUrl,
                   cdnFiles: dbAsset.cdnFiles,
                 };
                 filteredAssets.push(assetWithCDN);
