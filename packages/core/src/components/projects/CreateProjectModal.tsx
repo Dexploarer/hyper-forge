@@ -108,7 +108,6 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
                 placeholder="My Game Project"
                 className={errors.name ? "border-red-500" : ""}
                 disabled={loading}
-                autoFocus
               />
               {errors.name && (
                 <p className="mt-1 text-xs text-red-400">{errors.name}</p>

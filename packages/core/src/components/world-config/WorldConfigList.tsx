@@ -1,7 +1,12 @@
 import { Search, Plus, Filter, Globe } from "lucide-react";
 import React, { useState, useMemo } from "react";
 
-import { Button, Input, EmptyState } from "@/components/common";
+import {
+  Button,
+  Input,
+  EmptyState,
+  CollapsibleSection,
+} from "@/components/common";
 import type { WorldConfigurationData } from "@/services/api/WorldConfigAPIClient";
 
 import { WorldConfigCard } from "./WorldConfigCard";
@@ -185,10 +190,10 @@ export const WorldConfigList: React.FC<WorldConfigListProps> = ({
       {/* Active Configuration */}
       {activeConfig && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+          <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             Active Configuration
-          </h3>
+          </div>
           <WorldConfigCard
             config={activeConfig}
             selected={selectedId === activeConfig.id}
@@ -205,12 +210,11 @@ export const WorldConfigList: React.FC<WorldConfigListProps> = ({
 
       {/* Inactive Configurations */}
       {inactiveConfigs.length > 0 && (
-        <div className="space-y-2">
-          {activeConfig && (
-            <h3 className="text-sm font-semibold text-text-primary">
-              Other Configurations
-            </h3>
-          )}
+        <CollapsibleSection
+          title={activeConfig ? "Other Configurations" : "All Configurations"}
+          defaultOpen={true}
+          badge={inactiveConfigs.length.toString()}
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {inactiveConfigs.map((config) => (
               <WorldConfigCard
@@ -227,7 +231,7 @@ export const WorldConfigList: React.FC<WorldConfigListProps> = ({
               />
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
     </div>
   );

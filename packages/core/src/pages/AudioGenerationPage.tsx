@@ -217,9 +217,9 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-7xl mx-auto py-6 pb-12">
+      <div className="max-w-6xl mx-auto py-3 pb-4">
         {/* Header with tabs */}
-        <div className="mb-6">
+        <div className="mb-3">
           <TabNavigation
             activeView={activeView}
             generatedAudiosCount={generatedAudios.length}
@@ -232,7 +232,7 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
           <div className="animate-fade-in">
             {/* Audio List Button */}
             {generatedAudios.length > 0 && (
-              <div className="flex justify-end mb-6">
+              <div className="flex justify-end mb-3">
                 <Button
                   variant="secondary"
                   size="sm"
@@ -246,7 +246,7 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
             )}
 
             {/* Main Generation Card */}
-            <div className="max-w-4xl space-y-4">
+            <div className="mx-auto space-y-4">
               {audioType === "voice" && (
                 <VoiceGenerationCard
                   onGenerated={handleAudioGenerated}
@@ -281,7 +281,7 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
         {/* Results View */}
         {activeView === "results" && (
           <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold text-text-primary">
                 Generated Audio
               </h2>
@@ -297,7 +297,7 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
             </div>
 
             {/* Audio Preview */}
-            <div className="max-w-4xl">
+            <div className="mx-auto">
               {selectedAudio ? (
                 <AudioPreviewCard audio={selectedAudio} />
               ) : (

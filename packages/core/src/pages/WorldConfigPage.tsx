@@ -7,6 +7,7 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  Tray,
 } from "@/components/common";
 import {
   WorldConfigList,
@@ -59,7 +60,10 @@ export const WorldConfigPage: React.FC = () => {
       setConfigurations(configs);
     } catch (err) {
       // World config is optional - don't show error, just use empty array
-      console.warn("WorldConfigPage: Failed to load configurations (optional):", err);
+      console.warn(
+        "WorldConfigPage: Failed to load configurations (optional):",
+        err,
+      );
       setConfigurations([]);
     } finally {
       setLoading(false);
@@ -281,37 +285,35 @@ export const WorldConfigPage: React.FC = () => {
         </ModalFooter>
       </Modal>
 
-      {/* Preview Modal */}
-      <Modal
+      {/* Preview Tray */}
+      <Tray
         open={showPreviewModal}
         onClose={() => setShowPreviewModal(false)}
-        size="lg"
+        title="AI Context Preview"
+        defaultHeight="lg"
+        resizable={true}
       >
-        <ModalHeader>AI Context Preview</ModalHeader>
-        <ModalBody>
-          <div className="space-y-3">
-            <p className="text-sm text-text-secondary">
-              This is the context that will be prepended to AI generation
-              prompts:
-            </p>
-            <pre className="bg-bg-tertiary border border-border-primary rounded-lg p-4 overflow-x-auto text-xs text-text-primary font-mono max-h-[400px] overflow-y-auto whitespace-pre-wrap">
-              {previewContext}
-            </pre>
+        <div className="p-6 space-y-4">
+          <p className="text-sm text-text-secondary">
+            This is the context that will be prepended to AI generation prompts:
+          </p>
+          <pre className="bg-bg-tertiary border border-border-primary rounded-lg p-4 overflow-x-auto text-xs text-text-primary font-mono max-h-[400px] overflow-y-auto whitespace-pre-wrap">
+            {previewContext}
+          </pre>
+          <div className="flex justify-end gap-3 pt-4 border-t border-border-primary">
+            <Button
+              variant="secondary"
+              onClick={async () => {
+                await navigator.clipboard.writeText(previewContext);
+                notify.success("Copied to clipboard!");
+              }}
+            >
+              Copy to Clipboard
+            </Button>
+            <Button onClick={() => setShowPreviewModal(false)}>Close</Button>
           </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            variant="secondary"
-            onClick={async () => {
-              await navigator.clipboard.writeText(previewContext);
-              notify.success("Copied to clipboard!");
-            }}
-          >
-            Copy to Clipboard
-          </Button>
-          <Button onClick={() => setShowPreviewModal(false)}>Close</Button>
-        </ModalFooter>
-      </Modal>
+        </div>
+      </Tray>
 
       {/* Configuration Editor */}
       <WorldConfigEditor

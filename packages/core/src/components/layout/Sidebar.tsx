@@ -256,6 +256,12 @@ const NAVIGATION_STRUCTURE: NavSection[] = [
           label: "Playtester",
           description: "Test with AI feedback",
         },
+        {
+          view: NAVIGATION_VIEWS.WORLD_CONFIG,
+          icon: Globe,
+          label: "World Config",
+          description: "Manage world parameters",
+        },
       ],
     },
   },

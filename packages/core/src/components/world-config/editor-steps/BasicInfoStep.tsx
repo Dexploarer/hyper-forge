@@ -1,7 +1,14 @@
 import { Info, Tag, X } from "lucide-react";
 import React from "react";
 
-import { Input, Textarea, Button } from "@/components/common";
+import {
+  Input,
+  Textarea,
+  Button,
+  SelectOrCustom,
+  HelpTooltip,
+  Checkbox,
+} from "@/components/common";
 
 interface BasicInfoStepProps {
   data: {
@@ -76,8 +83,9 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
       {/* Configuration Name */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-text-primary">
+        <label className="text-sm font-medium text-text-primary flex items-center gap-2">
           Configuration Name <span className="text-red-400">*</span>
+          <HelpTooltip content="Give your world configuration a unique, descriptive name that helps identify it at a glance. This will be shown throughout the application when referencing this configuration." />
         </label>
         <Input
           value={data.name}
@@ -86,28 +94,24 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
           className="w-full"
           maxLength={255}
         />
-        <p className="text-xs text-text-tertiary">
-          Give your world configuration a descriptive name
-        </p>
       </div>
 
       {/* Genre */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-text-primary">
+        <label className="text-sm font-medium text-text-primary flex items-center gap-2">
           Genre <span className="text-red-400">*</span>
+          <HelpTooltip content="Select a predefined genre or enter a custom one that best describes your world's setting and atmosphere." />
         </label>
-        <select
+        <SelectOrCustom
           value={data.genre}
-          onChange={(e) => onChange({ ...data, genre: e.target.value })}
-          className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 [&>option]:bg-bg-tertiary [&>option]:text-text-primary"
-        >
-          <option value="">Select a genre</option>
-          {GENRES.map((genre) => (
-            <option key={genre} value={genre.toLowerCase().replace(/ /g, "-")}>
-              {genre}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => onChange({ ...data, genre: value })}
+          options={GENRES.filter((g) => g !== "Custom")}
+          label=""
+          placeholder="Select a genre or type your own..."
+          customPlaceholder="Enter custom genre..."
+          className="w-full"
+          allowEmpty={false}
+        />
         <p className="text-xs text-text-tertiary">
           Choose the primary genre that defines your world
         </p>
@@ -115,8 +119,9 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
 
       {/* Description */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-text-primary">
+        <label className="text-sm font-medium text-text-primary flex items-center gap-2">
           Description <span className="text-red-400">*</span>
+          <HelpTooltip content="Provide a comprehensive description of your world that captures its themes, setting, tone, and unique characteristics. This helps guide AI generation to match your vision." />
         </label>
         <Textarea
           value={data.description}
@@ -135,6 +140,7 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
         <label className="text-sm font-medium text-text-primary flex items-center gap-2">
           <Tag className="w-4 h-4" />
           Tags
+          <HelpTooltip content="Add searchable tags to categorize and quickly find this configuration. Tags help organize your world configs and make them easier to discover." />
         </label>
         <div className="flex items-center gap-2">
           <Input
@@ -179,23 +185,22 @@ export const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       {/* Template Option */}
       <div className="space-y-3 p-4 bg-bg-tertiary/30 rounded-lg border border-border-primary">
         <div className="flex items-start gap-3">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={data.isTemplate}
-            onChange={(e) =>
+            onChange={(checked) =>
               onChange({
                 ...data,
-                isTemplate: e.target.checked,
-                templateName: e.target.checked
+                isTemplate: checked,
+                templateName: checked
                   ? data.templateName || data.name
                   : undefined,
               })
             }
-            className="w-4 h-4 mt-0.5 text-primary bg-bg-tertiary border-border-primary rounded focus:ring-primary focus:ring-2"
           />
           <div className="flex-1">
-            <label className="text-sm font-medium text-text-primary cursor-pointer">
+            <label className="text-sm font-medium text-text-primary cursor-pointer flex items-center gap-2">
               Mark as Template
+              <HelpTooltip content="Save this configuration as a reusable template that can be quickly duplicated for new projects with similar settings." />
             </label>
             <p className="text-xs text-text-secondary mt-1">
               Templates can be reused to create new configurations quickly

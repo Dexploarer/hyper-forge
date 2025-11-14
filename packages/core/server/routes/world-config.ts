@@ -241,7 +241,7 @@ export const worldConfigRoutes = new Elysia({
       // DELETE /api/world-config/:id - Delete configuration
       .delete(
         "/:id",
-        async ({ params, request, headers }) => {
+        async ({ params, request, headers, set }) => {
           // Require authentication (any authenticated user can delete)
           const authResult = await requireAuth({ request, headers });
           if (authResult instanceof Response) {
@@ -650,7 +650,7 @@ export const worldConfigRoutes = new Elysia({
       // DELETE /api/world-config/:id/races/:raceId - Delete race
       .delete(
         "/:id/races/:raceId",
-        async ({ params, request, headers }) => {
+        async ({ params, request, headers, set }) => {
           // Require authentication (any authenticated user can delete)
           const authResult = await requireAuth({ request, headers });
           if (authResult instanceof Response) {
@@ -885,7 +885,7 @@ export const worldConfigRoutes = new Elysia({
       // DELETE /api/world-config/:id/factions/:factionId - Delete faction
       .delete(
         "/:id/factions/:factionId",
-        async ({ params, request, headers }) => {
+        async ({ params, request, headers, set }) => {
           // Require authentication (any authenticated user can delete)
           const authResult = await requireAuth({ request, headers });
           if (authResult instanceof Response) {
@@ -1121,7 +1121,7 @@ export const worldConfigRoutes = new Elysia({
       // DELETE /api/world-config/:id/skills/:skillId - Delete skill
       .delete(
         "/:id/skills/:skillId",
-        async ({ params, request, headers }) => {
+        async ({ params, request, headers, set }) => {
           // Require authentication (any authenticated user can delete)
           const authResult = await requireAuth({ request, headers });
           if (authResult instanceof Response) {

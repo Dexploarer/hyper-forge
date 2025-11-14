@@ -34,8 +34,8 @@ export function HandRiggingPage() {
   const simpleHandRiggingService = useRef<SimpleHandRiggingService | null>(
     null,
   );
-  const [showAssetsPanel, setShowAssetsPanel] = useState(false);
-  const [showControlsPanel, setShowControlsPanel] = useState(false);
+  const [showAssetsPanel, setShowAssetsPanel] = useState(true);
+  const [showControlsPanel, setShowControlsPanel] = useState(true);
   const [showDebugPanel, setShowDebugPanel] = useState(false);
   const [showHelpPanel, setShowHelpPanel] = useState(false);
 

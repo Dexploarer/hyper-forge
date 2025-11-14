@@ -11,7 +11,13 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 
-import { Badge, Card, CardContent, QuickActionMenu } from "@/components/common";
+import {
+  Badge,
+  Card,
+  CardContent,
+  QuickActionMenu,
+  Progress,
+} from "@/components/common";
 import type { QuickAction } from "@/components/common";
 import type { WorldConfigurationData } from "@/services/api/WorldConfigAPIClient";
 import { cn } from "@/styles";
@@ -67,6 +73,36 @@ export const WorldConfigCard: React.FC<WorldConfigCardProps> = ({
   const genreColor =
     GENRE_COLORS[config.genre.toLowerCase()] || GENRE_COLORS.default;
   const genreIcon = GENRE_ICONS[config.genre.toLowerCase()] || "🌍";
+
+  // Calculate completeness percentage
+  const calculateCompleteness = (): number => {
+    let totalFields = 0;
+    let filledFields = 0;
+
+    // Basic fields (always counted)
+    totalFields += 4; // name, description, genre, tags
+    if (config.name) filledFields++;
+    if (config.description) filledFields++;
+    if (config.genre) filledFields++;
+    if (config.tags && config.tags.length > 0) filledFields++;
+
+    // Optional data fields
+    totalFields += 4; // races, factions, skills, npcCategories
+    if (config.races && config.races.length > 0) filledFields++;
+    if (config.factions && config.factions.length > 0) filledFields++;
+    if (config.skills && config.skills.length > 0) filledFields++;
+    if (config.npcCategories && config.npcCategories.length > 0) filledFields++;
+
+    return Math.round((filledFields / totalFields) * 100);
+  };
+
+  const completeness = calculateCompleteness();
+  const getCompletenessVariant = () => {
+    if (completeness >= 75) return "success";
+    if (completeness >= 50) return "primary";
+    if (completeness >= 25) return "warning";
+    return "error";
+  };
 
   const actions: QuickAction[] = [
     ...(onPreview
@@ -230,6 +266,19 @@ export const WorldConfigCard: React.FC<WorldConfigCardProps> = ({
               {config.races.length} races, {config.factions.length} factions
             </span>
           </div>
+        </div>
+
+        {/* Completeness Progress */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-xs text-text-tertiary mb-1">
+            <span>Configuration Completeness</span>
+            <span className="font-medium">{completeness}%</span>
+          </div>
+          <Progress
+            value={completeness}
+            variant={getCompletenessVariant()}
+            size="sm"
+          />
         </div>
 
         {/* Status Badges */}

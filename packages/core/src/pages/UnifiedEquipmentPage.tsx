@@ -33,8 +33,8 @@ export const UnifiedEquipmentPage: React.FC = () => {
   const { assets, loading } = useAssets();
   const armorViewerRef = useRef<ArmorFittingViewerRef>(null);
   const weaponViewerRef = useRef<EquipmentViewerRef>(null);
-  const [showControlsDrawer, setShowControlsDrawer] = useState(false);
-  const [showAssetDrawer, setShowAssetDrawer] = useState(false);
+  const [showControlsDrawer, setShowControlsDrawer] = useState(true);
+  const [showAssetDrawer, setShowAssetDrawer] = useState(true);
 
   // Get state and actions from unified store
   const {

@@ -122,9 +122,9 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-7xl mx-auto py-4 pb-6">
+      <div className="max-w-6xl mx-auto py-3 pb-4">
         {/* Header with tabs */}
-        <div className="mb-4">
+        <div className="mb-3">
           <TabNavigation
             activeView={activeView}
             generatedContentsCount={generatedContents.length}
@@ -135,7 +135,7 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
         {/* Config View */}
         {activeView === "config" && (
           <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               {/* Back Button */}
               <Button
                 variant="ghost"
@@ -162,7 +162,7 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
             </div>
 
             {/* Main Generation Card */}
-            <div className="max-w-4xl">
+            <div className="mx-auto">
               {contentType === "npc" && (
                 <NPCGenerationCard
                   onGenerated={(npc, raw) =>
@@ -211,7 +211,7 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
         {/* Results View */}
         {activeView === "results" && (
           <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-semibold text-text-primary">
                 Generated Content
               </h2>
@@ -227,7 +227,7 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
             </div>
 
             {/* Content Preview */}
-            <div className="max-w-4xl">
+            <div className="mx-auto">
               {selectedContent ? (
                 <ContentPreviewCard content={selectedContent} />
               ) : (
