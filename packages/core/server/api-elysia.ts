@@ -168,10 +168,10 @@ const app = new Elysia()
     );
 
     // Initialize WebSocket client to CDN (if configured)
-    if (process.env.CDN_WS_URL && env.CDN_API_KEY) {
+    if (env.CDN_WS_URL && env.CDN_API_KEY) {
       logger.info({}, "[CDN WebSocket] Initializing connection to CDN...");
       const cdnWebSocket = new CDNWebSocketService(
-        process.env.CDN_WS_URL,
+        env.CDN_WS_URL,
         env.CDN_API_KEY,
       );
 

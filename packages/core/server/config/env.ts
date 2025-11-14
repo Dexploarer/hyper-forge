@@ -121,6 +121,19 @@ const envSchema = z.object({
       { message: "Must be a valid URL if provided" },
     ),
   CDN_API_KEY: z.string().optional(),
+  CDN_WS_URL: z
+    .string()
+    .optional()
+    .refine(
+      (val) =>
+        !val ||
+        val === "" ||
+        val.startsWith("ws://") ||
+        val.startsWith("wss://"),
+      {
+        message: "Must be a valid WebSocket URL (ws:// or wss://) if provided",
+      },
+    ),
   AUTO_PUBLISH_TO_CDN: z
     .string()
     .optional()
