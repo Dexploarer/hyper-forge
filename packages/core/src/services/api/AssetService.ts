@@ -41,6 +41,9 @@ export interface Asset {
   cdnConceptArtUrl?: string; // CDN URL for concept art
   cdnRiggedModelUrl?: string; // CDN URL for rigged/animated model
   cdnFiles?: string[]; // Array of all CDN file URLs
+
+  // Backward compatibility - populated from cdnUrl by frontend AssetService
+  modelUrl?: string; // Alias for cdnUrl, used by legacy components
 }
 
 export interface RetextureRequest {
@@ -75,7 +78,14 @@ class AssetServiceClass {
       throw new Error("Failed to fetch assets");
     }
 
-    return data as Asset[];
+    // Transform backend response to include modelUrl for backward compatibility
+    // Backend returns cdnUrl, but frontend components expect modelUrl
+    const assets = data as Asset[];
+    return assets.map((asset) => ({
+      ...asset,
+      // Set modelUrl from cdnUrl for backward compatibility with components
+      modelUrl: asset.cdnUrl || undefined,
+    }));
   }
 
   async getMaterialPresets(): Promise<MaterialPreset[]> {
