@@ -41,6 +41,7 @@ import type {
   DialogueData,
   LoreData,
 } from "@/types/content";
+import { AudioLibraryCard } from "./AudioLibraryCard";
 
 interface LibraryCardProps {
   item: ContentItem;
@@ -1258,8 +1259,6 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       case "lore":
         return renderLoreCard();
       case "audio":
-        // Import and render AudioLibraryCard
-        const { AudioLibraryCard } = require("./AudioLibraryCard");
         return (
           <AudioLibraryCard
             item={item}
