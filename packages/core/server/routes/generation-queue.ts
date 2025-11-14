@@ -63,6 +63,12 @@ export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
           error: t.String(),
         }),
       },
+      detail: {
+        tags: ["Generation Queue"],
+        summary: "Get generation job status",
+        description:
+          "Returns the current status, progress, and details of a generation job by pipeline ID. Use this endpoint to poll for job completion.",
+      },
     },
   )
 
@@ -118,6 +124,12 @@ export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
       params: t.Object({
         pipelineId: t.String(),
       }),
+      detail: {
+        tags: ["Generation Queue"],
+        summary: "Stream job status via Server-Sent Events",
+        description:
+          "Real-time updates for generation job progress using SSE. Automatically closes connection when job completes or fails. Updates sent every 2 seconds.",
+      },
     },
   )
 
@@ -168,25 +180,42 @@ export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
       params: t.Object({
         pipelineId: t.String(),
       }),
+      detail: {
+        tags: ["Generation Queue"],
+        summary: "Cancel a generation job",
+        description:
+          "Cancels a generation job that is currently initializing or processing. Jobs that are already completed or failed cannot be cancelled.",
+      },
     },
   )
 
   /**
    * Get queue statistics
    */
-  .get("/queue/stats", async () => {
-    const stats = await redisQueueService.getStats();
+  .get(
+    "/queue/stats",
+    async () => {
+      const stats = await redisQueueService.getStats();
 
-    return {
-      queues: {
-        high: stats.high,
-        normal: stats.normal,
-        low: stats.low,
+      return {
+        queues: {
+          high: stats.high,
+          normal: stats.normal,
+          low: stats.low,
+        },
+        total: stats.total,
+        timestamp: new Date().toISOString(),
+      };
+    },
+    {
+      detail: {
+        tags: ["Generation Queue"],
+        summary: "Get queue statistics",
+        description:
+          "Returns statistics for all generation queues (high, normal, low priority) including job counts and totals.",
       },
-      total: stats.total,
-      timestamp: new Date().toISOString(),
-    };
-  })
+    },
+  )
 
   /**
    * Get user's jobs
@@ -219,5 +248,11 @@ export const generationQueueRoutes = new Elysia({ prefix: "/api/generation" })
       query: t.Object({
         limit: t.Optional(t.String()),
       }),
+      detail: {
+        tags: ["Generation Queue"],
+        summary: "Get user's generation jobs",
+        description:
+          "Returns a list of generation jobs for a specific user, with optional limit parameter (default 50).",
+      },
     },
   );

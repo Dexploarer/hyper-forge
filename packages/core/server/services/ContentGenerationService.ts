@@ -160,7 +160,7 @@ export class ContentGenerationService {
 
     const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
-    console.log(
+    logger.info(
       `[ContentGeneration] Generating dialogue${npcName ? ` for NPC: ${npcName}` : ""}`,
     );
 
@@ -207,7 +207,7 @@ export class ContentGenerationService {
     const basePrompt = this.buildNPCPrompt(userPrompt, archetype, context);
     const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
-    console.log(
+    logger.info(
       `[ContentGeneration] Generating NPC${archetype ? ` with archetype: ${archetype}` : ""}`,
     );
 
@@ -282,7 +282,7 @@ export class ContentGenerationService {
 
     const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
-    console.log(
+    logger.info(
       `[ContentGeneration] Generating${difficulty ? ` ${difficulty}` : ""}${questType ? ` ${questType}` : ""} quest`,
     );
 
@@ -349,7 +349,7 @@ export class ContentGenerationService {
     );
     const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
 
-    console.log(
+    logger.info(
       `[ContentGeneration] Generating lore${category ? ` for: ${category}` : ""}${topic ? ` - ${topic}` : ""}`,
     );
 
@@ -427,7 +427,7 @@ export class ContentGenerationService {
       },
     };
 
-    console.log(
+    logger.info(
       `[ContentGeneration] Generated world: ${completeWorld.worldName}`,
     );
 

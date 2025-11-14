@@ -1,8 +1,9 @@
 /**
-import { apiFetch } from "@/utils/api";
  * Audio API Client
  * Client for ElevenLabs voice, sound effects, and music generation
  */
+
+import { apiFetch } from "@/utils/api";
 
 import type {
   Voice,

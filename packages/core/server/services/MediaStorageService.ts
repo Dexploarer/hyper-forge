@@ -45,7 +45,7 @@ export class MediaStorageService {
     this.cdnApiKey = process.env.CDN_API_KEY || "";
 
     if (!this.cdnApiKey) {
-      console.warn(
+      logger.warn(
         "[MediaStorageService] CDN_API_KEY not set - media uploads will fail!",
       );
     }
@@ -200,7 +200,7 @@ export class MediaStorageService {
         ),
       );
 
-    console.log(
+    logger.info(
       `[MediaStorage] Found ${assets.length} media assets for ${entityType}:${entityId}`,
     );
 
@@ -273,7 +273,7 @@ export class MediaStorageService {
         });
 
         if (!response.ok) {
-          console.warn(
+          logger.warn(
             `[MediaStorage] Failed to delete from CDN: ${response.statusText}`,
           );
         } else {

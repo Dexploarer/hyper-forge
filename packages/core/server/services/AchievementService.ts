@@ -50,7 +50,7 @@ export class AchievementService {
 
       return allAchievements;
     } catch (error) {
-      console.error(
+      logger.error(
         "[AchievementService] Failed to get all achievements:",
         error,
       );
@@ -69,7 +69,7 @@ export class AchievementService {
 
       return achievement || null;
     } catch (error) {
-      console.error(
+      logger.error(
         `[AchievementService] Failed to get achievement by code: ${code}`,
         error,
       );
@@ -124,7 +124,7 @@ export class AchievementService {
 
       return progress;
     } catch (error) {
-      console.error(
+      logger.error(
         `[AchievementService] Failed to get user achievements: ${userId}`,
         error,
       );
@@ -193,7 +193,7 @@ export class AchievementService {
         recentAchievements,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[AchievementService] Failed to get user achievement summary: ${userId}`,
         error,
       );
@@ -274,7 +274,7 @@ export class AchievementService {
           })
           .returning();
 
-        console.log(
+        logger.info(
           `[AchievementService] Awarded achievement ${achievementCode} to user ${userId}`,
         );
 
@@ -290,7 +290,7 @@ export class AchievementService {
         },
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[AchievementService] Failed to award achievement: ${achievementCode}`,
         error,
       );
@@ -452,7 +452,7 @@ export class AchievementService {
         },
       };
     } catch (error) {
-      console.error(
+      logger.error(
         `[AchievementService] Failed to update progress: ${achievementCode}`,
         error,
       );
@@ -568,7 +568,7 @@ export class AchievementService {
           const existing = await this.getAchievementByCode(achievement.code);
           if (!existing) {
             await db.insert(achievements).values(achievement);
-            console.log(
+            logger.info(
               `[AchievementService] Created default achievement: ${achievement.code}`,
             );
           } else {
@@ -604,13 +604,13 @@ export class AchievementService {
                   updatedAt: new Date(),
                 })
                 .where(eq(achievements.code, achievement.code));
-              console.log(
+              logger.info(
                 `[AchievementService] Updated achievement definition: ${achievement.code}`,
               );
             }
           }
         } catch (innerError) {
-          console.warn(
+          logger.warn(
             `[AchievementService] Failed to create/update achievement ${achievement.code}:`,
             innerError,
           );
@@ -620,7 +620,7 @@ export class AchievementService {
 
       logger.info({ }, '[AchievementService] Achievement initialization complete');
     } catch (error) {
-      console.error(
+      logger.error(
         "[AchievementService] Failed to initialize default achievements:",
         error,
       );

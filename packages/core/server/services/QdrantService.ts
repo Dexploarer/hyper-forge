@@ -63,7 +63,7 @@ export class QdrantService {
     if (!qdrantUrl) {
       // Don't throw - just create a null client
       // This allows the server to start even if Qdrant is not configured
-      console.warn(
+      logger.warn(
         "[QdrantService] QDRANT_URL not configured - vector search will not be available",
       );
       this.client = null as any; // Will be checked before use
@@ -78,7 +78,7 @@ export class QdrantService {
     ) {
       // Default to http:// for Railway internal URLs or localhost
       normalizedUrl = `http://${normalizedUrl}`;
-      console.log(
+      logger.info(
         `[QdrantService] Added http:// protocol to URL: ${normalizedUrl}`,
       );
     } else if (
@@ -87,7 +87,7 @@ export class QdrantService {
     ) {
       // Railway internal networking doesn't support HTTPS - convert to HTTP
       normalizedUrl = normalizedUrl.replace("https://", "http://");
-      console.log(
+      logger.info(
         `[QdrantService] Converted HTTPS to HTTP for Railway internal URL: ${normalizedUrl}`,
       );
     }
@@ -120,7 +120,7 @@ export class QdrantService {
    */
   async initializeCollections(): Promise<void> {
     if (!this.isAvailable()) {
-      console.warn(
+      logger.warn(
         "[QdrantService] Client not available - skipping initialization",
       );
       return;
@@ -172,7 +172,7 @@ export class QdrantService {
       // Create indexes for common payload fields
       await this.createPayloadIndexes(name);
     } catch (error) {
-      console.error(
+      logger.error(
         `[QdrantService] Error ensuring collection '${name}':`,
         error,
       );
@@ -224,12 +224,12 @@ export class QdrantService {
         });
       }
 
-      console.log(
+      logger.info(
         `[QdrantService] Created payload indexes for '${collection}'`,
       );
     } catch (error) {
       // Indexes might already exist, log but don't fail
-      console.warn(
+      logger.warn(
         `[QdrantService] Could not create some indexes for '${collection}'`,
       );
     }
@@ -270,7 +270,7 @@ export class QdrantService {
         `Upserted point ${id} to '${collection}'`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[QdrantService] Error upserting to '${collection}':`,
         error,
       );
@@ -299,11 +299,11 @@ export class QdrantService {
         })),
       });
 
-      console.log(
+      logger.info(
         `[QdrantService] Batch upserted ${points.length} points to '${collection}'`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[QdrantService] Error batch upserting to '${collection}':`,
         error,
       );
@@ -389,7 +389,7 @@ export class QdrantService {
           payload: result.payload as Record<string, unknown>,
         }));
     } catch (error) {
-      console.error(
+      logger.error(
         `[QdrantService] Error finding similar in '${collection}':`,
         error,
       );
@@ -412,7 +412,7 @@ export class QdrantService {
         `Deleted point ${id} from '${collection}'`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[QdrantService] Error deleting from '${collection}':`,
         error,
       );
@@ -430,11 +430,11 @@ export class QdrantService {
         points: ids,
       });
 
-      console.log(
+      logger.info(
         `[QdrantService] Deleted ${ids.length} points from '${collection}'`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[QdrantService] Error batch deleting from '${collection}':`,
         error,
       );
@@ -450,7 +450,7 @@ export class QdrantService {
       const info = await this.client.getCollection(collection);
       return info;
     } catch (error) {
-      console.error(
+      logger.error(
         `[QdrantService] Error getting collection info for '${collection}':`,
         error,
       );
@@ -466,7 +466,7 @@ export class QdrantService {
       const info = await this.client.getCollection(collection);
       return info.points_count || 0;
     } catch (error) {
-      console.error(
+      logger.error(
         `[QdrantService] Error counting points in '${collection}':`,
         error,
       );
@@ -500,7 +500,7 @@ export class QdrantService {
         return true;
       }
 
-      console.error(
+      logger.error(
         `[QdrantService] Health check returned status ${response.status}`,
       );
       return false;

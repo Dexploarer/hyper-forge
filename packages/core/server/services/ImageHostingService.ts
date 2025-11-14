@@ -52,7 +52,7 @@ export class ImageHostingService {
       // If it's a data URI and small enough, return it
       if (typeof imageDataOrPath === 'string' && imageDataOrPath.startsWith('data:')) {
         if (imageDataOrPath.length < 5000000) { // Less than 5MB
-          console.log('📸 Using data URI directly (no public hosting configured)')
+          logger.info('📸 Using data URI directly (no public hosting configured)')
           return imageDataOrPath
         } else {
           throw new Error('Image too large for data URI and no public hosting configured')
@@ -63,7 +63,7 @@ export class ImageHostingService {
       throw new Error('No public image hosting service configured. Set IMGUR_CLIENT_ID in .env or use ngrok.')
 
     } catch (error) {
-      console.error('Failed to upload image:', error)
+      logger.error('Failed to upload image:', error)
       throw error
     }
   }
@@ -99,11 +99,11 @@ export class ImageHostingService {
       }
 
       const data = await response.json() as ImgurUploadResponse
-      console.log('✅ Image uploaded to Imgur:', data.data.link)
+      logger.info('✅ Image uploaded to Imgur:', data.data.link)
       return data.data.link
 
     } catch (error) {
-      console.error('Imgur upload error:', error)
+      logger.error('Imgur upload error:', error)
       throw error
     }
   }

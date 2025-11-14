@@ -71,7 +71,7 @@ export class WorldConfigService {
 
       return results;
     } catch (error) {
-      console.error(
+      logger.error(
         "[WorldConfigService] Error listing configurations:",
         error,
       );
@@ -93,7 +93,7 @@ export class WorldConfigService {
 
       return results[0] || null;
     } catch (error) {
-      console.error(
+      logger.error(
         `[WorldConfigService] Error getting configuration ${id}:`,
         error,
       );
@@ -114,7 +114,7 @@ export class WorldConfigService {
 
       return results[0] || null;
     } catch (error) {
-      console.error(
+      logger.error(
         "[WorldConfigService] Error getting active configuration:",
         error,
       );
@@ -181,12 +181,12 @@ export class WorldConfigService {
         "Configuration created",
       );
 
-      console.log(
+      logger.info(
         `[WorldConfigService] Created configuration: ${created.name}`,
       );
       return created;
     } catch (error) {
-      console.error(
+      logger.error(
         "[WorldConfigService] Error creating configuration:",
         error,
       );
@@ -241,7 +241,7 @@ export class WorldConfigService {
       );
       return updated;
     } catch (error) {
-      console.error(
+      logger.error(
         `[WorldConfigService] Error updating configuration ${id}:`,
         error,
       );
@@ -294,12 +294,12 @@ export class WorldConfigService {
         [section],
       );
 
-      console.log(
+      logger.info(
         `[WorldConfigService] Updated section ${section} for config: ${id}`,
       );
       return updated;
     } catch (error) {
-      console.error(
+      logger.error(
         `[WorldConfigService] Error updating section ${section} for ${id}:`,
         error,
       );
@@ -330,7 +330,7 @@ export class WorldConfigService {
         `Deleted configuration: ${id}`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[WorldConfigService] Error deleting configuration ${id}:`,
         error,
       );
@@ -373,12 +373,12 @@ export class WorldConfigService {
         "Configuration activated",
       );
 
-      console.log(
+      logger.info(
         `[WorldConfigService] Activated configuration: ${activated.name}`,
       );
       return activated;
     } catch (error) {
-      console.error(
+      logger.error(
         `[WorldConfigService] Error activating configuration ${id}:`,
         error,
       );
@@ -514,7 +514,7 @@ export class WorldConfigService {
         createdBy,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         "[WorldConfigService] Error creating from template:",
         error,
       );
@@ -547,7 +547,7 @@ export class WorldConfigService {
 
       return exportData;
     } catch (error) {
-      console.error(
+      logger.error(
         `[WorldConfigService] Error exporting configuration ${id}:`,
         error,
       );
@@ -624,7 +624,7 @@ export class WorldConfigService {
       );
       return imported;
     } catch (error) {
-      console.error(
+      logger.error(
         "[WorldConfigService] Error importing configuration:",
         error,
       );
@@ -728,7 +728,7 @@ export class WorldConfigService {
 
       return { valid, errors };
     } catch (error) {
-      console.error(
+      logger.error(
         `[WorldConfigService] Error validating configuration ${id}:`,
         error,
       );
@@ -932,7 +932,7 @@ Use this world configuration as the foundation for all generated content. Ensure
 
       return { context, sections };
     } catch (error) {
-      console.error(
+      logger.error(
         `[WorldConfigService] Error building AI context for ${id}:`,
         error,
       );
@@ -961,7 +961,7 @@ Use this world configuration as the foundation for all generated content. Ensure
 
       return results;
     } catch (error) {
-      console.error(
+      logger.error(
         `[WorldConfigService] Error getting history for ${configId}:`,
         error,
       );

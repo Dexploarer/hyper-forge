@@ -1,8 +1,9 @@
 /**
-import { apiFetch } from "@/utils/api";
  * Achievements API Client
  * Client for user achievements and medals management
  */
+
+import { apiFetch } from "@/utils/api";
 
 import { getAuthToken } from "@/utils/auth-token-store";
 

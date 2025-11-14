@@ -4,6 +4,7 @@
  */
 
 import { ElevenLabsClient, type ElevenLabs } from "@elevenlabs/elevenlabs-js";
+import { logger } from '../utils/logger';
 
 // Simplified composition plan from API (gets converted to ElevenLabs.MusicPrompt)
 export interface SimpleCompositionPlan {

@@ -129,7 +129,7 @@ export class AssetService {
     // Delete the main asset from database
     await db.delete(assets).where(eq(assets.id, assetId));
 
-    console.log(
+    logger.info(
       `[AssetService] Deleted asset ${assetId} from database (CDN files persist)`,
     );
     return true;

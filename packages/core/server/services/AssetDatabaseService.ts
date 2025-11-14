@@ -48,7 +48,7 @@ export class AssetDatabaseService {
           })
           .returning();
 
-        console.log(
+        logger.info(
           `[AssetDatabaseService] Created database record for asset: ${assetId}`,
         );
 
@@ -57,7 +57,7 @@ export class AssetDatabaseService {
 
       // Generate and index embedding (async, don't block)
       this.indexAssetEmbedding(asset).catch((error) => {
-        console.warn(
+        logger.warn(
           `[AssetDatabaseService] Failed to index embedding for ${assetId}:`,
           error,
         );
@@ -65,7 +65,7 @@ export class AssetDatabaseService {
 
       return asset;
     } catch (error) {
-      console.error(
+      logger.error(
         `[AssetDatabaseService] Failed to create asset record:`,
         error,
       );
@@ -89,7 +89,7 @@ export class AssetDatabaseService {
         .limit(1);
 
       if (existingAssets.length === 0) {
-        console.warn(
+        logger.warn(
           `[AssetDatabaseService] No database record found for asset: ${assetId}`,
         );
         return null;
@@ -104,13 +104,13 @@ export class AssetDatabaseService {
         .where(eq(assets.id, existingAssets[0].id))
         .returning();
 
-      console.log(
+      logger.info(
         `[AssetDatabaseService] Updated database record for asset: ${assetId}`,
       );
 
       // Regenerate and update embedding (async, don't block)
       this.indexAssetEmbedding(updated).catch((error) => {
-        console.warn(
+        logger.warn(
           `[AssetDatabaseService] Failed to re-index embedding for ${assetId}:`,
           error,
         );
@@ -118,7 +118,7 @@ export class AssetDatabaseService {
 
       return updated;
     } catch (error) {
-      console.error(
+      logger.error(
         `[AssetDatabaseService] Failed to update asset record:`,
         error,
       );
@@ -143,21 +143,21 @@ export class AssetDatabaseService {
         .delete(assets)
         .where(eq(assets.filePath, `${assetId}/${assetId}.glb`));
 
-      console.log(
+      logger.info(
         `[AssetDatabaseService] Deleted database record for asset: ${assetId}`,
       );
 
       // Delete from Qdrant (async, don't block)
       if (existingAssets.length > 0 && process.env.QDRANT_URL) {
         qdrantService.delete("assets", existingAssets[0].id).catch((error) => {
-          console.warn(
+          logger.warn(
             `[AssetDatabaseService] Failed to delete embedding for ${assetId}:`,
             error,
           );
         });
       }
     } catch (error) {
-      console.error(
+      logger.error(
         `[AssetDatabaseService] Failed to delete asset record:`,
         error,
       );
@@ -221,7 +221,7 @@ export class AssetDatabaseService {
         },
       });
 
-      console.log(
+      logger.info(
         `[AssetDatabaseService] Indexed embedding for asset: ${asset.id}`,
       );
     } catch (error) {

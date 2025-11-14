@@ -198,7 +198,7 @@ class ImageGenerationService {
       ? "google/gemini-2.5-flash-image"
       : this.model;
 
-    console.log(
+    logger.info(
       `🎨 Using ${useAIGateway ? "Vercel AI Gateway" : "direct OpenAI API"} for image generation (model: ${modelName})`,
     );
 

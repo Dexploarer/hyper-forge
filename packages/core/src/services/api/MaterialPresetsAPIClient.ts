@@ -1,8 +1,9 @@
 /**
-import { apiFetch } from "@/utils/api";
  * Material Presets API Client
  * Client for managing material preset configurations
  */
+
+import { apiFetch } from "@/utils/api";
 
 const API_BASE = '/api'
 

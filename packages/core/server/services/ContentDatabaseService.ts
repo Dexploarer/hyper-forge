@@ -50,7 +50,7 @@ export class ContentDatabaseService {
 
       // Index to Qdrant (async, don't block)
       this.indexNPC(npc).catch((error) => {
-        console.warn(
+        logger.warn(
           `[ContentDatabaseService] Failed to index NPC embedding:`,
           error,
         );
@@ -130,7 +130,7 @@ export class ContentDatabaseService {
 
       // Re-index to Qdrant (async, don't block)
       this.indexNPC(npc).catch((error) => {
-        console.warn(
+        logger.warn(
           `[ContentDatabaseService] Failed to re-index NPC embedding:`,
           error,
         );
@@ -157,7 +157,7 @@ export class ContentDatabaseService {
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
         qdrantService.delete("npcs", id).catch((error) => {
-          console.warn(
+          logger.warn(
             `[ContentDatabaseService] Failed to delete NPC embedding:`,
             error,
           );
@@ -197,7 +197,7 @@ export class ContentDatabaseService {
 
       // Index to Qdrant (async, don't block)
       this.indexQuest(quest).catch((error) => {
-        console.warn(
+        logger.warn(
           `[ContentDatabaseService] Failed to index Quest embedding:`,
           error,
         );
@@ -277,7 +277,7 @@ export class ContentDatabaseService {
 
       // Re-index to Qdrant (async, don't block)
       this.indexQuest(quest).catch((error) => {
-        console.warn(
+        logger.warn(
           `[ContentDatabaseService] Failed to re-index Quest embedding:`,
           error,
         );
@@ -307,7 +307,7 @@ export class ContentDatabaseService {
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
         qdrantService.delete("quests", id).catch((error) => {
-          console.warn(
+          logger.warn(
             `[ContentDatabaseService] Failed to delete Quest embedding:`,
             error,
           );
@@ -340,13 +340,13 @@ export class ContentDatabaseService {
         })
         .returning();
 
-      console.log(
+      logger.info(
         `[ContentDatabaseService] Created Dialogue for: ${dialogue.npcName}`,
       );
 
       // Index to Qdrant (async, don't block)
       this.indexDialogue(dialogue).catch((error) => {
-        console.warn(
+        logger.warn(
           `[ContentDatabaseService] Failed to index Dialogue embedding:`,
           error,
         );
@@ -354,7 +354,7 @@ export class ContentDatabaseService {
 
       return dialogue;
     } catch (error) {
-      console.error(
+      logger.error(
         `[ContentDatabaseService] Failed to create Dialogue:`,
         error,
       );
@@ -397,7 +397,7 @@ export class ContentDatabaseService {
 
       return result;
     } catch (error) {
-      console.error(
+      logger.error(
         `[ContentDatabaseService] Failed to list Dialogues:`,
         error,
       );
@@ -422,13 +422,13 @@ export class ContentDatabaseService {
         .where(eq(dialogues.id, id))
         .returning();
 
-      console.log(
+      logger.info(
         `[ContentDatabaseService] Updated Dialogue for: ${dialogue.npcName}`,
       );
 
       // Re-index to Qdrant (async, don't block)
       this.indexDialogue(dialogue).catch((error) => {
-        console.warn(
+        logger.warn(
           `[ContentDatabaseService] Failed to re-index Dialogue embedding:`,
           error,
         );
@@ -436,7 +436,7 @@ export class ContentDatabaseService {
 
       return dialogue;
     } catch (error) {
-      console.error(
+      logger.error(
         `[ContentDatabaseService] Failed to update Dialogue:`,
         error,
       );
@@ -458,14 +458,14 @@ export class ContentDatabaseService {
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
         qdrantService.delete("dialogues", id).catch((error) => {
-          console.warn(
+          logger.warn(
             `[ContentDatabaseService] Failed to delete Dialogue embedding:`,
             error,
           );
         });
       }
     } catch (error) {
-      console.error(
+      logger.error(
         `[ContentDatabaseService] Failed to delete Dialogue:`,
         error,
       );
@@ -498,7 +498,7 @@ export class ContentDatabaseService {
 
       // Index to Qdrant (async, don't block)
       this.indexLore(lore).catch((error) => {
-        console.warn(
+        logger.warn(
           `[ContentDatabaseService] Failed to index Lore embedding:`,
           error,
         );
@@ -578,7 +578,7 @@ export class ContentDatabaseService {
 
       // Re-index to Qdrant (async, don't block)
       this.indexLore(lore).catch((error) => {
-        console.warn(
+        logger.warn(
           `[ContentDatabaseService] Failed to re-index Lore embedding:`,
           error,
         );
@@ -605,7 +605,7 @@ export class ContentDatabaseService {
       // Delete from Qdrant (async, don't block)
       if (process.env.QDRANT_URL) {
         qdrantService.delete("lore", id).catch((error) => {
-          console.warn(
+          logger.warn(
             `[ContentDatabaseService] Failed to delete Lore embedding:`,
             error,
           );
@@ -655,7 +655,7 @@ export class ContentDatabaseService {
         `Indexed NPC to Qdrant: ${npc.id}`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[ContentDatabaseService] Error indexing NPC ${npc.id} to Qdrant:`,
         error,
       );
@@ -690,11 +690,11 @@ export class ContentDatabaseService {
         },
       });
 
-      console.log(
+      logger.info(
         `[ContentDatabaseService] Indexed Quest to Qdrant: ${quest.id}`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[ContentDatabaseService] Error indexing Quest ${quest.id} to Qdrant:`,
         error,
       );
@@ -729,11 +729,11 @@ export class ContentDatabaseService {
         },
       });
 
-      console.log(
+      logger.info(
         `[ContentDatabaseService] Indexed Lore to Qdrant: ${lore.id}`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[ContentDatabaseService] Error indexing Lore ${lore.id} to Qdrant:`,
         error,
       );
@@ -766,11 +766,11 @@ export class ContentDatabaseService {
         },
       });
 
-      console.log(
+      logger.info(
         `[ContentDatabaseService] Indexed Dialogue to Qdrant: ${dialogue.id}`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[ContentDatabaseService] Error indexing Dialogue ${dialogue.id} to Qdrant:`,
         error,
       );

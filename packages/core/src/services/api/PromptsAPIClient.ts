@@ -1,8 +1,9 @@
 /**
-import { apiFetch } from "@/utils/api";
  * Prompts API Client
  * Client for fetching various prompt configuration files
  */
+
+import { apiFetch } from "@/utils/api";
 
 const API_BASE = '/api/prompts'
 

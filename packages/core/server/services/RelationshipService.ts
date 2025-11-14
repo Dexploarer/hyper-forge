@@ -70,7 +70,7 @@ export class RelationshipService {
       .values(relationship)
       .returning();
 
-    console.log(
+    logger.info(
       `[RelationshipService] Created ${params.relationshipType} relationship: ${params.sourceType}:${params.sourceId} -> ${params.targetType}:${params.targetId}`,
     );
 
@@ -105,7 +105,7 @@ export class RelationshipService {
         .values(relationships)
         .returning();
 
-      console.log(
+      logger.info(
         `[RelationshipService] Created ${result.length} relationships`,
       );
 
@@ -191,7 +191,7 @@ export class RelationshipService {
 
     const relationships = await query;
 
-    console.log(
+    logger.info(
       `[RelationshipService] Found ${relationships.length} relationships for ${entityType}:${entityId}`,
     );
 
@@ -249,7 +249,7 @@ export class RelationshipService {
 
     const relatedEntities = Array.from(relatedEntitiesMap.values());
 
-    console.log(
+    logger.info(
       `[RelationshipService] Built graph for ${entityType}:${entityId} - ${relatedEntities.length} related entities`,
     );
 
@@ -269,7 +269,7 @@ export class RelationshipService {
       .where(eq(entityRelationships.id, relationshipId))
       .returning();
 
-    console.log(
+    logger.info(
       `[RelationshipService] Deleted relationship: ${relationshipId}`,
     );
 
@@ -299,7 +299,7 @@ export class RelationshipService {
       )
       .returning();
 
-    console.log(
+    logger.info(
       `[RelationshipService] Deleted ${deleted.length} relationships for ${entityType}:${entityId}`,
     );
 

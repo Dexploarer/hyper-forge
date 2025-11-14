@@ -70,7 +70,7 @@ export class UserService {
           })
           .returning();
 
-        console.log(
+        logger.info(
           `[UserService] Created new user: ${newUser.id} (${data.privyUserId})`,
         );
 

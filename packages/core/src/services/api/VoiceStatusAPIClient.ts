@@ -1,8 +1,9 @@
 /**
-import { apiFetch } from "@/utils/api";
  * Voice Status API Client
  * Client for monitoring ElevenLabs voice generation service status
  */
+
+import { apiFetch } from "@/utils/api";
 
 const API_BASE = "/api/voice";
 

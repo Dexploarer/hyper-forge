@@ -78,7 +78,7 @@ export class CDNWebSocketService {
           const message = JSON.parse(event.data as string);
           await this.handleMessage(message);
         } catch (error) {
-          console.error(
+          logger.error(
             "[CDN WebSocket] Error parsing message:",
             error instanceof Error ? error.message : String(error),
           );
@@ -87,7 +87,7 @@ export class CDNWebSocketService {
 
       // Connection closed
       this.ws.onclose = (event) => {
-        console.log(
+        logger.info(
           `[CDN WebSocket] Connection closed (code: ${event.code}, reason: ${event.reason})`,
         );
         this.isConnecting = false;
@@ -101,7 +101,7 @@ export class CDNWebSocketService {
         this.isConnecting = false;
       };
     } catch (error) {
-      console.error(
+      logger.error(
         "[CDN WebSocket] Failed to connect:",
         error instanceof Error ? error.message : String(error),
       );
@@ -150,7 +150,7 @@ export class CDNWebSocketService {
    */
   private async handleUploadEvent(event: UploadEvent): Promise<void> {
     try {
-      console.log(
+      logger.info(
         `[CDN WebSocket] Processing upload event for asset ${event.assetId} (${event.files.length} files)`,
       );
 
@@ -160,7 +160,7 @@ export class CDNWebSocketService {
       });
 
       if (!existingAsset) {
-        console.warn(
+        logger.warn(
           `[CDN WebSocket] Asset ${event.assetId} not found in database - skipping`,
         );
         return;
@@ -169,7 +169,7 @@ export class CDNWebSocketService {
       // Build CDN URL (use the first file's URL as base, then extract base path)
       const firstFile = event.files[0];
       if (!firstFile) {
-        console.warn(
+        logger.warn(
           `[CDN WebSocket] No files in upload event for asset ${event.assetId}`,
         );
         return;
@@ -195,11 +195,11 @@ export class CDNWebSocketService {
         })
         .where(eq(assets.id, event.assetId));
 
-      console.log(
+      logger.info(
         `[CDN WebSocket] Updated asset ${event.assetId} with CDN URL: ${cdnUrl}`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[CDN WebSocket] Error handling upload event for asset ${event.assetId}:`,
         error instanceof Error ? error.message : String(error),
       );
@@ -234,7 +234,7 @@ export class CDNWebSocketService {
    */
   private attemptReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error(
+      logger.error(
         `[CDN WebSocket] Max reconnect attempts (${this.maxReconnectAttempts}) reached - giving up`,
       );
       return;
@@ -246,7 +246,7 @@ export class CDNWebSocketService {
       this.maxReconnectDelay,
     );
 
-    console.log(
+    logger.info(
       `[CDN WebSocket] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`,
     );
 

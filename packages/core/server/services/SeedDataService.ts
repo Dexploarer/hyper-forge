@@ -276,7 +276,7 @@ Generate exactly ${config.locations} locations, ${config.npcs} NPCs, ${config.qu
 
 Return ONLY the JSON object, no explanation.`;
 
-    console.log(
+    logger.info(
       `[SeedDataService] Generating ${scale} ${genre} world: ${theme}`,
     );
 
@@ -289,7 +289,7 @@ Return ONLY the JSON object, no explanation.`;
 
     const seedData = this.parseSeedWorldResponse(result.text);
 
-    console.log(
+    logger.info(
       `[SeedDataService] Generated world: ${seedData.world.name} with ${seedData.locations.length} locations, ${seedData.npcs.length} NPCs, ${seedData.quests.length} quests, ${seedData.lore.length} lore, ${seedData.music.length} music tracks, ${seedData.relationships.length} relationships`,
     );
 
@@ -334,7 +334,7 @@ Return ONLY the JSON object, no explanation.`;
 
     const prompt = this.buildLinkedContentPrompt(contentType, linkTo);
 
-    console.log(
+    logger.info(
       `[SeedDataService] Generating ${contentType} linked to ${linkTo.type}: ${linkTo.name}`,
     );
 
@@ -351,7 +351,7 @@ Return ONLY the JSON object, no explanation.`;
       linkTo,
     );
 
-    console.log(
+    logger.info(
       `[SeedDataService] Generated linked ${contentType} with ${parsed.relationships.length} relationships`,
     );
 
@@ -445,7 +445,7 @@ Return JSON: {"music": {...Music data...}, "relationshipType": "plays_in|theme_f
         relationships: [relationship],
       };
     } catch (error) {
-      console.error(
+      logger.error(
         "[Parse Error] Failed to parse linked content response:",
         error,
       );

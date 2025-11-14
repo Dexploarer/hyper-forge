@@ -56,7 +56,7 @@ export class EmbeddingService {
         : "https://api.openai.com/v1",
     });
 
-    console.log(
+    logger.info(
       `[EmbeddingService] Initialized with ${useAIGateway ? "AI Gateway" : "direct OpenAI"}`,
     );
   }

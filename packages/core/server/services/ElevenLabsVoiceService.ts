@@ -4,6 +4,7 @@
  */
 
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { logger } from '../utils/logger';
 
 export interface VoiceSettings {
   stability?: number;

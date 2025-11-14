@@ -1,8 +1,9 @@
 /**
-import { apiFetch } from "@/utils/api";
  * World Configuration API Client
  * Client for managing world configurations, templates, and AI context
  */
+
+import { apiFetch } from "@/utils/api";
 
 export interface WorldConfigurationData {
   id: string;
@@ -331,7 +332,11 @@ export class WorldConfigAPIClient {
     limit?: number;
     offset?: number;
     includeTemplates?: boolean;
-  }): Promise<{ success: boolean; configs: WorldConfigurationData[]; count: number }> {
+  }): Promise<{
+    success: boolean;
+    configs: WorldConfigurationData[];
+    count: number;
+  }> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.limit) queryParams.set("limit", params.limit.toString());
@@ -345,7 +350,9 @@ export class WorldConfigAPIClient {
 
       if (!response.ok) {
         // World config is optional - return empty array instead of throwing
-        console.warn(`[WorldConfigAPIClient] Failed to list configurations: ${response.statusText}`);
+        console.warn(
+          `[WorldConfigAPIClient] Failed to list configurations: ${response.statusText}`,
+        );
         return {
           success: true,
           configs: [],
@@ -362,7 +369,10 @@ export class WorldConfigAPIClient {
       };
     } catch (error) {
       // World config is optional - return empty array instead of throwing
-      console.warn("[WorldConfigAPIClient] Error listing configurations:", error);
+      console.warn(
+        "[WorldConfigAPIClient] Error listing configurations:",
+        error,
+      );
       return {
         success: true,
         configs: [],
@@ -399,7 +409,9 @@ export class WorldConfigAPIClient {
 
       if (!response.ok) {
         // World config is optional - return null instead of throwing
-        console.warn(`[WorldConfigAPIClient] Failed to get active configuration: ${response.statusText}`);
+        console.warn(
+          `[WorldConfigAPIClient] Failed to get active configuration: ${response.statusText}`,
+        );
         return {
           success: true,
           config: null,
@@ -414,7 +426,10 @@ export class WorldConfigAPIClient {
       };
     } catch (error) {
       // World config is optional - return null instead of throwing
-      console.warn("[WorldConfigAPIClient] Error fetching active configuration:", error);
+      console.warn(
+        "[WorldConfigAPIClient] Error fetching active configuration:",
+        error,
+      );
       return {
         success: true,
         config: null,
@@ -835,11 +850,14 @@ export class WorldConfigAPIClient {
     skillId: string,
     updates: Partial<WorldSkill>,
   ): Promise<{ success: boolean; skill: WorldSkill }> {
-    const response = await apiFetch(`${API_BASE}/${configId}/skills/${skillId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    });
+    const response = await apiFetch(
+      `${API_BASE}/${configId}/skills/${skillId}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to update skill: ${response.statusText}`);
@@ -855,9 +873,12 @@ export class WorldConfigAPIClient {
     configId: string,
     skillId: string,
   ): Promise<{ success: boolean; message: string }> {
-    const response = await apiFetch(`${API_BASE}/${configId}/skills/${skillId}`, {
-      method: "DELETE",
-    });
+    const response = await apiFetch(
+      `${API_BASE}/${configId}/skills/${skillId}`,
+      {
+        method: "DELETE",
+      },
+    );
 
     if (!response.ok) {
       throw new Error(`Failed to delete skill: ${response.statusText}`);

@@ -11,6 +11,7 @@
 
 import type { Asset } from "../db/schema/assets.schema";
 import type { Project } from "../db/schema/users.schema";
+import { logger } from '../utils/logger';
 
 /**
  * Simplified user interface for permission checks

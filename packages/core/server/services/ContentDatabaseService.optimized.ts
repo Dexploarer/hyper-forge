@@ -36,7 +36,7 @@ export class OptimizedContentDatabaseService {
 
       return result;
     } catch (error) {
-      console.error(
+      logger.error(
         "[ContentDatabaseService] Failed to batch get NPCs:",
         error,
       );
@@ -58,7 +58,7 @@ export class OptimizedContentDatabaseService {
 
       return result;
     } catch (error) {
-      console.error(
+      logger.error(
         "[ContentDatabaseService] Failed to batch get Quests:",
         error,
       );
@@ -175,7 +175,7 @@ export class OptimizedContentDatabaseService {
         totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
-      console.error(
+      logger.error(
         "[ContentDatabaseService] Failed to list NPCs paginated:",
         error,
       );
@@ -235,7 +235,7 @@ export class OptimizedContentDatabaseService {
         totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
-      console.error(
+      logger.error(
         "[ContentDatabaseService] Failed to list Quests paginated:",
         error,
       );
@@ -319,7 +319,7 @@ export class OptimizedContentDatabaseService {
         questsByType,
       };
     } catch (error) {
-      console.error(
+      logger.error(
         "[ContentDatabaseService] Failed to get user stats:",
         error,
       );
@@ -363,11 +363,11 @@ export class OptimizedContentDatabaseService {
         })
         .where(inArray(table.id, ids));
 
-      console.log(
+      logger.info(
         `[ContentDatabaseService] Incremented view counts for ${ids.length} ${type}s`,
       );
     } catch (error) {
-      console.error(
+      logger.error(
         `[ContentDatabaseService] Failed to increment view counts:`,
         error,
       );

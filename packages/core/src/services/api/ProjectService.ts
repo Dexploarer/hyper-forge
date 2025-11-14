@@ -1,8 +1,9 @@
 /**
-import { apiFetch } from "@/utils/api";
  * Project API Service
  * Type-safe wrapper for project API endpoints
  */
+
+import { apiFetch } from "@/utils/api";
 
 import { getAuthToken } from "@/utils/auth-token-store";
 

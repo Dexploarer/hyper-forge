@@ -245,23 +245,23 @@ export class GenerationService extends EventEmitter {
 
     // Log which key sources are being used
     logger.info({ context: "GenerationService" }, "Initializing with API keys");
-    console.log(
+    logger.info(
       `  - Meshy: ${config?.meshyApiKey ? "user-provided" : "environment variable"}`,
     );
-    console.log(
+    logger.info(
       `  - AI Gateway: ${config?.aiGatewayApiKey ? "user-provided" : "environment variable"}`,
     );
     logger.info(
       { context: "GenerationService" },
       "OpenAI: environment variable",
     );
-    console.log(
+    logger.info(
       `  - ElevenLabs: ${config?.elevenLabsApiKey ? "user-provided" : "environment variable"}`,
     );
 
     // Check for required API keys
     if ((!this.aiGatewayApiKey && !this.openaiApiKey) || !meshyApiKey) {
-      console.warn(
+      logger.warn(
         "[GenerationService] Missing API keys - generation features will be limited",
       );
     }
@@ -302,7 +302,7 @@ export class GenerationService extends EventEmitter {
     if (config?.pipelineRepo) {
       this.pipelineRepo = config.pipelineRepo;
     } else {
-      console.warn(
+      logger.warn(
         "[GenerationService] No repository provided - using placeholder in-memory storage",
       );
       // Dynamic import to avoid circular dependency
@@ -445,7 +445,7 @@ export class GenerationService extends EventEmitter {
     // Load pipeline from database
     const dbPipeline = await this.pipelineRepo.findById(pipelineId);
     if (!dbPipeline) {
-      console.error(
+      logger.error(
         `❌ [Pipeline ${pipelineId}] Pipeline not found in database!`,
       );
       return;
@@ -505,11 +505,11 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.promptOptimization.progress = 100;
           pipeline.stages.promptOptimization.result = optimizationResult;
           pipeline.results.promptOptimization = optimizationResult;
-          console.log(
+          logger.info(
             `✅ [Pipeline ${pipelineId}] GPT-4 enhancement completed`,
           );
         } catch (error) {
-          console.warn(
+          logger.warn(
             `⚠️ [Pipeline ${pipelineId}] GPT-4 enhancement failed, using original prompt:`,
             error,
           );
@@ -523,7 +523,7 @@ export class GenerationService extends EventEmitter {
         }
 
         pipeline.progress = 10;
-        console.log(
+        logger.info(
           `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
         );
       } else {
@@ -558,7 +558,7 @@ export class GenerationService extends EventEmitter {
         pipeline.results.imageGeneration =
           pipeline.stages.imageGeneration.result;
         pipeline.progress = 20;
-        console.log(
+        logger.info(
           `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
         );
       } else {
@@ -635,11 +635,11 @@ export class GenerationService extends EventEmitter {
             { pipelineId, stage: "imageGeneration" },
             "Image generation completed",
           );
-          console.log(
+          logger.info(
             `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
           );
         } catch (error) {
-          console.error(
+          logger.error(
             `❌ [Pipeline ${pipelineId}] Image generation failed:`,
             error,
           );
@@ -650,7 +650,7 @@ export class GenerationService extends EventEmitter {
       }
 
       // Stage 3: Image to 3D with Meshy AI
-      console.log(
+      logger.info(
         `📋 [Pipeline ${pipelineId}] Stage 3: Image to 3D Conversion`,
       );
       pipeline.stages.image3D.status = "processing";
@@ -673,7 +673,7 @@ export class GenerationService extends EventEmitter {
             imageUrlForMeshy = `${env.IMAGE_SERVER_URL}/${path.basename(imagePath)}`;
           } else {
             // Need to upload to a public URL for Meshy
-            console.warn(
+            logger.warn(
               "No IMAGE_SERVER_URL configured, Meshy needs a public URL",
             );
           }
@@ -688,7 +688,7 @@ export class GenerationService extends EventEmitter {
           imageUrlForMeshy.includes("localhost") ||
           imageUrlForMeshy.includes("127.0.0.1")
         ) {
-          console.warn(
+          logger.warn(
             "⚠️ Non-public image reference detected - uploading to public hosting...",
           );
 
@@ -702,11 +702,11 @@ export class GenerationService extends EventEmitter {
               "Image uploaded to public URL",
             );
           } catch (uploadError) {
-            console.error(
+            logger.error(
               "❌ Failed to upload image:",
               (uploadError as Error).message,
             );
-            console.log(ImageHostingService.getSetupInstructions());
+            logger.info(ImageHostingService.getSetupInstructions());
             throw new Error(
               "Cannot make image publicly accessible. See instructions above.",
             );
@@ -769,10 +769,10 @@ export class GenerationService extends EventEmitter {
         const timeoutMs = env.MESHY_TIMEOUT_MS || defaultTimeouts.HIGH;
         const maxAttempts = Math.max(1, Math.ceil(timeoutMs / pollIntervalMs));
 
-        console.log(
+        logger.info(
           `⏳ Meshy polling configured: quality=${quality}, model=${aiModel}, interval=${pollIntervalMs}ms, timeout=${timeoutMs}ms, maxAttempts=${maxAttempts}`,
         );
-        console.log(
+        logger.info(
           `📋 Meshy Task ID: ${meshyTaskId} (stored for retexturing/rigging)`,
         );
 
@@ -796,13 +796,13 @@ export class GenerationService extends EventEmitter {
               status.progress || (attempts / maxAttempts) * 100;
 
             // Log status
-            console.log(
+            logger.info(
               `📊 Meshy task ${meshyTaskId}: ${status.status} (${Math.round(pipeline.stages.image3D.progress)}%) [attempt ${attempts}/${maxAttempts}]`,
             );
 
             if (status.status === "SUCCEEDED") {
               meshyResult = status;
-              console.log(
+              logger.info(
                 `✅ Meshy conversion succeeded! Polycount: ${meshyResult.polycount || "N/A"}`,
               );
               break;
@@ -813,7 +813,7 @@ export class GenerationService extends EventEmitter {
             }
             // Continue polling for PENDING or IN_PROGRESS
           } catch (error) {
-            console.error(
+            logger.error(
               `⚠️ Error polling Meshy task (attempt ${attempts}/${maxAttempts}):`,
               error,
             );
@@ -877,7 +877,7 @@ export class GenerationService extends EventEmitter {
               (pipeline.stages.image3D as StageResult).dimensions =
                 normalized.metadata.dimensions;
             } catch (error) {
-              console.warn(
+              logger.warn(
                 "⚠️ Normalization failed, using raw model:",
                 (error as Error).message,
               );
@@ -914,7 +914,7 @@ export class GenerationService extends EventEmitter {
                 depth: result.dimensions.length,
               };
             } catch (error) {
-              console.warn(
+              logger.warn(
                 "⚠️ Weapon normalization failed, using raw model:",
                 (error as Error).message,
               );
@@ -1050,7 +1050,7 @@ export class GenerationService extends EventEmitter {
           const preset = config.materialPresets![i] as MaterialPresetType;
 
           try {
-            console.log(
+            logger.info(
               `🎨 Generating variant ${i + 1}/${totalVariants}: ${preset.displayName}`,
             );
 
@@ -1184,7 +1184,7 @@ export class GenerationService extends EventEmitter {
               success: true,
             });
           } catch (error) {
-            console.error(
+            logger.error(
               `Failed to generate variant ${preset.displayName}:`,
               error,
             );
@@ -1345,7 +1345,7 @@ export class GenerationService extends EventEmitter {
                     "T-pose extracted successfully",
                   );
                 } catch (tposeError) {
-                  console.error(
+                  logger.error(
                     "⚠️ Failed to extract T-pose:",
                     (tposeError as Error).message,
                   );
@@ -1410,7 +1410,7 @@ export class GenerationService extends EventEmitter {
             await fs
               .rm(tempRiggingDir, { recursive: true, force: true })
               .catch((err) =>
-                console.warn(
+                logger.warn(
                   `Failed to cleanup temp rigging dir ${tempRiggingDir}:`,
                   err,
                 ),
@@ -1450,7 +1450,7 @@ export class GenerationService extends EventEmitter {
               },
             ]);
           } catch (metadataError) {
-            console.error(
+            logger.error(
               "Failed to upload metadata after rigging failure:",
               metadataError,
             );
@@ -1461,7 +1461,7 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.rigging!.progress = 0;
 
           // Continue without rigging - don't fail the entire pipeline
-          console.log(
+          logger.info(
             "⚠️  Continuing without rigging - avatar will not have animations",
           );
         }
@@ -1469,7 +1469,7 @@ export class GenerationService extends EventEmitter {
 
       // Note: CDN upload is now handled inline during each stage
       // The webhook handler will create/update database records automatically
-      console.log(
+      logger.info(
         `✅ [Pipeline ${pipelineId}] All files uploaded to CDN, webhook notifications sent`,
       );
 
@@ -1619,7 +1619,7 @@ Your task is to enhance the user's description to create better results with ima
         ? "openai/gpt-4o" // AI Gateway uses provider/model format
         : "gpt-4"; // Direct OpenAI uses just the model name
 
-      console.log(
+      logger.info(
         `🤖 Using ${useAIGateway ? "Vercel AI Gateway" : "direct OpenAI API"} for GPT-4 enhancement`,
       );
 
@@ -1713,7 +1713,7 @@ Your task is to enhance the user's description to create better results with ima
 
     formData.append("directory", "models");
 
-    console.log(
+    logger.info(
       `[CDN Upload] Uploading ${files.length} files for asset ${assetId}`,
     );
 
@@ -1734,7 +1734,7 @@ Your task is to enhance the user's description to create better results with ima
       success: boolean;
       files: Array<{ path: string; url: string; size: number }>;
     };
-    console.log(
+    logger.info(
       `[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`,
     );
 

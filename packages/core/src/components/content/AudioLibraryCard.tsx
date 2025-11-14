@@ -92,17 +92,6 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
       ? audioFile.fileUrl
       : null);
 
-  // Debug logging
-  useEffect(() => {
-    console.log("Audio file data:", {
-      id: audioFile.id,
-      fileName: audioFile.fileName,
-      cdnUrl: audioFile.cdnUrl,
-      fileUrl: audioFile.fileUrl,
-      computedAudioUrl: audioUrl,
-    });
-  }, [audioFile, audioUrl]);
-
   useEffect(() => {
     const audioEl = audioRef.current;
     if (!audioEl) return;

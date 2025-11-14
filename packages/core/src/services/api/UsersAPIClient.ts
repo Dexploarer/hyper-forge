@@ -1,8 +1,9 @@
 /**
-import { apiFetch } from "@/utils/api";
  * Users API Client
  * Client for user profile management and authentication
  */
+
+import { apiFetch } from "@/utils/api";
 
 import { getAuthToken } from "@/utils/auth-token-store";
 

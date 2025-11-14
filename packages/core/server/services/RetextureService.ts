@@ -280,7 +280,7 @@ export class RetextureService {
     this.fetchFn = config?.fetchFn || fetch;
 
     if (!this.meshyApiKey) {
-      console.warn(
+      logger.warn(
         "[RetextureService] MESHY_API_KEY not found - retexturing will be disabled",
       );
       this.meshyClient = null;
@@ -332,7 +332,7 @@ export class RetextureService {
 
     formData.append("directory", "models");
 
-    console.log(
+    logger.info(
       `[CDN Upload] Uploading ${files.length} files for asset ${assetId}`,
     );
 
@@ -353,7 +353,7 @@ export class RetextureService {
       success: boolean;
       files: any[];
     };
-    console.log(
+    logger.info(
       `[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`,
     );
 
@@ -397,7 +397,7 @@ export class RetextureService {
         // Custom prompt retexturing
         textPrompt = customPrompt;
         mode = "custom prompt";
-        console.log(
+        logger.info(
           `🎨 Starting custom prompt retexture for ${baseAssetId}: "${customPrompt.substring(0, 50)}..."`,
         );
       } else if (materialPreset) {
@@ -406,7 +406,7 @@ export class RetextureService {
           materialPreset.stylePrompt ||
           `Apply ${materialPreset.displayName} material texture`;
         mode = `preset: ${materialPreset.displayName}`;
-        console.log(
+        logger.info(
           `🎨 Starting preset retexture for ${baseAssetId} with material: ${materialPreset.displayName}`,
         );
       } else {
@@ -617,7 +617,7 @@ export class RetextureService {
           return (await response.json()) as AssetMetadataType;
         }
       } catch (error) {
-        console.warn(
+        logger.warn(
           `Failed to fetch metadata from CDN, falling back to local: ${error}`,
         );
       }

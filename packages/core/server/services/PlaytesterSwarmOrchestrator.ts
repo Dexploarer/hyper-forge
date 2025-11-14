@@ -144,7 +144,7 @@ export class PlaytesterSwarmOrchestrator {
       );
     }
 
-    console.log(
+    logger.info(
       `[PlaytesterSwarmOrchestrator] Running swarm playtest with ${testers.length} testers...`,
     );
 
@@ -231,7 +231,7 @@ export class PlaytesterSwarmOrchestrator {
       // Parse test results from response
       const testResult = parseTestResult(response.text, tester);
 
-      console.log(
+      logger.info(
         `[${tester.name}] Completed. Found ${testResult.bugs.length} issues, engagement: ${testResult.engagement}/10`,
       );
 
@@ -542,7 +542,7 @@ export class PlaytesterSwarmOrchestrator {
     };
     this.testers.clear();
 
-    console.log(
+    logger.info(
       "[PlaytesterSwarmOrchestrator] Destroyed and resources cleaned up",
     );
   }

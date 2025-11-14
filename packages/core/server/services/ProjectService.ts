@@ -376,12 +376,12 @@ export class ProjectService {
         throw new Error(`Project not found: ${projectId}`);
       }
 
-      console.log(
+      logger.info(
         `[ProjectService] Updated visibility for project ${projectId}: isPublic=${isPublic}`,
       );
       return updatedProject;
     } catch (error) {
-      console.error(
+      logger.error(
         "[ProjectService] Failed to update project visibility:",
         error,
       );

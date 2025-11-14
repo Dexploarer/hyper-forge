@@ -40,7 +40,7 @@ export class CDNPublishService {
     this.assetsDir = config.assetsDir;
 
     if (!this.apiKey) {
-      console.warn(
+      logger.warn(
         "[CDNPublishService] No API key provided - uploads may fail!",
       );
     }
@@ -62,7 +62,7 @@ export class CDNPublishService {
     const apiKey = process.env.CDN_API_KEY || "";
 
     if (!apiKey) {
-      console.warn(
+      logger.warn(
         "[CDNPublishService] CDN_API_KEY not set in environment - uploads will fail!",
       );
     }
@@ -162,7 +162,7 @@ export class CDNPublishService {
           url.includes("_rigged"),
       );
 
-      console.log(
+      logger.info(
         `✅ Published ${assetId} to CDN: ${filesPublished.length} files`,
       );
       logger.info({ context: "CDNPublish" }, `   Main URL: ${mainCdnUrl}`);
@@ -260,7 +260,7 @@ export class CDNPublishService {
     publishResult: PublishResult,
   ): Promise<void> {
     if (!publishResult.success) {
-      console.error(
+      logger.error(
         `[CDNPublishService] Cannot update database - publish failed for ${assetId}`,
       );
       return;
