@@ -183,6 +183,13 @@
       "when": 1763109375525,
       "tag": "0025_cuddly_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1763117965299,
+      "tag": "0026_magical_red_skull",
+      "breakpoints": true
     }
   ]
 }
