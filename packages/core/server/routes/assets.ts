@@ -8,7 +8,6 @@ import { logger } from "../utils/logger";
 import type { AssetService } from "../services/AssetService";
 import * as Models from "../models";
 import { requireAuth } from "../middleware/auth";
-import { getAssetFromPath, canModifyAsset } from "../middleware/assetAuth";
 
 export const createAssetRoutes = (
   rootDir: string,
@@ -53,13 +52,12 @@ export const createAssetRoutes = (
               tags: ["Assets"],
               summary: "List all assets",
               description:
-                "Returns a list of all generated 3D assets with optional filtering by project. (Auth optional - shows public assets, authenticated users see their own assets)",
+                "Returns a list of all generated 3D assets with optional filtering by project. (Auth optional - all users see all assets)",
             },
           },
         )
 
         // Delete asset endpoint
-        // SECURED: Requires authentication and ownership check
         .delete(
           "/:id",
           async (context) => {
@@ -74,25 +72,6 @@ export const createAssetRoutes = (
             if (authResult instanceof Response) {
               set.status = 401;
               return { error: "Unauthorized" };
-            }
-            const user = authResult.user;
-
-            // Get asset from database to check ownership
-            const dbAsset = await getAssetFromPath(id);
-
-            if (!dbAsset) {
-              set.status = 404;
-              return { error: "Asset not found" };
-            }
-
-            // Check if user can modify this asset
-            if (!canModifyAsset(dbAsset, user)) {
-              set.status = 403;
-              return {
-                error: "Forbidden",
-                message:
-                  "You do not have permission to delete this asset. Only the owner or admins can delete assets.",
-              };
             }
 
             const includeVariants = query.includeVariants === "true";
@@ -118,13 +97,12 @@ export const createAssetRoutes = (
               tags: ["Assets"],
               summary: "Delete an asset",
               description:
-                "Deletes an asset and optionally its variants. (Auth required - users can only delete their own assets, admins can delete any asset)",
+                "Deletes an asset and optionally its variants. (Auth required - all authenticated users can delete any asset)",
             },
           },
         )
 
         // Update asset metadata
-        // SECURED: Requires authentication and ownership check
         .patch(
           "/:id",
           async (context) => {
@@ -139,25 +117,6 @@ export const createAssetRoutes = (
             if (authResult instanceof Response) {
               set.status = 401;
               return { error: "Unauthorized" };
-            }
-            const user = authResult.user;
-
-            // Get asset from database to check ownership
-            const dbAsset = await getAssetFromPath(id);
-
-            if (!dbAsset) {
-              set.status = 404;
-              return { error: "Asset not found" };
-            }
-
-            // Check if user can modify this asset
-            if (!canModifyAsset(dbAsset, user)) {
-              set.status = 403;
-              return {
-                error: "Forbidden",
-                message:
-                  "You do not have permission to update this asset. Only the owner or admins can modify assets.",
-              };
             }
 
             const updatedAsset = await assetService.updateAsset(id, body);
@@ -177,14 +136,13 @@ export const createAssetRoutes = (
             response: {
               200: Models.AssetMetadata,
               401: Models.ErrorResponse,
-              403: Models.ErrorResponse,
               404: Models.ErrorResponse,
             },
             detail: {
               tags: ["Assets"],
               summary: "Update asset metadata",
               description:
-                "Updates asset metadata like name, type, tier, etc. (Auth required - users can only update their own assets, admins can update any asset)",
+                "Updates asset metadata like name, type, tier, etc. (Auth required - all authenticated users can update any asset)",
             },
           },
         )
@@ -466,7 +424,7 @@ export const createAssetRoutes = (
               tags: ["Assets"],
               summary: "Bulk update assets",
               description:
-                "Updates multiple assets at once. Currently supports status and favorite updates. (Auth required - users can only update their own assets)",
+                "Updates multiple assets at once. Currently supports status and favorite updates. (Auth required - all authenticated users can update any asset)",
             },
           },
         ),
