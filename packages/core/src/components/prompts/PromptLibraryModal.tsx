@@ -8,6 +8,7 @@ import {
   Trash2,
   Globe,
   Lock,
+  Edit,
 } from "lucide-react";
 import {
   Modal,
@@ -28,6 +29,7 @@ export interface PromptLibraryModalProps {
   open: boolean;
   onClose: () => void;
   onLoad: (prompt: SavedPrompt) => void;
+  onEdit?: (prompt: SavedPrompt) => void;
   promptType: PromptType;
 }
 
@@ -39,12 +41,16 @@ const PROMPT_TYPE_LABELS: Record<PromptType, string> = {
   voice: "Voice",
   sfx: "Sound Effect",
   music: "Music",
+  character: "3D Character",
+  prop: "3D Prop",
+  environment: "3D Environment",
 };
 
 export const PromptLibraryModal: React.FC<PromptLibraryModalProps> = ({
   open,
   onClose,
   onLoad,
+  onEdit,
   promptType,
 }) => {
   const { prompts, isLoading, loadPrompts, deletePrompt, duplicatePrompt } =
@@ -90,6 +96,11 @@ export const PromptLibraryModal: React.FC<PromptLibraryModalProps> = ({
   const handleDuplicate = async (prompt: SavedPrompt, e: React.MouseEvent) => {
     e.stopPropagation();
     await duplicatePrompt(prompt);
+  };
+
+  const handleEdit = (prompt: SavedPrompt, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.(prompt);
   };
 
   return (
@@ -190,6 +201,15 @@ export const PromptLibraryModal: React.FC<PromptLibraryModalProps> = ({
 
                       {/* Action Buttons */}
                       <div className="flex items-center gap-1 flex-shrink-0">
+                        {!prompt.isSystem && onEdit && (
+                          <button
+                            onClick={(e) => handleEdit(prompt, e)}
+                            className="p-1.5 rounded hover:bg-bg-hover transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="w-3.5 h-3.5 text-text-secondary hover:text-primary" />
+                          </button>
+                        )}
                         <button
                           onClick={(e) => handleDuplicate(prompt, e)}
                           className="p-1.5 rounded hover:bg-bg-hover transition-colors"

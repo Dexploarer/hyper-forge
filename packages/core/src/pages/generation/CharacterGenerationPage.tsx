@@ -7,6 +7,8 @@ import {
   Skull,
   Bot,
   Crown,
+  Save,
+  FolderOpen,
 } from "lucide-react";
 import { useGenerationStore } from "@/store";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +24,8 @@ import {
   AssetPreviewCard,
   NoAssetSelected,
 } from "@/components/generation";
+import { SavePromptModal, PromptLibraryModal } from "@/components/prompts";
+import { usePromptLibrary } from "@/hooks/usePromptLibrary";
 
 interface CharacterGenerationPageProps {
   onNavigateToAssets?: () => void;
@@ -135,6 +139,11 @@ export function CharacterGenerationPage({
   >("warrior");
   const [customCharacterClass, setCustomCharacterClass] = useState<string>("");
 
+  // Prompt library
+  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+
   // Set generation type to avatar on mount
   useEffect(() => {
     setGenerationType("avatar");
@@ -246,16 +255,92 @@ export function CharacterGenerationPage({
     }
   };
 
+  const handleSavePrompt = async (data: {
+    name: string;
+    description?: string;
+    isPublic?: boolean;
+  }) => {
+    await savePrompt({
+      type: "character",
+      name: data.name,
+      content: {
+        prompt: description,
+        assetName,
+        characterType,
+        customCharacterType,
+        characterClass,
+        customCharacterClass,
+        characterHeight,
+        enableRigging,
+      },
+      description: data.description,
+      isPublic: data.isPublic,
+      metadata: {
+        quality,
+      },
+    });
+    setShowSavePrompt(false);
+  };
+
+  const handleLoadPrompt = (loadedPrompt: any) => {
+    setDescription(loadedPrompt.content.prompt || "");
+    setAssetName(loadedPrompt.content.assetName || "");
+    if (loadedPrompt.content.characterType) {
+      setCharacterType(loadedPrompt.content.characterType);
+    }
+    if (loadedPrompt.content.customCharacterType) {
+      setCustomCharacterType(loadedPrompt.content.customCharacterType);
+    }
+    if (loadedPrompt.content.characterClass) {
+      setCharacterClass(loadedPrompt.content.characterClass);
+    }
+    if (loadedPrompt.content.customCharacterClass) {
+      setCustomCharacterClass(loadedPrompt.content.customCharacterClass);
+    }
+    if (loadedPrompt.content.characterHeight !== undefined) {
+      setCharacterHeight(loadedPrompt.content.characterHeight);
+    }
+    if (loadedPrompt.content.enableRigging !== undefined) {
+      setEnableRigging(loadedPrompt.content.enableRigging);
+    }
+    if (loadedPrompt.metadata?.quality) {
+      setQuality(loadedPrompt.metadata.quality);
+    }
+    notify.success(`Loaded prompt: ${loadedPrompt.name}`);
+  };
+
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with tabs */}
         <div className="mb-6">
-          <TabNavigation
-            activeView={activeView}
-            generatedAssetsCount={generatedAssets.length}
-            onTabChange={setActiveView}
-          />
+          <div className="flex items-center justify-between">
+            <TabNavigation
+              activeView={activeView}
+              generatedAssetsCount={generatedAssets.length}
+              onTabChange={setActiveView}
+            />
+            {/* Prompt Library Buttons */}
+            {activeView === "config" && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowLoadPrompt(true)}
+                  className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all"
+                  title="Load saved prompt"
+                >
+                  <FolderOpen className="w-4 h-4 text-text-secondary hover:text-primary" />
+                </button>
+                <button
+                  onClick={() => setShowSavePrompt(true)}
+                  disabled={!description}
+                  className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Save current prompt"
+                >
+                  <Save className="w-4 h-4 text-text-secondary hover:text-primary" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Configuration View */}
@@ -590,6 +675,32 @@ export function CharacterGenerationPage({
           </div>
         )}
       </div>
+
+      {/* Prompt Library Modals */}
+      <SavePromptModal
+        open={showSavePrompt}
+        onClose={() => setShowSavePrompt(false)}
+        onSave={handleSavePrompt}
+        promptType="character"
+        currentContent={{
+          prompt: description,
+          assetName,
+          characterType,
+          customCharacterType,
+          characterClass,
+          customCharacterClass,
+          characterHeight,
+          enableRigging,
+        }}
+        loading={isSavingPrompt}
+      />
+
+      <PromptLibraryModal
+        open={showLoadPrompt}
+        onClose={() => setShowLoadPrompt(false)}
+        onLoad={handleLoadPrompt}
+        promptType="character"
+      />
     </div>
   );
 }

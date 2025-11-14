@@ -6,6 +6,8 @@ import {
   Sparkles,
   Loader2,
   Castle,
+  Save,
+  FolderOpen,
 } from "lucide-react";
 import { useGenerationStore } from "@/store";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +23,8 @@ import {
   AssetPreviewCard,
   NoAssetSelected,
 } from "@/components/generation";
+import { SavePromptModal, PromptLibraryModal } from "@/components/prompts";
+import { usePromptLibrary } from "@/hooks/usePromptLibrary";
 
 interface EnvironmentGenerationPageProps {
   onNavigateToAssets?: () => void;
@@ -161,6 +165,11 @@ export function EnvironmentGenerationPage({
   const [scale, setScale] = useState<ScaleType>("medium");
   const [mood, setMood] = useState<string>("bright");
 
+  // Prompt library
+  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+
   // Set generation type to environment on mount
   useEffect(() => {
     setGenerationType("environment");
@@ -273,16 +282,92 @@ export function EnvironmentGenerationPage({
     }
   };
 
+  const handleSavePrompt = async (data: {
+    name: string;
+    description?: string;
+    isPublic?: boolean;
+  }) => {
+    await savePrompt({
+      type: "environment",
+      name: data.name,
+      content: {
+        prompt: description,
+        assetName,
+        environmentType,
+        customEnvironmentType,
+        biome,
+        customBiome,
+        scale,
+        mood,
+      },
+      description: data.description,
+      isPublic: data.isPublic,
+      metadata: {
+        quality,
+      },
+    });
+    setShowSavePrompt(false);
+  };
+
+  const handleLoadPrompt = (loadedPrompt: any) => {
+    setDescription(loadedPrompt.content.prompt || "");
+    setAssetName(loadedPrompt.content.assetName || "");
+    if (loadedPrompt.content.environmentType) {
+      setEnvironmentType(loadedPrompt.content.environmentType);
+    }
+    if (loadedPrompt.content.customEnvironmentType) {
+      setCustomEnvironmentType(loadedPrompt.content.customEnvironmentType);
+    }
+    if (loadedPrompt.content.biome) {
+      setBiome(loadedPrompt.content.biome);
+    }
+    if (loadedPrompt.content.customBiome) {
+      setCustomBiome(loadedPrompt.content.customBiome);
+    }
+    if (loadedPrompt.content.scale) {
+      setScale(loadedPrompt.content.scale);
+    }
+    if (loadedPrompt.content.mood) {
+      setMood(loadedPrompt.content.mood);
+    }
+    if (loadedPrompt.metadata?.quality) {
+      setQuality(loadedPrompt.metadata.quality);
+    }
+    notify.success(`Loaded prompt: ${loadedPrompt.name}`);
+  };
+
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with tabs */}
         <div className="mb-6">
-          <TabNavigation
-            activeView={activeView}
-            generatedAssetsCount={generatedAssets.length}
-            onTabChange={setActiveView}
-          />
+          <div className="flex items-center justify-between">
+            <TabNavigation
+              activeView={activeView}
+              generatedAssetsCount={generatedAssets.length}
+              onTabChange={setActiveView}
+            />
+            {/* Prompt Library Buttons */}
+            {activeView === "config" && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowLoadPrompt(true)}
+                  className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all"
+                  title="Load saved prompt"
+                >
+                  <FolderOpen className="w-4 h-4 text-text-secondary hover:text-primary" />
+                </button>
+                <button
+                  onClick={() => setShowSavePrompt(true)}
+                  disabled={!description}
+                  className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Save current prompt"
+                >
+                  <Save className="w-4 h-4 text-text-secondary hover:text-primary" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Configuration View */}
@@ -628,6 +713,32 @@ export function EnvironmentGenerationPage({
           </div>
         )}
       </div>
+
+      {/* Prompt Library Modals */}
+      <SavePromptModal
+        open={showSavePrompt}
+        onClose={() => setShowSavePrompt(false)}
+        onSave={handleSavePrompt}
+        promptType="environment"
+        currentContent={{
+          prompt: description,
+          assetName,
+          environmentType,
+          customEnvironmentType,
+          biome,
+          customBiome,
+          scale,
+          mood,
+        }}
+        loading={isSavingPrompt}
+      />
+
+      <PromptLibraryModal
+        open={showLoadPrompt}
+        onClose={() => setShowLoadPrompt(false)}
+        onLoad={handleLoadPrompt}
+        promptType="environment"
+      />
     </div>
   );
 }

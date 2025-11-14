@@ -7,6 +7,7 @@ import {
   Loader2,
   Settings,
   Search,
+  FolderOpen,
 } from "lucide-react";
 import React, { useState, useEffect, useRef } from "react";
 
@@ -20,7 +21,9 @@ import {
   Input,
   Textarea,
 } from "../common";
+import { SavePromptModal, PromptLibraryModal } from "../prompts";
 import { AudioAPIClient } from "@/services/api/AudioAPIClient";
+import { usePromptLibrary } from "@/hooks/usePromptLibrary";
 import { notify } from "@/utils/notify";
 import type {
   Voice,
@@ -87,6 +90,11 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDesigning, setIsDesigning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Prompt library
+  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [showLoadPrompt, setShowLoadPrompt] = useState(false);
 
   // Audio preview
   const [playingPreview, setPlayingPreview] = useState<string | null>(null);
@@ -290,6 +298,42 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
     }
   };
 
+  const handleSavePrompt = async (data: {
+    name: string;
+    description?: string;
+    isPublic?: boolean;
+  }) => {
+    await savePrompt({
+      type: "voice",
+      name: data.name,
+      content: {
+        mode,
+        text: ttsText || undefined,
+        voiceId: selectedVoice || undefined,
+        voiceDescription: voiceDescription || undefined,
+        settings,
+      },
+      description: data.description,
+      isPublic: data.isPublic,
+    });
+    setShowSavePrompt(false);
+  };
+
+  const handleLoadPrompt = (loadedPrompt: any) => {
+    if (loadedPrompt.content.mode) {
+      setMode(loadedPrompt.content.mode);
+    }
+    setTtsText(loadedPrompt.content.text || "");
+    if (loadedPrompt.content.voiceId) {
+      setSelectedVoice(loadedPrompt.content.voiceId);
+    }
+    setVoiceDescription(loadedPrompt.content.voiceDescription || "");
+    if (loadedPrompt.content.settings) {
+      setSettings(loadedPrompt.content.settings);
+    }
+    notify.success(`Loaded prompt: ${loadedPrompt.name}`);
+  };
+
   return (
     <Card className="bg-gradient-to-br from-bg-primary via-bg-secondary to-blue-500/5 border-border-primary shadow-lg">
       <CardHeader>
@@ -310,23 +354,44 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
             </div>
           </div>
 
-          {/* Mode Toggle */}
-          <div className="flex gap-2">
-            <Button
-              variant={mode === "existing" ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => setMode("existing")}
-            >
-              Use Existing
-            </Button>
-            <Button
-              variant={mode === "design" ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => setMode("design")}
-            >
-              <Sparkles className="w-4 h-4 mr-1" />
-              Design Voice
-            </Button>
+          <div className="flex items-center gap-2">
+            {/* Mode Toggle */}
+            <div className="flex gap-2">
+              <Button
+                variant={mode === "existing" ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => setMode("existing")}
+              >
+                Use Existing
+              </Button>
+              <Button
+                variant={mode === "design" ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => setMode("design")}
+              >
+                <Sparkles className="w-4 h-4 mr-1" />
+                Design Voice
+              </Button>
+            </div>
+
+            {/* Prompt Library Buttons */}
+            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border-primary">
+              <button
+                onClick={() => setShowLoadPrompt(true)}
+                className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all"
+                title="Load saved prompt"
+              >
+                <FolderOpen className="w-4 h-4 text-text-secondary hover:text-primary" />
+              </button>
+              <button
+                onClick={() => setShowSavePrompt(true)}
+                disabled={!ttsText && !voiceDescription}
+                className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Save current prompt"
+              >
+                <Save className="w-4 h-4 text-text-secondary hover:text-primary" />
+              </button>
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -661,6 +726,29 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
         ref={audioRef}
         onEnded={() => setPlayingPreview(null)}
         style={{ display: "none" }}
+      />
+
+      {/* Prompt Library Modals */}
+      <SavePromptModal
+        open={showSavePrompt}
+        onClose={() => setShowSavePrompt(false)}
+        onSave={handleSavePrompt}
+        promptType="voice"
+        currentContent={{
+          mode,
+          text: ttsText || undefined,
+          voiceId: selectedVoice || undefined,
+          voiceDescription: voiceDescription || undefined,
+          settings,
+        }}
+        loading={isSavingPrompt}
+      />
+
+      <PromptLibraryModal
+        open={showLoadPrompt}
+        onClose={() => setShowLoadPrompt(false)}
+        onLoad={handleLoadPrompt}
+        promptType="voice"
       />
     </Card>
   );

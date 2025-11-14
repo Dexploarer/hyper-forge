@@ -1,4 +1,12 @@
-import { Book, Loader2, Zap, Shield, Sparkles } from "lucide-react";
+import {
+  Book,
+  Loader2,
+  Zap,
+  Shield,
+  Sparkles,
+  Save,
+  FolderOpen,
+} from "lucide-react";
 import React, { useState, useEffect } from "react";
 
 import {
@@ -13,8 +21,10 @@ import {
   SelectOrCustom,
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
+import { SavePromptModal, PromptLibraryModal } from "../prompts";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
 import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
+import { usePromptLibrary } from "@/hooks/usePromptLibrary";
 import { notify } from "@/utils/notify";
 import type { LoreData, QualityLevel } from "@/types/content";
 
@@ -53,6 +63,11 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
   const [quality, setQuality] = useState<QualityLevel>("balanced");
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Prompt library
+  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+
   // Fetch world config options
   const worldConfigOptions = useWorldConfigOptions(worldConfigId);
 
@@ -90,20 +105,79 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
     }
   };
 
+  const handleSavePrompt = async (data: {
+    name: string;
+    description?: string;
+    isPublic?: boolean;
+  }) => {
+    await savePrompt({
+      type: "lore",
+      name: data.name,
+      content: {
+        prompt,
+        category: category || undefined,
+        topic: topic || undefined,
+        context: context || undefined,
+      },
+      description: data.description,
+      isPublic: data.isPublic,
+      metadata: {
+        quality,
+        worldConfigId: worldConfigId || undefined,
+      },
+    });
+    setShowSavePrompt(false);
+  };
+
+  const handleLoadPrompt = (loadedPrompt: any) => {
+    setPrompt(loadedPrompt.content.prompt || "");
+    setCategory(loadedPrompt.content.category || "");
+    setTopic(loadedPrompt.content.topic || "");
+    setContext(loadedPrompt.content.context || "");
+    if (loadedPrompt.metadata?.quality) {
+      setQuality(loadedPrompt.metadata.quality);
+    }
+    if (loadedPrompt.metadata?.worldConfigId) {
+      setWorldConfigId(loadedPrompt.metadata.worldConfigId);
+    }
+    notify.success(`Loaded prompt: ${loadedPrompt.name}`);
+  };
+
   return (
     <Card className="bg-gradient-to-br from-bg-primary via-bg-secondary to-orange-500/5 border-border-primary shadow-lg">
       <CardHeader>
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 bg-orange-500/10 rounded-xl">
-            <Book className="w-5 h-5 text-orange-500" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-orange-500/10 rounded-xl">
+              <Book className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-semibold">
+                World Lore Generation
+              </CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Create rich world-building lore
+              </CardDescription>
+            </div>
           </div>
-          <div>
-            <CardTitle className="text-lg font-semibold">
-              World Lore Generation
-            </CardTitle>
-            <CardDescription className="text-xs mt-0.5">
-              Create rich world-building lore
-            </CardDescription>
+
+          {/* Prompt Library Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowLoadPrompt(true)}
+              className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all"
+              title="Load saved prompt"
+            >
+              <FolderOpen className="w-4 h-4 text-text-secondary hover:text-primary" />
+            </button>
+            <button
+              onClick={() => setShowSavePrompt(true)}
+              disabled={!prompt && !topic}
+              className="p-2 rounded-lg bg-bg-tertiary/50 hover:bg-bg-tertiary border border-border-primary hover:border-primary/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Save current prompt"
+            >
+              <Save className="w-4 h-4 text-text-secondary hover:text-primary" />
+            </button>
           </div>
         </div>
       </CardHeader>
@@ -244,6 +318,28 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
           )}
         </Button>
       </CardContent>
+
+      {/* Prompt Library Modals */}
+      <SavePromptModal
+        open={showSavePrompt}
+        onClose={() => setShowSavePrompt(false)}
+        onSave={handleSavePrompt}
+        promptType="lore"
+        currentContent={{
+          prompt,
+          category: category || undefined,
+          topic: topic || undefined,
+          context: context || undefined,
+        }}
+        loading={isSavingPrompt}
+      />
+
+      <PromptLibraryModal
+        open={showLoadPrompt}
+        onClose={() => setShowLoadPrompt(false)}
+        onLoad={handleLoadPrompt}
+        promptType="lore"
+      />
     </Card>
   );
 };

@@ -10,13 +10,18 @@ export type PromptType =
   | "lore"
   | "voice"
   | "sfx"
-  | "music";
+  | "music"
+  | "character"
+  | "prop"
+  | "environment";
 
 export interface PromptContent {
   prompt: string;
   archetype?: string;
   context?: string;
   settings?: Record<string, any>;
+  // Allow any additional fields for different prompt types
+  [key: string]: any;
 }
 
 export interface SavedPrompt {

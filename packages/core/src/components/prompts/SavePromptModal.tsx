@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Save, Loader2 } from "lucide-react";
+import { Save, Loader2, AlertCircle } from "lucide-react";
 import {
   Modal,
   ModalHeader,
@@ -9,7 +9,11 @@ import {
   Textarea,
   Button,
 } from "@/components/common";
-import type { PromptType, PromptContent } from "@/hooks/usePromptLibrary";
+import {
+  usePromptLibrary,
+  type PromptType,
+  type PromptContent,
+} from "@/hooks/usePromptLibrary";
 
 export interface SavePromptModalProps {
   open: boolean;
@@ -22,6 +26,12 @@ export interface SavePromptModalProps {
   promptType: PromptType;
   currentContent: PromptContent;
   loading?: boolean;
+  editingPrompt?: {
+    id: string;
+    name: string;
+    description?: string;
+    isPublic: boolean;
+  };
 }
 
 const PROMPT_TYPE_LABELS: Record<PromptType, string> = {
@@ -32,6 +42,9 @@ const PROMPT_TYPE_LABELS: Record<PromptType, string> = {
   voice: "Voice",
   sfx: "Sound Effect",
   music: "Music",
+  character: "3D Character",
+  prop: "3D Prop",
+  environment: "3D Environment",
 };
 
 export const SavePromptModal: React.FC<SavePromptModalProps> = ({
@@ -41,11 +54,42 @@ export const SavePromptModal: React.FC<SavePromptModalProps> = ({
   promptType,
   currentContent,
   loading = false,
+  editingPrompt,
 }) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+
+  // Get prompts hook to check for duplicates
+  const { loadPrompts } = usePromptLibrary();
+
+  // Populate form when editing
+  React.useEffect(() => {
+    if (editingPrompt && open) {
+      setName(editingPrompt.name);
+      setDescription(editingPrompt.description || "");
+      setIsPublic(editingPrompt.isPublic);
+    }
+  }, [editingPrompt, open]);
+
+  const checkDuplicateName = async (promptName: string): Promise<boolean> => {
+    try {
+      setIsCheckingDuplicate(true);
+      const existingPrompts = await loadPrompts(promptType);
+      return existingPrompts.some(
+        (p) =>
+          p.name.toLowerCase() === promptName.toLowerCase() &&
+          p.id !== editingPrompt?.id, // Skip current prompt when editing
+      );
+    } catch (error) {
+      console.error("Failed to check duplicate names:", error);
+      return false;
+    } finally {
+      setIsCheckingDuplicate(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,10 +98,21 @@ export const SavePromptModal: React.FC<SavePromptModalProps> = ({
     const newErrors: Record<string, string> = {};
     if (!name.trim()) {
       newErrors.name = "Prompt name is required";
+    } else if (name.trim().length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
     }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      return;
+    }
+
+    // Check for duplicate names
+    const isDuplicate = await checkDuplicateName(name.trim());
+    if (isDuplicate) {
+      setErrors({
+        name: `A prompt named "${name.trim()}" already exists. Please choose a different name.`,
+      });
       return;
     }
 
@@ -90,10 +145,13 @@ export const SavePromptModal: React.FC<SavePromptModalProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-semibold text-text-primary">
-                Save {PROMPT_TYPE_LABELS[promptType]} Prompt
+                {editingPrompt ? "Edit" : "Save"}{" "}
+                {PROMPT_TYPE_LABELS[promptType]} Prompt
               </h2>
               <p className="text-sm text-text-tertiary">
-                Save this prompt for quick reuse
+                {editingPrompt
+                  ? "Update this saved prompt"
+                  : "Save this prompt for quick reuse"}
               </p>
             </div>
           </div>
@@ -123,18 +181,25 @@ export const SavePromptModal: React.FC<SavePromptModalProps> = ({
 
             {/* Prompt Name */}
             <div>
-              <label
-                htmlFor="prompt-name"
-                className="block text-sm font-medium text-text-primary mb-2"
-              >
-                Prompt Name <span className="text-red-400">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="prompt-name"
+                  className="text-sm font-medium text-text-primary"
+                >
+                  Prompt Name <span className="text-red-400">*</span>
+                </label>
+                <span className="text-xs text-text-tertiary">
+                  {name.length} / 100
+                </span>
+              </div>
               <Input
                 id="prompt-name"
                 type="text"
                 value={name}
                 onChange={(e) => {
-                  setName(e.target.value);
+                  if (e.target.value.length <= 100) {
+                    setName(e.target.value);
+                  }
                   if (errors.name) {
                     setErrors({ ...errors, name: "" });
                   }
@@ -142,27 +207,41 @@ export const SavePromptModal: React.FC<SavePromptModalProps> = ({
                 placeholder="e.g., Grumpy Merchant Template"
                 className={errors.name ? "border-red-500" : ""}
                 disabled={loading}
+                maxLength={100}
               />
               {errors.name && (
-                <p className="mt-1 text-xs text-red-400">{errors.name}</p>
+                <p className="mt-1 text-xs text-red-400 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.name}
+                </p>
               )}
             </div>
 
             {/* Description */}
             <div>
-              <label
-                htmlFor="prompt-description"
-                className="block text-sm font-medium text-text-primary mb-2"
-              >
-                Description (Optional)
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label
+                  htmlFor="prompt-description"
+                  className="text-sm font-medium text-text-primary"
+                >
+                  Description (Optional)
+                </label>
+                <span className="text-xs text-text-tertiary">
+                  {description.length} / 500
+                </span>
+              </div>
               <Textarea
                 id="prompt-description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value.length <= 500) {
+                    setDescription(e.target.value);
+                  }
+                }}
                 placeholder="Brief description of when to use this prompt..."
                 rows={3}
                 disabled={loading}
+                maxLength={500}
               />
             </div>
 
@@ -198,9 +277,23 @@ export const SavePromptModal: React.FC<SavePromptModalProps> = ({
           >
             Cancel
           </Button>
-          <Button type="submit" variant="primary" disabled={loading}>
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Save Prompt
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={loading || isCheckingDuplicate}
+          >
+            {(loading || isCheckingDuplicate) && (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            )}
+            {isCheckingDuplicate
+              ? "Checking..."
+              : loading
+                ? editingPrompt
+                  ? "Updating..."
+                  : "Saving..."
+                : editingPrompt
+                  ? "Update Prompt"
+                  : "Save Prompt"}
           </Button>
         </ModalFooter>
       </form>
