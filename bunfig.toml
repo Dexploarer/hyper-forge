@@ -17,7 +17,7 @@ dir = ".bun-cache"
 preload = ["./packages/core/__tests__/setup-dom.ts"]
 coverage = true
 coverageThreshold = 0.80  # Require 80% coverage
-coverageReporter = ["text", "lcov", "html"]
+coverageReporter = ["text", "lcov"]  # Fixed: "html" is not a valid Bun coverage reporter
 coveragePathIgnorePatterns = [
   "node_modules/",
   "dist/",

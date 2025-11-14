@@ -19,11 +19,11 @@ export interface SaveMediaParams {
     prompt?: string;
     model?: string;
     voiceId?: string;
-    voiceSettings?: Record<string, any>;
-    imageSettings?: Record<string, any>;
+    voiceSettings?: Record<string, unknown>;
+    imageSettings?: Record<string, unknown>;
     duration?: number;
     mimeType?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdBy?: string;
 }

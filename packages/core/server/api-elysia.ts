@@ -23,6 +23,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { logger } from "./utils/logger";
+import { env } from "./config/env";
 
 // Services
 import { AssetService } from "./services/AssetService";
@@ -100,27 +101,27 @@ initializeQdrantCollections().catch((error) => {
 });
 
 // Initialize services
-const API_PORT = process.env.PORT || process.env.API_PORT || 3004;
+const API_PORT = env.PORT || env.API_PORT;
 
 // Railway volume path takes priority, then ASSETS_DIR env var, then local default
-const ASSETS_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
-  ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
-  : process.env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
+const ASSETS_DIR = env.RAILWAY_VOLUME_MOUNT_PATH
+  ? path.join(env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
+  : env.ASSETS_DIR || path.join(ROOT_DIR, "gdd-assets");
 
 // CDN_URL and IMAGE_SERVER_URL must be set in production
 const CDN_URL =
-  process.env.CDN_URL ||
+  env.CDN_URL ||
   (() => {
-    if (process.env.NODE_ENV === "production") {
+    if (env.NODE_ENV === "production") {
       throw new Error("CDN_URL must be set in production environment");
     }
     throw new Error("CDN_URL must be set in development environment");
   })();
 
 const IMAGE_SERVER_URL =
-  process.env.IMAGE_SERVER_URL ||
+  env.IMAGE_SERVER_URL ||
   (() => {
-    if (process.env.NODE_ENV === "production") {
+    if (env.NODE_ENV === "production") {
       throw new Error(
         "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
       );
@@ -130,7 +131,7 @@ const IMAGE_SERVER_URL =
 
 const assetService = new AssetService(ASSETS_DIR);
 const retextureService = new RetextureService({
-  meshyApiKey: process.env.MESHY_API_KEY || "",
+  meshyApiKey: env.MESHY_API_KEY || "",
   imageServerBaseUrl: IMAGE_SERVER_URL,
 });
 const generationService = new GenerationService();
@@ -150,11 +151,11 @@ const app = new Elysia()
     );
 
     // Initialize WebSocket client to CDN (if configured)
-    if (process.env.CDN_WS_URL && process.env.CDN_API_KEY) {
+    if (process.env.CDN_WS_URL && env.CDN_API_KEY) {
       logger.info({}, "[CDN WebSocket] Initializing connection to CDN...");
       const cdnWebSocket = new CDNWebSocketService(
         process.env.CDN_WS_URL,
-        process.env.CDN_API_KEY,
+        env.CDN_API_KEY,
       );
 
       // Connect to CDN WebSocket server
@@ -174,14 +175,8 @@ const app = new Elysia()
     }
 
     // Check if we should run workers embedded in API process (dev mode)
-    if (
-      process.env.ENABLE_EMBEDDED_WORKERS === "true" &&
-      process.env.REDIS_URL
-    ) {
-      const WORKER_CONCURRENCY = parseInt(
-        process.env.WORKER_CONCURRENCY || "2",
-        10,
-      );
+    if (process.env.ENABLE_EMBEDDED_WORKERS === "true" && env.REDIS_URL) {
+      const WORKER_CONCURRENCY = env.WORKER_CONCURRENCY || 2;
       console.log(
         `[Workers] Starting ${WORKER_CONCURRENCY} embedded workers...`,
       );
@@ -353,12 +348,12 @@ const app = new Elysia()
         requestId,
         endpoint: pathname,
         method,
-        errorCode: isApiError(error) ? error.code : code,
-        errorMessage: error.message,
-        errorStack: error.stack,
+        errorCode: isApiError(error) ? error.code : String(code),
+        errorMessage: (error as any).message || String(error),
+        errorStack: (error as any).stack || undefined,
         severity: code === "VALIDATION" ? "warning" : "error",
         category: determineErrorCategory(error),
-        statusCode: set.status || 500,
+        statusCode: typeof set.status === "number" ? set.status : 500,
         context: isApiError(error) ? error.context || {} : {},
         tags: [],
       })
@@ -394,7 +389,9 @@ const app = new Elysia()
       error: "INTERNAL_SERVER_ERROR",
       message: "An unexpected error occurred",
       requestId,
-      ...(process.env.NODE_ENV !== "production" && { stack: error.stack }),
+      ...(env.NODE_ENV !== "production" && {
+        stack: (error as any).stack || undefined,
+      }),
     };
   })
 
@@ -534,10 +531,7 @@ const app = new Elysia()
   // CORS configuration
   .use(
     cors({
-      origin:
-        process.env.NODE_ENV === "production"
-          ? process.env.FRONTEND_URL || "*"
-          : true,
+      origin: env.NODE_ENV === "production" ? env.FRONTEND_URL || "*" : true,
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     }),
@@ -548,6 +542,21 @@ const app = new Elysia()
   .use(loggingMiddleware)
   .use(cachingMiddleware)
   .use(compression)
+
+  // Admin-only rate limiting (stricter than public endpoints)
+  .group("/api/admin", (app) =>
+    app.use(
+      rateLimit({
+        duration: 60000, // 1 minute window
+        max: 10, // Only 10 requests per minute for admin endpoints
+        errorResponse: {
+          error: "TOO_MANY_REQUESTS",
+          message:
+            "Admin endpoint rate limit exceeded. Please try again later.",
+        } as any,
+      }),
+    ),
+  )
 
   // Cron jobs for background cleanup
   .use(
@@ -880,7 +889,7 @@ const app = new Elysia()
         "X-Frame-Options": set.headers["x-frame-options"],
       },
       environment: {
-        NODE_ENV: process.env.NODE_ENV,
+        NODE_ENV: env.NODE_ENV,
         PORT: API_PORT,
         ROOT_DIR,
         cwd: process.cwd(),
@@ -944,8 +953,19 @@ const app = new Elysia()
   // TEMPORARY: Download assets from URL for populating Railway volume
   // TODO: Remove this after assets are uploaded
   .post("/api/admin/download-assets", async ({ body, headers }) => {
-    const adminToken =
-      process.env.ADMIN_UPLOAD_TOKEN || "temp-upload-secret-change-me";
+    // SECURITY: Admin token must be set in environment - no defaults
+    const adminToken = process.env.ADMIN_UPLOAD_TOKEN;
+
+    if (
+      !adminToken ||
+      adminToken === "CHANGEME_GENERATE_WITH_OPENSSL_RAND_HEX_32"
+    ) {
+      logger.error(
+        {},
+        "[Security] ADMIN_UPLOAD_TOKEN not configured or using default",
+      );
+      return new Response("Admin endpoint not configured", { status: 503 });
+    }
 
     if (headers.authorization !== `Bearer ${adminToken}`) {
       return new Response("Unauthorized", { status: 401 });
@@ -1085,32 +1105,30 @@ try {
     port: Number(API_PORT),
     hostname: "0.0.0.0", // Bind to all interfaces for Railway/Docker
     maxRequestBodySize: 100 * 1024 * 1024, // 100MB limit (below 128MB default)
-    development: process.env.NODE_ENV !== "production", // Disable detailed errors in prod
+    development: env.NODE_ENV !== "production", // Disable detailed errors in prod
   });
 
   const publicUrl = process.env.RAILWAY_PUBLIC_DOMAIN
     ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
     : process.env.RAILWAY_STATIC_URL || `http://localhost:${API_PORT}`;
 
-  const env = process.env.NODE_ENV || "development";
+  const nodeEnv = env.NODE_ENV || "development";
 
   // Log startup
-  logger.info({}, "\n[Server] Asset-Forge API started (${env})");
+  logger.info({}, "\n[Server] Asset-Forge API started (${nodeEnv})");
   logger.info({ context: "Server" }, "Port: ${API_PORT}");
   logger.info({ context: "Server" }, "URL: ${publicUrl}");
   logger.info({ context: "Server" }, "Docs: ${publicUrl}/swagger");
 
   // Log configured services
   const services = [];
-  if (process.env.DATABASE_URL) services.push("PostgreSQL");
-  if (process.env.PRIVY_APP_ID && process.env.PRIVY_APP_SECRET)
-    services.push("Privy");
-  if (process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY)
-    services.push("AI");
-  if (process.env.MESHY_API_KEY) services.push("Meshy");
-  if (process.env.ELEVENLABS_API_KEY) services.push("ElevenLabs");
-  if (process.env.QDRANT_URL) services.push("Qdrant");
-  if (process.env.REDIS_URL) services.push("Redis");
+  if (env.DATABASE_URL) services.push("PostgreSQL");
+  if (env.PRIVY_APP_ID && env.PRIVY_APP_SECRET) services.push("Privy");
+  if (env.AI_GATEWAY_API_KEY || env.OPENAI_API_KEY) services.push("AI");
+  if (env.MESHY_API_KEY) services.push("Meshy");
+  if (env.ELEVENLABS_API_KEY) services.push("ElevenLabs");
+  if (env.QDRANT_URL) services.push("Qdrant");
+  if (env.REDIS_URL) services.push("Redis");
 
   if (services.length > 0) {
     logger.info({ context: "Server" }, 'Services: ${services.join(", ")}');

@@ -52,7 +52,7 @@ export class WorldConfigService {
       let query = db.select().from(worldConfigurations);
 
       // Apply filters
-      const conditions: any[] = [];
+      const conditions: import("drizzle-orm").SQL[] = [];
       if (createdBy) {
         conditions.push(eq(worldConfigurations.createdBy, createdBy));
       }

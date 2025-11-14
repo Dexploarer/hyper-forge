@@ -4,7 +4,7 @@
  */
 
 import { generateText } from "ai";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 export interface SeedWorldData {
   world: {
@@ -109,7 +109,7 @@ export interface SeedWorldData {
     targetName: string;
     relationshipType: string;
     strength: "weak" | "medium" | "strong";
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
   }>;
 }
 
@@ -118,7 +118,7 @@ export class SeedDataService {
     if (!process.env.AI_GATEWAY_API_KEY) {
       throw new Error("AI_GATEWAY_API_KEY required for Seed Data Service");
     }
-    logger.info({ }, '[SeedDataService] Initialized with AI Gateway');
+    logger.info({}, "[SeedDataService] Initialized with AI Gateway");
   }
 
   /**
@@ -135,11 +135,12 @@ export class SeedDataService {
   }> {
     const { theme, genre, scale, quality = "quality" } = params;
 
-    const model = quality === "quality"
-      ? "openai/gpt-4o"
-      : quality === "speed"
-      ? "openai/gpt-4o-mini"
-      : "openai/gpt-4o";
+    const model =
+      quality === "quality"
+        ? "openai/gpt-4o"
+        : quality === "speed"
+          ? "openai/gpt-4o-mini"
+          : "openai/gpt-4o";
 
     const scaleConfig = {
       small: { locations: 3, npcs: 5, quests: 3, lore: 4, music: 5 },
@@ -311,24 +312,25 @@ Return ONLY the JSON object, no explanation.`;
     };
     quality?: "quality" | "speed" | "balanced";
   }): Promise<{
-    content: any;
+    content: unknown;
     relationships: Array<{
       sourceType: string;
       targetType: string;
       targetId: string;
       relationshipType: string;
       strength: string;
-      metadata: Record<string, any>;
+      metadata: Record<string, unknown>;
     }>;
     rawResponse: string;
   }> {
     const { contentType, linkTo, quality = "balanced" } = params;
 
-    const model = quality === "quality"
-      ? "openai/gpt-4o"
-      : quality === "speed"
-      ? "openai/gpt-4o-mini"
-      : "openai/gpt-4o";
+    const model =
+      quality === "quality"
+        ? "openai/gpt-4o"
+        : quality === "speed"
+          ? "openai/gpt-4o-mini"
+          : "openai/gpt-4o";
 
     const prompt = this.buildLinkedContentPrompt(contentType, linkTo);
 
@@ -401,7 +403,10 @@ Return JSON: {"music": {...Music data...}, "relationshipType": "plays_in|theme_f
       const cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      logger.error({ err: error }, '[Parse Error] Failed to parse seed world response:');
+      logger.error(
+        { err: error },
+        "[Parse Error] Failed to parse seed world response:",
+      );
       throw new Error("Invalid JSON response from AI");
     }
   }
@@ -411,14 +416,14 @@ Return JSON: {"music": {...Music data...}, "relationshipType": "plays_in|theme_f
     contentType: string,
     linkTo: { type: string; id: string; name: string },
   ): {
-    content: any;
+    content: unknown;
     relationships: Array<{
       sourceType: string;
       targetType: string;
       targetId: string;
       relationshipType: string;
       strength: string;
-      metadata: Record<string, any>;
+      metadata: Record<string, unknown>;
     }>;
   } {
     try {

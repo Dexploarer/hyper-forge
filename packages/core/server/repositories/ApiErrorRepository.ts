@@ -188,7 +188,7 @@ export class ApiErrorRepository {
       .delete(apiErrors)
       .where(lt(apiErrors.createdAt, olderThan));
 
-    return result.rowCount || 0;
+    return (result as any).rowCount || 0;
   }
 
   /**

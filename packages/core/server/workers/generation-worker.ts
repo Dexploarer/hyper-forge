@@ -7,6 +7,7 @@ import { RedisQueueService } from "../services/RedisQueueService";
 import { logger } from "../utils/logger";
 import { GenerationJobService } from "../services/GenerationJobService";
 import { GenerationService } from "../services/GenerationService";
+import { generationPipelineRepository } from "../repositories/GenerationPipelineRepository";
 
 const MAX_RETRIES = parseInt(process.env.MAX_JOB_RETRIES || "3", 10);
 const POLL_TIMEOUT = parseInt(process.env.QUEUE_POLL_TIMEOUT || "5", 10);
@@ -22,7 +23,9 @@ export class GenerationWorker {
     this.workerId = workerId;
     this.queueService = new RedisQueueService();
     this.jobService = new GenerationJobService();
-    this.generationService = new GenerationService();
+    this.generationService = new GenerationService({
+      pipelineRepo: generationPipelineRepository,
+    });
 
     logger.info({ workerId: this.workerId }, "Worker initialized");
   }

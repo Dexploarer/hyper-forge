@@ -1,11 +1,12 @@
 /**
  * AI SDK Service
  * Provides configured language models from Vercel AI SDK
- * Supports Cloudflare AI Gateway routing
+ * Supports Vercel AI Gateway routing
  */
 
 import { createOpenAI } from "@ai-sdk/openai";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
+import { env } from "../config/env";
 import type { LanguageModel } from "ai";
 
 type ModelQuality = "quality" | "speed" | "balanced";
@@ -24,11 +25,9 @@ class AISDKService {
   private modelConfigs: Record<ModelQuality, ModelConfig>;
 
   constructor() {
-    // Initialize OpenAI client with AI Gateway if available
-    const useAIGateway = !!process.env.AI_GATEWAY_API_KEY;
-    const apiKey = useAIGateway
-      ? process.env.AI_GATEWAY_API_KEY!
-      : process.env.OPENAI_API_KEY!;
+    // Initialize OpenAI client with Vercel AI Gateway if available
+    const useAIGateway = !!env.AI_GATEWAY_API_KEY;
+    const apiKey = useAIGateway ? env.AI_GATEWAY_API_KEY! : env.OPENAI_API_KEY!;
 
     if (!apiKey) {
       throw new Error(
@@ -62,8 +61,13 @@ class AISDKService {
       },
     };
 
-    console.log(
-      `[AISDKService] Initialized with ${useAIGateway ? "AI Gateway" : "direct OpenAI"}`,
+    logger.info(
+      {
+        context: "AISDKService",
+        useAIGateway,
+        provider: useAIGateway ? "Vercel AI Gateway" : "Direct OpenAI",
+      },
+      "AI SDK Service initialized",
     );
   }
 

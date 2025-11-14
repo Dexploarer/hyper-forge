@@ -5,13 +5,21 @@
  * MOCK only external Privy authentication in test mode
  */
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll } from "bun:test";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  beforeAll,
+} from "bun:test";
 import { Elysia } from "elysia";
 import { userApiKeysRoutes } from "../user-api-keys";
 import { db } from "../../db/db";
 import { users } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { createMockJWT } from "../../../__tests__/helpers/auth";
+import { logger } from "../../utils/logger";
 
 /**
  * Test Helpers
@@ -38,7 +46,7 @@ async function cleanupTestData(userId?: string) {
       await db.delete(users).where(eq(users.id, userId));
     }
   } catch (error) {
-    console.error("Cleanup error:", error);
+    logger.error({ context: "Test Cleanup", err: error }, "Cleanup error");
   }
 }
 
@@ -80,7 +88,7 @@ describe("User API Keys Routes", () => {
               aiGatewayApiKey: "gateway-test-key-456",
               elevenLabsApiKey: "elevenlabs-test-key-789",
             }),
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -106,7 +114,9 @@ describe("User API Keys Routes", () => {
         // Keys should be encrypted (not plaintext)
         expect(updatedUser.meshyApiKey).not.toBe("meshy-test-key-123");
         expect(updatedUser.aiGatewayApiKey).not.toBe("gateway-test-key-456");
-        expect(updatedUser.elevenLabsApiKey).not.toBe("elevenlabs-test-key-789");
+        expect(updatedUser.elevenLabsApiKey).not.toBe(
+          "elevenlabs-test-key-789",
+        );
 
         await cleanupTestData(user.id);
       } catch (error) {
@@ -131,7 +141,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: "meshy-only-key",
             }),
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -165,7 +175,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               aiGatewayApiKey: "gateway-only-key",
             }),
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -199,7 +209,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               elevenLabsApiKey: "elevenlabs-only-key",
             }),
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -234,7 +244,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: "old-meshy-key",
             }),
-          })
+          }),
         );
 
         // Update with new keys
@@ -249,7 +259,7 @@ describe("User API Keys Routes", () => {
               meshyApiKey: "new-meshy-key",
               aiGatewayApiKey: "new-gateway-key",
             }),
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -280,7 +290,7 @@ describe("User API Keys Routes", () => {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({}),
-          })
+          }),
         );
 
         expect(response.status).toBe(400);
@@ -305,7 +315,7 @@ describe("User API Keys Routes", () => {
           body: JSON.stringify({
             meshyApiKey: "test-key",
           }),
-        })
+        }),
       );
 
       expect(response.status).toBe(401);
@@ -325,7 +335,7 @@ describe("User API Keys Routes", () => {
           body: JSON.stringify({
             meshyApiKey: "test-key",
           }),
-        })
+        }),
       );
 
       expect(response.status).toBe(401);
@@ -351,7 +361,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: longKey,
             }),
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -383,7 +393,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: specialKey,
             }),
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -418,7 +428,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: "test-key",
             }),
-          })
+          }),
         );
 
         const [updatedUser] = await db
@@ -428,7 +438,7 @@ describe("User API Keys Routes", () => {
 
         expect(updatedUser.updatedAt).toBeDefined();
         expect(updatedUser.updatedAt!.getTime()).toBeGreaterThanOrEqual(
-          beforeUpdate.getTime()
+          beforeUpdate.getTime(),
         );
 
         await cleanupTestData(user.id);
@@ -458,7 +468,7 @@ describe("User API Keys Routes", () => {
               meshyApiKey: "meshy-key",
               elevenLabsApiKey: "elevenlabs-key",
             }),
-          })
+          }),
         );
 
         // Get status
@@ -468,7 +478,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -498,7 +508,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -533,7 +543,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: "secret-meshy-key-12345",
             }),
-          })
+          }),
         );
 
         // Get status
@@ -543,7 +553,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -566,7 +576,7 @@ describe("User API Keys Routes", () => {
       const response = await app.handle(
         new Request("http://localhost/api/users/api-keys/status", {
           method: "GET",
-        })
+        }),
       );
 
       expect(response.status).toBe(401);
@@ -582,7 +592,7 @@ describe("User API Keys Routes", () => {
           headers: {
             Authorization: "Bearer invalid-token",
           },
-        })
+        }),
       );
 
       expect(response.status).toBe(401);
@@ -612,7 +622,7 @@ describe("User API Keys Routes", () => {
               aiGatewayApiKey: "gateway-key",
               elevenLabsApiKey: "elevenlabs-key",
             }),
-          })
+          }),
         );
 
         // Delete keys
@@ -622,7 +632,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -662,7 +672,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -681,7 +691,7 @@ describe("User API Keys Routes", () => {
       const response = await app.handle(
         new Request("http://localhost/api/users/api-keys", {
           method: "DELETE",
-        })
+        }),
       );
 
       expect(response.status).toBe(401);
@@ -697,7 +707,7 @@ describe("User API Keys Routes", () => {
           headers: {
             Authorization: "Bearer invalid-token",
           },
-        })
+        }),
       );
 
       expect(response.status).toBe(401);
@@ -723,7 +733,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: "test-key",
             }),
-          })
+          }),
         );
 
         const beforeDelete = new Date();
@@ -736,7 +746,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         const [updatedUser] = await db
@@ -746,7 +756,7 @@ describe("User API Keys Routes", () => {
 
         expect(updatedUser.updatedAt).toBeDefined();
         expect(updatedUser.updatedAt!.getTime()).toBeGreaterThanOrEqual(
-          beforeDelete.getTime()
+          beforeDelete.getTime(),
         );
 
         await cleanupTestData(user.id);
@@ -776,7 +786,7 @@ describe("User API Keys Routes", () => {
               meshyApiKey: "meshy-key",
               aiGatewayApiKey: "gateway-key",
             }),
-          })
+          }),
         );
 
         expect(saveResponse.status).toBe(200);
@@ -790,7 +800,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         expect(statusResponse.status).toBe(200);
@@ -806,7 +816,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         expect(deleteResponse.status).toBe(200);
@@ -820,7 +830,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         expect(finalStatusResponse.status).toBe(200);
@@ -851,7 +861,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: "key-version-1",
             }),
-          })
+          }),
         );
 
         // Update 2
@@ -865,7 +875,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: "key-version-2",
             }),
-          })
+          }),
         );
 
         // Update 3
@@ -879,7 +889,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: "key-version-3",
             }),
-          })
+          }),
         );
 
         expect(response.status).toBe(200);
@@ -891,7 +901,7 @@ describe("User API Keys Routes", () => {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          })
+          }),
         );
 
         const statusData = await statusResponse.json();
@@ -922,7 +932,7 @@ describe("User API Keys Routes", () => {
             body: JSON.stringify({
               meshyApiKey: "test-key",
             }),
-          })
+          }),
         );
 
         // Elysia should handle this validation
@@ -955,8 +965,8 @@ describe("User API Keys Routes", () => {
               body: JSON.stringify({
                 meshyApiKey: `concurrent-key-${i}`,
               }),
-            })
-          )
+            }),
+          ),
         );
 
         const responses = await Promise.all(requests);

@@ -4,14 +4,20 @@
  * Returns 401 if not authenticated, 403 if not admin
  */
 
-import { requireAuth } from './auth';
+import { requireAuth, AuthUser } from "./auth";
 
 /**
  * Require admin role - returns 401 if not authenticated, 403 if not admin
  */
-export async function requireAdmin(context: any): Promise<{ user: any } | Response> {
+export async function requireAdmin({
+  request,
+  headers,
+}: {
+  request: Request;
+  headers: Record<string, string | undefined>;
+}): Promise<{ user: AuthUser } | Response> {
   // First check if user is authenticated
-  const authResult = await requireAuth(context);
+  const authResult = await requireAuth({ request, headers });
 
   // If requireAuth returned a Response (error), pass it through
   if (authResult instanceof Response) {
@@ -21,16 +27,16 @@ export async function requireAdmin(context: any): Promise<{ user: any } | Respon
   const { user } = authResult;
 
   // Check if user has admin role
-  if (user.role !== 'admin') {
+  if (user.role !== "admin") {
     return new Response(
       JSON.stringify({
-        error: 'Forbidden',
-        message: 'Admin access required',
+        error: "Forbidden",
+        message: "Admin access required",
       }),
       {
         status: 403,
-        headers: { 'Content-Type': 'application/json' },
-      }
+        headers: { "Content-Type": "application/json" },
+      },
     );
   }
 

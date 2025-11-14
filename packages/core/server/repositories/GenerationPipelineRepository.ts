@@ -198,7 +198,7 @@ export class GenerationPipelineRepository extends BaseRepository<
     status: string,
     error?: string,
     errorStage?: string,
-    errorDetails?: any,
+    errorDetails?: unknown,
   ): Promise<GenerationPipeline | undefined> {
     try {
       const updates: Partial<NewGenerationPipeline> = {
@@ -279,16 +279,17 @@ export class GenerationPipelineRepository extends BaseRepository<
    */
   async cleanupOldPipelines(olderThan: Date): Promise<number> {
     try {
-      return this.deleteMany(
-        and(
-          inArray(generationPipelines.status, [
-            "completed",
-            "failed",
-            "cancelled",
-          ]),
-          lt(generationPipelines.completedAt, olderThan),
-        ),
+      const condition = and(
+        inArray(generationPipelines.status, [
+          "completed",
+          "failed",
+          "cancelled",
+        ]),
+        lt(generationPipelines.completedAt, olderThan),
       );
+
+      // and() can return undefined if no conditions provided, but we always have conditions here
+      return this.deleteMany(condition!);
     } catch (err) {
       logger.error({ err, olderThan }, "Failed to cleanup old pipelines");
       throw err;

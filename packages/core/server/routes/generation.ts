@@ -18,7 +18,10 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
   new Elysia({ prefix: "/api/generation", name: "generation" })
     .derive(async (context) => {
       // Extract user from auth token if present (optional)
-      const authResult = await optionalAuth(context as any);
+      const authResult = await optionalAuth({
+        request: context.request,
+        headers: context.headers,
+      });
       return { user: authResult.user };
     })
     .guard(
@@ -374,9 +377,9 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
 
                       return false; // Continue polling
                     } catch (error) {
-                      console.error(
-                        "[SSE] Error fetching pipeline status:",
-                        error,
+                      logger.error(
+                        { context: "SSE", err: error },
+                        "Error fetching pipeline status",
                       );
                       const errorMessage = `event: error\ndata: ${JSON.stringify({ error: "Failed to fetch status" })}\n\n`;
                       controller.enqueue(

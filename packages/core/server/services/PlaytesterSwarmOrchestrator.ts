@@ -35,6 +35,14 @@ import {
   generateRecommendations as generateActionableRecommendations,
 } from "../utils/playtester-prompts";
 
+interface PlaytestContent {
+  title?: string;
+  description?: string;
+  type?: string;
+  difficulty?: string;
+  [key: string]: unknown;
+}
+
 interface TesterStats extends PlaytesterConfig {
   testsCompleted: number;
   bugsFound: number;
@@ -125,8 +133,8 @@ export class PlaytesterSwarmOrchestrator {
    * Run swarm playtest on content
    */
   async runSwarmPlaytest(
-    contentToTest: any,
-    testConfig: Record<string, any> = {},
+    contentToTest: PlaytestContent,
+    testConfig: Record<string, unknown> = {},
   ): Promise<SwarmPlaytestResult> {
     const testers = Array.from(this.testers.values());
 
@@ -191,8 +199,8 @@ export class PlaytesterSwarmOrchestrator {
    */
   async runSingleTest(
     tester: TesterStats,
-    content: any,
-    testConfig: Record<string, any>,
+    content: PlaytestContent,
+    testConfig: Record<string, unknown>,
   ): Promise<TestResult> {
     logger.info({ context: `${tester.name}` }, "Starting playtest...");
 
@@ -256,8 +264,8 @@ export class PlaytesterSwarmOrchestrator {
    */
   async runSequentialTests(
     testers: TesterStats[],
-    content: any,
-    testConfig: Record<string, any>,
+    content: PlaytestContent,
+    testConfig: Record<string, unknown>,
   ): Promise<TestResult[]> {
     const results: TestResult[] = [];
 

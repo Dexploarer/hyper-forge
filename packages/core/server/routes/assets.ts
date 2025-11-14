@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import path from "path";
 import fs from "fs";
 import type { AssetService } from "../services/AssetService";
@@ -23,7 +23,11 @@ export const createAssetRoutes = (
   return new Elysia({ prefix: "/api/assets", name: "assets" }).guard(
     {
       beforeHandle: ({ request }) => {
-        logger.info({ context: 'Assets' }, '${request.method} request');
+        const url = new URL(request.url);
+        logger.info(
+          { context: "Assets", method: request.method, path: url.pathname },
+          "Assets request",
+        );
       },
     },
     (app) =>
@@ -36,7 +40,10 @@ export const createAssetRoutes = (
             const { query } = context;
 
             // Check authentication (optional)
-            const authResult = await optionalAuth(context);
+            const authResult = await optionalAuth({
+              request: context.request,
+              headers: context.headers,
+            });
             const user = authResult.user;
 
             // Get all assets from filesystem
@@ -101,7 +108,10 @@ export const createAssetRoutes = (
             const id = params.id;
 
             // Require authentication
-            const authResult = await requireAuth(context);
+            const authResult = await requireAuth({
+              request: context.request,
+              headers: context.headers,
+            });
             if (authResult instanceof Response) {
               set.status = 401;
               return { error: "Unauthorized" };
@@ -163,7 +173,10 @@ export const createAssetRoutes = (
             const id = params.id;
 
             // Require authentication
-            const authResult = await requireAuth(context);
+            const authResult = await requireAuth({
+              request: context.request,
+              headers: context.headers,
+            });
             if (authResult instanceof Response) {
               set.status = 401;
               return { error: "Unauthorized" };
@@ -223,8 +236,9 @@ export const createAssetRoutes = (
           async ({ params: { id }, body }) => {
             const { sprites, config } = body;
 
-            console.log(
-              `[Sprites] Uploading ${sprites.length} sprites to CDN for asset: ${id}`,
+            logger.info(
+              { context: "Sprites", spriteCount: sprites.length, assetId: id },
+              "Uploading sprites to CDN",
             );
 
             const CDN_URL = process.env.CDN_URL || "http://localhost:3005";
@@ -261,8 +275,13 @@ export const createAssetRoutes = (
                 type: "image/png",
               });
 
-              console.log(
-                `[Sprites] Prepared: ${filename} (${(buffer.length / 1024).toFixed(2)} KB)`,
+              logger.debug(
+                {
+                  context: "Sprites",
+                  filename,
+                  sizeKB: (buffer.length / 1024).toFixed(2),
+                },
+                "Sprite prepared",
               );
             }
 
@@ -295,8 +314,9 @@ export const createAssetRoutes = (
 
             formData.append("directory", "sprites");
 
-            console.log(
-              `[Sprites] Uploading ${filesToUpload.length} files to CDN`,
+            logger.info(
+              { context: "Sprites", fileCount: filesToUpload.length },
+              "Uploading files to CDN",
             );
 
             const response = await fetch(`${CDN_URL}/api/upload`, {
@@ -315,7 +335,10 @@ export const createAssetRoutes = (
             }
 
             const result = await response.json();
-            logger.info({ context: 'Sprites', result }, 'Successfully uploaded to CDN:');
+            logger.info(
+              { context: "Sprites", result },
+              "Successfully uploaded to CDN:",
+            );
 
             // Build CDN URLs for response
             const cdnUrls = sprites.map(
@@ -355,11 +378,14 @@ export const createAssetRoutes = (
             const assetId = formData.assetId!;
             const filename = file.name;
 
-            console.log(
-              `[VRM Upload] Uploading ${filename} for asset: ${assetId} to CDN`,
-            );
-            console.log(
-              `[VRM Upload] File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`,
+            logger.info(
+              {
+                context: "VRM Upload",
+                filename,
+                assetId,
+                sizeMB: (file.size / 1024 / 1024).toFixed(2),
+              },
+              "Uploading VRM to CDN",
             );
 
             const CDN_URL = process.env.CDN_URL || "http://localhost:3005";
@@ -382,8 +408,9 @@ export const createAssetRoutes = (
             cdnFormData.append("files", blob, `${assetId}/${filename}`);
             cdnFormData.append("directory", "models");
 
-            console.log(
-              `[VRM Upload] Uploading to CDN: models/${assetId}/${filename}`,
+            logger.info(
+              { context: "VRM Upload", path: `models/${assetId}/${filename}` },
+              "Uploading to CDN",
             );
 
             const response = await fetch(`${CDN_URL}/api/upload`, {
@@ -402,7 +429,10 @@ export const createAssetRoutes = (
             }
 
             const result = await response.json();
-            logger.info({ context: 'VRM Upload', result }, 'Successfully uploaded to CDN:');
+            logger.info(
+              { context: "VRM Upload", result },
+              "Successfully uploaded to CDN:",
+            );
 
             // Return success with CDN URL
             const cdnUrl = `${CDN_URL}/models/${assetId}/${filename}`;
@@ -429,9 +459,9 @@ export const createAssetRoutes = (
           async ({ body, set }) => {
             const { assetIds, updates } = body;
 
-            console.log(
-              `[Bulk Update] Updating ${assetIds.length} assets with:`,
-              updates,
+            logger.info(
+              { context: "Bulk Update", assetCount: assetIds.length, updates },
+              "Updating assets",
             );
 
             let updated = 0;
@@ -451,15 +481,16 @@ export const createAssetRoutes = (
                 failed++;
                 const err = error as Error;
                 errors.push({ assetId, error: err.message });
-                console.error(
-                  `[Bulk Update] Failed to update ${assetId}:`,
-                  err.message,
+                logger.error(
+                  { context: "Bulk Update", assetId, err: err.message },
+                  "Failed to update asset",
                 );
               }
             }
 
-            console.log(
-              `[Bulk Update] Complete: ${updated} updated, ${failed} failed`,
+            logger.info(
+              { context: "Bulk Update", updated, failed },
+              "Bulk update complete",
             );
 
             return {

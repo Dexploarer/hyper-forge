@@ -18,6 +18,7 @@ import {
 } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import type { PgSelect } from "drizzle-orm/pg-core";
+import type { PgTransaction } from "drizzle-orm/pg-core";
 import { logger } from "../utils/logger";
 
 /**
@@ -74,7 +75,10 @@ export abstract class BaseRepository<
    */
   async findMany(options?: FilterOptions): Promise<TSelect[]> {
     try {
-      let query = db.select().from(this.table).$dynamic();
+      let query = db
+        .select()
+        .from(this.table as any)
+        .$dynamic() as any;
 
       if (options?.where) {
         query = query.where(options.where);
@@ -104,10 +108,10 @@ export abstract class BaseRepository<
    */
   async findById(id: string): Promise<TSelect | undefined> {
     try {
-      const idColumn = this.table.id;
+      const idColumn = (this.table as any).id;
       const [record] = await db
         .select()
-        .from(this.table)
+        .from(this.table as any)
         .where(eq(idColumn, id))
         .limit(1);
 
@@ -126,7 +130,11 @@ export abstract class BaseRepository<
    */
   async findOne(where: SQL): Promise<TSelect | undefined> {
     try {
-      const [record] = await db.select().from(this.table).where(where).limit(1);
+      const [record] = await db
+        .select()
+        .from(this.table as any)
+        .where(where)
+        .limit(1);
 
       return record as TSelect | undefined;
     } catch (err) {
@@ -140,7 +148,10 @@ export abstract class BaseRepository<
    */
   async create(data: TInsert): Promise<TSelect> {
     try {
-      const [record] = await db.insert(this.table).values(data).returning();
+      const [record] = await db
+        .insert(this.table)
+        .values(data as any)
+        .returning();
 
       return record as TSelect;
     } catch (err) {
@@ -154,7 +165,10 @@ export abstract class BaseRepository<
    */
   async createMany(data: TInsert[]): Promise<TSelect[]> {
     try {
-      const records = await db.insert(this.table).values(data).returning();
+      const records = await db
+        .insert(this.table)
+        .values(data as any)
+        .returning();
 
       return records as TSelect[];
     } catch (err) {
@@ -174,7 +188,7 @@ export abstract class BaseRepository<
     data: Partial<TInsert>,
   ): Promise<TSelect | undefined> {
     try {
-      const idColumn = this.table.id;
+      const idColumn = (this.table as any).id;
       const [record] = await db
         .update(this.table)
         .set(data as any)
@@ -217,10 +231,10 @@ export abstract class BaseRepository<
    */
   async delete(id: string): Promise<boolean> {
     try {
-      const idColumn = this.table.id;
-      const result = await db.delete(this.table).where(eq(idColumn, id));
+      const idColumn = (this.table as any).id;
+      const result = await db.delete(this.table as any).where(eq(idColumn, id));
 
-      return (result.rowCount ?? 0) > 0;
+      return ((result as any).rowCount ?? 0) > 0;
     } catch (err) {
       logger.error({ err, id, table: this.table }, "Failed to delete record");
       throw err;
@@ -232,9 +246,9 @@ export abstract class BaseRepository<
    */
   async deleteMany(where: SQL): Promise<number> {
     try {
-      const result = await db.delete(this.table).where(where);
+      const result = await db.delete(this.table as any).where(where);
 
-      return result.rowCount ?? 0;
+      return (result as any).rowCount ?? 0;
     } catch (err) {
       logger.error({ err, table: this.table }, "Failed to delete many records");
       throw err;
@@ -246,7 +260,9 @@ export abstract class BaseRepository<
    */
   async count(where?: SQL): Promise<number> {
     try {
-      let query = db.select({ count: sql<number>`count(*)` }).from(this.table);
+      let query = db
+        .select({ count: sql<number>`count(*)` })
+        .from(this.table as any);
 
       if (where) {
         query = query.where(where) as any;
@@ -276,7 +292,9 @@ export abstract class BaseRepository<
   /**
    * Execute a transaction
    */
-  async transaction<T>(callback: (tx: typeof db) => Promise<T>): Promise<T> {
+  async transaction<T>(
+    callback: (tx: PgTransaction<any, any, any>) => Promise<T>,
+  ): Promise<T> {
     try {
       return await db.transaction(callback);
     } catch (err) {

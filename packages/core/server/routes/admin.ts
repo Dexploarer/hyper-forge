@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { eq, desc, and } from "drizzle-orm";
 import { db, activityLog } from "../db";
 import { requireAdmin } from "../middleware/requireAdmin";
@@ -21,8 +21,8 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
    */
   .put(
     "/users/:id/role",
-    async ({ request, params, body }) => {
-      const adminResult = await requireAdmin({ request });
+    async ({ request, headers, params, body }) => {
+      const adminResult = await requireAdmin({ request, headers });
 
       // If admin check failed, return the error response
       if (adminResult instanceof Response) {
@@ -118,8 +118,8 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
    */
   .delete(
     "/users/:id",
-    async ({ request, params }) => {
-      const adminResult = await requireAdmin({ request });
+    async ({ request, headers, params }) => {
+      const adminResult = await requireAdmin({ request, headers });
 
       // If admin check failed, return the error response
       if (adminResult instanceof Response) {
@@ -180,7 +180,7 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
           message: "User deleted successfully",
         };
       } catch (error) {
-        logger.error({ err: error }, '[AdminRoutes] Failed to delete user:');
+        logger.error({ err: error }, "[AdminRoutes] Failed to delete user:");
         return new Response(
           JSON.stringify({
             error: "Delete failed",
@@ -214,8 +214,8 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
    */
   .get(
     "/activity-log",
-    async ({ request, query }) => {
-      const adminResult = await requireAdmin({ request });
+    async ({ request, headers, query }) => {
+      const adminResult = await requireAdmin({ request, headers });
 
       // If admin check failed, return the error response
       if (adminResult instanceof Response) {
@@ -284,8 +284,8 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
    */
   .get(
     "/media-storage/health",
-    async ({ request }) => {
-      const adminResult = await requireAdmin({ request });
+    async ({ request, headers }) => {
+      const adminResult = await requireAdmin({ request, headers });
 
       if (adminResult instanceof Response) {
         return adminResult;

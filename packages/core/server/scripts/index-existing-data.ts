@@ -375,7 +375,14 @@ async function main() {
 
   // Check configuration
   if (!process.env.QDRANT_URL) {
-    logger.error("❌ QDRANT_URL not configured. Aborting.");
+    logger.error(
+      {
+        missing: "QDRANT_URL",
+        purpose: "vector database connection for embedding indexing",
+        action: "aborting",
+      },
+      "QDRANT_URL not configured",
+    );
     process.exit(1);
   }
 

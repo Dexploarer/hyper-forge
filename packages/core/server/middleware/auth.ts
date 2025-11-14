@@ -5,14 +5,12 @@
  */
 
 import { PrivyClient } from "@privy-io/server-auth";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { userService } from "../services/UserService";
+import { env } from "../config/env";
 
 // Initialize Privy client
-const privy = new PrivyClient(
-  process.env.PRIVY_APP_ID!,
-  process.env.PRIVY_APP_SECRET!,
-);
+const privy = new PrivyClient(env.PRIVY_APP_ID, env.PRIVY_APP_SECRET);
 
 export interface AuthUser {
   id: string;
@@ -21,6 +19,7 @@ export interface AuthUser {
   walletAddress: string | null;
   displayName: string | null;
   role: string;
+  isAdmin: boolean;
   profileCompleted: Date | null;
   createdAt: Date;
 }
@@ -29,12 +28,17 @@ export interface AuthUser {
  * Optional auth middleware - attaches user if valid token present
  * Does not error if no token - use requireAuth or requireAdmin for protected routes
  */
-export async function optionalAuth(context: any): Promise<{ user?: AuthUser }> {
+export async function optionalAuth({
+  request,
+  headers,
+}: {
+  request: Request;
+  headers: Record<string, string | undefined>;
+}): Promise<{ user?: AuthUser }> {
   try {
     // Extract token from Authorization header
     const authHeader =
-      context.headers?.authorization ||
-      context.request?.headers.get("authorization");
+      headers?.authorization || request?.headers.get("authorization");
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       // No token provided - continue without user
@@ -46,7 +50,7 @@ export async function optionalAuth(context: any): Promise<{ user?: AuthUser }> {
     let privyUserId: string;
 
     // In test mode, decode JWT without verifying signature
-    if (process.env.NODE_ENV === "test" || Bun.env.NODE_ENV === "test") {
+    if (env.NODE_ENV === "test") {
       try {
         // Decode JWT payload (part between first and second dot)
         const parts = token.split(".");
@@ -114,13 +118,14 @@ export async function optionalAuth(context: any): Promise<{ user?: AuthUser }> {
         walletAddress: user.walletAddress,
         displayName: user.displayName,
         role: user.role,
+        isAdmin: user.role === "admin",
         profileCompleted: user.profileCompleted,
         createdAt: user.createdAt,
       },
     };
   } catch (error) {
     // Invalid token or verification failed - continue without user
-    logger.error({ err: error }, 'Auth middleware error:');
+    logger.error({ err: error }, "Auth middleware error:");
     return {};
   }
 }
@@ -128,10 +133,14 @@ export async function optionalAuth(context: any): Promise<{ user?: AuthUser }> {
 /**
  * Require authentication - returns 401 if no valid token
  */
-export async function requireAuth(
-  context: any,
-): Promise<{ user: AuthUser } | Response> {
-  const result = await optionalAuth(context);
+export async function requireAuth({
+  request,
+  headers,
+}: {
+  request: Request;
+  headers: Record<string, string | undefined>;
+}): Promise<{ user: AuthUser } | Response> {
+  const result = await optionalAuth({ request, headers });
 
   if (!result.user) {
     return new Response(

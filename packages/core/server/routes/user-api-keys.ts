@@ -5,7 +5,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { requireAuth } from "../middleware/auth";
 import { getEncryptionService } from "../services/ApiKeyEncryptionService";
 import { db } from "../db";
@@ -16,8 +16,8 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
   // Save user API keys (encrypted)
   .post(
     "/api-keys",
-    async ({ request, body }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers, body }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -33,7 +33,7 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           JSON.stringify({
             error: "At least one API key must be provided",
           }),
-          { status: 400, headers: { "Content-Type": "application/json" } }
+          { status: 400, headers: { "Content-Type": "application/json" } },
         );
       }
 
@@ -58,8 +58,15 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           })
           .where(eq(users.id, authUser.id));
 
-        console.log(
-          `[UserApiKeys] User ${authUser.id} updated API keys: meshy=${!!meshyApiKey}, aiGateway=${!!aiGatewayApiKey}, elevenLabs=${!!elevenLabsApiKey}`
+        logger.info(
+          {
+            context: "UserApiKeys",
+            userId: authUser.id,
+            meshy: !!meshyApiKey,
+            aiGateway: !!aiGatewayApiKey,
+            elevenLabs: !!elevenLabsApiKey,
+          },
+          "User updated API keys",
         );
 
         return {
@@ -72,14 +79,13 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           },
         };
       } catch (error) {
-        logger.error({ err: error }, '[UserApiKeys] Failed to save API keys:');
+        logger.error({ err: error }, "[UserApiKeys] Failed to save API keys:");
         return new Response(
           JSON.stringify({
             error: "Failed to save API keys",
-            message:
-              error instanceof Error ? error.message : "Unknown error",
+            message: error instanceof Error ? error.message : "Unknown error",
           }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
+          { status: 500, headers: { "Content-Type": "application/json" } },
         );
       }
     },
@@ -96,14 +102,14 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           "Save encrypted API keys for the authenticated user. Keys are encrypted before storage. Requires Privy JWT.",
         security: [{ BearerAuth: [] }],
       },
-    }
+    },
   )
 
   // Get API key configuration status (doesn't return actual keys)
   .get(
     "/api-keys/status",
-    async ({ request }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -125,10 +131,10 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           .where(eq(users.id, authUser.id));
 
         if (!userRecord) {
-          return new Response(
-            JSON.stringify({ error: "User not found" }),
-            { status: 404, headers: { "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: "User not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         // Return status of which keys are configured (not the actual keys)
@@ -145,14 +151,16 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           ),
         };
       } catch (error) {
-        logger.error({ err: error }, '[UserApiKeys] Failed to fetch API key status:');
+        logger.error(
+          { err: error },
+          "[UserApiKeys] Failed to fetch API key status:",
+        );
         return new Response(
           JSON.stringify({
             error: "Failed to fetch API key status",
-            message:
-              error instanceof Error ? error.message : "Unknown error",
+            message: error instanceof Error ? error.message : "Unknown error",
           }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
+          { status: 500, headers: { "Content-Type": "application/json" } },
         );
       }
     },
@@ -164,14 +172,14 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           "Check which API keys are configured for the authenticated user. Does not return actual keys. Requires Privy JWT.",
         security: [{ BearerAuth: [] }],
       },
-    }
+    },
   )
 
   // Delete user API keys
   .delete(
     "/api-keys",
-    async ({ request }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -193,21 +201,26 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           })
           .where(eq(users.id, authUser.id));
 
-        logger.info({ context: 'UserApiKeys' }, 'User ${authUser.id} deleted all API keys');
+        logger.info(
+          { context: "UserApiKeys" },
+          "User ${authUser.id} deleted all API keys",
+        );
 
         return {
           success: true,
           message: "API keys deleted successfully",
         };
       } catch (error) {
-        logger.error({ err: error }, '[UserApiKeys] Failed to delete API keys:');
+        logger.error(
+          { err: error },
+          "[UserApiKeys] Failed to delete API keys:",
+        );
         return new Response(
           JSON.stringify({
             error: "Failed to delete API keys",
-            message:
-              error instanceof Error ? error.message : "Unknown error",
+            message: error instanceof Error ? error.message : "Unknown error",
           }),
-          { status: 500, headers: { "Content-Type": "application/json" } }
+          { status: 500, headers: { "Content-Type": "application/json" } },
         );
       }
     },
@@ -219,5 +232,5 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           "Delete all API keys for the authenticated user. Requires Privy JWT.",
         security: [{ BearerAuth: [] }],
       },
-    }
+    },
   );

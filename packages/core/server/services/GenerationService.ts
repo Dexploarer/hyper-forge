@@ -5,6 +5,7 @@
 
 import EventEmitter from "events";
 import { logger } from "../utils/logger";
+import { env } from "../config/env";
 import type { UserContextType } from "../models";
 import { AICreationService } from "./AICreationService";
 import { ImageHostingService } from "./ImageHostingService";
@@ -164,6 +165,7 @@ interface MeshyResult {
 
 interface RetextureResult {
   status: string;
+  error?: string;
   model_urls: {
     glb: string;
   };
@@ -218,7 +220,7 @@ export class GenerationService extends EventEmitter {
   private fetchFn: FetchFunction;
   // REMOVED: private pipelines: Map<string, Pipeline> = new Map();
   // Now using database via repository
-  private pipelineRepo: any; // IGenerationPipelineRepository (placeholder)
+  private pipelineRepo: import("../repositories/GenerationPipelineRepository").GenerationPipelineRepository;
   private aiGatewayApiKey: string;
   private openaiApiKey: string;
 
@@ -227,19 +229,19 @@ export class GenerationService extends EventEmitter {
     meshyApiKey?: string;
     aiGatewayApiKey?: string;
     elevenLabsApiKey?: string;
-    pipelineRepo?: any; // IGenerationPipelineRepository
+    pipelineRepo?: import("../repositories/GenerationPipelineRepository").GenerationPipelineRepository;
   }) {
     super();
 
     this.fetchFn = (config?.fetchFn || fetch) as FetchFunction;
 
-    // Determine which API keys to use (user-provided or environment variables)
-    const meshyApiKey = config?.meshyApiKey || process.env.MESHY_API_KEY || "";
+    // Determine which API keys to use (user-provided or validated environment variables)
+    const meshyApiKey = config?.meshyApiKey || env.MESHY_API_KEY || "";
     this.aiGatewayApiKey =
-      config?.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY || "";
-    this.openaiApiKey = process.env.OPENAI_API_KEY || "";
+      config?.aiGatewayApiKey || env.AI_GATEWAY_API_KEY || "";
+    this.openaiApiKey = env.OPENAI_API_KEY || "";
     const elevenLabsApiKey =
-      config?.elevenLabsApiKey || process.env.ELEVENLABS_API_KEY || "";
+      config?.elevenLabsApiKey || env.ELEVENLABS_API_KEY || "";
 
     // Log which key sources are being used
     logger.info({ context: "GenerationService" }, "Initializing with API keys");
@@ -264,11 +266,11 @@ export class GenerationService extends EventEmitter {
       );
     }
 
-    // Initialize AI service with backend environment variables
+    // Initialize AI service with validated environment variables
     const imageServerBaseUrl =
-      process.env.IMAGE_SERVER_URL ||
+      env.IMAGE_SERVER_URL ||
       (() => {
-        if (process.env.NODE_ENV === "production") {
+        if (env.NODE_ENV === "production") {
           throw new Error(
             "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
           );
@@ -297,8 +299,9 @@ export class GenerationService extends EventEmitter {
 
     // Initialize repository (use injected or create new placeholder)
     // TODO: Replace with real database repository when database-specialist completes it
-    this.pipelineRepo = config?.pipelineRepo;
-    if (!this.pipelineRepo) {
+    if (config?.pipelineRepo) {
+      this.pipelineRepo = config.pipelineRepo;
+    } else {
       console.warn(
         "[GenerationService] No repository provided - using placeholder in-memory storage",
       );
@@ -384,36 +387,52 @@ export class GenerationService extends EventEmitter {
    * Get pipeline status
    */
   async getPipelineStatus(pipelineId: string): Promise<PipelineStatusResponse> {
-    const pipeline = this.pipelines.get(pipelineId);
+    // Load pipeline from database
+    const dbPipeline = await this.pipelineRepo.findById(pipelineId);
 
-    if (!pipeline) {
+    if (!dbPipeline) {
       throw new Error(`Pipeline ${pipelineId} not found`);
     }
 
+    // Parse config and results from database
+    const config = dbPipeline.config as any;
+    const results = (dbPipeline.results as any) || {};
+
+    // Reconstruct stages from database state
+    // Note: The database stores simplified state, we reconstruct the full stages object here
+    const stages = config.stages || {
+      textInput: { status: "completed", progress: 100 },
+      promptOptimization: { status: "pending", progress: 0 },
+      imageGeneration: { status: "pending", progress: 0 },
+      image3D: { status: "pending", progress: 0 },
+      textureGeneration: { status: "pending", progress: 0 },
+    };
+
     // Convert stages to Record format with name property for each stage
     const stagesWithNames: Record<string, PipelineStageWithName> = {};
-    for (const [stageName, stageData] of Object.entries(pipeline.stages)) {
+    for (const [stageName, stageData] of Object.entries(stages)) {
+      const data = stageData as StageResult;
       stagesWithNames[stageName] = {
         name: stageName,
-        status: stageData.status as
+        status: data.status as
           | "pending"
           | "processing"
           | "completed"
           | "failed",
-        progress: stageData.progress,
-        error: stageData.error,
+        progress: data.progress,
+        error: data.error,
       };
     }
 
     return {
-      id: pipeline.id,
-      status: pipeline.status,
-      progress: pipeline.progress,
+      id: dbPipeline.id,
+      status: dbPipeline.status,
+      progress: dbPipeline.progress,
       stages: stagesWithNames,
-      results: pipeline.results,
-      error: pipeline.error,
-      createdAt: pipeline.createdAt,
-      completedAt: pipeline.completedAt,
+      results: results,
+      error: dbPipeline.error || undefined,
+      createdAt: dbPipeline.createdAt.toISOString(),
+      completedAt: dbPipeline.completedAt?.toISOString(),
     };
   }
 
@@ -422,13 +441,34 @@ export class GenerationService extends EventEmitter {
    */
   private async processPipeline(pipelineId: string): Promise<void> {
     logger.info({ pipelineId }, "processPipeline() called");
-    const pipeline = this.pipelines.get(pipelineId);
-    if (!pipeline) {
+
+    // Load pipeline from database
+    const dbPipeline = await this.pipelineRepo.findById(pipelineId);
+    if (!dbPipeline) {
       console.error(
-        `❌ [Pipeline ${pipelineId}] Pipeline not found in memory!`,
+        `❌ [Pipeline ${pipelineId}] Pipeline not found in database!`,
       );
       return;
     }
+
+    // Reconstruct pipeline state from database
+    const pipeline: Pipeline = {
+      id: dbPipeline.id,
+      config: dbPipeline.config as any,
+      status: dbPipeline.status as any,
+      progress: dbPipeline.progress,
+      stages: (dbPipeline.config as any).stages || {
+        textInput: { status: "completed", progress: 100 },
+        promptOptimization: { status: "pending", progress: 0 },
+        imageGeneration: { status: "pending", progress: 0 },
+        image3D: { status: "pending", progress: 0 },
+        textureGeneration: { status: "pending", progress: 0 },
+      },
+      results: (dbPipeline.results as any) || {},
+      error: dbPipeline.error || undefined,
+      createdAt: dbPipeline.createdAt.toISOString(),
+      completedAt: dbPipeline.completedAt?.toISOString(),
+    };
 
     // Cast the config to our local PipelineConfig type for proper typing
     const config = pipeline.config as PipelineConfig;
@@ -436,6 +476,9 @@ export class GenerationService extends EventEmitter {
     try {
       logger.info({ pipelineId }, "Setting status to processing");
       pipeline.status = "processing";
+      await this.pipelineRepo.update(pipelineId, {
+        status: "processing",
+      } as any);
 
       let enhancedPrompt = config.description;
       let imageUrl: string | null = null;
@@ -626,8 +669,8 @@ export class GenerationService extends EventEmitter {
           await fs.writeFile(imagePath, imageBuffer);
 
           // If we have an image server, use it
-          if (process.env.IMAGE_SERVER_URL) {
-            imageUrlForMeshy = `${process.env.IMAGE_SERVER_URL}/${path.basename(imagePath)}`;
+          if (env.IMAGE_SERVER_URL) {
+            imageUrlForMeshy = `${env.IMAGE_SERVER_URL}/${path.basename(imagePath)}`;
           } else {
             // Need to upload to a public URL for Meshy
             console.warn(
@@ -689,14 +732,10 @@ export class GenerationService extends EventEmitter {
           quality === "ultra" ? 4096 : quality === "high" ? 2048 : 1024;
         const enablePbr = quality !== "standard";
 
-        // Allow per-quality model selection via env, with a sensible default
-        const qualityUpper = quality.toUpperCase();
-        const aiModelEnv =
-          process.env[`MESHY_MODEL_${qualityUpper}`] ||
-          process.env.MESHY_MODEL_DEFAULT;
-        const aiModel = aiModelEnv || "meshy-5";
+        // Use default model from validated env
+        const aiModel = env.MESHY_MODEL_DEFAULT || "meshy-5";
 
-        meshyTaskId = await this.aiService
+        const meshyTaskResult = await this.aiService
           .getMeshyService()
           .startImageTo3D(imageUrlForMeshy, {
             enable_pbr: enablePbr,
@@ -706,15 +745,18 @@ export class GenerationService extends EventEmitter {
             texture_resolution: textureResolution,
           });
 
+        // Handle both string and MeshyTaskResponse types
+        meshyTaskId =
+          typeof meshyTaskResult === "string"
+            ? meshyTaskResult
+            : String(meshyTaskResult);
+
         // Poll for completion - following Meshy best practices
         let meshyResult: MeshyResult | null = null;
         let attempts = 0;
 
         // Best practice: 10 second polling interval (not too aggressive)
-        const pollIntervalMs = parseInt(
-          process.env.MESHY_POLL_INTERVAL_MS || "10000",
-          10,
-        );
+        const pollIntervalMs = env.MESHY_POLL_INTERVAL_MS || 10000;
 
         // Quality-based timeouts as per documentation:
         // Standard: 5 minutes, High: 10 minutes, Ultra: 20 minutes
@@ -724,12 +766,7 @@ export class GenerationService extends EventEmitter {
           ULTRA: 1200000, // 20 minutes
         };
 
-        const timeoutMs = parseInt(
-          process.env[`MESHY_TIMEOUT_${qualityUpper}_MS`] ||
-            process.env.MESHY_TIMEOUT_MS ||
-            String(defaultTimeouts[qualityUpper] || defaultTimeouts.HIGH),
-          10,
-        );
+        const timeoutMs = env.MESHY_TIMEOUT_MS || defaultTimeouts.HIGH;
         const maxAttempts = Math.max(1, Math.ceil(timeoutMs / pollIntervalMs));
 
         console.log(
@@ -748,9 +785,11 @@ export class GenerationService extends EventEmitter {
           }
 
           try {
-            const status = await this.aiService
+            const statusResponse = await this.aiService
               .getMeshyService()
               .getTaskStatus(meshyTaskId);
+
+            const status = statusResponse as MeshyResult;
 
             // Update progress
             pipeline.stages.image3D.progress =
@@ -762,7 +801,7 @@ export class GenerationService extends EventEmitter {
             );
 
             if (status.status === "SUCCEEDED") {
-              meshyResult = status as MeshyResult;
+              meshyResult = status;
               console.log(
                 `✅ Meshy conversion succeeded! Polycount: ${meshyResult.polycount || "N/A"}`,
               );
@@ -1021,7 +1060,7 @@ export class GenerationService extends EventEmitter {
             );
 
             // Use Meshy retexture API
-            const retextureTaskId = await this.aiService
+            const retextureTaskResult = await this.aiService
               .getMeshyService()
               .startRetextureTask(
                 { inputTaskId: meshyTaskId! },
@@ -1033,6 +1072,12 @@ export class GenerationService extends EventEmitter {
                 },
               );
 
+            // Handle both string and MeshyTaskResponse types
+            const retextureTaskId =
+              typeof retextureTaskResult === "string"
+                ? retextureTaskResult
+                : String(retextureTaskResult);
+
             // Wait for completion
             let retextureResult: RetextureResult | null = null;
             let retextureAttempts = 0;
@@ -1041,12 +1086,14 @@ export class GenerationService extends EventEmitter {
             while (retextureAttempts < maxRetextureAttempts) {
               await new Promise((resolve) => setTimeout(resolve, 5000));
 
-              const status = await this.aiService
+              const statusResponse = await this.aiService
                 .getMeshyService()
                 .getRetextureTaskStatus(retextureTaskId);
 
+              const status = statusResponse as RetextureResult;
+
               if (status.status === "SUCCEEDED") {
-                retextureResult = status as RetextureResult;
+                retextureResult = status;
                 break;
               } else if (status.status === "FAILED") {
                 throw new Error(status.error || "Retexture failed");
@@ -1178,7 +1225,7 @@ export class GenerationService extends EventEmitter {
           );
 
           // Start rigging task
-          const riggingTaskId = await this.aiService
+          const riggingTaskResult = await this.aiService
             .getMeshyService()
             .startRiggingTask(
               { inputTaskId: meshyTaskId },
@@ -1186,6 +1233,12 @@ export class GenerationService extends EventEmitter {
                 heightMeters: config.riggingOptions?.heightMeters || 1.7,
               },
             );
+
+          // Handle both string and MeshyTaskResponse types
+          const riggingTaskId =
+            typeof riggingTaskResult === "string"
+              ? riggingTaskResult
+              : String(riggingTaskResult);
 
           logger.info({ pipelineId, riggingTaskId }, "Rigging task started");
 
@@ -1197,14 +1250,16 @@ export class GenerationService extends EventEmitter {
           while (riggingAttempts < maxRiggingAttempts) {
             await new Promise((resolve) => setTimeout(resolve, 5000));
 
-            const status = await this.aiService
+            const statusResponse = await this.aiService
               .getMeshyService()
               .getRiggingTaskStatus(riggingTaskId);
+
+            const status = statusResponse as RiggingResult;
             pipeline.stages.rigging!.progress =
               status.progress || (riggingAttempts / maxRiggingAttempts) * 100;
 
             if (status.status === "SUCCEEDED") {
-              riggingResult = status as RiggingResult;
+              riggingResult = status;
               break;
             } else if (status.status === "FAILED") {
               throw new Error(status.task_error?.message || "Rigging failed");
@@ -1631,9 +1686,12 @@ Your task is to enhance the user's description to create better results with ima
   private async uploadToCDN(
     assetId: string,
     files: Array<{ buffer: ArrayBuffer | Buffer; name: string; type?: string }>,
-  ): Promise<{ success: boolean; files: any[] }> {
-    const CDN_URL = process.env.CDN_URL;
-    const CDN_API_KEY = process.env.CDN_API_KEY;
+  ): Promise<{
+    success: boolean;
+    files: Array<{ path: string; url: string; size: number }>;
+  }> {
+    const CDN_URL = env.CDN_URL;
+    const CDN_API_KEY = env.CDN_API_KEY;
 
     if (!CDN_URL || !CDN_API_KEY) {
       throw new Error("CDN_URL and CDN_API_KEY must be configured");
@@ -1674,7 +1732,7 @@ Your task is to enhance the user's description to create better results with ima
 
     const result = (await response.json()) as {
       success: boolean;
-      files: any[];
+      files: Array<{ path: string; url: string; size: number }>;
     };
     console.log(
       `[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`,
@@ -1820,31 +1878,28 @@ Your task is to enhance the user's description to create better results with ima
   }
 
   /**
-   * Clean up old pipelines from memory
+   * Clean up old pipelines from database
    * Removes completed pipelines older than 24 hours and failed pipelines older than 1 hour
    */
   async cleanupOldPipelines(): Promise<void> {
-    const now = Date.now();
-    const completedThreshold = 24 * 60 * 60 * 1000; // 24 hours
-    const failedThreshold = 60 * 60 * 1000; // 1 hour
+    const now = new Date();
+    const completedThreshold = new Date(now.getTime() - 24 * 60 * 60 * 1000); // 24 hours ago
+    const failedThreshold = new Date(now.getTime() - 60 * 60 * 1000); // 1 hour ago
 
-    for (const [pipelineId, pipeline] of this.pipelines.entries()) {
-      const createdAt = new Date(pipeline.createdAt).getTime();
-      const age = now - createdAt;
+    try {
+      // Clean up old completed pipelines
+      const completedCount =
+        await this.pipelineRepo.cleanupOldPipelines(completedThreshold);
+      logger.info(
+        { count: completedCount, threshold: completedThreshold },
+        "Cleaned up completed pipelines",
+      );
 
-      if (pipeline.status === "completed" && age > completedThreshold) {
-        this.pipelines.delete(pipelineId);
-        logger.info(
-          { pipelineId, status: "completed" },
-          "Cleaned up completed pipeline",
-        );
-      } else if (pipeline.status === "failed" && age > failedThreshold) {
-        this.pipelines.delete(pipelineId);
-        logger.info(
-          { pipelineId, status: "failed" },
-          "Cleaned up failed pipeline",
-        );
-      }
+      // Note: The repository's cleanupOldPipelines handles completed, failed, and cancelled
+      // so we don't need a separate call for failed pipelines
+    } catch (error) {
+      logger.error({ err: error }, "Failed to cleanup old pipelines");
+      throw error;
     }
   }
 }

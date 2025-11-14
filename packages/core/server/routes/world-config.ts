@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { WorldConfigService } from "../services/WorldConfigService";
 import * as Models from "../models";
 
@@ -16,8 +16,10 @@ export const worldConfigRoutes = new Elysia({
 }).guard(
   {
     beforeHandle: ({ request }) => {
-      console.log(
-        `[WorldConfig] ${request.method} ${new URL(request.url).pathname}`,
+      const url = new URL(request.url);
+      logger.info(
+        { context: "WorldConfig", method: request.method, path: url.pathname },
+        "WorldConfig request",
       );
     },
   },
@@ -48,11 +50,17 @@ export const worldConfigRoutes = new Elysia({
               count: configs.length,
             };
           } catch (error) {
-            logger.error({ err: error }, '[WorldConfig Route] Error listing configurations:');
+            logger.error(
+              { err: error },
+              "[WorldConfig Route] Error listing configurations:",
+            );
             set.status = 500;
             return {
               success: false,
-              error: error instanceof Error ? error.message : "Failed to list configurations",
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to list configurations",
             };
           }
         },
@@ -90,7 +98,10 @@ export const worldConfigRoutes = new Elysia({
               config,
             };
           } catch (error) {
-            logger.error({ err: error }, '[WorldConfig Route] Error getting active configuration:');
+            logger.error(
+              { err: error },
+              "[WorldConfig Route] Error getting active configuration:",
+            );
             // Return success with null config - world config is optional
             return {
               success: true,

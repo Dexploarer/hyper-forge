@@ -27,8 +27,8 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
   // Get current user's achievements
   .get(
     "/me",
-    async ({ request }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -36,7 +36,9 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
       }
 
       const { user } = authResult;
-      const summary = await achievementService.getUserAchievementSummary(user.id);
+      const summary = await achievementService.getUserAchievementSummary(
+        user.id,
+      );
 
       return summary;
     },
@@ -54,8 +56,8 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
   // Get specific user's achievements (admin only, or self)
   .get(
     "/user/:userId",
-    async ({ request, params }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers, params }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -67,13 +69,13 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
 
       // Users can only view their own achievements unless they're admin
       if (authUser.id !== userId && authUser.role !== "admin") {
-        return new Response(
-          JSON.stringify({ error: "Forbidden" }),
-          { status: 403 },
-        );
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+        });
       }
 
-      const summary = await achievementService.getUserAchievementSummary(userId);
+      const summary =
+        await achievementService.getUserAchievementSummary(userId);
 
       return summary;
     },
@@ -94,8 +96,8 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
   // Award an achievement to a user (admin only, or system)
   .post(
     "/award",
-    async ({ request, body }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers, body }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -108,10 +110,9 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
       // Users can only award achievements to themselves unless they're admin
       const targetUserId = userId || authUser.id;
       if (targetUserId !== authUser.id && authUser.role !== "admin") {
-        return new Response(
-          JSON.stringify({ error: "Forbidden" }),
-          { status: 403 },
-        );
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+        });
       }
 
       const result = await achievementService.awardAchievement(
@@ -143,8 +144,8 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
   // Update progress for a progressive achievement
   .post(
     "/progress",
-    async ({ request, body }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers, body }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -178,4 +179,3 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
       },
     },
   );
-

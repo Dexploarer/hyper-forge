@@ -27,7 +27,10 @@ export const contentGenerationRoutes = new Elysia({
 })
   .derive(async (context) => {
     // Extract user from auth token if present (optional)
-    const authResult = await optionalAuth(context as any);
+    const authResult = await optionalAuth({
+      request: context.request,
+      headers: context.headers,
+    });
     return { user: authResult.user };
   })
   .guard(
@@ -282,8 +285,9 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/generate-npc-portrait",
           async ({ body, user }) => {
-            console.log(
-              `[ContentGeneration] Generating portrait for NPC: ${body.npcName}`,
+            logger.info(
+              { context: "ContentGeneration", npcName: body.npcName },
+              "Generating portrait for NPC",
             );
 
             // Fetch user's API keys with env fallback
@@ -337,15 +341,19 @@ export const contentGenerationRoutes = new Elysia({
 
             const imagePrompt = promptParts.join(". ");
 
-            logger.info({ context: 'ContentGeneration' }, 'Image prompt: ${imagePrompt}');
+            logger.info(
+              { context: "ContentGeneration", imagePrompt },
+              "Image prompt created",
+            );
 
             // Generate image
             const imageResult = await aiService
               .getImageService()
               .generateImage(imagePrompt, "portrait", "realistic");
 
-            console.log(
-              `[ContentGeneration] Portrait generated successfully for ${body.npcName}`,
+            logger.info(
+              { context: "ContentGeneration", npcName: body.npcName },
+              "Portrait generated successfully",
             );
 
             return {
@@ -379,8 +387,9 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/generate-quest-banner",
           async ({ body, user }) => {
-            console.log(
-              `[ContentGeneration] Generating banner for quest: ${body.questTitle}`,
+            logger.info(
+              { context: "ContentGeneration", questTitle: body.questTitle },
+              "Generating banner for quest",
             );
 
             // Fetch user's API keys with env fallback
@@ -434,15 +443,19 @@ export const contentGenerationRoutes = new Elysia({
 
             const imagePrompt = promptParts.join(". ");
 
-            logger.info({ context: 'ContentGeneration' }, 'Banner prompt: ${imagePrompt}');
+            logger.info(
+              { context: "ContentGeneration", imagePrompt },
+              "Banner prompt created",
+            );
 
             // Generate image
             const imageResult = await aiService
               .getImageService()
               .generateImage(imagePrompt, "banner", "fantasy");
 
-            console.log(
-              `[ContentGeneration] Banner generated successfully for ${body.questTitle}`,
+            logger.info(
+              { context: "ContentGeneration", questTitle: body.questTitle },
+              "Banner generated successfully",
             );
 
             return {
@@ -1009,8 +1022,14 @@ export const contentGenerationRoutes = new Elysia({
           "/media/save-portrait",
           async ({ body, user }) => {
             const mediaType = body.type || "portrait";
-            console.log(
-              `[Media] Saving ${mediaType} for ${body.entityType}:${body.entityId}`,
+            logger.info(
+              {
+                context: "Media",
+                mediaType,
+                entityType: body.entityType,
+                entityId: body.entityId,
+              },
+              "Saving media",
             );
 
             // Decode base64 image data
@@ -1057,8 +1076,9 @@ export const contentGenerationRoutes = new Elysia({
               createdBy: body.createdBy || user?.id,
             });
 
-            console.log(
-              `[Media] Portrait saved successfully: ${result.cdnUrl}`,
+            logger.info(
+              { context: "Media", cdnUrl: result.cdnUrl },
+              "Portrait saved successfully",
             );
 
             return {
@@ -1099,8 +1119,13 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/media/save-voice",
           async ({ body, user }) => {
-            console.log(
-              `[Media] Saving voice for ${body.entityType}:${body.entityId}`,
+            logger.info(
+              {
+                context: "Media",
+                entityType: body.entityType,
+                entityId: body.entityId,
+              },
+              "Saving voice",
             );
 
             // Decode base64 audio data
@@ -1144,7 +1169,10 @@ export const contentGenerationRoutes = new Elysia({
               createdBy: body.createdBy || user?.id,
             });
 
-            logger.info({ context: 'Media' }, 'Voice saved successfully: ${result.cdnUrl}');
+            logger.info(
+              { context: "Media", cdnUrl: result.cdnUrl },
+              "Voice saved successfully",
+            );
 
             return {
               success: true,
@@ -1183,8 +1211,13 @@ export const contentGenerationRoutes = new Elysia({
         .get(
           "/media/:entityType/:entityId",
           async ({ params }) => {
-            console.log(
-              `[Media] Fetching media for ${params.entityType}:${params.entityId}`,
+            logger.info(
+              {
+                context: "Media",
+                entityType: params.entityType,
+                entityId: params.entityId,
+              },
+              "Fetching media",
             );
 
             const media = await mediaStorageService.getMediaForEntity(
@@ -1219,8 +1252,9 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/generate-quest-for-npc",
           async ({ body, user }) => {
-            console.log(
-              `[ContentGeneration] Generating quest for NPC: ${body.npcName}`,
+            logger.info(
+              { context: "ContentGeneration", npcName: body.npcName },
+              "Generating quest for NPC",
             );
 
             // Generate quest with NPC context
@@ -1265,8 +1299,9 @@ export const contentGenerationRoutes = new Elysia({
               createdBy: body.createdBy || user?.id,
             });
 
-            console.log(
-              `[ContentGeneration] Quest generated and linked to NPC: ${quest.id}`,
+            logger.info(
+              { context: "ContentGeneration", questId: quest.id },
+              "Quest generated and linked to NPC",
             );
 
             return {
@@ -1323,8 +1358,9 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/generate-lore-for-npc",
           async ({ body, user }) => {
-            console.log(
-              `[ContentGeneration] Generating lore for NPC: ${body.npcName}`,
+            logger.info(
+              { context: "ContentGeneration", npcName: body.npcName },
+              "Generating lore for NPC",
             );
 
             // Generate lore that mentions the NPC
@@ -1374,8 +1410,9 @@ export const contentGenerationRoutes = new Elysia({
               createdBy: body.createdBy || user?.id,
             });
 
-            console.log(
-              `[ContentGeneration] Lore generated and linked to NPC: ${lore.id}`,
+            logger.info(
+              { context: "ContentGeneration", loreId: lore.id },
+              "Lore generated and linked to NPC",
             );
 
             return {
@@ -1431,8 +1468,13 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/generate-world",
           async ({ body }) => {
-            console.log(
-              `[ContentGeneration] Generating ${body.complexity || "medium"} ${body.theme || "fantasy"} world`,
+            logger.info(
+              {
+                context: "ContentGeneration",
+                complexity: body.complexity || "medium",
+                theme: body.theme || "fantasy",
+              },
+              "Generating world",
             );
 
             const result = await contentGenService.generateWorld({
@@ -1442,8 +1484,12 @@ export const contentGenerationRoutes = new Elysia({
               quality: body.quality,
             });
 
-            console.log(
-              `[ContentGeneration] Successfully generated world: ${result.world.worldName}`,
+            logger.info(
+              {
+                context: "ContentGeneration",
+                worldName: result.world.worldName,
+              },
+              "Successfully generated world",
             );
 
             return {

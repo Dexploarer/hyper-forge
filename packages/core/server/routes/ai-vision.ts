@@ -3,32 +3,50 @@
  * GPT-4 Vision powered weapon detection endpoints
  */
 
-import { Elysia } from 'elysia'
-import { logger } from '../utils/logger';
-import fetch from 'node-fetch'
-import { getWeaponDetectionPrompts } from '../utils/promptLoader'
-import * as Models from '../models'
+import { Elysia } from "elysia";
+import { logger } from "../utils/logger";
+import fetch from "node-fetch";
+import { getWeaponDetectionPrompts } from "../utils/promptLoader";
+import * as Models from "../models";
 
-export const aiVisionRoutes = new Elysia({ prefix: '/api', name: 'ai-vision' })
-  .guard({
+export const aiVisionRoutes = new Elysia({
+  prefix: "/api",
+  name: "ai-vision",
+}).guard(
+  {
     beforeHandle: ({ set }) => {
-      if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your_openai_api_key') {
-        set.status = 500
-        console.error('[AI Vision] OpenAI API key not configured or is placeholder')
-        return { success: false, error: 'OpenAI API key not configured. Please set OPENAI_API_KEY in your environment variables.' }
+      if (
+        !process.env.OPENAI_API_KEY ||
+        process.env.OPENAI_API_KEY === "your_openai_api_key"
+      ) {
+        set.status = 500;
+        logger.error(
+          { context: "AI Vision" },
+          "OpenAI API key not configured or is placeholder",
+        );
+        return {
+          success: false,
+          error:
+            "OpenAI API key not configured. Please set OPENAI_API_KEY in your environment variables.",
+        };
       }
-    }
-  }, (app) => app
-    // Weapon handle detection with GPT-4 Vision
-    .post('/weapon-handle-detect', async ({ body }) => {
-      const { image, angle, promptHint } = body
+    },
+  },
+  (app) =>
+    app
+      // Weapon handle detection with GPT-4 Vision
+      .post(
+        "/weapon-handle-detect",
+        async ({ body }) => {
+          const { image, angle, promptHint } = body;
 
-      // Load weapon detection prompts
-      const weaponPrompts = await getWeaponDetectionPrompts()
+          // Load weapon detection prompts
+          const weaponPrompts = await getWeaponDetectionPrompts();
 
-      // Build the prompt with optional hint
-      const basePromptTemplate = weaponPrompts?.basePrompt ||
-        `You are analyzing a 3D weapon rendered from the \${angle || 'side'} in a 512x512 pixel image.
+          // Build the prompt with optional hint
+          const basePromptTemplate =
+            weaponPrompts?.basePrompt ||
+            `You are analyzing a 3D weapon rendered from the \${angle || 'side'} in a 512x512 pixel image.
 The weapon is oriented vertically with the blade/head pointing UP and handle pointing DOWN.
 
 YOUR TASK: Identify ONLY the HANDLE/GRIP area where a human hand would hold this weapon.
@@ -51,31 +69,41 @@ VISUAL CUES for the handle:
 2. Look for width changes (handle is narrower than blade)
 3. Look for the crossguard/guard that separates blade from handle
 4. The handle is typically in the LOWER portion of the weapon
-5. If you see a wide, flat, metallic surface - that's the BLADE, not the handle!`
+5. If you see a wide, flat, metallic surface - that's the BLADE, not the handle!`;
 
-      // Replace template variables
-      let promptText = basePromptTemplate.replace('${angle || \'side\'}', angle || 'side')
+          // Replace template variables
+          let promptText = basePromptTemplate.replace(
+            "${angle || 'side'}",
+            angle || "side",
+          );
 
-      if (promptHint) {
-        const additionalGuidance = weaponPrompts?.additionalGuidance || '\n\nAdditional guidance: ${promptHint}'
-        promptText += additionalGuidance.replace('${promptHint}', promptHint)
-      }
+          if (promptHint) {
+            const additionalGuidance =
+              weaponPrompts?.additionalGuidance ||
+              "\n\nAdditional guidance: ${promptHint}";
+            promptText += additionalGuidance.replace(
+              "${promptHint}",
+              promptHint,
+            );
+          }
 
-      // Add restrictions
-      const restrictions = weaponPrompts?.restrictions ||
-        `\n\nDO NOT select:
+          // Add restrictions
+          const restrictions =
+            weaponPrompts?.restrictions ||
+            `\n\nDO NOT select:
 - The blade (wide, flat, sharp part)
 - The guard/crossguard
 - Decorative elements
 - The pommel alone
 
-ONLY select the cylindrical grip area where fingers would wrap around.`
+ONLY select the cylindrical grip area where fingers would wrap around.`;
 
-      promptText += restrictions
+          promptText += restrictions;
 
-      // Add response format
-      const responseFormat = weaponPrompts?.responseFormat ||
-        `\n\nRespond with ONLY a JSON object in this exact format:
+          // Add response format
+          const responseFormat =
+            weaponPrompts?.responseFormat ||
+            `\n\nRespond with ONLY a JSON object in this exact format:
 {
   "gripBounds": {
     "minX": <pixel coordinate 0-512>,
@@ -91,78 +119,94 @@ ONLY select the cylindrical grip area where fingers would wrap around.`
     "handle": "<describe what you identified as the handle>",
     "guard": "<describe if you see a guard/crossguard>"
   }
-}`
+}`;
 
-      promptText += responseFormat
+          promptText += responseFormat;
 
-      // Use GPT-4 Vision to analyze the weapon and identify grip location
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
+          // Use GPT-4 Vision to analyze the weapon and identify grip location
+          const response = await fetch(
+            "https://api.openai.com/v1/chat/completions",
             {
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: promptText
-                },
-                { type: "image_url", image_url: { url: image, detail: "high" } }
-              ]
-            }
-          ],
-          max_tokens: 300,
-          temperature: 0.3,
-          response_format: { type: "json_object" }
-        })
-      })
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              },
+              body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                  {
+                    role: "user",
+                    content: [
+                      {
+                        type: "text",
+                        text: promptText,
+                      },
+                      {
+                        type: "image_url",
+                        image_url: { url: image, detail: "high" },
+                      },
+                    ],
+                  },
+                ],
+                max_tokens: 300,
+                temperature: 0.3,
+                response_format: { type: "json_object" },
+              }),
+            },
+          );
 
-      if (!response.ok) {
-        const error = await response.text()
-        throw new Error(`OpenAI API error: ${response.status} - ${error}`)
-      }
+          if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+          }
 
-      const data = await response.json() as unknown as { choices: { message: { content: string } }[] }
-      let gripData
+          const data = (await response.json()) as unknown as {
+            choices: { message: { content: string } }[];
+          };
+          let gripData;
 
-      try {
-        gripData = JSON.parse((data as { choices: { message: { content: string } }[] }).choices[0].message.content as unknown as string)
-      } catch (parseError) {
-        // If parsing fails, return default values
-        gripData = {
-          gripBounds: { minX: 200, minY: 350, maxX: 300, maxY: 450 },
-          confidence: 0.5,
-          weaponType: "unknown",
-          gripDescription: "Unable to parse AI response",
-          orientation: "vertical"
-        }
-      }
+          try {
+            gripData = JSON.parse(
+              (data as { choices: { message: { content: string } }[] })
+                .choices[0].message.content as unknown as string,
+            );
+          } catch (parseError) {
+            // If parsing fails, return default values
+            gripData = {
+              gripBounds: { minX: 200, minY: 350, maxX: 300, maxY: 450 },
+              confidence: 0.5,
+              weaponType: "unknown",
+              gripDescription: "Unable to parse AI response",
+              orientation: "vertical",
+            };
+          }
 
-      return {
-        success: true,
-        gripData,
-        originalImage: image
-      }
-    }, {
-      body: Models.WeaponHandleDetectRequest,
-      response: Models.WeaponHandleDetectResponse,
-      detail: {
-        tags: ['AI Vision'],
-        summary: 'Detect weapon handle/grip area',
-        description: 'Uses GPT-4 Vision to identify the handle/grip area of a weapon image. (Auth optional)'
-      }
-    })
+          return {
+            success: true,
+            gripData,
+            originalImage: image,
+          };
+        },
+        {
+          body: Models.WeaponHandleDetectRequest,
+          response: Models.WeaponHandleDetectResponse,
+          detail: {
+            tags: ["AI Vision"],
+            summary: "Detect weapon handle/grip area",
+            description:
+              "Uses GPT-4 Vision to identify the handle/grip area of a weapon image. (Auth optional)",
+          },
+        },
+      )
 
-    // Weapon orientation detection with GPT-4 Vision
-    .post('/weapon-orientation-detect', async ({ body }) => {
-      const { image } = body
+      // Weapon orientation detection with GPT-4 Vision
+      .post(
+        "/weapon-orientation-detect",
+        async ({ body }) => {
+          const { image } = body;
 
-      const promptText = `You are analyzing a 3D weapon that should be oriented vertically.
+          const promptText = `You are analyzing a 3D weapon that should be oriented vertically.
 
 CRITICAL TASK: Determine if this weapon is upside down and needs to be flipped 180 degrees.
 
@@ -190,61 +234,78 @@ Respond with ONLY a JSON object:
   "needsFlip": <true if weapon is upside down, false if correctly oriented>,
   "currentOrientation": "<describe what you see at top and bottom>",
   "reason": "<brief explanation of your decision>"
-}`
+}`;
 
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
+          const response = await fetch(
+            "https://api.openai.com/v1/chat/completions",
             {
-              role: "user",
-              content: [
-                { type: "text", text: promptText },
-                { type: "image_url", image_url: { url: image, detail: "high" } }
-              ]
-            }
-          ],
-          max_tokens: 200,
-          temperature: 0.2,
-          response_format: { type: "json_object" }
-        })
-      })
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+              },
+              body: JSON.stringify({
+                model: "gpt-4o-mini",
+                messages: [
+                  {
+                    role: "user",
+                    content: [
+                      { type: "text", text: promptText },
+                      {
+                        type: "image_url",
+                        image_url: { url: image, detail: "high" },
+                      },
+                    ],
+                  },
+                ],
+                max_tokens: 200,
+                temperature: 0.2,
+                response_format: { type: "json_object" },
+              }),
+            },
+          );
 
-      if (!response.ok) {
-        const error = await response.text()
-        throw new Error(`OpenAI API error: ${response.status} - ${error}`)
-      }
+          if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+          }
 
-      const data = await response.json() as unknown as { choices: { message: { content: string } }[] }
-      let orientationData
+          const data = (await response.json()) as unknown as {
+            choices: { message: { content: string } }[];
+          };
+          let orientationData;
 
-      try {
-        orientationData = JSON.parse((data as { choices: { message: { content: string } }[] }).choices[0].message.content as unknown as string)
-      } catch (parseError: unknown) {
-        console.error('Error parsing AI response:', parseError)
-        orientationData = {
-          needsFlip: false,
-          currentOrientation: "Unable to parse AI response",
-          reason: "Parse error - assuming correct orientation"
-        }
-      }
+          try {
+            orientationData = JSON.parse(
+              (data as { choices: { message: { content: string } }[] })
+                .choices[0].message.content as unknown as string,
+            );
+          } catch (parseError: unknown) {
+            logger.error(
+              { context: "AI Vision", err: parseError },
+              "Error parsing AI response",
+            );
+            orientationData = {
+              needsFlip: false,
+              currentOrientation: "Unable to parse AI response",
+              reason: "Parse error - assuming correct orientation",
+            };
+          }
 
-      return {
-        success: true,
-        ...orientationData
-      }
-    }, {
-      body: Models.WeaponOrientationDetectRequest,
-      response: Models.WeaponOrientationDetectResponse,
-      detail: {
-        tags: ['AI Vision'],
-        summary: 'Detect weapon orientation',
-        description: 'Uses GPT-4 Vision to determine if weapon needs to be flipped 180 degrees. (Auth optional)'
-      }
-    })
-  )
+          return {
+            success: true,
+            ...orientationData,
+          };
+        },
+        {
+          body: Models.WeaponOrientationDetectRequest,
+          response: Models.WeaponOrientationDetectResponse,
+          detail: {
+            tags: ["AI Vision"],
+            summary: "Detect weapon orientation",
+            description:
+              "Uses GPT-4 Vision to determine if weapon needs to be flipped 180 degrees. (Auth optional)",
+          },
+        },
+      ),
+);

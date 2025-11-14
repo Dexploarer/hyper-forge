@@ -3,24 +3,36 @@
  * AI music generation for game soundtracks
  */
 
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
+import { ElevenLabsClient, type ElevenLabs } from "@elevenlabs/elevenlabs-js";
+
+// Simplified composition plan from API (gets converted to ElevenLabs.MusicPrompt)
+export interface SimpleCompositionPlan {
+  prompt?: string;
+  musicLengthMs?: number;
+  sections?: Array<{
+    name: string;
+    duration: number;
+    description: string;
+  }>;
+  modelId?: string;
+}
 
 export interface GenerateMusicParams {
   prompt?: string;
   musicLengthMs?: number;
-  compositionPlan?: any;
+  compositionPlan?: SimpleCompositionPlan | ElevenLabs.MusicPrompt;
   forceInstrumental?: boolean;
   respectSectionsDurations?: boolean;
   storeForInpainting?: boolean;
-  modelId?: string;
-  outputFormat?: string;
+  modelId?: "music_v1" | string;
+  outputFormat?: ElevenLabs.MusicComposeRequestOutputFormat | string;
 }
 
 export interface CreateCompositionPlanParams {
   prompt: string;
   musicLengthMs?: number;
-  sourceCompositionPlan?: any;
-  modelId?: string;
+  sourceCompositionPlan?: SimpleCompositionPlan | ElevenLabs.MusicPrompt;
+  modelId?: "music_v1" | string;
 }
 
 export class ElevenLabsMusicService {
@@ -37,20 +49,56 @@ export class ElevenLabsMusicService {
     return this.client !== null;
   }
 
+  /**
+   * Convert simplified composition plan to ElevenLabs MusicPrompt
+   */
+  private convertToMusicPrompt(
+    plan: SimpleCompositionPlan,
+  ): ElevenLabs.MusicPrompt {
+    const sections: ElevenLabs.SongSection[] =
+      plan.sections?.map((section) => ({
+        sectionName: section.name,
+        durationMs: section.duration,
+        positiveLocalStyles: [section.description],
+        negativeLocalStyles: [],
+        lines: [],
+      })) || [];
+
+    return {
+      positiveGlobalStyles: plan.prompt ? [plan.prompt] : [],
+      negativeGlobalStyles: [],
+      sections,
+    };
+  }
+
   async generateMusic(params: GenerateMusicParams): Promise<Buffer> {
     if (!this.client) {
       throw new Error("ElevenLabs client not initialized");
     }
 
+    // Convert compositionPlan if it's a simple format
+    let musicPrompt: ElevenLabs.MusicPrompt | undefined = undefined;
+    if (params.compositionPlan) {
+      // Check if it's already a MusicPrompt (has positiveGlobalStyles)
+      if ("positiveGlobalStyles" in params.compositionPlan) {
+        musicPrompt = params.compositionPlan as ElevenLabs.MusicPrompt;
+      } else {
+        musicPrompt = this.convertToMusicPrompt(
+          params.compositionPlan as SimpleCompositionPlan,
+        );
+      }
+    }
+
     const audioStream = await this.client.music.compose({
       prompt: params.prompt,
-      compositionPlan: params.compositionPlan,
+      compositionPlan: musicPrompt,
       musicLengthMs: params.musicLengthMs,
-      modelId: (params.modelId || "music_v1") as any,
+      modelId: (params.modelId as "music_v1") || "music_v1",
       forceInstrumental: params.forceInstrumental,
       respectSectionsDurations: params.respectSectionsDurations,
       storeForInpainting: params.storeForInpainting,
-      outputFormat: params.outputFormat as any,
+      outputFormat:
+        params.outputFormat as ElevenLabs.MusicComposeRequestOutputFormat,
     });
 
     // Convert stream to buffer
@@ -83,35 +131,44 @@ export class ElevenLabsMusicService {
     };
   }
 
-  async createCompositionPlan(params: CreateCompositionPlanParams) {
+  async createCompositionPlan(
+    params: CreateCompositionPlanParams,
+  ): Promise<ElevenLabs.MusicPrompt> {
     if (!this.client) {
       throw new Error("ElevenLabs client not initialized");
     }
 
     // Note: The SDK may not have a direct composition plan API
     // This might need to call a different endpoint or method
-    // Placeholder implementation
+    // Placeholder implementation that returns a proper MusicPrompt
+    const sections: ElevenLabs.SongSection[] = [
+      {
+        sectionName: "intro",
+        durationMs: 5000,
+        positiveLocalStyles: ["energetic", "uplifting"],
+        negativeLocalStyles: [],
+        lines: [],
+      },
+      {
+        sectionName: "main",
+        durationMs: params.musicLengthMs ? params.musicLengthMs - 10000 : 50000,
+        positiveLocalStyles: ["dynamic"],
+        negativeLocalStyles: [],
+        lines: [],
+      },
+      {
+        sectionName: "outro",
+        durationMs: 5000,
+        positiveLocalStyles: ["calm", "fade out"],
+        negativeLocalStyles: [],
+        lines: [],
+      },
+    ];
+
     return {
-      prompt: params.prompt,
-      musicLengthMs: params.musicLengthMs,
-      sections: [
-        {
-          name: "intro",
-          duration: 5000,
-          description: "Opening section",
-        },
-        {
-          name: "main",
-          duration: params.musicLengthMs ? params.musicLengthMs - 10000 : 50000,
-          description: "Main melody",
-        },
-        {
-          name: "outro",
-          duration: 5000,
-          description: "Closing section",
-        },
-      ],
-      modelId: params.modelId || "music_v1",
+      positiveGlobalStyles: [], // Required by MusicPrompt
+      negativeGlobalStyles: [], // Required by MusicPrompt
+      sections,
     };
   }
 

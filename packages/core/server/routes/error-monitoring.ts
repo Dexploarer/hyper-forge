@@ -9,6 +9,12 @@ import { requireAuth } from "../middleware/auth";
 import { ForbiddenError } from "../errors";
 
 export const errorMonitoringRoutes = new Elysia({ prefix: "/api/errors" })
+  // Apply optional auth to all routes
+  .derive(async (context) => {
+    const { optionalAuth } = await import("../middleware/auth");
+    return optionalAuth({ request: context.request, headers: context.headers });
+  })
+
   /**
    * GET /api/errors
    * List recent errors with filtering

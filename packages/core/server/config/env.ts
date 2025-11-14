@@ -7,7 +7,7 @@
  */
 
 import { z } from "zod";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 /**
  * Environment variable schema
@@ -58,39 +58,39 @@ const envSchema = z.object({
   // =========================================
   // Vector Database (Optional)
   // =========================================
-    QDRANT_URL: z
-      .string()
-      .optional()
-      .transform((val) => {
-        // Auto-add protocol if missing (common with Railway service URLs)
-        if (!val || val === "") return val;
-        const trimmed = val.trim();
-        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-          return trimmed;
+  QDRANT_URL: z
+    .string()
+    .optional()
+    .transform((val) => {
+      // Auto-add protocol if missing (common with Railway service URLs)
+      if (!val || val === "") return val;
+      const trimmed = val.trim();
+      if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        return trimmed;
+      }
+      // Railway service URLs should use https://
+      // Railway internal URLs should use http://
+      if (trimmed.includes(".railway.internal")) {
+        return `http://${trimmed}`;
+      }
+      return `https://${trimmed}`;
+    })
+    .refine(
+      (val) => {
+        if (!val || val === "") return true;
+        // Allow Railway internal hostnames and standard URLs
+        try {
+          const url = new URL(val);
+          return url.protocol === "http:" || url.protocol === "https:";
+        } catch {
+          return false;
         }
-        // Railway service URLs should use https://
-        // Railway internal URLs should use http://
-        if (trimmed.includes(".railway.internal")) {
-          return `http://${trimmed}`;
-        }
-        return `https://${trimmed}`;
-      })
-      .refine(
-        (val) => {
-          if (!val || val === "") return true;
-          // Allow Railway internal hostnames and standard URLs
-          try {
-            const url = new URL(val);
-            return url.protocol === "http:" || url.protocol === "https:";
-          } catch {
-            return false;
-          }
-        },
-        {
-          message:
-            "Must be a valid URL with http:// or https:// protocol if provided",
-        },
-      ),
+      },
+      {
+        message:
+          "Must be a valid URL with http:// or https:// protocol if provided",
+      },
+    ),
   QDRANT_API_KEY: z.string().optional(),
 
   // =========================================
@@ -280,12 +280,14 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-  logger.error('❌ Environment variable validation failed:');
-  console.error(JSON.stringify(parsed.error.format(), null, 2));
-  console.error(
-    "\n💡 Please check your .env file and ensure all required variables are set.",
+  logger.error(
+    {
+      validation: "failed",
+      errors: parsed.error.format(),
+      help: "Check .env file and .env.example for required variables",
+    },
+    "Environment variable validation failed",
   );
-  logger.error('📝 See .env.example for reference.');
   process.exit(1);
 }
 

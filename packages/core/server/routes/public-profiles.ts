@@ -19,9 +19,12 @@ export const publicProfilesRoutes = new Elysia({ prefix: "/api/public" })
   // Get public profile info
   .get(
     "/users/:userId/profile",
-    async ({ params, request, set }) => {
+    async ({ params, request, headers, set }) => {
       // Use optional auth to detect if user is viewing their own profile
-      const authContext = await optionalAuth({ request });
+      const authContext = await optionalAuth({
+        request,
+        headers,
+      });
       const isOwnProfile = authContext.user?.id === params.userId;
 
       const profile = await userService.getPublicProfile(params.userId);
@@ -58,8 +61,8 @@ export const publicProfilesRoutes = new Elysia({ prefix: "/api/public" })
   // Get public assets for a user
   .get(
     "/users/:userId/assets",
-    async ({ params, query, request, set }) => {
-      const authContext = await optionalAuth({ request });
+    async ({ params, query, request, headers, set }) => {
+      const authContext = await optionalAuth({ request, headers });
       const isOwnProfile = authContext.user?.id === params.userId;
 
       // Verify user exists
@@ -109,8 +112,8 @@ export const publicProfilesRoutes = new Elysia({ prefix: "/api/public" })
   // Get public projects for a user
   .get(
     "/users/:userId/projects",
-    async ({ params, request, set }) => {
-      const authContext = await optionalAuth({ request });
+    async ({ params, request, headers, set }) => {
+      const authContext = await optionalAuth({ request, headers });
       const isOwnProfile = authContext.user?.id === params.userId;
 
       // Verify user exists
@@ -147,8 +150,8 @@ export const publicProfilesRoutes = new Elysia({ prefix: "/api/public" })
   // Get user's achievements
   .get(
     "/users/:userId/achievements",
-    async ({ params, request, set }) => {
-      const authContext = await optionalAuth({ request });
+    async ({ params, request, headers, set }) => {
+      const authContext = await optionalAuth({ request, headers });
       const isOwnProfile = authContext.user?.id === params.userId;
 
       // Verify user exists
@@ -200,8 +203,8 @@ export const publicProfilesRoutes = new Elysia({ prefix: "/api/public" })
   // Get user statistics
   .get(
     "/users/:userId/stats",
-    async ({ params, request, set }) => {
-      const authContext = await optionalAuth({ request });
+    async ({ params, request, headers, set }) => {
+      const authContext = await optionalAuth({ request, headers });
       const isOwnProfile = authContext.user?.id === params.userId;
 
       // Verify user exists

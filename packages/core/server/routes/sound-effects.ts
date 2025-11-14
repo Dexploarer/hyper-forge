@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { ElevenLabsSoundEffectsService } from "../services/ElevenLabsSoundEffectsService";
 import * as Models from "../models";
 
@@ -14,7 +14,11 @@ export const soundEffectsRoutes = new Elysia({
 }).guard(
   {
     beforeHandle: ({ request }) => {
-      logger.info({ context: 'SFX' }, '${request.method} ${new URL(request.url).pathname}');
+      const url = new URL(request.url);
+      logger.info(
+        { context: "SFX", method: request.method, path: url.pathname },
+        "SFX request",
+      );
     },
   },
   (app) =>
@@ -33,8 +37,9 @@ export const soundEffectsRoutes = new Elysia({
         async ({ body, sfxService, set }) => {
           // Check if service is available
           if (!sfxService.isAvailable()) {
-            console.error(
-              "[SFX] Service not available - ELEVENLABS_API_KEY not configured",
+            logger.error(
+              { context: "SFX" },
+              "Service not available - ELEVENLABS_API_KEY not configured",
             );
             set.status = 503;
             return {
@@ -46,14 +51,16 @@ export const soundEffectsRoutes = new Elysia({
           }
 
           try {
-            console.log(
-              `[SFX] Generating sound effect: "${body.text.substring(0, 50)}..."`,
+            logger.info(
+              { context: "SFX", textPreview: body.text.substring(0, 50) },
+              "Generating sound effect",
             );
 
             const audioBuffer = await sfxService.generateSoundEffect(body);
 
-            console.log(
-              `[SFX] Sound effect generated successfully: ${audioBuffer.length} bytes`,
+            logger.info(
+              { context: "SFX", sizeBytes: audioBuffer.length },
+              "Sound effect generated successfully",
             );
 
             // Return audio file directly as binary
@@ -69,7 +76,7 @@ export const soundEffectsRoutes = new Elysia({
               },
             );
           } catch (err) {
-            logger.error({ err: err }, '[SFX] Generation failed:');
+            logger.error({ err: err }, "[SFX] Generation failed:");
             set.status = 500;
             return {
               error: "Generation Failed",
@@ -98,8 +105,9 @@ export const soundEffectsRoutes = new Elysia({
         async ({ body, sfxService, set }) => {
           // Check if service is available
           if (!sfxService.isAvailable()) {
-            console.error(
-              "[SFX] Service not available - ELEVENLABS_API_KEY not configured",
+            logger.error(
+              { context: "SFX" },
+              "Service not available - ELEVENLABS_API_KEY not configured",
             );
             set.status = 503;
             return {
@@ -110,16 +118,22 @@ export const soundEffectsRoutes = new Elysia({
           }
 
           try {
-            console.log(
-              `[SFX] Batch generating ${body.effects.length} sound effects`,
+            logger.info(
+              { context: "SFX", effectCount: body.effects.length },
+              "Batch generating sound effects",
             );
 
             const results = await sfxService.generateSoundEffectBatch(
               body.effects,
             );
 
-            console.log(
-              `[SFX] Batch generation complete: ${results.successful}/${results.total}`,
+            logger.info(
+              {
+                context: "SFX",
+                successful: results.successful,
+                total: results.total,
+              },
+              "Batch generation complete",
             );
 
             // Convert audio buffers to base64 for JSON response
@@ -136,7 +150,7 @@ export const soundEffectsRoutes = new Elysia({
 
             return formattedResults;
           } catch (err) {
-            logger.error({ err: err }, '[SFX] Batch generation failed:');
+            logger.error({ err: err }, "[SFX] Batch generation failed:");
             set.status = 500;
             return {
               error: "Batch Generation Failed",

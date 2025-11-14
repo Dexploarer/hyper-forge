@@ -19,7 +19,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { randomUUID } from "crypto";
 import { PlaytesterSwarmOrchestrator } from "../services/PlaytesterSwarmOrchestrator";
 import type {
@@ -393,8 +393,13 @@ export const playtesterSwarmRoutes = new Elysia({
           orchestrator.registerTester(testerConfig);
         }
 
-        console.log(
-          `[Playtester Swarm] Starting test session ${sessionId} with ${selectedProfiles.length} testers`,
+        logger.info(
+          {
+            context: "Playtester Swarm",
+            sessionId,
+            testerCount: selectedProfiles.length,
+          },
+          "Starting test session",
         );
 
         // Run swarm playtest
@@ -407,8 +412,13 @@ export const playtesterSwarmRoutes = new Elysia({
           );
           const duration = Date.now() - startTime;
 
-          console.log(
-            `[Playtester Swarm] Completed in ${duration}ms. Found ${results.aggregatedMetrics.uniqueBugs} unique issues.`,
+          logger.info(
+            {
+              context: "Playtester Swarm",
+              durationMs: duration,
+              uniqueBugs: results.aggregatedMetrics.uniqueBugs,
+            },
+            "Test session completed",
           );
 
           // Get orchestrator stats
@@ -440,7 +450,7 @@ export const playtesterSwarmRoutes = new Elysia({
           orchestrator.destroy();
         }
       } catch (error) {
-        logger.error({ err: error }, '[Playtester Swarm] Generation error:');
+        logger.error({ err: error }, "[Playtester Swarm] Generation error:");
         set.status = 500;
         return {
           error: "Failed to run playtester swarm",

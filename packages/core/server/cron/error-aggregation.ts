@@ -150,7 +150,7 @@ export async function cleanupOldErrors() {
       .delete(apiErrors)
       .where(lt(apiErrors.createdAt, cutoffDate));
 
-    const deletedCount = result.rowCount || 0;
+    const deletedCount = (result as any).rowCount || 0;
 
     logger.info(
       {
@@ -192,7 +192,7 @@ export async function cleanupOldAggregations() {
       .delete(errorAggregations)
       .where(lt(errorAggregations.hourBucket, cutoffDate));
 
-    const deletedCount = result.rowCount || 0;
+    const deletedCount = (result as any).rowCount || 0;
 
     logger.info(
       {

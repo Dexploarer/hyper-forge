@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { ElevenLabsVoiceService } from "../services/ElevenLabsVoiceService";
 import { MediaStorageService } from "../services/MediaStorageService";
 import * as Models from "../models";
@@ -20,14 +20,19 @@ export const voiceGenerationRoutes = new Elysia({
 })
   .derive(async (context) => {
     // Extract user from auth token if present (optional)
-    const authResult = await optionalAuth(context as any);
+    const authResult = await optionalAuth({
+      request: context.request,
+      headers: context.headers,
+    });
     return { user: authResult.user };
   })
   .guard(
     {
       beforeHandle: ({ request }) => {
-        console.log(
-          `[Voice] ${request.method} ${new URL(request.url).pathname}`,
+        const url = new URL(request.url);
+        logger.info(
+          { context: "Voice", method: request.method, path: url.pathname },
+          "Voice request",
         );
       },
     },
@@ -210,14 +215,22 @@ export const voiceGenerationRoutes = new Elysia({
         .post(
           "/design",
           async ({ body, voiceService }) => {
-            console.log(
-              `[Voice] Designing voice: "${body.voiceDescription.substring(0, 50)}..."`,
+            logger.info(
+              {
+                context: "Voice",
+                descriptionPreview: body.voiceDescription.substring(0, 50),
+              },
+              "Designing voice",
             );
 
             const result = await voiceService.designVoice(body);
 
-            console.log(
-              `[Voice] Voice design complete: ${(result as any).previews?.length || 0} previews generated`,
+            logger.info(
+              {
+                context: "Voice",
+                previewCount: (result as any).previews?.length || 0,
+              },
+              "Voice design complete",
             );
 
             return result;
@@ -238,14 +251,19 @@ export const voiceGenerationRoutes = new Elysia({
         .post(
           "/create",
           async ({ body, voiceService }) => {
-            console.log(
-              `[Voice] Creating voice from preview: "${body.voiceName}"`,
+            logger.info(
+              { context: "Voice", voiceName: body.voiceName },
+              "Creating voice from preview",
             );
 
             const result = await voiceService.createVoiceFromPreview(body);
 
-            console.log(
-              `[Voice] Voice created successfully: ${(result as any).voiceId || (result as any).voice_id}`,
+            logger.info(
+              {
+                context: "Voice",
+                voiceId: (result as any).voiceId || (result as any).voice_id,
+              },
+              "Voice created successfully",
             );
 
             return result;
@@ -266,8 +284,9 @@ export const voiceGenerationRoutes = new Elysia({
         .post(
           "/save",
           async ({ body, user }) => {
-            console.log(
-              `[Voice] Saving ${body.type || "voice"} audio: ${body.name}`,
+            logger.info(
+              { context: "Voice", type: body.type || "voice", name: body.name },
+              "Saving audio",
             );
 
             // Decode base64 audio data
@@ -293,7 +312,10 @@ export const voiceGenerationRoutes = new Elysia({
               createdBy: user?.id,
             });
 
-            logger.info({ context: 'Voice' }, 'Audio saved successfully: ${result.cdnUrl}');
+            logger.info(
+              { context: "Voice", cdnUrl: result.cdnUrl },
+              "Audio saved successfully",
+            );
 
             return {
               success: true,
@@ -341,8 +363,9 @@ export const voiceGenerationRoutes = new Elysia({
         .get(
           "/saved",
           async ({ query, user }) => {
-            console.log(
-              `[Voice] Fetching saved audio${query.type ? ` of type: ${query.type}` : ""}`,
+            logger.info(
+              { context: "Voice", type: query.type },
+              "Fetching saved audio",
             );
 
             const limit = query.limit ? parseInt(query.limit) : 50;
@@ -374,7 +397,10 @@ export const voiceGenerationRoutes = new Elysia({
               allAudio = allAudio.slice(0, limit);
             }
 
-            logger.info({ context: 'Voice' }, 'Found ${allAudio.length} saved audio files');
+            logger.info(
+              { context: "Voice", count: allAudio.length },
+              "Found saved audio files",
+            );
 
             return {
               success: true,

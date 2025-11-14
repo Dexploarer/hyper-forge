@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { createHmac, timingSafeEqual } from "crypto";
 import { CDNPublishService } from "../services/CDNPublishService";
 import { requireAuth } from "../middleware/auth";
@@ -38,7 +38,10 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
           const assetId = params.assetId;
 
           // Require authentication
-          const authResult = await requireAuth(context);
+          const authResult = await requireAuth({
+            request: context.request,
+            headers: context.headers,
+          });
           if (authResult instanceof Response) {
             return authResult; // Return 401 if not authenticated
           }
@@ -98,7 +101,10 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
           const { assetIds } = body as { assetIds: string[] };
 
           // Require authentication
-          const authResult = await requireAuth(context);
+          const authResult = await requireAuth({
+            request: context.request,
+            headers: context.headers,
+          });
           if (authResult instanceof Response) {
             return authResult; // Return 401 if not authenticated
           }
@@ -235,8 +241,9 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
             }
 
             const payload = body as WebhookPayload;
-            console.log(
-              `[CDN Webhook] Received upload notification for asset: ${payload.assetId}`,
+            logger.info(
+              { context: "CDN Webhook", assetId: payload.assetId },
+              "Received upload notification",
             );
 
             // Extract metadata from payload
@@ -255,8 +262,9 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
             if (existingAssets.length > 0) {
               // Asset exists - update CDN URLs
               const existing = existingAssets[0];
-              console.log(
-                `[CDN Webhook] Asset ${payload.assetId} already exists, updating CDN URLs`,
+              logger.info(
+                { context: "CDN Webhook", assetId: payload.assetId },
+                "Asset already exists, updating CDN URLs",
               );
 
               await db
@@ -274,8 +282,9 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
               databaseId = existing.id;
             } else {
               // Asset doesn't exist - create new record
-              console.log(
-                `[CDN Webhook] Creating new database record for asset: ${payload.assetId}`,
+              logger.info(
+                { context: "CDN Webhook", assetId: payload.assetId },
+                "Creating new database record",
               );
 
               const newAsset = toNewAsset(metadata, systemUserId);
@@ -287,8 +296,9 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
               action = "created";
               databaseId = created.id;
 
-              console.log(
-                `[CDN Webhook] Created asset record with ID: ${databaseId}`,
+              logger.info(
+                { context: "CDN Webhook", databaseId },
+                "Created asset record",
               );
             }
 
@@ -299,7 +309,10 @@ export const createCDNRoutes = (assetsDir: string, cdnUrl: string) => {
               databaseId,
             };
           } catch (error) {
-            logger.error({ err: error }, '[CDN Webhook] Error processing webhook:');
+            logger.error(
+              { err: error },
+              "[CDN Webhook] Error processing webhook:",
+            );
             set.status = 500;
             return {
               success: false,

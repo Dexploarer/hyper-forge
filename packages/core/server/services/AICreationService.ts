@@ -94,28 +94,19 @@ interface MeshyTaskResponse {
   result?: {
     task_id?: string;
     id?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface MeshyStatusResponse {
-  result?: any;
-  [key: string]: any;
+  result?: unknown;
+  [key: string]: unknown;
 }
 
 // ==================== Generation Prompts Interface ====================
-
-interface GenerationPrompts {
-  imageGeneration?: {
-    base?: string;
-    fallbackEnhancement?: string;
-  };
-  posePrompts?: {
-    [key: string]: any;
-  };
-  [key: string]: any;
-}
+// Re-use the interface from promptLoader to avoid type mismatches
+import type { GenerationPrompts } from "../utils/promptLoader";
 
 // ==================== Main Service Class ====================
 
@@ -245,7 +236,21 @@ class ImageGenerationService {
       );
     }
 
-    const data = (await response.json()) as any;
+    interface AIGatewayImageResponse {
+      choices?: Array<{
+        message?: {
+          images?: Array<{
+            image_url: { url: string };
+          }>;
+        };
+      }>;
+      data?: Array<{
+        url?: string;
+        b64_json?: string;
+      }>;
+    }
+
+    const data = (await response.json()) as AIGatewayImageResponse;
     let imageUrl: string;
 
     if (useAIGateway) {
@@ -304,7 +309,7 @@ class MeshyService {
   async startImageTo3D(
     imageUrl: string,
     options: ImageTo3DOptions,
-  ): Promise<string | any> {
+  ): Promise<string | MeshyTaskResponse> {
     const response = await this.fetchFn(
       `${this.baseUrl}/openapi/v1/image-to-3d`,
       {
@@ -342,7 +347,7 @@ class MeshyService {
     return taskId;
   }
 
-  async getTaskStatus(taskId: string): Promise<any> {
+  async getTaskStatus(taskId: string): Promise<unknown> {
     const response = await this.fetchFn(
       `${this.baseUrl}/openapi/v1/image-to-3d/${taskId}`,
       {
@@ -365,8 +370,8 @@ class MeshyService {
     input: RetextureInput,
     style: RetextureStyle,
     options: RetextureOptions,
-  ): Promise<string | any> {
-    const body: Record<string, any> = {
+  ): Promise<string | MeshyTaskResponse> {
+    const body: Record<string, unknown> = {
       art_style: options.artStyle || "realistic",
       ai_model: options.aiModel || "meshy-5",
       enable_original_uv: options.enableOriginalUV ?? true,
@@ -415,7 +420,7 @@ class MeshyService {
     return taskId;
   }
 
-  async getRetextureTaskStatus(taskId: string): Promise<any> {
+  async getRetextureTaskStatus(taskId: string): Promise<unknown> {
     const response = await this.fetchFn(
       `${this.baseUrl}/openapi/v1/retexture/${taskId}`,
       {
@@ -438,8 +443,8 @@ class MeshyService {
   async startRiggingTask(
     input: RiggingInput,
     options: RiggingOptions = {},
-  ): Promise<string | any> {
-    const body: Record<string, any> = {
+  ): Promise<string | MeshyTaskResponse> {
+    const body: Record<string, unknown> = {
       height_meters: options.heightMeters || 1.7,
     };
 
@@ -477,7 +482,7 @@ class MeshyService {
     return taskId;
   }
 
-  async getRiggingTaskStatus(taskId: string): Promise<any> {
+  async getRiggingTaskStatus(taskId: string): Promise<unknown> {
     const response = await this.fetchFn(
       `${this.baseUrl}/openapi/v1/rigging/${taskId}`,
       {
@@ -512,5 +517,4 @@ export type {
   RetextureOptions,
   RiggingInput,
   RiggingOptions,
-  GenerationPrompts,
 };

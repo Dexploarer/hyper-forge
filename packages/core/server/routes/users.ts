@@ -12,8 +12,8 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
   // Get current user profile (requires authentication)
   .get(
     "/me",
-    async ({ request }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -37,8 +37,8 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
   // Update/Complete user profile (requires authentication)
   .post(
     "/complete-profile",
-    async ({ request, body }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers, body }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {
@@ -52,7 +52,11 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
       const markCompleted = !authUser.profileCompleted;
 
       // Build update object - only include discordUsername if provided
-      const updateData: { displayName: string; email: string; discordUsername?: string } = {
+      const updateData: {
+        displayName: string;
+        email: string;
+        discordUsername?: string;
+      } = {
         displayName,
         email,
       };
@@ -87,8 +91,8 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
   // Get all users (admin only)
   .get(
     "/",
-    async ({ request, query }) => {
-      const adminResult = await requireAdmin({ request });
+    async ({ request, headers, query }) => {
+      const adminResult = await requireAdmin({ request, headers });
 
       // If admin check failed, return the error response
       if (adminResult instanceof Response) {
@@ -137,8 +141,8 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
   // Update user settings (requires authentication)
   .post(
     "/settings",
-    async ({ request, body }) => {
-      const authResult = await requireAuth({ request });
+    async ({ request, headers, body }) => {
+      const authResult = await requireAuth({ request, headers });
 
       // If auth failed, return the error response
       if (authResult instanceof Response) {

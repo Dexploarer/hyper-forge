@@ -26,7 +26,7 @@ export interface VariantWithAsset extends AssetVariant {
     id: string;
     name: string;
     thumbnailUrl: string | null;
-    modelUrl: string;
+    modelUrl: string | null;
   };
 }
 
@@ -103,8 +103,8 @@ export class AssetVariantRepository extends BaseRepository<
           variantAsset: {
             id: assets.id,
             name: assets.name,
-            thumbnailUrl: assets.thumbnailUrl,
-            modelUrl: assets.modelUrl,
+            thumbnailUrl: assets.cdnThumbnailUrl,
+            modelUrl: assets.cdnUrl,
           },
         })
         .from(assetVariants)
@@ -139,8 +139,8 @@ export class AssetVariantRepository extends BaseRepository<
           variantAsset: {
             id: assets.id,
             name: assets.name,
-            thumbnailUrl: assets.thumbnailUrl,
-            modelUrl: assets.modelUrl,
+            thumbnailUrl: assets.cdnThumbnailUrl,
+            modelUrl: assets.cdnUrl,
           },
         })
         .from(assetVariants)
@@ -243,29 +243,35 @@ export class AssetVariantRepository extends BaseRepository<
         // Calculate statistics
         const total = variants.length;
         const completed = variants.filter(
-          (v) => v.generationStatus === "completed",
+          (v: AssetVariant) => v.generationStatus === "completed",
         ).length;
         const failed = variants.filter(
-          (v) => v.generationStatus === "failed",
+          (v: AssetVariant) => v.generationStatus === "failed",
         ).length;
-        const active = variants.filter((v) => v.isActive).length;
+        const active = variants.filter((v: AssetVariant) => v.isActive).length;
 
         // Get latest timestamps
         const completedVariants = variants.filter(
-          (v) => v.completedAt !== null,
+          (v: AssetVariant) => v.completedAt !== null,
         );
         const lastCompleted =
           completedVariants.length > 0
             ? new Date(
                 Math.max(
-                  ...completedVariants.map((v) => v.completedAt!.getTime()),
+                  ...completedVariants.map((v: AssetVariant) =>
+                    v.completedAt!.getTime(),
+                  ),
                 ),
               )
             : null;
 
         const lastCreated =
           variants.length > 0
-            ? new Date(Math.max(...variants.map((v) => v.createdAt.getTime())))
+            ? new Date(
+                Math.max(
+                  ...variants.map((v: AssetVariant) => v.createdAt.getTime()),
+                ),
+              )
             : null;
 
         // Upsert statistics

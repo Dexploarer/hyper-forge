@@ -20,7 +20,10 @@ export const createRetextureRoutes = (
     new Elysia({ prefix: "/api", name: "retexture" })
       .derive(async (context) => {
         // Extract user from auth token if present (optional)
-        const authResult = await optionalAuth(context as any);
+        const authResult = await optionalAuth({
+          request: context.request,
+          headers: context.headers,
+        });
         return { user: authResult.user };
       })
       // Retexture endpoint
@@ -40,12 +43,16 @@ export const createRetextureRoutes = (
           }
 
           // Create RetextureService instance with user's API key
-          const imageServerBaseUrl = process.env.IMAGE_SERVER_URL || (() => {
-            if (process.env.NODE_ENV === 'production') {
-              throw new Error('IMAGE_SERVER_URL must be set in production for Meshy AI callbacks');
-            }
-            return "http://localhost:8080";
-          })();
+          const imageServerBaseUrl =
+            process.env.IMAGE_SERVER_URL ||
+            (() => {
+              if (process.env.NODE_ENV === "production") {
+                throw new Error(
+                  "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
+                );
+              }
+              return "http://localhost:8080";
+            })();
 
           const retextureService = new RetextureService({
             meshyApiKey: userApiKeys.meshyApiKey,
@@ -94,12 +101,16 @@ export const createRetextureRoutes = (
           }
 
           // Create RetextureService instance with user's API key
-          const imageServerBaseUrl = process.env.IMAGE_SERVER_URL || (() => {
-            if (process.env.NODE_ENV === 'production') {
-              throw new Error('IMAGE_SERVER_URL must be set in production for Meshy AI callbacks');
-            }
-            return "http://localhost:8080";
-          })();
+          const imageServerBaseUrl =
+            process.env.IMAGE_SERVER_URL ||
+            (() => {
+              if (process.env.NODE_ENV === "production") {
+                throw new Error(
+                  "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
+                );
+              }
+              return "http://localhost:8080";
+            })();
 
           const retextureService = new RetextureService({
             meshyApiKey: userApiKeys.meshyApiKey,
