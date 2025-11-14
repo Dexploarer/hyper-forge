@@ -38,6 +38,9 @@ interface Asset {
   hasModel: boolean;
   modelFile?: string;
   generatedAt?: string;
+  cdnUrl?: string | null;
+  cdnThumbnailUrl?: string | null;
+  cdnConceptArtUrl?: string | null;
 }
 
 export class AssetService {
@@ -207,6 +210,9 @@ export class AssetService {
             ? path.basename(updatedAsset.cdnUrl)
             : undefined,
           generatedAt: updatedAsset.createdAt.toISOString(),
+          cdnUrl: updatedAsset.cdnUrl,
+          cdnThumbnailUrl: updatedAsset.cdnThumbnailUrl,
+          cdnConceptArtUrl: updatedAsset.cdnConceptArtUrl,
         };
       } else {
         // Just update metadata in database
@@ -237,6 +243,9 @@ export class AssetService {
             ? path.basename(updatedAsset.cdnUrl)
             : undefined,
           generatedAt: updatedAsset.createdAt.toISOString(),
+          cdnUrl: updatedAsset.cdnUrl,
+          cdnThumbnailUrl: updatedAsset.cdnThumbnailUrl,
+          cdnConceptArtUrl: updatedAsset.cdnConceptArtUrl,
         };
       }
     } catch (error) {
