@@ -461,7 +461,7 @@ const app = new Elysia()
   .use(
     rateLimit({
       duration: 60000, // 1 minute window
-      max: 100, // 100 requests per minute per IP
+      max: 1000, // 1000 requests per minute per IP (increased for development)
       errorResponse: {
         error: "TOO_MANY_REQUESTS",
         message: "Rate limit exceeded. Please try again later.",
@@ -596,7 +596,7 @@ const app = new Elysia()
     app.use(
       rateLimit({
         duration: 60000, // 1 minute window
-        max: 10, // Only 10 requests per minute for admin endpoints
+        max: 100, // 100 requests per minute for admin endpoints (increased for development)
         errorResponse: {
           error: "TOO_MANY_REQUESTS",
           message:
