@@ -10,6 +10,7 @@ import { db, activityLog } from "../db";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { userService } from "../services/UserService";
 import { MediaStorageService } from "../services/MediaStorageService";
+import { importCDNAssets } from "../scripts/import-cdn-assets";
 
 const mediaStorageService = new MediaStorageService();
 
@@ -325,6 +326,55 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
         summary: "Check media storage health (Admin only)",
         description:
           "Check CDN health and media storage statistics for CDN-first architecture.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
+  )
+
+  /**
+   * Import CDN assets to database
+   * POST /api/admin/import-cdn-assets
+   * Scans CDN and creates database records for missing assets
+   */
+  .post(
+    "/import-cdn-assets",
+    async ({ request, headers, set }) => {
+      const adminResult = await requireAdmin({ request, headers });
+
+      if (adminResult instanceof Response) {
+        return adminResult;
+      }
+
+      try {
+        logger.info({ context: "Admin" }, "Starting CDN asset import via API");
+
+        const result = await importCDNAssets();
+
+        logger.info(
+          { context: "Admin", result },
+          "CDN asset import completed via API",
+        );
+
+        return {
+          success: true,
+          ...result,
+          message: `Imported ${result.imported} assets, skipped ${result.skipped}, failed ${result.failed}`,
+        };
+      } catch (error) {
+        logger.error({ context: "Admin", err: error }, "CDN import failed");
+        set.status = 500;
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Import failed",
+        };
+      }
+    },
+    {
+      detail: {
+        tags: ["Admin"],
+        summary: "Import CDN assets to database (Admin only)",
+        description:
+          "Scans CDN for assets and creates database records for any missing assets. This fixes the issue where assets exist on CDN but not in database.",
         security: [{ BearerAuth: [] }],
       },
     },
