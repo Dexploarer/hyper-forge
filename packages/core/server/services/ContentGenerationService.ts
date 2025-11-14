@@ -173,7 +173,7 @@ export class ContentGenerationService {
 
     const nodes = this.parseDialogueResponse(result.text);
 
-    logger.info({ context: 'ContentGeneration' }, 'Generated ${nodes.length} dialogue nodes');
+    logger.info({ context: 'ContentGeneration' }, `Generated ${nodes.length} dialogue nodes`);
 
     return {
       nodes,
@@ -232,7 +232,7 @@ export class ContentGenerationService {
       },
     };
 
-    logger.info({ context: 'ContentGeneration' }, 'Generated NPC: ${completeNPC.name}');
+    logger.info({ context: 'ContentGeneration' }, `Generated NPC: ${completeNPC.name}`);
 
     return {
       npc: completeNPC,
@@ -308,7 +308,7 @@ export class ContentGenerationService {
       },
     };
 
-    logger.info({ context: 'ContentGeneration' }, 'Generated quest: ${completeQuest.title}');
+    logger.info({ context: 'ContentGeneration' }, `Generated quest: ${completeQuest.title}`);
 
     return {
       quest: completeQuest,
@@ -373,7 +373,7 @@ export class ContentGenerationService {
       },
     };
 
-    logger.info({ context: 'ContentGeneration' }, 'Generated lore: ${completeLore.title}');
+    logger.info({ context: 'ContentGeneration' }, `Generated lore: ${completeLore.title}`);
 
     return {
       lore: completeLore,
@@ -404,7 +404,7 @@ export class ContentGenerationService {
 
     const aiPrompt = this.buildWorldPrompt(theme, complexity, customPrompt);
 
-    logger.info({ context: 'ContentGeneration' }, 'Generating ${complexity} ${theme} world');
+    logger.info({ context: 'ContentGeneration' }, `Generating ${complexity} ${theme} world`);
 
     const result = await generateText({
       model,
