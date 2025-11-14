@@ -42,11 +42,11 @@ async function importCDNAssets() {
     );
 
     // Group files by asset ID (directory name)
-    // Files from CDN are in format like "models/assetId/file.glb"
+    // Files from CDN are in format like "models/assetId/file.glb" or "models/assetId/subdir/file.glb"
     const assetMap = new Map<string, CDNAsset[]>();
     for (const file of cdnFiles) {
       const parts = file.path.split("/");
-      // Expected format: models/assetId/file.ext
+      // Expected format: models/assetId/... (at least 3 parts)
       if (parts.length < 3 || parts[0] !== "models") continue;
 
       const assetId = parts[1]; // Second part is the asset ID (after 'models/')
@@ -84,12 +84,16 @@ async function importCDNAssets() {
           continue;
         }
 
-        // Find main model file (.glb)
-        const modelFile = files.find((f) => f.path.endsWith(".glb"));
+        // Find main model file (.glb) - must be directly in asset directory (not in subdirectories like animations/)
+        // Expected path: models/assetId/file.glb (exactly 3 parts when split by "/")
+        const modelFile = files.find((f) => {
+          const parts = f.path.split("/");
+          return parts.length === 3 && f.path.endsWith(".glb");
+        });
         if (!modelFile) {
           logger.warn(
             { context: "CDN Import", assetId },
-            "No .glb file found, skipping",
+            "No .glb file found in root directory, skipping",
           );
           skipped++;
           continue;
