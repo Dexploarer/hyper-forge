@@ -6,6 +6,7 @@
 import { db } from "../db/db";
 import { assets } from "../db/schema/assets.schema";
 import { logger } from "../utils/logger";
+import { randomUUID } from "crypto";
 
 const CDN_URL = process.env.CDN_URL || "http://localhost:3005";
 const CDN_API_KEY = process.env.CDN_API_KEY;
@@ -110,8 +111,10 @@ async function importCDNAssets() {
           ? `${CDN_URL}/${conceptArtFile.path}`
           : undefined;
 
+        const assetUUID = randomUUID();
+
         await db.insert(assets).values({
-          id: assetId,
+          id: assetUUID,
           name: assetId.replace(/-/g, " ").replace(/_/g, " "), // Convert kebab-case to readable name
           description: `Imported from CDN`,
           type: "character", // Default type, can be updated later
@@ -123,6 +126,7 @@ async function importCDNAssets() {
             importedFromCDN: true,
             importedAt: new Date().toISOString(),
             fileCount: files.length,
+            cdnAssetId: assetId, // Store original directory name
           },
           isPublic: true, // Make imported assets public by default
           createdAt: new Date(modelFile.lastModified),
