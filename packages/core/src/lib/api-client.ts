@@ -127,8 +127,8 @@ const _api = treaty<App>(API_BASE_URL, {
   // Dynamic headers - auth token updated on every request
   fetch: {
     credentials: "include",
-    headers: () => getAuthHeaders(),
-  } as any,
+  },
+  headers: () => getAuthHeaders(),
 });
 
 /**
