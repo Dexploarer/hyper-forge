@@ -341,14 +341,18 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
     async ({ request, headers, set }) => {
       // Allow either admin auth OR system API key for one-time import
       const apiKey = headers["x-api-key"];
-      const isSystemKey = apiKey === process.env.CDN_API_KEY;
+      const cdnApiKey = process.env.CDN_API_KEY;
+      const isSystemKey = apiKey && cdnApiKey && apiKey === cdnApiKey;
 
+      // If not using system API key, require admin auth
       if (!isSystemKey) {
         const adminResult = await requireAdmin({ request, headers });
 
         if (adminResult instanceof Response) {
           return adminResult;
         }
+      } else {
+        logger.info({ context: "Admin" }, "Import called with system API key");
       }
 
       try {
