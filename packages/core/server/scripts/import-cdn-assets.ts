@@ -68,9 +68,11 @@ async function importCDNAssets() {
     // Import each asset
     for (const [assetId, files] of assetMap) {
       try {
-        // Check if asset already exists in database
+        // Check if asset with this CDN asset ID already exists in database
+        // We check metadata.cdnAssetId since the database ID is a UUID
         const existing = await db.query.assets.findFirst({
-          where: (assets, { eq }) => eq(assets.id, assetId),
+          where: (assets, { sql }) =>
+            sql`${assets.metadata}->>'cdnAssetId' = ${assetId}`,
         });
 
         if (existing) {
