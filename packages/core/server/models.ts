@@ -701,23 +701,7 @@ export const NPCDataResponse = t.Object({
 
 export const GenerateNPCRequest = t.Object({
   prompt: t.String({ minLength: 10, maxLength: 2000 }),
-  archetype: t.Optional(
-    t.Union([
-      t.Literal("warrior"),
-      t.Literal("mage"),
-      t.Literal("rogue"),
-      t.Literal("merchant"),
-      t.Literal("noble"),
-      t.Literal("peasant"),
-      t.Literal("guard"),
-      t.Literal("priest"),
-      t.Literal("scholar"),
-      t.Literal("artisan"),
-      t.Literal("monster"),
-      t.Literal("beast"),
-      t.Literal("custom"),
-    ]),
-  ),
+  archetype: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
   context: t.Optional(t.String({ maxLength: 5000 })),
   quality: t.Optional(ModelQuality),
   worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
@@ -765,28 +749,8 @@ export const QuestDataResponse = t.Object({
 
 export const GenerateQuestRequest = t.Object({
   prompt: t.Optional(t.String({ minLength: 10, maxLength: 2000 })),
-  questType: t.Optional(
-    t.Union([
-      t.Literal("combat"),
-      t.Literal("exploration"),
-      t.Literal("fetch"),
-      t.Literal("escort"),
-      t.Literal("puzzle"),
-      t.Literal("stealth"),
-      t.Literal("diplomatic"),
-      t.Literal("crafting"),
-      t.Literal("mystery"),
-      t.Literal("custom"),
-    ]),
-  ),
-  difficulty: t.Optional(
-    t.Union([
-      t.Literal("easy"),
-      t.Literal("medium"),
-      t.Literal("hard"),
-      t.Literal("expert"),
-    ]),
-  ),
+  questType: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
+  difficulty: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
   theme: t.Optional(t.String({ maxLength: 200 })),
   context: t.Optional(t.String({ maxLength: 5000 })),
   quality: t.Optional(ModelQuality),
@@ -813,21 +777,7 @@ export const LoreDataResponse = t.Object({
 
 export const GenerateLoreRequest = t.Object({
   prompt: t.Optional(t.String({ minLength: 10, maxLength: 2000 })),
-  category: t.Optional(
-    t.Union([
-      t.Literal("history"),
-      t.Literal("mythology"),
-      t.Literal("religion"),
-      t.Literal("politics"),
-      t.Literal("geography"),
-      t.Literal("culture"),
-      t.Literal("magic"),
-      t.Literal("technology"),
-      t.Literal("creatures"),
-      t.Literal("legends"),
-      t.Literal("custom"),
-    ]),
-  ),
+  category: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
   topic: t.Optional(t.String({ minLength: 1, maxLength: 200 })),
   context: t.Optional(t.String({ maxLength: 5000 })),
   quality: t.Optional(ModelQuality),

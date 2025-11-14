@@ -1,5 +1,5 @@
 import { useRef, useCallback, useEffect, useState } from "react";
-import { Settings, Menu, HelpCircle, Image as ImageIcon } from "lucide-react";
+import { RotateCcw, X, Package, Sparkles, Loader2 } from "lucide-react";
 
 import { useHandRiggingStore } from "../store";
 import type { ProcessingStage } from "../store";
@@ -9,14 +9,15 @@ import {
   HandProcessingSteps,
   HandRiggingControls,
   ModelViewer,
-  ModelStats,
-  RiggingResults,
   DebugImages,
   HelpSection,
   ExportModal,
+  HandViewportControls,
+  HandPanelToggles,
 } from "@/components/hand-rigging";
-import { Drawer, CollapsibleSection, Tray } from "@/components/common";
+import { CollapsibleSection, ErrorNotification } from "@/components/common";
 import { ThreeViewerRef } from "@/components/shared/ThreeViewer";
+import { FittingProgress } from "@/components/armor-fitting";
 import {
   HandRiggingService,
   HandRiggingResult,
@@ -33,9 +34,10 @@ export function HandRiggingPage() {
   const simpleHandRiggingService = useRef<SimpleHandRiggingService | null>(
     null,
   );
-  const [showControlsDrawer, setShowControlsDrawer] = useState(false);
-  const [showDebugTray, setShowDebugTray] = useState(false);
-  const [showHelpTray, setShowHelpTray] = useState(false);
+  const [showAssetsPanel, setShowAssetsPanel] = useState(false);
+  const [showControlsPanel, setShowControlsPanel] = useState(false);
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
+  const [showHelpPanel, setShowHelpPanel] = useState(false);
 
   // Get state and actions from store
   const {
@@ -275,135 +277,232 @@ export function HandRiggingPage() {
     setShowExportModal(false);
   };
 
+  const { error: storeError } = useHandRiggingStore();
+
   return (
     <>
-      <div className="viewer-page-container p-4">
-        <div className="flex-1 overflow-hidden">
-          {/* Top Bar with Controls */}
-          <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-text-primary">
-              Hand Rigging
-            </h1>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowControlsDrawer(true)}
-                className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"
-              >
-                <Settings className="w-4 h-4" />
-                <span>Controls</span>
-              </button>
-              {Object.keys(debugImages).length > 0 && (
-                <button
-                  onClick={() => setShowDebugTray(true)}
-                  className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"
-                >
-                  <ImageIcon className="w-4 h-4" />
-                  <span>Debug Images</span>
-                </button>
-              )}
-              <button
-                onClick={() => setShowHelpTray(true)}
-                className="px-4 py-2 rounded-lg bg-bg-secondary border border-border-primary hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors flex items-center gap-2"
-              >
-                <HelpCircle className="w-4 h-4" />
-                <span>Help</span>
-              </button>
-            </div>
-          </div>
+      <div className="page-container">
+        {/* Error Toast */}
+        {storeError && (
+          <ErrorNotification
+            error={storeError}
+            onClose={() => setError(null)}
+          />
+        )}
 
-          {/* Main Content - 3D Viewer */}
-          <div className="space-y-4">
+        {/* Center - Full 3D Viewport */}
+        <div className="flex-1 flex flex-col">
+          <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl flex items-center justify-center">
+            {/* 3D Model Viewer - Full Screen */}
             <ModelViewer
               modelUrl={modelUrl}
               selectedAvatar={selectedAvatar}
-              showSkeleton={showSkeleton}
-              canExport={canExport()}
               leftHandData={leftHandData}
               rightHandData={rightHandData}
               processingStage={processingStage}
               viewerRef={viewerRef}
-              onToggleSkeleton={handleToggleSkeleton}
-              onExport={() => setShowExportModal(true)}
               onModelLoad={handleModelLoad}
             />
 
-            {/* Collapsible Sections for Stats and Results */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <CollapsibleSection
-                title="Model Statistics"
-                defaultOpen={false}
-                icon={Settings}
-                badge={modelInfo ? 1 : undefined}
-              >
-                <ModelStats modelInfo={modelInfo} />
-              </CollapsibleSection>
+            {/* Viewport Controls (top-right) */}
+            {modelUrl && (
+              <HandViewportControls
+                showSkeleton={showSkeleton}
+                canExport={canExport()}
+                onToggleSkeleton={handleToggleSkeleton}
+                onResetCamera={() => viewerRef.current?.resetCamera?.()}
+                onExport={() => setShowExportModal(true)}
+              />
+            )}
 
-              <CollapsibleSection
-                title="Rigging Results"
-                defaultOpen={false}
-                icon={Settings}
-                badge={riggingResult ? 1 : undefined}
-              >
-                <RiggingResults riggingResult={riggingResult} />
-              </CollapsibleSection>
-            </div>
+            {/* Bottom-center: Processing Buttons */}
+            {selectedAvatar && (
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-wrap justify-center gap-3 z-10 max-w-[90%]">
+                <button
+                  onClick={handleStartProcessing}
+                  disabled={
+                    processingStage !== "idle" &&
+                    processingStage !== "complete" &&
+                    processingStage !== "error"
+                  }
+                  className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2.5 bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shadow-lg"
+                >
+                  {processingStage === "idle" || processingStage === "error" ? (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Start Rigging</span>
+                    </>
+                  ) : processingStage === "complete" ? (
+                    <>
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Rig Again</span>
+                    </>
+                  ) : (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Processing...</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  onClick={() => useHandRiggingStore.getState().reset()}
+                  disabled={
+                    processingStage !== "idle" &&
+                    processingStage !== "complete" &&
+                    processingStage !== "error"
+                  }
+                  className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 flex items-center gap-2.5 bg-bg-primary/80 border border-white/10 text-text-primary hover:bg-bg-secondary hover:border-white/20 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Reset</span>
+                </button>
+              </div>
+            )}
+
+            {/* Panel Toggle Buttons (bottom-right) */}
+            <HandPanelToggles
+              showAssetsPanel={showAssetsPanel}
+              showControlsPanel={showControlsPanel}
+              showDebugPanel={showDebugPanel}
+              showHelpPanel={showHelpPanel}
+              hasDebugImages={Object.keys(debugImages).length > 0}
+              hasSelectedAvatar={!!selectedAvatar}
+              onToggleAssets={() => setShowAssetsPanel(!showAssetsPanel)}
+              onToggleControls={() => setShowControlsPanel(!showControlsPanel)}
+              onToggleDebug={() => setShowDebugPanel(!showDebugPanel)}
+              onToggleHelp={() => setShowHelpPanel(!showHelpPanel)}
+            />
+
+            {/* Processing Progress Overlay */}
+            {processingStage !== "idle" &&
+              processingStage !== "complete" &&
+              processingStage !== "error" && (
+                <FittingProgress
+                  progress={
+                    processingStage === "detecting-wrists"
+                      ? 33
+                      : processingStage === "creating-bones"
+                        ? 66
+                        : 90
+                  }
+                  message={
+                    processingStage === "detecting-wrists"
+                      ? "Detecting wrist positions..."
+                      : processingStage === "creating-bones"
+                        ? "Creating hand bones..."
+                        : "Applying bone weights..."
+                  }
+                />
+              )}
           </div>
         </div>
       </div>
 
-      {/* Controls Drawer */}
-      <Drawer
-        open={showControlsDrawer}
-        onClose={() => setShowControlsDrawer(false)}
-        side="left"
-        size="lg"
-        title="Hand Rigging Controls"
-      >
-        <div className="p-6 space-y-4">
-          {/* Upload Card */}
-          <HandAvatarSelector />
+      {/* Assets Side Panel (left) */}
+      {showAssetsPanel && (
+        <div className="absolute top-4 left-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-3 z-20 min-w-[280px] max-w-[340px] max-h-[calc(100vh-2rem)] flex flex-col animate-scale-in">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-text-primary text-sm font-semibold">
+              Avatar Selection
+            </h3>
+            <button
+              onClick={() => setShowAssetsPanel(false)}
+              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-colors"
+              aria-label="Close Assets Panel"
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-          {/* Controls */}
-          {selectedAvatar && (
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1">
+            <HandAvatarSelector />
+          </div>
+        </div>
+      )}
+
+      {/* Controls Side Panel (right) */}
+      {showControlsPanel && selectedAvatar && (
+        <div className="absolute top-4 right-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-3 z-20 min-w-[300px] max-w-[360px] max-h-[calc(100vh-2rem)] flex flex-col animate-scale-in">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-text-primary text-sm font-semibold">
+              Rigging Controls
+            </h3>
+            <button
+              onClick={() => setShowControlsPanel(false)}
+              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-colors"
+              aria-label="Close Controls Panel"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1 space-y-4">
             <HandRiggingControls onStartProcessing={handleStartProcessing} />
-          )}
 
-          {/* Processing Pipeline */}
-          <CollapsibleSection
-            title="Processing Pipeline"
-            defaultOpen={true}
-            icon={Settings}
-          >
-            <HandProcessingSteps />
-          </CollapsibleSection>
+            {/* Processing Pipeline */}
+            <CollapsibleSection
+              title="Processing Pipeline"
+              defaultOpen={true}
+              icon={Package}
+            >
+              <HandProcessingSteps />
+            </CollapsibleSection>
+          </div>
         </div>
-      </Drawer>
+      )}
 
-      {/* Debug Images Tray */}
-      <Tray
-        open={showDebugTray}
-        onClose={() => setShowDebugTray(false)}
-        title="Debug Images"
-        defaultHeight="lg"
-        resizable={true}
-      >
-        <div className="p-6">
-          <DebugImages debugImages={debugImages} showDebugImages={true} />
-        </div>
-      </Tray>
+      {/* Debug Images Panel (bottom) */}
+      {showDebugPanel && Object.keys(debugImages).length > 0 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-3 z-20 max-w-[90%] max-h-[40vh] flex flex-col animate-scale-in">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-text-primary text-sm font-semibold">
+              Debug Images
+            </h3>
+            <button
+              onClick={() => setShowDebugPanel(false)}
+              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-colors"
+              aria-label="Close Debug Panel"
+            >
+              <X size={16} />
+            </button>
+          </div>
 
-      {/* Help Tray */}
-      <Tray
-        open={showHelpTray}
-        onClose={() => setShowHelpTray(false)}
-        title="Help & Documentation"
-        defaultHeight="md"
-        resizable={true}
-      >
-        <div className="p-6">
-          <HelpSection useSimpleMode={useSimpleMode} />
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1">
+            <DebugImages debugImages={debugImages} showDebugImages={true} />
+          </div>
         </div>
-      </Tray>
+      )}
+
+      {/* Help Panel (bottom) */}
+      {showHelpPanel && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-3 z-20 max-w-[90%] max-h-[50vh] flex flex-col animate-scale-in">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-text-primary text-sm font-semibold">
+              Help & Documentation
+            </h3>
+            <button
+              onClick={() => setShowHelpPanel(false)}
+              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-colors"
+              aria-label="Close Help Panel"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="overflow-y-auto flex-1">
+            <HelpSection useSimpleMode={useSimpleMode} />
+          </div>
+        </div>
+      )}
 
       {/* Export Modal */}
       <ExportModal

@@ -337,7 +337,7 @@ export const contentGenerationRoutes = new Elysia({
               `Portrait of ${body.npcName}, a ${body.archetype}`,
               body.appearance,
               `Personality: ${body.personality}`,
-              "Professional character portrait, detailed facial features, game character art style, head and shoulders view",
+              "Professional character portrait, detailed facial features, game character art style, head and shoulders view, square aspect ratio 1:1, centered composition optimized for circular display at 96x96 pixels",
             ];
 
             const imagePrompt = promptParts.join(". ");
@@ -439,7 +439,7 @@ export const contentGenerationRoutes = new Elysia({
               `Quest banner artwork for "${body.questTitle}"`,
               body.description,
               `Quest type: ${body.questType}, Difficulty: ${body.difficulty}`,
-              "Epic fantasy game quest banner, wide horizontal format, dramatic composition, game UI art style, 16:9 aspect ratio, cinematic lighting",
+              "Epic fantasy game quest banner, wide horizontal format, dramatic composition, game UI art style, aspect ratio 6:1, optimized for 384x64 pixels banner display, cinematic lighting, important elements centered vertically",
             ];
 
             const imagePrompt = promptParts.join(". ");

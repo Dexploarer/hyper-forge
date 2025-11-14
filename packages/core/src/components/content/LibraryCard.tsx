@@ -208,8 +208,11 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       const result = await apiClient.generateNPCPortrait({
         npcName: npc.name,
         archetype: npc.archetype || "default",
-        appearance: npc.appearance?.description || "",
-        personality: npc.personality?.traits?.join(", ") || "",
+        appearance:
+          npc.appearance?.description || "Generic appearance for a character",
+        personality:
+          npc.personality?.traits?.join(", ") ||
+          "Neutral and balanced personality",
       });
 
       // Set the generated portrait URL
