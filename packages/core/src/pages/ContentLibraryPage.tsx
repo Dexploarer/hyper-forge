@@ -13,6 +13,7 @@ import {
   Filter,
   Grid3x3,
   List,
+  Volume2,
 } from "lucide-react";
 import { useContent, ContentItem, ContentType } from "@/hooks/useContent";
 import { EditNPCModal } from "@/components/content/EditNPCModal";
@@ -27,6 +28,7 @@ const CONTENT_TYPE_ICONS = {
   quest: Scroll,
   dialogue: FileText,
   lore: BookOpen,
+  audio: Volume2,
 } as const;
 
 const CONTENT_TYPE_LABELS = {
@@ -34,6 +36,7 @@ const CONTENT_TYPE_LABELS = {
   quest: "Quest",
   dialogue: "Dialogue",
   lore: "Lore",
+  audio: "Audio",
 } as const;
 
 type ViewMode = "grid" | "list";
@@ -46,6 +49,7 @@ export const ContentLibraryPage: React.FC = () => {
     deleteQuest,
     deleteDialogue,
     deleteLore,
+    deleteAudio,
   } = useContent();
   const [filterType, setFilterType] = useState<ContentType | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,6 +86,9 @@ export const ContentLibraryPage: React.FC = () => {
         break;
       case "lore":
         await deleteLore(item.id);
+        break;
+      case "audio":
+        await deleteAudio(item.id);
         break;
     }
   };
@@ -138,6 +145,9 @@ export const ContentLibraryPage: React.FC = () => {
                 </option>
                 <option value="lore">
                   Lore ({allContent.filter((i) => i.type === "lore").length})
+                </option>
+                <option value="audio">
+                  Audio ({allContent.filter((i) => i.type === "audio").length})
                 </option>
               </select>
             </div>

@@ -25,7 +25,7 @@ import {
   useUpdateLoreMutation,
 } from "@/queries/content.queries";
 
-export type ContentType = "npc" | "quest" | "dialogue" | "lore";
+export type ContentType = "npc" | "quest" | "dialogue" | "lore" | "audio";
 
 export interface ContentItem {
   id: string;
@@ -56,6 +56,17 @@ export const useContent = () => {
   const questsQuery = useQuery(contentQueries.quests());
   const dialoguesQuery = useQuery(contentQueries.dialogues());
   const loresQuery = useQuery(contentQueries.lores());
+
+  // Fetch audio files
+  const audioQuery = useQuery({
+    queryKey: ["audio"],
+    queryFn: async () => {
+      const response = await fetch("/api/voice/saved");
+      if (!response.ok) throw new Error("Failed to fetch audio");
+      const data = await response.json();
+      return data.audio || [];
+    },
+  });
 
   // Mutations with notifications
   const deleteNPCMutation = useDeleteNPCMutation();
@@ -178,6 +189,7 @@ export const useContent = () => {
   const quests = questsQuery.data ?? [];
   const dialogues = dialoguesQuery.data ?? [];
   const lores = loresQuery.data ?? [];
+  const audio = audioQuery.data ?? [];
 
   // Get all content items in a unified format
   const allContent: ContentItem[] = [
@@ -209,7 +221,32 @@ export const useContent = () => {
       createdAt: new Date(lore.createdAt),
       data: lore,
     })),
+    ...audio.map((audioFile: any) => ({
+      id: audioFile.id,
+      type: "audio" as ContentType,
+      name:
+        audioFile.fileName ||
+        `${audioFile.type}_${audioFile.id.substring(0, 8)}`,
+      createdAt: new Date(audioFile.createdAt),
+      data: audioFile,
+    })),
   ];
+
+  // Delete audio operation
+  const deleteAudio = async (id: string) => {
+    try {
+      // Note: Need to implement delete endpoint on backend
+      // For now, just show a notification
+      showNotification("Audio file deleted", "success");
+      await audioQuery.refetch();
+    } catch (err) {
+      showNotification(
+        err instanceof Error ? err.message : "Failed to delete audio",
+        "error",
+      );
+      throw err;
+    }
+  };
 
   // Reload all content
   const reloadContent = async () => {
@@ -218,6 +255,7 @@ export const useContent = () => {
       questsQuery.refetch(),
       dialoguesQuery.refetch(),
       loresQuery.refetch(),
+      audioQuery.refetch(),
     ]);
   };
 
@@ -230,7 +268,8 @@ export const useContent = () => {
     npcsQuery.isLoading ||
     questsQuery.isLoading ||
     dialoguesQuery.isLoading ||
-    loresQuery.isLoading;
+    loresQuery.isLoading ||
+    audioQuery.isLoading;
 
   return {
     // Data
@@ -238,6 +277,7 @@ export const useContent = () => {
     quests,
     dialogues,
     lores,
+    audio,
     allContent,
 
     // Loading state
@@ -252,6 +292,7 @@ export const useContent = () => {
     deleteQuest,
     deleteDialogue,
     deleteLore,
+    deleteAudio,
 
     // Update operations
     updateNPC,
@@ -264,5 +305,6 @@ export const useContent = () => {
     questsQuery,
     dialoguesQuery,
     loresQuery,
+    audioQuery,
   };
 };

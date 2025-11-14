@@ -1257,6 +1257,18 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         return renderDialogueCard();
       case "lore":
         return renderLoreCard();
+      case "audio":
+        // Import and render AudioLibraryCard
+        const { AudioLibraryCard } = require("./AudioLibraryCard");
+        return (
+          <AudioLibraryCard
+            item={item}
+            onClick={onClick}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            className={className}
+          />
+        );
       default:
         return null;
     }
