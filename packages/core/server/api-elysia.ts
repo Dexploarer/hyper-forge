@@ -169,7 +169,7 @@ const app = new Elysia()
   .onStart(async () => {
     logger.info(
       { context: "Startup" },
-      "Elysia server started on port ${API_PORT}",
+      `Elysia server started on port ${API_PORT}`,
     );
 
     // Initialize WebSocket client to CDN (if configured)
@@ -223,7 +223,8 @@ const app = new Elysia()
     // Check if we should run workers embedded in API process (dev mode)
     if (process.env.ENABLE_EMBEDDED_WORKERS === "true" && env.REDIS_URL) {
       const WORKER_CONCURRENCY = env.WORKER_CONCURRENCY || 2;
-      console.log(
+      logger.info(
+        {},
         `[Workers] Starting ${WORKER_CONCURRENCY} embedded workers...`,
       );
 
@@ -237,7 +238,8 @@ const app = new Elysia()
 
       // Store in app context for shutdown
       (app as any).workers = workers;
-      console.log(
+      logger.info(
+        {},
         `[Workers] ${WORKER_CONCURRENCY} workers started successfully`,
       );
     } else {
@@ -265,7 +267,7 @@ const app = new Elysia()
     if (workers && workers.length > 0) {
       logger.info(
         { context: "Workers" },
-        "Stopping ${workers.length} embedded workers...",
+        `Stopping ${workers.length} embedded workers...`,
       );
       for (const worker of workers) {
         worker.stop();
@@ -1026,7 +1028,7 @@ const app = new Elysia()
       const tarPath = path.join(ROOT_DIR, "gdd-assets.tar.gz");
       const assetsDir = ASSETS_DIR;
 
-      logger.info({}, "📥 Downloading from ${url}...");
+      logger.info({}, `📥 Downloading from ${url}...`);
 
       // Download file
       const response = await fetch(url);
@@ -1036,7 +1038,7 @@ const app = new Elysia()
 
       const arrayBuffer = await response.arrayBuffer();
       await Bun.write(tarPath, arrayBuffer);
-      logger.info({}, "📦 Saved tar file to ${tarPath}");
+      logger.info({}, `📦 Saved tar file to ${tarPath}`);
 
       // Extract tar file
       const proc = Bun.spawn(
@@ -1046,7 +1048,7 @@ const app = new Elysia()
         },
       );
       await proc.exited;
-      logger.info({}, "✅ Extracted assets to ${assetsDir}");
+      logger.info({}, `✅ Extracted assets to ${assetsDir}`);
 
       // Clean up tar file
       await fs.promises.unlink(tarPath);
@@ -1161,10 +1163,10 @@ try {
   const nodeEnv = env.NODE_ENV || "development";
 
   // Log startup
-  logger.info({}, "\n[Server] Asset-Forge API started (${nodeEnv})");
-  logger.info({ context: "Server" }, "Port: ${API_PORT}");
-  logger.info({ context: "Server" }, "URL: ${publicUrl}");
-  logger.info({ context: "Server" }, "Docs: ${publicUrl}/swagger");
+  logger.info({}, `\n[Server] Asset-Forge API started (${nodeEnv})`);
+  logger.info({ context: "Server" }, `Port: ${API_PORT}`);
+  logger.info({ context: "Server" }, `URL: ${publicUrl}`);
+  logger.info({ context: "Server" }, `Docs: ${publicUrl}/swagger`);
 
   // Log configured services
   const services = [];
@@ -1177,7 +1179,7 @@ try {
   if (env.REDIS_URL) services.push("Redis");
 
   if (services.length > 0) {
-    logger.info({ context: "Server" }, 'Services: ${services.join(", ")}');
+    logger.info({ context: "Server" }, `Services: ${services.join(", ")}`);
   }
 
   logger.info({}, "");
