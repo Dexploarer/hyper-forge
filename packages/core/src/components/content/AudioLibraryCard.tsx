@@ -92,6 +92,17 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
       ? audioFile.fileUrl
       : null);
 
+  // Debug logging
+  useEffect(() => {
+    console.log("Audio file data:", {
+      id: audioFile.id,
+      fileName: audioFile.fileName,
+      cdnUrl: audioFile.cdnUrl,
+      fileUrl: audioFile.fileUrl,
+      computedAudioUrl: audioUrl,
+    });
+  }, [audioFile, audioUrl]);
+
   useEffect(() => {
     const audioEl = audioRef.current;
     if (!audioEl) return;
@@ -117,16 +128,23 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
     };
   }, [audioUrl]);
 
-  const togglePlayPause = (e: React.MouseEvent) => {
+  const togglePlayPause = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!audioRef.current) return;
 
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
+    try {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error("Audio playback error:", error);
+      setHasError(true);
+      setIsPlaying(false);
     }
-    setIsPlaying(!isPlaying);
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
