@@ -286,6 +286,131 @@ export const createAssetRoutes = (
           },
         )
 
+        // Get asset model file (with CDN redirect fallback)
+        .get(
+          "/:id/model",
+          async ({ params, set }) => {
+            const { id } = params;
+
+            // Get asset from database to check for CDN URL
+            const assets = await assetService.listAssets();
+            const asset = assets.find((a) => a.id === id);
+
+            if (!asset) {
+              set.status = 404;
+              return { error: "Asset not found" };
+            }
+
+            // If asset has CDN URL, redirect to it
+            if (asset.cdnUrl) {
+              set.status = 302;
+              set.headers["Location"] = asset.cdnUrl;
+              return new Response(null, {
+                status: 302,
+                headers: { Location: asset.cdnUrl },
+              });
+            }
+
+            // Fallback: Try to find model file in legacy storage
+            // This path is for backward compatibility with old assets
+            const path = await import("path");
+            const fs = await import("fs/promises");
+
+            const ASSETS_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
+              ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
+              : path.join(rootDir, "gdd-assets");
+
+            const modelPath = path.join(ASSETS_DIR, id, "model.glb");
+
+            try {
+              const fileData = await fs.readFile(modelPath);
+              set.headers["Content-Type"] = "model/gltf-binary";
+              set.headers["Content-Disposition"] =
+                `inline; filename="${id}.glb"`;
+              return new Response(fileData, {
+                headers: {
+                  "Content-Type": "model/gltf-binary",
+                  "Content-Disposition": `inline; filename="${id}.glb"`,
+                },
+              });
+            } catch (error) {
+              logger.error({ err: error, assetId: id }, "Model file not found");
+              set.status = 404;
+              return {
+                error: "Model file not found - asset may need CDN migration",
+                assetId: id,
+                cdnUrl: asset.cdnUrl || null,
+              };
+            }
+          },
+          {
+            params: t.Object({
+              id: t.String({ minLength: 1 }),
+            }),
+            detail: {
+              tags: ["Assets"],
+              summary: "Get asset 3D model",
+              description:
+                "Returns the GLB model file for an asset. Redirects to CDN if available, falls back to legacy storage. (Auth optional)",
+            },
+          },
+        )
+
+        // HEAD endpoint for model existence check
+        .head(
+          "/:id/model",
+          async ({ params, set }) => {
+            const { id } = params;
+
+            // Get asset from database to check for CDN URL
+            const assets = await assetService.listAssets();
+            const asset = assets.find((a) => a.id === id);
+
+            if (!asset) {
+              set.status = 404;
+              return;
+            }
+
+            // If asset has CDN URL, it exists
+            if (asset.cdnUrl) {
+              set.status = 200;
+              set.headers["Content-Type"] = "model/gltf-binary";
+              return;
+            }
+
+            // Check legacy storage
+            const path = await import("path");
+            const fs = await import("fs/promises");
+
+            const ASSETS_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
+              ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
+              : path.join(rootDir, "gdd-assets");
+
+            const modelPath = path.join(ASSETS_DIR, id, "model.glb");
+
+            try {
+              await fs.access(modelPath);
+              set.status = 200;
+              set.headers["Content-Type"] = "model/gltf-binary";
+              return;
+            } catch {
+              set.status = 404;
+              return;
+            }
+          },
+          {
+            params: t.Object({
+              id: t.String({ minLength: 1 }),
+            }),
+            detail: {
+              tags: ["Assets"],
+              summary: "Check if asset model exists",
+              description:
+                "HEAD request to check if a model file exists for an asset. (Auth optional)",
+            },
+          },
+        )
+
         // Upload VRM file
         .post(
           "/upload-vrm",

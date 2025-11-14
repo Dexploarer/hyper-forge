@@ -3,7 +3,7 @@ export const API_ENDPOINTS = {
   // Assets
   ASSETS: "/api/assets",
   ASSET_BY_ID: (id: string) => `/api/assets/${id}`,
-  // ASSET_MODEL removed - assets are now served from CDN via asset.cdnUrl
+  ASSET_MODEL: (id: string) => `/api/assets/${id}/model`, // Fallback endpoint - redirects to CDN or serves from legacy storage
   ASSET_FILE: (id: string, filename: string) => `/api/assets/${id}/${filename}`,
   ASSET_SPRITES: (id: string) => `/api/assets/${id}/sprites`,
 
