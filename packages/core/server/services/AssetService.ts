@@ -42,6 +42,9 @@ interface Asset {
   cdnUrl?: string | null;
   cdnThumbnailUrl?: string | null;
   cdnConceptArtUrl?: string | null;
+  // Access control fields
+  visibility?: string;
+  ownerId?: string | null;
 }
 
 export class AssetService {
@@ -71,6 +74,9 @@ export class AssetService {
         cdnUrl: asset.cdnUrl,
         cdnThumbnailUrl: asset.cdnThumbnailUrl,
         cdnConceptArtUrl: asset.cdnConceptArtUrl,
+        // Access control fields for route-level filtering
+        visibility: asset.visibility,
+        ownerId: asset.ownerId,
       }));
     } catch (error) {
       logger.error({ err: error }, "Failed to list assets:");

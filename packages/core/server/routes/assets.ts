@@ -5,16 +5,10 @@
 
 import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
-import path from "path";
-import fs from "fs";
 import type { AssetService } from "../services/AssetService";
 import * as Models from "../models";
-import { optionalAuth, requireAuth } from "../middleware/auth";
-import {
-  getAssetFromPath,
-  canViewAsset,
-  canModifyAsset,
-} from "../middleware/assetAuth";
+import { requireAuth } from "../middleware/auth";
+import { getAssetFromPath, canModifyAsset } from "../middleware/assetAuth";
 
 export const createAssetRoutes = (
   rootDir: string,
@@ -33,58 +27,22 @@ export const createAssetRoutes = (
     (app) =>
       app
         // Asset listing endpoint
-        // SECURED: Filters based on visibility and ownership
         .get(
           "",
           async (context) => {
             const { query } = context;
 
-            // Check authentication (optional)
-            const authResult = await optionalAuth({
-              request: context.request,
-              headers: context.headers,
-            });
-            const user = authResult.user;
-
-            // Get all assets from filesystem
-            let assets = await assetService.listAssets();
-
-            // Filter assets based on visibility and ownership
-            // AND merge CDN URLs from database
-            const filteredAssets = [];
-            for (const asset of assets) {
-              // Get database record for visibility check AND CDN URLs
-              const dbAsset = await getAssetFromPath(asset.id);
-
-              if (!dbAsset) {
-                // Asset not in database - include for backward compatibility
-                filteredAssets.push(asset);
-                continue;
-              }
-
-              // Check if user can view this asset
-              if (canViewAsset(dbAsset, user)) {
-                // Merge CDN URLs from database into asset response
-                const assetWithCDN = {
-                  ...asset,
-                  cdnUrl: dbAsset.cdnUrl,
-                  cdnThumbnailUrl: dbAsset.cdnThumbnailUrl,
-                  cdnConceptArtUrl: dbAsset.cdnConceptArtUrl,
-                  cdnRiggedModelUrl: dbAsset.cdnRiggedModelUrl,
-                  cdnFiles: dbAsset.cdnFiles,
-                };
-                filteredAssets.push(assetWithCDN);
-              }
-            }
+            // Get all assets from database (includes CDN URLs)
+            const allAssets = await assetService.listAssets();
 
             // Apply projectId filter if provided
             if (query.projectId) {
-              return filteredAssets.filter(
+              return allAssets.filter(
                 (asset) => asset.metadata.projectId === query.projectId,
               );
             }
 
-            return filteredAssets;
+            return allAssets;
           },
           {
             query: t.Object({
