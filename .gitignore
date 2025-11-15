@@ -123,3 +123,4 @@ backup/
 
 .cursor/rules/kluster-code-verify.mdc
 .kluster
+.bun-cache/
