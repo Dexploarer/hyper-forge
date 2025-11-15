@@ -7,7 +7,11 @@ import { Elysia, t } from "elysia";
 import type { GenerationService } from "../services/GenerationService";
 import { optionalAuth } from "../middleware/auth";
 import * as Models from "../models";
-import { UnauthorizedError, InternalServerError } from "../errors";
+import {
+  UnauthorizedError,
+  InternalServerError,
+  NotFoundError,
+} from "../errors";
 import { createChildLogger } from "../utils/logger";
 import { generationJobService } from "../services/GenerationJobService";
 import { redisQueueService } from "../services/RedisQueueService";
@@ -238,8 +242,16 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
           .get(
             "/pipeline/:pipelineId",
             async ({ params: { pipelineId } }) => {
-              const status =
-                await generationService.getPipelineStatus(pipelineId);
+              // Get job from generation_jobs table (where POST creates it)
+              const job =
+                await generationJobService.getJobByPipelineId(pipelineId);
+
+              if (!job) {
+                throw new NotFoundError("Pipeline", pipelineId);
+              }
+
+              // Convert job to pipeline format for API response
+              const status = generationJobService.jobToPipeline(job);
               return status;
             },
             {
@@ -369,8 +381,23 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                 async start(controller) {
                   const sendUpdate = async () => {
                     try {
-                      const status =
-                        await generationService.getPipelineStatus(pipelineId);
+                      // Get job from generation_jobs table (same as GET endpoint)
+                      const job =
+                        await generationJobService.getJobByPipelineId(
+                          pipelineId,
+                        );
+
+                      if (!job) {
+                        const errorMessage = `event: error\ndata: ${JSON.stringify({ error: "Pipeline not found" })}\n\n`;
+                        controller.enqueue(
+                          new TextEncoder().encode(errorMessage),
+                        );
+                        controller.close();
+                        return true; // Stop polling
+                      }
+
+                      // Convert job to pipeline format
+                      const status = generationJobService.jobToPipeline(job);
 
                       // Send update
                       const message = `event: pipeline-update\ndata: ${JSON.stringify(status)}\nid: ${Date.now()}\n\n`;
