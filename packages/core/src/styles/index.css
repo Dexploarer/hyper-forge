@@ -36,9 +36,10 @@
     --color-info-light: #60a5fa;
     --color-info-dark: #2563eb;
     
-    /* Typography */
-    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    --font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+    /* Typography - Hex-inspired with Inter */
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
     
     /* Animation */
     --duration-fast: 150ms;
@@ -48,70 +49,72 @@
     --easing-in-out: cubic-bezier(0.4, 0, 0.2, 1);
   }
   
-  /* Dark Theme (Default) */
+  /* Dark Theme (Default) - Hex-inspired deep blue-tinted blacks */
   :root {
-    --bg-primary: #0f0f0f;
-    --bg-secondary: #1a1a1a;
-    --bg-tertiary: #262626;
-    --bg-card: #1a1a1a;
-    --bg-hover: #2a2a2a;
-    --bg-elevated: #2d2d2d;
-    
+    --bg-primary: #14141C;
+    --bg-secondary: #1a1a24;
+    --bg-tertiary: #22222e;
+    --bg-card: #1f1f29;
+    --bg-hover: #292936;
+    --bg-elevated: #2a2a38;
+
     --text-primary: #ffffff;
-    --text-secondary: #a1a1aa;
-    --text-tertiary: #71717a;
-    --text-muted: #52525b;
-    
-    --border-primary: #27272a;
-    --border-secondary: #3f3f46;
-    --border-hover: #52525b;
-    
-    /* Dark theme shadows */
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+    --text-secondary: #b4b4c0;
+    --text-tertiary: #8484a0;
+    --text-muted: #64647a;
+
+    --border-primary: #2a2a36;
+    --border-secondary: #3a3a48;
+    --border-hover: #4a4a5a;
+
+    /* Refined shadows - Hex style */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
   
-  /* Grid background pattern */
+  /* Grid background pattern - Hex style with more visibility */
   .grid-background {
-    background-image: linear-gradient(rgba(139, 92, 246, 0.1) 1px, transparent 1px), 
-                      linear-gradient(90deg, rgba(139, 92, 246, 0.1) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(139, 92, 246, 0.15) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(139, 92, 246, 0.15) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 
   .light-theme .grid-background {
-    background-image: linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px), 
-                      linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(139, 92, 246, 0.08) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(139, 92, 246, 0.08) 1px, transparent 1px);
+    background-size: 40px 40px;
   }
 
-  /* Light Theme */
+  /* Light Theme - Hex-inspired clean, bright aesthetic */
   .light-theme {
     --bg-primary: #ffffff;
-    --bg-secondary: #f9fafb;
-    --bg-tertiary: #f3f4f6;
+    --bg-secondary: #fafafa;
+    --bg-tertiary: #f5f5f5;
     --bg-card: #ffffff;
-    --bg-hover: #f3f4f6;
+    --bg-hover: #f8f8f8;
     --bg-elevated: #ffffff;
-    
-    /* Improved text contrast for light mode */
-    --text-primary: #0f172a;        /* Darker for better contrast */
-    --text-secondary: #475569;      /* Darker gray - was #6b7280 */
-    --text-tertiary: #64748b;       /* Medium gray - was #9ca3af */
-    --text-muted: #94a3b8;          /* Lighter but still readable - was #d1d5db */
-    
-    /* Stronger borders for better separation */
-    --border-primary: #cbd5e1;      /* Darker - was #e5e7eb */
-    --border-secondary: #94a3b8;    /* Darker - was #d1d5db */
-    --border-hover: #64748b;        /* Darker - was #9ca3af */
-    
-    /* Icon background opacity - higher for light mode visibility */
-    --icon-bg-opacity: 0.2;          /* 20% opacity for light mode */
-    
-    /* Enhanced shadows for depth and separation */
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.12), 0 1px 2px 0 rgba(0, 0, 0, 0.08);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+
+    /* High contrast text for excellent readability */
+    --text-primary: #0a0a0a;
+    --text-secondary: #52525b;
+    --text-tertiary: #71717a;
+    --text-muted: #a1a1aa;
+
+    /* Clean, minimal borders */
+    --border-primary: #e5e5e5;
+    --border-secondary: #d4d4d8;
+    --border-hover: #a1a1aa;
+
+    /* Icon background opacity */
+    --icon-bg-opacity: 0.1;
+
+    /* Refined shadows for light mode */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
   
   /* Dark theme icon opacity */
@@ -1299,26 +1302,26 @@ body {
 
   /* Unified Theme Utilities - Dashboard Redesign */
 
-  /* Subtle grid background with adjustable opacity */
+  /* Hex-style grid backgrounds with better visibility */
   .grid-bg-subtle {
     background-image: linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
                      linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px);
-    background-size: 50px 50px;
-    opacity: 0.03;
+    background-size: 40px 40px;
+    opacity: 0.08;
   }
 
   .grid-bg-medium {
     background-image: linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
                      linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px);
-    background-size: 50px 50px;
-    opacity: 0.05;
+    background-size: 40px 40px;
+    opacity: 0.12;
   }
 
   .grid-bg-strong {
     background-image: linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
                      linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px);
-    background-size: 50px 50px;
-    opacity: 0.1;
+    background-size: 40px 40px;
+    opacity: 0.18;
   }
 
   /* Gradient text utilities */
@@ -1351,21 +1354,7 @@ body {
     -webkit-text-fill-color: transparent;
   }
 
-  /* Floating orb animation - for subtle background accents */
-  @keyframes float-orb {
-    0%, 100% {
-      transform: translate(0, 0) scale(1);
-      opacity: 0.1;
-    }
-    50% {
-      transform: translate(10px, -10px) scale(1.05);
-      opacity: 0.15;
-    }
-  }
-
-  .animate-orb {
-    animation: float-orb 8s ease-in-out infinite;
-  }
+  /* Removed animated orbs for cleaner Hex-style design */
 
   /* Page background with grid - combines bg color + grid pattern */
   .page-bg-with-grid {

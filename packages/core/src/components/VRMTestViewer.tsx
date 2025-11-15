@@ -9,15 +9,16 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { VRMLoaderPlugin, VRMUtils } from "@pixiv/three-vrm";
+import { Play } from "lucide-react";
 import styled from "styled-components";
 import { retargetAnimation } from "../services/retargeting/AnimationRetargeting";
+import { ThreeDPanel } from "./3DPanel";
 
 const Container = styled.div`
   width: 100%;
-  height: 600px;
+  height: 100%;
   position: relative;
   background: #1a1a1a;
-  border-radius: 8px;
   overflow: hidden;
 `;
 
@@ -26,17 +27,28 @@ const Canvas = styled.canvas`
   height: 100%;
 `;
 
-const Controls = styled.div`
+const AnimationsButton = styled.button`
   position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
   background: rgba(0, 0, 0, 0.7);
-  padding: 15px;
+  color: white;
+  padding: 12px 24px;
+  border: none;
   border-radius: 8px;
   backdrop-filter: blur(10px);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.85);
+  }
 `;
 
 const Button = styled.button.withConfig({
@@ -118,6 +130,7 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string>("");
+  const [animationsDrawerOpen, setAnimationsDrawerOpen] = useState(false);
 
   // Update current VRM URL when prop changes
   useEffect(() => {
@@ -127,7 +140,11 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
 
   // Debug: Log VRM URL on mount
   useEffect(() => {
-    console.log("[VRMTestViewer] Loading VRM from:", currentVrmUrl);
+    console.log("[VRMTestViewer] currentVrmUrl:", currentVrmUrl);
+    if (!currentVrmUrl) {
+      console.log("[VRMTestViewer] No VRM URL provided - waiting for upload");
+      setLoading(false);
+    }
   }, [currentVrmUrl]);
 
   // Handle file upload
@@ -152,15 +169,30 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
   const baseUrl = import.meta.env.PROD
     ? ""
     : `http://localhost:${import.meta.env.VITE_API_PORT || "3004"}`;
-  const animations = {
-    idle: `${baseUrl}/emotes/emote-idle.glb`,
-    walk: `${baseUrl}/emotes/emote-walk.glb`,
-    run: `${baseUrl}/emotes/emote-run.glb`,
-    jump: `${baseUrl}/emotes/emote-jump.glb`,
-  };
+
+  const animations = React.useMemo(
+    () => ({
+      idle: `${baseUrl}/emotes/emote-idle.glb`,
+      walk: `${baseUrl}/emotes/emote-walk.glb`,
+      run: `${baseUrl}/emotes/emote-run.glb`,
+      jump: `${baseUrl}/emotes/emote-jump.glb`,
+    }),
+    [baseUrl],
+  );
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    console.log("[VRMTestViewer] Three.js setup useEffect triggered");
+    console.log("[VRMTestViewer] canvasRef.current:", !!canvasRef.current);
+    console.log("[VRMTestViewer] currentVrmUrl:", currentVrmUrl);
+
+    if (!canvasRef.current || !currentVrmUrl) {
+      console.log(
+        "[VRMTestViewer] Skipping Three.js setup - missing canvas or URL",
+      );
+      return;
+    }
+
+    console.log("[VRMTestViewer] Starting Three.js scene setup");
 
     let animationId: number;
     const canvas = canvasRef.current;
@@ -168,6 +200,7 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
     // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x212121);
+    console.log("[VRMTestViewer] Scene created");
 
     // Camera setup
     const camera = new THREE.PerspectiveCamera(
@@ -182,6 +215,12 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
     const renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
+    });
+    console.log("[VRMTestViewer] Canvas dimensions:", {
+      clientWidth: canvas.clientWidth,
+      clientHeight: canvas.clientHeight,
+      offsetWidth: canvas.offsetWidth,
+      offsetHeight: canvas.offsetHeight,
     });
     renderer.setSize(canvas.clientWidth, canvas.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -336,7 +375,12 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
     // Store loadAnimation in ref so it can be accessed outside the effect
     loadAnimationRef.current = loadAnimation;
 
-    console.log("[VRMTestViewer] Starting VRM load...");
+    console.log("[VRMTestViewer] Starting VRM load from URL:", currentVrmUrl);
+    console.log("[VRMTestViewer] VRM URL type:", typeof currentVrmUrl);
+    console.log("[VRMTestViewer] VRM URL length:", currentVrmUrl.length);
+
+    setLoading(true);
+    setError(null);
 
     loader.load(
       currentVrmUrl,
@@ -684,17 +728,10 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
       {!loading && !error && (
         <>
           <Info>{info}</Info>
-          <Controls>
-            {Object.keys(animations).map((animName) => (
-              <Button
-                key={animName}
-                active={currentAnimation === animName}
-                onClick={() => handleAnimationChange(animName)}
-              >
-                {animName.toUpperCase()}
-              </Button>
-            ))}
-          </Controls>
+          <AnimationsButton onClick={() => setAnimationsDrawerOpen(true)}>
+            <Play className="w-4 h-4" />
+            Animations
+          </AnimationsButton>
         </>
       )}
 
@@ -714,6 +751,56 @@ export const VRMTestViewer: React.FC<VRMTestViewerProps> = ({ vrmUrl }) => {
           {uploadedFileName ? `Uploaded: ${uploadedFileName}` : "Upload VRM"}
         </UploadButton>
       </UploadBox>
+
+      {/* Animations Panel */}
+      <ThreeDPanel
+        isOpen={animationsDrawerOpen}
+        onClose={() => setAnimationsDrawerOpen(false)}
+        title="Animations"
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {Object.keys(animations).map((animName) => (
+            <button
+              key={animName}
+              onClick={() => {
+                handleAnimationChange(animName);
+              }}
+              style={{
+                width: "100%",
+                padding: "12px 16px",
+                borderRadius: "8px",
+                border: "none",
+                textAlign: "left",
+                fontWeight: "500",
+                fontSize: "14px",
+                cursor: "pointer",
+                transition: "all 0.2s",
+                background:
+                  currentAnimation === animName
+                    ? "#8b5cf6"
+                    : "rgba(255, 255, 255, 0.05)",
+                color:
+                  currentAnimation === animName
+                    ? "white"
+                    : "rgba(255, 255, 255, 0.9)",
+              }}
+              onMouseEnter={(e) => {
+                if (currentAnimation !== animName) {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currentAnimation !== animName) {
+                  e.currentTarget.style.background =
+                    "rgba(255, 255, 255, 0.05)";
+                }
+              }}
+            >
+              {animName.charAt(0).toUpperCase() + animName.slice(1)}
+            </button>
+          ))}
+        </div>
+      </ThreeDPanel>
     </Container>
   );
 };

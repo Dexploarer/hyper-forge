@@ -247,8 +247,8 @@ const NAVIGATION_STRUCTURE: NavSection[] = [
         {
           view: NAVIGATION_VIEWS.RETARGET_ANIMATE,
           icon: Play,
-          label: "Animation Tools",
-          description: "Retarget animations",
+          label: "VRM Animation Test",
+          description: "Test VRM animations",
         },
         {
           view: NAVIGATION_VIEWS.PLAYTESTER,

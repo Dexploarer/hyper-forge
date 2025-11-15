@@ -26,6 +26,11 @@ module.exports = {
         dark: theme.colors.secondary.dark,
         light: theme.colors.secondary.light,
       },
+      accent: {
+        DEFAULT: theme.colors.accent.DEFAULT,
+        dark: theme.colors.accent.dark,
+        light: theme.colors.accent.light,
+      },
       
       // Semantic colors
       success: theme.colors.ui.success,

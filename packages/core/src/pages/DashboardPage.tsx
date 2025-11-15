@@ -116,36 +116,26 @@ export function DashboardPage() {
 
   return (
     <div className="h-full overflow-y-auto bg-bg-primary relative">
-      {/* Subtle grid background */}
+      {/* Hex-style grid background - more visible */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        className="absolute inset-0 pointer-events-none opacity-[0.08]"
         style={{
           backgroundImage: `linear-gradient(to right, var(--color-primary) 1px, transparent 1px),
                            linear-gradient(to bottom, var(--color-primary) 1px, transparent 1px)`,
-          backgroundSize: "50px 50px",
-        }}
-      />
-
-      {/* Subtle accent orb in corner */}
-      <div
-        className="absolute top-0 right-0 w-96 h-96 pointer-events-none opacity-10"
-        style={{
-          background:
-            "radial-gradient(circle at center, var(--color-primary), transparent 70%)",
-          animation: "pulse 4s ease-in-out infinite",
+          backgroundSize: "40px 40px",
         }}
       />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Header */}
+        {/* Welcome Header - Hex style */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Sparkles className="w-8 h-8 text-primary animate-pulse" />
-            <h1 className="text-4xl font-bold gradient-text-primary">
+          <div className="flex items-center gap-4 mb-3">
+            <Sparkles className="w-10 h-10 text-primary" />
+            <h1 className="font-display text-5xl md:text-6xl font-extrabold tracking-tight leading-tight gradient-text-primary">
               Welcome Back{user?.displayName ? `, ${user.displayName}` : ""}!
             </h1>
           </div>
-          <p className="text-lg text-text-secondary">
+          <p className="text-xl text-text-secondary font-normal">
             Let's create something amazing today
           </p>
         </div>
@@ -200,7 +190,7 @@ export function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Quick Actions - Takes up 2 columns */}
           <div className="lg:col-span-2">
-            <h2 className="text-2xl font-bold text-text-primary mb-4 flex items-center gap-2">
+            <h2 className="font-display text-3xl font-bold tracking-tight text-text-primary mb-4 flex items-center gap-2">
               <span className="gradient-text-primary">Quick Actions</span>
             </h2>
 
@@ -252,7 +242,7 @@ export function DashboardPage() {
 
           {/* Recent Activity - Takes up 1 column */}
           <div>
-            <h2 className="text-2xl font-bold text-text-primary mb-4 flex items-center gap-2">
+            <h2 className="font-display text-3xl font-bold tracking-tight text-text-primary mb-4 flex items-center gap-2">
               <span className="gradient-text-primary">Recent Activity</span>
             </h2>
 
@@ -298,7 +288,7 @@ export function DashboardPage() {
         {recentlyViewed.length > 0 && (
           <div className="mt-8">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+              <h2 className="font-display text-3xl font-bold tracking-tight text-text-primary flex items-center gap-2">
                 <span className="gradient-text-primary">Recent Assets</span>
               </h2>
               <button

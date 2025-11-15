@@ -2,56 +2,64 @@
 // These tokens ensure consistency across all components and replace scattered CSS variables
 
 export const colors = {
-  // Primary colors
+  // Primary colors - Hex-inspired palette
   primary: {
-    DEFAULT: "#6366f1",
+    DEFAULT: "#6366f1", // Indigo - keeping for brand consistency
     light: "#818cf8",
     dark: "#4f46e5",
-    rgb: "99, 102, 241", // For opacity usage
+    rgb: "99, 102, 241",
   },
   secondary: {
-    DEFAULT: "#8b5cf6",
+    DEFAULT: "#8b5cf6", // Violet - keeping for brand consistency
     light: "#a78bfa",
     dark: "#7c3aed",
     rgb: "139, 92, 246",
   },
 
-  // Dark Theme Colors (Default)
-  dark: {
-    "bg-primary": "#0f0f0f",
-    "bg-secondary": "#1a1a1a",
-    "bg-tertiary": "#262626",
-    "bg-card": "#1a1a1a",
-    "bg-hover": "#2a2a2a",
-    "bg-elevated": "#2d2d2d",
-
-    "text-primary": "#ffffff",
-    "text-secondary": "#a1a1aa",
-    "text-tertiary": "#71717a",
-    "text-muted": "#52525b",
-
-    "border-primary": "#27272a",
-    "border-secondary": "#3f3f46",
-    "border-hover": "#52525b",
+  // Hex accent color
+  accent: {
+    DEFAULT: "#F5C0C0", // Hex's signature soft pink/rose
+    light: "#f9d5d5",
+    dark: "#e6a8a8",
+    rgb: "245, 192, 192",
   },
 
-  // Light Theme Colors (Future)
+  // Dark Theme Colors - Hex-inspired deep blue-tinted blacks
+  dark: {
+    "bg-primary": "#14141C", // Deeper, blue-tinted black (Hex style)
+    "bg-secondary": "#1a1a24", // Subtle blue undertone
+    "bg-tertiary": "#22222e", // Slightly lighter blue-black
+    "bg-card": "#1f1f29", // Card backgrounds
+    "bg-hover": "#292936", // Hover states
+    "bg-elevated": "#2a2a38", // Elevated surfaces
+
+    "text-primary": "#ffffff", // Pure white for maximum contrast
+    "text-secondary": "#b4b4c0", // Soft gray with blue undertone
+    "text-tertiary": "#8484a0", // Medium gray-blue
+    "text-muted": "#64647a", // Muted text
+
+    "border-primary": "#2a2a36", // Subtle borders
+    "border-secondary": "#3a3a48", // Slightly more visible
+    "border-hover": "#4a4a5a", // Hover state borders
+  },
+
+  // Light Theme Colors - Clean, bright Hex-inspired
   light: {
-    "bg-primary": "#ffffff",
-    "bg-secondary": "#f9fafb",
-    "bg-tertiary": "#f3f4f6",
-    "bg-card": "#ffffff",
-    "bg-hover": "#f3f4f6",
-    "bg-elevated": "#ffffff",
+    "bg-primary": "#ffffff", // Pure white background
+    "bg-secondary": "#fafafa", // Very subtle off-white
+    "bg-tertiary": "#f5f5f5", // Light gray
+    "bg-card": "#ffffff", // Card backgrounds (white)
+    "bg-hover": "#f8f8f8", // Hover states
+    "bg-elevated": "#ffffff", // Elevated surfaces
 
-    "text-primary": "#111827",
-    "text-secondary": "#6b7280",
-    "text-tertiary": "#9ca3af",
-    "text-muted": "#d1d5db",
+    "text-primary": "#0a0a0a", // Near-black for excellent contrast
+    "text-secondary": "#52525b", // Dark gray
+    "text-tertiary": "#71717a", // Medium gray
+    "text-muted": "#a1a1aa", // Lighter gray for muted text
 
-    "border-primary": "#e5e7eb",
-    "border-secondary": "#d1d5db",
-    "border-hover": "#9ca3af",
+    "border-primary": "#e5e5e5", // Light borders
+    "border-secondary": "#d4d4d8", // Slightly darker
+    "border-hover": "#a1a1aa", // Hover state borders
   },
 
   // Semantic Colors
@@ -141,8 +149,13 @@ export const borderRadius = {
 
 export const typography = {
   fontFamily: {
-    sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
-    mono: '"SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace',
+    // Hex-inspired: Inter for clean, modern geometric sans-serif
+    sans: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
+    // Display font for large headings (using Inter with tighter spacing)
+    display:
+      '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    // Monospace for code
+    mono: '"JetBrains Mono", "SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace',
   },
 
   fontSize: {
@@ -156,21 +169,24 @@ export const typography = {
     "4xl": "2.25rem", // 36px
     "5xl": "3rem", // 48px
     "6xl": "3.75rem", // 60px
+    "7xl": "4.5rem", // 72px - for hero text
+    "8xl": "6rem", // 96px - for massive headlines
   },
 
   fontWeight: {
     thin: "100",
-    light: "300",
-    normal: "400",
+    light: "300", // Hex uses 300
+    normal: "400", // Hex uses 400
     medium: "500",
-    semibold: "600",
-    bold: "700",
-    extrabold: "800",
+    semibold: "600", // Hex uses 600
+    bold: "700", // Hex uses 700
+    extrabold: "800", // Hex uses 800
     black: "900",
   },
 
   lineHeight: {
-    tight: "1.25",
+    none: "1",
+    tight: "1.25", // Tighter for headlines (Hex style)
     snug: "1.375",
     normal: "1.5",
     relaxed: "1.625",
@@ -179,7 +195,7 @@ export const typography = {
 
   letterSpacing: {
     tighter: "-0.05em",
-    tight: "-0.025em",
+    tight: "-0.025em", // Hex uses -0.025em for headings
     normal: "0em",
     wide: "0.025em",
     wider: "0.05em",
@@ -189,20 +205,22 @@ export const typography = {
 
 export const effects = {
   boxShadow: {
-    sm: "0 1px 2px 0 rgba(0, 0, 0, 0.3)",
-    md: "0 4px 6px -1px rgba(0, 0, 0, 0.3)",
-    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.3)",
-    xl: "0 20px 25px -5px rgba(0, 0, 0, 0.4)",
-    "2xl": "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-    inner: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.3)",
+    // Refined shadows for Hex-style (subtler, more elegant)
+    sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+    md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+    xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+    "2xl": "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+    inner: "inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)",
     none: "none",
 
-    // Special shadows
+    // Special shadows - Hex-inspired
     "glow-primary": `0 0 20px ${colors.primary.DEFAULT}40`,
     "glow-secondary": `0 0 20px ${colors.secondary.DEFAULT}40`,
-    "elevation-1": "0 2px 4px rgba(0, 0, 0, 0.3)",
-    "elevation-2": "0 4px 8px rgba(0, 0, 0, 0.3)",
-    "elevation-3": "0 8px 16px rgba(0, 0, 0, 0.3)",
+    "glow-accent": `0 0 20px ${colors.accent.DEFAULT}40`,
+    "elevation-1": "0 2px 4px rgba(0, 0, 0, 0.08)",
+    "elevation-2": "0 4px 8px rgba(0, 0, 0, 0.12)",
+    "elevation-3": "0 8px 16px rgba(0, 0, 0, 0.16)",
   },
 
   opacity: {

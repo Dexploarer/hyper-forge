@@ -26,6 +26,7 @@ import {
   ArmorFittingPanel,
   WeaponFittingPanel,
 } from "@/components/equipment";
+import { ThreeDPanel } from "@/components/3DPanel";
 import { EQUIPMENT_SLOTS } from "@/constants/equipment";
 import { useAssets } from "@/hooks";
 
@@ -350,68 +351,39 @@ export const UnifiedEquipmentPage: React.FC = () => {
       </div>
 
       {/* Assets Side Panel - Always available to select assets */}
-      {showAssetDrawer && (
-        <div className="absolute top-4 left-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-3 z-20 min-w-[280px] max-w-[340px] max-h-[calc(100vh-2rem)] flex flex-col animate-scale-in">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-text-primary text-sm font-semibold">
-              Asset Selection
-            </h3>
-            <button
-              onClick={() => setShowAssetDrawer(false)}
-              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-colors"
-              aria-label="Close Assets Panel"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Scrollable Content */}
-          <div className="overflow-y-auto flex-1">
-            <ArmorAssetList
-              assets={assets}
-              loading={loading}
-              assetType={assetTypeFilter}
-              selectedAsset={selectedEquipment}
-              selectedAvatar={selectedAvatar}
-              selectedArmor={selectedArmor}
-              selectedHelmet={selectedHelmet}
-              selectedWeapon={selectedWeapon}
-              onAssetSelect={handleAssetSelect}
-              onAssetTypeChange={setAssetTypeFilter}
-              hideTypeToggle={true}
-              equipmentSlot={
-                equipmentSlot as
-                  | "Head"
-                  | "Spine2"
-                  | "Pelvis"
-                  | "Hand_R"
-                  | "Hand_L"
-              }
-            />
-          </div>
-        </div>
-      )}
+      <ThreeDPanel
+        isOpen={showAssetDrawer}
+        onClose={() => setShowAssetDrawer(false)}
+        title="Asset Selection"
+        side="left"
+      >
+        <ArmorAssetList
+          assets={assets}
+          loading={loading}
+          assetType={assetTypeFilter}
+          selectedAsset={selectedEquipment}
+          selectedAvatar={selectedAvatar}
+          selectedArmor={selectedArmor}
+          selectedHelmet={selectedHelmet}
+          selectedWeapon={selectedWeapon}
+          onAssetSelect={handleAssetSelect}
+          onAssetTypeChange={setAssetTypeFilter}
+          hideTypeToggle={true}
+          equipmentSlot={
+            equipmentSlot as "Head" | "Spine2" | "Pelvis" | "Hand_R" | "Hand_L"
+          }
+        />
+      </ThreeDPanel>
 
       {/* Controls Side Panel */}
-      {showControlsDrawer && (selectedAvatar || selectedEquipment) && (
-        <div className="absolute top-4 right-4 bg-bg-secondary bg-opacity-95 rounded-lg border border-border-primary p-3 z-20 min-w-[300px] max-w-[360px] max-h-[calc(100vh-2rem)] flex flex-col animate-scale-in">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-text-primary text-sm font-semibold">
-              Equipment Fitting Controls
-            </h3>
-            <button
-              onClick={() => setShowControlsDrawer(false)}
-              className="p-1 rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-hover transition-colors"
-              aria-label="Close Controls Panel"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Scrollable Content */}
-          <div className="overflow-y-auto flex-1 space-y-4">
+      {(selectedAvatar || selectedEquipment) && (
+        <ThreeDPanel
+          isOpen={showControlsDrawer}
+          onClose={() => setShowControlsDrawer(false)}
+          title="Equipment Fitting Controls"
+          side="right"
+        >
+          <div className="space-y-4">
             {/* Equipment Slot Selector */}
             <CollapsibleSection
               title="Equipment Slot"
@@ -553,8 +525,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
                 />
               )}
             </div>
-          </div>
-        </div>
+          </ThreeDPanel>
       )}
     </>
   );

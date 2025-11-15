@@ -28,7 +28,7 @@ export const VIEW_TITLES: Record<NavigationView, string> = {
   [NAVIGATION_VIEWS.PLAYTESTER]: "AI Playtester Swarm",
   [NAVIGATION_VIEWS.EQUIPMENT]: "Equipment Fitting",
   [NAVIGATION_VIEWS.HAND_RIGGING]: "Hand Rigging",
-  [NAVIGATION_VIEWS.RETARGET_ANIMATE]: "Animation Retargeting",
+  [NAVIGATION_VIEWS.RETARGET_ANIMATE]: "VRM Animation Testing",
   [NAVIGATION_VIEWS.WORLD_CONFIG]: "World Configuration",
   // System
   [NAVIGATION_VIEWS.SETTINGS]: "Settings & Configuration",
@@ -69,7 +69,7 @@ export const MOBILE_VIEW_TITLES: Record<NavigationView, string> = {
   [NAVIGATION_VIEWS.PLAYTESTER]: "Playtester",
   [NAVIGATION_VIEWS.EQUIPMENT]: "Equipment",
   [NAVIGATION_VIEWS.HAND_RIGGING]: "Hand Rigging",
-  [NAVIGATION_VIEWS.RETARGET_ANIMATE]: "Animation",
+  [NAVIGATION_VIEWS.RETARGET_ANIMATE]: "VRM Test",
   [NAVIGATION_VIEWS.WORLD_CONFIG]: "World Config",
   // System
   [NAVIGATION_VIEWS.SETTINGS]: "Settings",
