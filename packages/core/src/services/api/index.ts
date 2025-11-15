@@ -12,7 +12,7 @@ export {
   type BulkUpdateRequest,
   type RetextureRequest,
   type RetextureResponse,
-} from './AssetService'
+} from "./AssetService";
 
 // Generation API Client
 export {
@@ -22,21 +22,21 @@ export {
   type PipelineResults,
   type APIPipelineResult,
   type GenerationAPIEvents,
-} from './GenerationAPIClient'
+} from "./GenerationAPIClient";
 // Note: PipelineStage and PipelineResult (UI types) are exported from @/types/generation
 
 // Content API Client
-export { ContentAPIClient } from './ContentAPIClient'
+export { ContentAPIClient } from "./ContentAPIClient";
 
 // Audio API Client
-export { AudioAPIClient } from './AudioAPIClient'
+export { AudioAPIClient } from "./AudioAPIClient";
 
 // Users API Client
 export {
   type User,
   type UserProfileUpdate,
   type GetCurrentUserResponse,
-} from './UsersAPIClient'
+} from "./UsersAPIClient";
 
 // Material Presets API Client
 export {
@@ -44,20 +44,21 @@ export {
   type MaterialPreset as MaterialPresetAPI,
   type MaterialPresetList,
   type MaterialPresetSaveResponse,
-} from './MaterialPresetsAPIClient'
+} from "./MaterialPresetsAPIClient";
 
 // Prompts API Client
-export {
-  PromptsAPIClient,
-  promptsClient,
-  type PromptData,
-  type GameStylePrompts,
-  type AssetTypePrompts,
-  type MaterialPrompts,
-  type GenerationPrompts,
-  type GPT4EnhancementPrompts,
-  type WeaponDetectionPrompts,
-} from './PromptsAPIClient'
+export { PromptsAPIClient, promptsClient } from "./PromptsAPIClient";
+
+// Prompts types (from @/types/api/prompts)
+export type {
+  GameStylePrompts,
+  AssetTypePrompts,
+  MaterialPrompts,
+  GenerationPrompts,
+  GPT4EnhancementPrompts,
+  WeaponDetectionPrompts,
+  AllPromptsResponse,
+} from "@/types/api/prompts";
 
 // Prompt Service
 export {
@@ -67,21 +68,20 @@ export {
   type AssetTypePromptsByCategory,
   type PromptsResponse,
   type MaterialPromptTemplate,
-} from './PromptService'
+} from "./PromptService";
 
 // AI Vision API Client
 export {
   type HandleDetectionParams,
   type HandleDetectionResponse,
   type OrientationDetectionParams,
-} from './AIVisionAPIClient'
+} from "./AIVisionAPIClient";
 
 // Voice Status API Client
 export {
   type VoiceSubscriptionInfo,
   type VoiceRateLimitInfo,
-} from './VoiceStatusAPIClient'
+} from "./VoiceStatusAPIClient";
 
 // Playtester API Client
-export { PlaytesterAPIClient } from './PlaytesterAPIClient'
-
+export { PlaytesterAPIClient } from "./PlaytesterAPIClient";

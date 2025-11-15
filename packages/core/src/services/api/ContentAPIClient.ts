@@ -13,6 +13,31 @@ import type {
   GenerateDialogueParams,
   GenerateLoreParams,
 } from "@/types/content";
+import type {
+  GenerateNPCResponse,
+  GenerateQuestResponse,
+  GenerateDialogueResponse,
+  GenerateLoreResponse,
+  GenerateImageResponse,
+  ListNPCsResponse,
+  ListQuestsResponse,
+  ListDialoguesResponse,
+  ListLoresResponse,
+  GetNPCResponse,
+  GetQuestResponse,
+  GetDialogueResponse,
+  GetLoreResponse,
+  UpdateNPCResponse,
+  UpdateQuestResponse,
+  UpdateDialogueResponse,
+  UpdateLoreResponse,
+  DeleteResponse,
+  SaveMediaResponse,
+  GetMediaResponse,
+  GenerateQuestForNPCResponse,
+  GenerateLoreForNPCResponse,
+  VoiceSettings,
+} from "@/types/api/content";
 import { apiFetch } from "@/utils/api";
 
 const API_BASE = "/api";
@@ -23,10 +48,7 @@ export class ContentAPIClient {
   /**
    * Generate a complete NPC character
    */
-  async generateNPC(params: GenerateNPCParams): Promise<{
-    npc: NPCData & { id: string; metadata: any };
-    rawResponse: string;
-  }> {
+  async generateNPC(params: GenerateNPCParams): Promise<GenerateNPCResponse> {
     const response = await apiFetch(`${API_BASE}/content/generate-npc`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -48,11 +70,7 @@ export class ContentAPIClient {
     archetype: string;
     appearance: string;
     personality: string;
-  }): Promise<{
-    success: boolean;
-    imageUrl: string;
-    prompt: string;
-  }> {
+  }): Promise<GenerateImageResponse> {
     const response = await apiFetch(
       `${API_BASE}/content/generate-npc-portrait`,
       {
@@ -80,11 +98,7 @@ export class ContentAPIClient {
     description: string;
     questType?: string; // Optional - not used for image generation
     difficulty?: string; // Optional - not used for image generation
-  }): Promise<{
-    success: boolean;
-    imageUrl: string;
-    prompt: string;
-  }> {
+  }): Promise<GenerateImageResponse> {
     const response = await apiFetch(
       `${API_BASE}/content/generate-quest-banner`,
       {
@@ -108,15 +122,9 @@ export class ContentAPIClient {
   /**
    * Generate a game quest
    */
-  async generateQuest(params: GenerateQuestParams): Promise<{
-    quest: QuestData & {
-      id: string;
-      difficulty: string;
-      questType: string;
-      metadata: any;
-    };
-    rawResponse: string;
-  }> {
+  async generateQuest(
+    params: GenerateQuestParams,
+  ): Promise<GenerateQuestResponse> {
     const response = await apiFetch(`${API_BASE}/content/generate-quest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -135,10 +143,9 @@ export class ContentAPIClient {
   /**
    * Generate NPC dialogue tree nodes
    */
-  async generateDialogue(params: GenerateDialogueParams): Promise<{
-    nodes: DialogueNode[];
-    rawResponse: string;
-  }> {
+  async generateDialogue(
+    params: GenerateDialogueParams,
+  ): Promise<GenerateDialogueResponse> {
     const response = await apiFetch(`${API_BASE}/content/generate-dialogue`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -157,10 +164,9 @@ export class ContentAPIClient {
   /**
    * Generate world lore content
    */
-  async generateLore(params: GenerateLoreParams): Promise<{
-    lore: LoreData & { id: string; metadata: any };
-    rawResponse: string;
-  }> {
+  async generateLore(
+    params: GenerateLoreParams,
+  ): Promise<GenerateLoreResponse> {
     const response = await apiFetch(`${API_BASE}/content/generate-lore`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -179,10 +185,7 @@ export class ContentAPIClient {
   /**
    * List all NPCs
    */
-  async listNPCs(
-    limit = 50,
-    offset = 0,
-  ): Promise<{ success: boolean; npcs: any[] }> {
+  async listNPCs(limit = 50, offset = 0): Promise<ListNPCsResponse> {
     const response = await apiFetch(
       `${API_BASE}/content/npcs?limit=${limit}&offset=${offset}`,
     );
@@ -197,7 +200,7 @@ export class ContentAPIClient {
   /**
    * Get NPC by ID
    */
-  async getNPC(id: string): Promise<{ success: boolean; npc: any }> {
+  async getNPC(id: string): Promise<GetNPCResponse> {
     const response = await apiFetch(`${API_BASE}/content/npcs/${id}`);
 
     if (!response.ok) {
@@ -210,7 +213,7 @@ export class ContentAPIClient {
   /**
    * Delete NPC by ID
    */
-  async deleteNPC(id: string): Promise<{ success: boolean; message: string }> {
+  async deleteNPC(id: string): Promise<DeleteResponse> {
     const response = await apiFetch(`${API_BASE}/content/npcs/${id}`, {
       method: "DELETE",
     });
@@ -227,10 +230,7 @@ export class ContentAPIClient {
   /**
    * List all quests
    */
-  async listQuests(
-    limit = 50,
-    offset = 0,
-  ): Promise<{ success: boolean; quests: any[] }> {
+  async listQuests(limit = 50, offset = 0): Promise<ListQuestsResponse> {
     const response = await apiFetch(
       `${API_BASE}/content/quests?limit=${limit}&offset=${offset}`,
     );
@@ -245,7 +245,7 @@ export class ContentAPIClient {
   /**
    * Get quest by ID
    */
-  async getQuest(id: string): Promise<{ success: boolean; quest: any }> {
+  async getQuest(id: string): Promise<GetQuestResponse> {
     const response = await apiFetch(`${API_BASE}/content/quests/${id}`);
 
     if (!response.ok) {
@@ -258,9 +258,7 @@ export class ContentAPIClient {
   /**
    * Delete quest by ID
    */
-  async deleteQuest(
-    id: string,
-  ): Promise<{ success: boolean; message: string }> {
+  async deleteQuest(id: string): Promise<DeleteResponse> {
     const response = await apiFetch(`${API_BASE}/content/quests/${id}`, {
       method: "DELETE",
     });
@@ -277,10 +275,7 @@ export class ContentAPIClient {
   /**
    * List all dialogues
    */
-  async listDialogues(
-    limit = 50,
-    offset = 0,
-  ): Promise<{ success: boolean; dialogues: any[] }> {
+  async listDialogues(limit = 50, offset = 0): Promise<ListDialoguesResponse> {
     const response = await apiFetch(
       `${API_BASE}/content/dialogues?limit=${limit}&offset=${offset}`,
     );
@@ -295,7 +290,7 @@ export class ContentAPIClient {
   /**
    * Get dialogue by ID
    */
-  async getDialogue(id: string): Promise<{ success: boolean; dialogue: any }> {
+  async getDialogue(id: string): Promise<GetDialogueResponse> {
     const response = await apiFetch(`${API_BASE}/content/dialogues/${id}`);
 
     if (!response.ok) {
@@ -308,9 +303,7 @@ export class ContentAPIClient {
   /**
    * Delete dialogue by ID
    */
-  async deleteDialogue(
-    id: string,
-  ): Promise<{ success: boolean; message: string }> {
+  async deleteDialogue(id: string): Promise<DeleteResponse> {
     const response = await apiFetch(`${API_BASE}/content/dialogues/${id}`, {
       method: "DELETE",
     });
@@ -327,10 +320,7 @@ export class ContentAPIClient {
   /**
    * List all lore entries
    */
-  async listLores(
-    limit = 50,
-    offset = 0,
-  ): Promise<{ success: boolean; lores: any[] }> {
+  async listLores(limit = 50, offset = 0): Promise<ListLoresResponse> {
     const response = await apiFetch(
       `${API_BASE}/content/lores?limit=${limit}&offset=${offset}`,
     );
@@ -345,7 +335,7 @@ export class ContentAPIClient {
   /**
    * Get lore by ID
    */
-  async getLore(id: string): Promise<{ success: boolean; lore: any }> {
+  async getLore(id: string): Promise<GetLoreResponse> {
     const response = await apiFetch(`${API_BASE}/content/lores/${id}`);
 
     if (!response.ok) {
@@ -358,7 +348,7 @@ export class ContentAPIClient {
   /**
    * Delete lore by ID
    */
-  async deleteLore(id: string): Promise<{ success: boolean; message: string }> {
+  async deleteLore(id: string): Promise<DeleteResponse> {
     const response = await apiFetch(`${API_BASE}/content/lores/${id}`, {
       method: "DELETE",
     });
@@ -378,7 +368,7 @@ export class ContentAPIClient {
   async updateNPC(
     id: string,
     updates: Partial<NPCData>,
-  ): Promise<{ success: boolean; npc: any }> {
+  ): Promise<UpdateNPCResponse> {
     const response = await apiFetch(`${API_BASE}/content/npcs/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -398,7 +388,7 @@ export class ContentAPIClient {
   async updateQuest(
     id: string,
     updates: Partial<QuestData>,
-  ): Promise<{ success: boolean; quest: any }> {
+  ): Promise<UpdateQuestResponse> {
     const response = await apiFetch(`${API_BASE}/content/quests/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -418,7 +408,7 @@ export class ContentAPIClient {
   async updateDialogue(
     id: string,
     updates: Partial<DialogueNode[]>,
-  ): Promise<{ success: boolean; dialogue: any }> {
+  ): Promise<UpdateDialogueResponse> {
     const response = await apiFetch(`${API_BASE}/content/dialogues/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -438,7 +428,7 @@ export class ContentAPIClient {
   async updateLore(
     id: string,
     updates: Partial<LoreData>,
-  ): Promise<{ success: boolean; lore: any }> {
+  ): Promise<UpdateLoreResponse> {
     const response = await apiFetch(`${API_BASE}/content/lores/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -465,11 +455,7 @@ export class ContentAPIClient {
     prompt?: string;
     model?: string;
     createdBy?: string;
-  }): Promise<{
-    success: boolean;
-    mediaId: string;
-    fileUrl: string;
-  }> {
+  }): Promise<SaveMediaResponse> {
     const response = await apiFetch(`${API_BASE}/content/media/save-portrait`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -491,15 +477,11 @@ export class ContentAPIClient {
     entityId: string;
     audioData: string; // base64 encoded
     voiceId?: string;
-    voiceSettings?: any;
+    voiceSettings?: VoiceSettings;
     text?: string;
     duration?: number;
     createdBy?: string;
-  }): Promise<{
-    success: boolean;
-    mediaId: string;
-    fileUrl: string;
-  }> {
+  }): Promise<SaveMediaResponse> {
     const response = await apiFetch(`${API_BASE}/content/media/save-voice`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -519,10 +501,7 @@ export class ContentAPIClient {
   async getMediaForEntity(
     entityType: string,
     entityId: string,
-  ): Promise<{
-    success: boolean;
-    media: any[];
-  }> {
+  ): Promise<GetMediaResponse> {
     const response = await apiFetch(
       `${API_BASE}/content/media/${entityType}/${entityId}`,
     );
@@ -549,12 +528,7 @@ export class ContentAPIClient {
     theme?: string;
     quality?: "quality" | "speed" | "balanced";
     createdBy?: string;
-  }): Promise<{
-    success: boolean;
-    quest: any;
-    questId: string;
-    relationship: any;
-  }> {
+  }): Promise<GenerateQuestForNPCResponse> {
     const response = await apiFetch(
       `${API_BASE}/content/generate-quest-for-npc`,
       {
@@ -585,12 +559,7 @@ export class ContentAPIClient {
     additionalContext?: string;
     quality?: "quality" | "speed" | "balanced";
     createdBy?: string;
-  }): Promise<{
-    success: boolean;
-    lore: any;
-    loreId: string;
-    relationship: any;
-  }> {
+  }): Promise<GenerateLoreForNPCResponse> {
     const response = await apiFetch(
       `${API_BASE}/content/generate-lore-for-npc`,
       {

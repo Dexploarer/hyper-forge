@@ -20,10 +20,15 @@ import {
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
-import {
-  promptsClient,
-  type PromptData,
-} from "@/services/api/PromptsAPIClient";
+import { promptsClient } from "@/services/api/PromptsAPIClient";
+import type {
+  GameStylePrompts,
+  AssetTypePrompts,
+  MaterialPrompts,
+  GenerationPrompts,
+  GPT4EnhancementPrompts,
+  WeaponDetectionPrompts,
+} from "@/types/api/prompts";
 import { usersClient, type User } from "@/services/api/UsersAPIClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/components/common/ThemeSwitcher";
@@ -43,7 +48,12 @@ import { cn } from "@/styles";
 import { notify } from "@/utils/notify";
 import { ApiKeySettings } from "@/components/settings/ApiKeySettings";
 
-type SettingsTab = "profile" | "preferences" | "apiKeys" | "generation" | "prompts";
+type SettingsTab =
+  | "profile"
+  | "preferences"
+  | "apiKeys"
+  | "generation"
+  | "prompts";
 
 type PromptCategory =
   | "gameStyles"
@@ -142,9 +152,14 @@ export const SettingsPage: React.FC = () => {
   // Prompts state
   const [activeCategory, setActiveCategory] =
     useState<PromptCategory>("gameStyles");
-  const [prompts, setPrompts] = useState<
-    Record<PromptCategory, PromptData | null>
-  >({
+  const [prompts, setPrompts] = useState<{
+    gameStyles: GameStylePrompts | null;
+    assetTypes: AssetTypePrompts | null;
+    materials: MaterialPrompts | null;
+    generation: GenerationPrompts | null;
+    gpt4Enhancement: GPT4EnhancementPrompts | null;
+    weaponDetection: WeaponDetectionPrompts | null;
+  }>({
     gameStyles: null,
     assetTypes: null,
     materials: null,

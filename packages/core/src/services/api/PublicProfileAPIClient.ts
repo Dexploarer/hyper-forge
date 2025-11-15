@@ -4,8 +4,12 @@
  */
 
 import { apiFetch } from "@/utils/api";
-
 import { getAuthToken } from "@/utils/auth-token-store";
+import type {
+  PublicAssetsResponse,
+  PublicProjectsResponse,
+  PublicAchievementsResponse,
+} from "@/types/api/publicProfile";
 
 export interface PublicProfile {
   id: string;
@@ -27,24 +31,6 @@ export interface UserStats {
 export interface PublicProfileResponse {
   profile: PublicProfile;
   stats: UserStats;
-}
-
-export interface PublicAssetsResponse {
-  assets: any[];
-  total: number;
-  isOwnProfile: boolean;
-}
-
-export interface PublicProjectsResponse {
-  projects: any[];
-  total: number;
-  isOwnProfile: boolean;
-}
-
-export interface PublicAchievementsResponse {
-  achievements: any[];
-  total: number;
-  isOwnProfile: boolean;
 }
 
 const API_BASE = "/api/public/users";
