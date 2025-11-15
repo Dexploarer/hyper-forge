@@ -25,6 +25,7 @@ import {
 } from "@/hooks/usePromptLibrary";
 import { cn } from "@/styles";
 
+import { formatDate } from '@/utils';
 export interface PromptLibraryModalProps {
   open: boolean;
   onClose: () => void;
@@ -266,7 +267,7 @@ export const PromptLibraryModal: React.FC<PromptLibraryModalProps> = ({
                         <span>Type: {prompt.content.archetype}</span>
                       )}
                       <span>
-                        {new Date(prompt.createdAt).toLocaleDateString()}
+                        {formatDate(prompt.createdAt)}
                       </span>
                     </div>
                   </div>

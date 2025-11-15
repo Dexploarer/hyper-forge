@@ -9,6 +9,8 @@ import {
   Loader2,
   User,
   Settings,
+  Zap,
+  Package,
 } from "lucide-react";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 
@@ -28,7 +30,6 @@ import {
   MaterialVariantsCard,
   AvatarRiggingOptionsCard,
   GenerationTypeSelector,
-  TabNavigation,
   GeneratedAssetsList,
   AssetPreviewCard,
   MaterialVariantsDisplay,
@@ -47,6 +48,8 @@ import {
   CardContent,
   Drawer,
   CollapsibleSection,
+  LoadingSpinner,
+  TabNavigation,
 } from "@/components/common";
 import { useCommandRegistration } from "@/hooks/useCommandRegistration";
 import { Sparkles as SparklesIcon, Play, Save } from "lucide-react";
@@ -837,8 +840,18 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
             {/* Tab Navigation */}
             <TabNavigation
               activeView={activeView}
-              generatedAssetsCount={generatedAssets.length}
+              tabs={[
+                { id: "config", icon: Settings, label: "Configuration" },
+                { id: "progress", icon: Zap, label: "Pipeline" },
+                {
+                  id: "results",
+                  icon: Package,
+                  label: "Results",
+                  badge: generatedAssets.length,
+                },
+              ]}
               onTabChange={setActiveView}
+              variant="pills"
             />
           </div>
           {/* Configuration Form View */}
@@ -1004,7 +1017,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
                       >
                         {isGenerating ? (
                           <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            <LoadingSpinner size="md" className="mr-2" />
                             Generating...
                           </>
                         ) : (

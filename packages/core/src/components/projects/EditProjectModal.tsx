@@ -13,6 +13,7 @@ import {
   Input,
   Textarea,
   Button,
+  LoadingSpinner,
 } from "@/components/common";
 import { Project, ProjectUpdateData } from "@/services/api/ProjectService";
 
@@ -160,7 +161,7 @@ export const EditProjectModal: React.FC<EditProjectModalProps> = ({
             Cancel
           </Button>
           <Button type="submit" variant="primary" disabled={loading}>
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {loading && <LoadingSpinner size="sm" className="mr-2" />}
             Save Changes
           </Button>
         </ModalFooter>

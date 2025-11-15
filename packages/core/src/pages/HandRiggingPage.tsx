@@ -15,7 +15,9 @@ import {
   HandViewportControls,
   HandPanelToggles,
 } from "@/components/hand-rigging";
-import { CollapsibleSection, ErrorNotification } from "@/components/common";
+import { CollapsibleSection, ErrorNotification,
+  LoadingSpinner,
+} from "@/components/common";
 import { ThreeViewerRef } from "@/components/shared/ThreeViewer";
 import { FittingProgress } from "@/components/armor-fitting";
 import {
@@ -339,7 +341,7 @@ export function HandRiggingPage() {
                     </>
                   ) : (
                     <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <LoadingSpinner size="sm" />
                       <span>Processing...</span>
                     </>
                   )}

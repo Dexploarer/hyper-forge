@@ -16,6 +16,7 @@ import type { VoiceServiceStatus as VoiceServiceStatusData } from "@/services/ap
 import { voiceStatusClient } from "@/services/api/VoiceStatusAPIClient";
 import { cn } from "@/styles";
 
+import { formatTime } from '@/utils';
 interface VoiceServiceStatusProps {
   autoRefresh?: boolean;
   refreshInterval?: number; // in milliseconds
@@ -343,7 +344,7 @@ export const VoiceServiceStatus: React.FC<VoiceServiceStatusProps> = ({
           {lastUpdate && (
             <div className="px-6 pb-4">
               <p className="text-xs text-text-tertiary text-center">
-                Last updated: {lastUpdate.toLocaleTimeString()}
+                Last updated: {formatTime(lastUpdate)}
               </p>
             </div>
           )}

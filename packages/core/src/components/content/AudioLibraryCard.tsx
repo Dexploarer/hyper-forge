@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/styles";
 import { ContentItem } from "@/hooks/useContent";
+import { formatDate } from "@/utils";
 
 interface AudioLibraryCardProps {
   item: ContentItem;
@@ -308,7 +309,7 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
         <div className="flex items-center justify-between text-xs text-text-tertiary group-hover:text-text-tertiary pt-2">
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            {item.createdAt.toLocaleDateString()}
+            {formatDate(item.createdAt)}
           </div>
           {!audioUrl && (
             <span className="text-amber-400 text-xs">

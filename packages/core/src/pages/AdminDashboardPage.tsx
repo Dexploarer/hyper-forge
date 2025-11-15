@@ -5,7 +5,6 @@ import {
   Calendar,
   CheckCircle,
   XCircle,
-  Loader2,
   Shield,
   User as UserIcon,
   AlertCircle,
@@ -30,7 +29,7 @@ import React, {
 } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 
-import { Badge } from "../components/common";
+import { Badge, LoadingSpinner } from "../components/common";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigation } from "../hooks/useNavigation";
 
@@ -127,7 +126,7 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
             disabled={loading}
             className="px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white transition-colors disabled:opacity-50 flex items-center gap-2"
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading && <LoadingSpinner size="sm" />}
             Confirm
           </button>
         </div>
@@ -192,7 +191,7 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
             disabled={loading || !confirmChecked}
             className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
-            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {loading && <LoadingSpinner size="sm" />}
             Delete User
           </button>
         </div>
@@ -796,10 +795,11 @@ export const AdminDashboardPage: React.FC = () => {
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-text-secondary">
-                    Loading users...
-                  </p>
+                  <LoadingSpinner
+                    size="lg"
+                    text="Loading users..."
+                    className="mx-auto"
+                  />
                 </div>
               </div>
             ) : error ? (
@@ -1078,10 +1078,11 @@ export const AdminDashboardPage: React.FC = () => {
             {activityLoading && activityLogs.length === 0 ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-2" />
-                  <p className="text-sm text-text-secondary">
-                    Loading activity log...
-                  </p>
+                  <LoadingSpinner
+                    size="lg"
+                    text="Loading activity log..."
+                    className="mx-auto"
+                  />
                 </div>
               </div>
             ) : activityLogs.length === 0 ? (
@@ -1202,9 +1203,7 @@ export const AdminDashboardPage: React.FC = () => {
                       disabled={activityLoading}
                       className="w-full px-4 py-2 rounded-lg bg-bg-tertiary hover:bg-bg-hover text-text-primary transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                     >
-                      {activityLoading && (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      )}
+                      {activityLoading && <LoadingSpinner size="sm" />}
                       Load More
                     </button>
                   </div>

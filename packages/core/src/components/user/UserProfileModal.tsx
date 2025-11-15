@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 
 import type { User } from '@/services/api/UsersAPIClient'
 import { usersClient } from '@/services/api/UsersAPIClient'
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button } from '@/components/common'
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, LoadingSpinner} from '@/components/common'
 import { AchievementDisplay } from '@/components/achievements'
 
 interface UserProfileModalProps {
@@ -181,7 +181,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  <LoadingSpinner size="sm" className="mr-2" />
                   Saving...
                 </>
               ) : (

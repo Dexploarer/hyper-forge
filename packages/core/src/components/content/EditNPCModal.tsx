@@ -3,24 +3,39 @@
  * Modal for editing NPC content
  */
 
-import React, { useState, useEffect } from "react";
-import { Users, Loader2, Save } from "lucide-react";
+import React from "react";
 import {
   Modal,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   ModalSection,
-  Button,
   Input,
   Textarea,
 } from "../common";
 import { useContent } from "@/hooks/useContent";
+import { useContentEditForm } from "@/hooks/useContentEditForm";
+import { EditModalFooter } from "./EditModalFooter";
 
 interface EditNPCModalProps {
   open: boolean;
   onClose: () => void;
   npc: any;
+}
+
+interface NPCFormData {
+  name: string;
+  archetype: string;
+  personalityBackground: string;
+  personalityTraits: string;
+  personalityMotivations: string;
+  appearanceDescription: string;
+  appearanceEquipment: string;
+  dialogueGreeting: string;
+  dialogueFarewell: string;
+  dialogueIdle: string;
+  behaviorRole: string;
+  behaviorSchedule: string;
+  behaviorRelationships: string;
 }
 
 export const EditNPCModal: React.FC<EditNPCModalProps> = ({
@@ -29,27 +44,53 @@ export const EditNPCModal: React.FC<EditNPCModalProps> = ({
   npc,
 }) => {
   const { updateNPC } = useContent();
-  const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    archetype: "",
-    personalityBackground: "",
-    personalityTraits: "",
-    personalityMotivations: "",
-    appearanceDescription: "",
-    appearanceEquipment: "",
-    dialogueGreeting: "",
-    dialogueFarewell: "",
-    dialogueIdle: "",
-    behaviorRole: "",
-    behaviorSchedule: "",
-    behaviorRelationships: "",
-  });
 
-  // Initialize form data when modal opens
-  useEffect(() => {
-    if (open && npc) {
-      setFormData({
+  const { formData, setFormData, isSaving, handleSave, isValid } =
+    useContentEditForm<NPCFormData, any>({
+      initialData: npc,
+      open,
+      onUpdate: updateNPC,
+      onClose,
+      validator: (data) => !!data.name.trim(),
+      transformer: (data) => ({
+        name: data.name,
+        archetype: data.archetype,
+        personality: {
+          background: data.personalityBackground,
+          traits: data.personalityTraits
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+          motivations: data.personalityMotivations
+            .split(",")
+            .map((m) => m.trim())
+            .filter(Boolean),
+        },
+        appearance: {
+          description: data.appearanceDescription,
+          equipment: data.appearanceEquipment
+            .split(",")
+            .map((e) => e.trim())
+            .filter(Boolean),
+        },
+        dialogue: {
+          greeting: data.dialogueGreeting,
+          farewell: data.dialogueFarewell,
+          idle: data.dialogueIdle
+            .split("\n")
+            .map((i) => i.trim())
+            .filter(Boolean),
+        },
+        behavior: {
+          role: data.behaviorRole,
+          schedule: data.behaviorSchedule,
+          relationships: data.behaviorRelationships
+            .split(",")
+            .map((r) => r.trim())
+            .filter(Boolean),
+        },
+      }),
+      initializer: (npc) => ({
         name: npc.name || "",
         archetype: npc.archetype || "",
         personalityBackground: npc.personality?.background || "",
@@ -73,65 +114,8 @@ export const EditNPCModal: React.FC<EditNPCModalProps> = ({
         behaviorRelationships: Array.isArray(npc.behavior?.relationships)
           ? npc.behavior.relationships.join(", ")
           : "",
-      });
-    }
-  }, [open, npc]);
-
-  const handleSave = async () => {
-    if (!formData.name.trim()) {
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-
-      const updates = {
-        name: formData.name,
-        archetype: formData.archetype,
-        personality: {
-          background: formData.personalityBackground,
-          traits: formData.personalityTraits
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
-          motivations: formData.personalityMotivations
-            .split(",")
-            .map((m) => m.trim())
-            .filter(Boolean),
-        },
-        appearance: {
-          description: formData.appearanceDescription,
-          equipment: formData.appearanceEquipment
-            .split(",")
-            .map((e) => e.trim())
-            .filter(Boolean),
-        },
-        dialogue: {
-          greeting: formData.dialogueGreeting,
-          farewell: formData.dialogueFarewell,
-          idle: formData.dialogueIdle
-            .split("\n")
-            .map((i) => i.trim())
-            .filter(Boolean),
-        },
-        behavior: {
-          role: formData.behaviorRole,
-          schedule: formData.behaviorSchedule,
-          relationships: formData.behaviorRelationships
-            .split(",")
-            .map((r) => r.trim())
-            .filter(Boolean),
-        },
-      };
-
-      await updateNPC(npc.id, updates);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save NPC:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+      }),
+    });
 
   return (
     <Modal open={open} onClose={onClose} size="xl">
@@ -377,27 +361,12 @@ export const EditNPCModal: React.FC<EditNPCModalProps> = ({
         </div>
       </ModalBody>
 
-      <ModalFooter>
-        <Button variant="secondary" onClick={onClose} disabled={isSaving}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving || !formData.name.trim()}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </>
-          )}
-        </Button>
-      </ModalFooter>
+      <EditModalFooter
+        onClose={onClose}
+        onSave={handleSave}
+        isSaving={isSaving}
+        isValid={isValid}
+      />
     </Modal>
   );
 };

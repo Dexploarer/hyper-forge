@@ -33,8 +33,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/styles";
 import { ContentItem, ContentType } from "@/hooks/useContent";
+import { LoadingSpinner } from "@/components/common";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
-import { notify } from "@/utils/notify";
+import { notify, formatDate } from "@/utils";
 import type {
   NPCData,
   QuestData,
@@ -649,7 +650,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
                     title="Generate Portrait"
                   >
                     {isGeneratingPortrait || isSavingPortrait ? (
-                      <Loader2 className="w-6 h-6 text-white animate-spin" />
+                      <LoadingSpinner size="md" className="text-white" />
                     ) : (
                       <>
                         <SparklesIcon className="w-6 h-6 text-white" />
@@ -720,7 +721,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
           <div className="mt-3 flex items-center justify-between text-xs text-text-tertiary group-hover:text-text-tertiary">
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              {item.createdAt.toLocaleDateString()}
+              {formatDate(item.createdAt)}
             </div>
             {/* Status Indicators */}
             <div className="flex items-center gap-1.5">
@@ -904,7 +905,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
               title="Generate Banner"
             >
               {isGeneratingBanner || isSavingBanner ? (
-                <Loader2 className="w-6 h-6 text-white animate-spin" />
+                <LoadingSpinner size="md" className="text-white" />
               ) : (
                 <>
                   <SparklesIcon className="w-6 h-6 text-white" />
@@ -988,7 +989,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
           <div className="flex items-center justify-between text-xs text-text-tertiary group-hover:text-text-tertiary pt-2">
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              {item.createdAt.toLocaleDateString()}
+              {formatDate(item.createdAt)}
             </div>
             {npcs.length > 0 && (
               <div className="flex items-center gap-1">
@@ -1088,7 +1089,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
           <div className="flex items-center justify-between text-xs text-text-tertiary group-hover:text-text-tertiary">
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              {item.createdAt.toLocaleDateString()}
+              {formatDate(item.createdAt)}
             </div>
             <div className="flex items-center gap-1">
               <MessageSquare className="w-3 h-3" />
@@ -1205,7 +1206,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
           <div className="flex items-center justify-between text-xs text-text-tertiary group-hover:text-text-tertiary pt-2">
             <div className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              {item.createdAt.toLocaleDateString()}
+              {formatDate(item.createdAt)}
             </div>
             {lore.timeline && (
               <div className="flex items-center gap-1 italic">

@@ -7,7 +7,9 @@ import {
   BookOpen,
   Users,
 } from "lucide-react";
-import { Card, CardContent, Button } from "@/components/common";
+import { Card, CardContent, Button,
+  LoadingSpinner,
+} from "@/components/common";
 import { notify } from "@/utils/notify";
 import { api } from "@/lib/api-client";
 
@@ -391,7 +393,7 @@ export function WorldBuilderPage({
                 >
                   {isGenerating ? (
                     <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      <LoadingSpinner size="md" className="mr-2" />
                       Generating World...
                     </>
                   ) : (

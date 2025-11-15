@@ -16,7 +16,7 @@ import React, { useState, useEffect } from 'react'
 
 import type { MaterialPreset } from '@/services/api/MaterialPresetsAPIClient'
 import { materialPresetsClient } from '@/services/api/MaterialPresetsAPIClient'
-import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Badge } from '@/components/common'
+import { Modal, ModalHeader, ModalBody, ModalFooter, Button, Badge, LoadingSpinner} from '@/components/common'
 import { cn } from '@/styles'
 
 interface MaterialPresetEditorProps {
@@ -269,7 +269,7 @@ export const MaterialPresetEditor: React.FC<MaterialPresetEditorProps> = ({
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <LoadingSpinner size="md" className="text-primary" />
             <span className="ml-3 text-text-secondary">Loading presets...</span>
           </div>
         ) : (
@@ -514,7 +514,7 @@ export const MaterialPresetEditor: React.FC<MaterialPresetEditorProps> = ({
                     >
                       {isSaving ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <LoadingSpinner size="sm" />
                           Saving...
                         </>
                       ) : (

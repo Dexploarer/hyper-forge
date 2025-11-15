@@ -25,6 +25,7 @@ import {
   Button,
   Badge,
   Progress,
+  LoadingSpinner,
 } from "../common";
 
 interface PipelineProgressCardProps {
@@ -165,7 +166,7 @@ const PipelineStageItem: React.FC<{
             )}
           >
             {isActive ? (
-              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+              <LoadingSpinner size="md" className="text-primary" />
             ) : isComplete ? (
               <CheckCircle className="w-5 h-5 text-success" />
             ) : isFailed ? (

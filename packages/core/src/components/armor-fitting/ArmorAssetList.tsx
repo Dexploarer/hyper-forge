@@ -12,7 +12,9 @@ import React, { useState, useMemo } from "react";
 
 import { cn } from "../../styles";
 import { Asset } from "../../types";
-import { Badge, Input } from "../common";
+import { Badge, Input,
+  LoadingSpinner,
+} from "../common";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 
 interface ArmorAssetListProps {
@@ -219,7 +221,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
         <div className="p-2">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-32 gap-3">
-              <Loader2 className="animate-spin text-primary" size={28} />
+              <LoadingSpinner size="lg" className="text-primary" />
               <p className="text-sm text-text-tertiary">Loading assets...</p>
             </div>
           ) : visibleAssets.length === 0 && !isLoadingMore ? (
@@ -306,7 +308,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
           {/* Loading indicator for infinite scroll */}
           {isLoadingMore && (
             <div className="flex items-center justify-center p-4">
-              <Loader2 className="w-5 h-5 text-primary animate-spin" />
+              <LoadingSpinner size="md" className="text-primary" />
               <span className="ml-2 text-sm text-text-secondary">
                 Loading more assets...
               </span>

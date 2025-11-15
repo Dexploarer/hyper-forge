@@ -8,16 +8,24 @@ import {
   Castle,
   Save,
   FolderOpen,
+  Settings,
+  Zap,
+  Package,
 } from "lucide-react";
 import { useGenerationStore } from "@/store";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePrivy } from "@privy-io/react-auth";
-import { Card, CardContent, Button } from "@/components/common";
+import {
+  Card,
+  CardContent,
+  Button,
+  LoadingSpinner,
+  TabNavigation,
+} from "@/components/common";
 import { GenerationAPIClient } from "@/services/api/GenerationAPIClient";
 import { buildGenerationConfig } from "@/utils/generationConfigBuilder";
 import { notify } from "@/utils/notify";
 import {
-  TabNavigation,
   PipelineProgressCard,
   GeneratedAssetsList,
   AssetPreviewCard,
@@ -400,8 +408,18 @@ export function EnvironmentGenerationPage({
           <div className="flex items-center justify-between">
             <TabNavigation
               activeView={activeView}
-              generatedAssetsCount={generatedAssets.length}
+              tabs={[
+                { id: "config", icon: Settings, label: "Configuration" },
+                { id: "progress", icon: Zap, label: "Pipeline" },
+                {
+                  id: "results",
+                  icon: Package,
+                  label: "Results",
+                  badge: generatedAssets.length,
+                },
+              ]}
               onTabChange={setActiveView}
+              variant="pills"
             />
             {/* Prompt Library Buttons */}
             {activeView === "config" && (
@@ -719,7 +737,7 @@ export function EnvironmentGenerationPage({
                 >
                   {isGenerating ? (
                     <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      <LoadingSpinner size="md" className="mr-2" />
                       Generating Environment...
                     </>
                   ) : (

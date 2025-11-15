@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { User, CheckCircle2, Circle, Loader2 } from 'lucide-react'
 
-import { Card, CardHeader, CardTitle, CardContent, Badge } from '../common'
+import { Card, CardHeader, CardTitle, CardContent, Badge, LoadingSpinner} from '../common'
 import { PlaytesterAPIClient } from '@/services/api/PlaytesterAPIClient'
 import type { TesterPersona } from '@/types/playtester'
 
@@ -65,7 +65,7 @@ export const TesterProfileList: React.FC<TesterProfileListProps> = ({
     return (
       <Card className="h-full">
         <CardContent className="p-6 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-text-tertiary" />
+          <LoadingSpinner size="md" className="text-text-tertiary" />
         </CardContent>
       </Card>
     )

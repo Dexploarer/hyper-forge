@@ -1,7 +1,7 @@
 import { Scroll, Loader2, CheckCircle, Sparkles } from 'lucide-react'
 import React, { useState } from 'react'
 
-import { Modal, ModalHeader, ModalBody, ModalFooter, ModalSection, Button, Select, Input } from '../common'
+import { Modal, ModalHeader, ModalBody, ModalFooter, ModalSection, Button, Select, Input, LoadingSpinner} from '../common'
 import { ContentAPIClient } from '@/services/api/ContentAPIClient'
 import { notify } from '@/utils/notify'
 import type { NPCData, QuestData } from '@/types/content'
@@ -166,7 +166,7 @@ export const QuestGenerationModal: React.FC<QuestGenerationModalProps> = ({
 
         {status === 'generating' && (
           <div className="flex flex-col items-center justify-center py-12">
-            <Loader2 className="w-16 h-16 text-primary animate-spin mb-4" />
+            <LoadingSpinner size="md" className="w-16 h-16 text-primary mb-4" />
             <h3 className="text-lg font-semibold text-text-primary mb-2">
               Generating Quest...
             </h3>

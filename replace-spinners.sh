@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Script to consolidate LoadingSpinner usage
+# This script replaces Loader2 animate-spin instances with LoadingSpinner component
+
+FILES=(
+  "packages/core/src/pages/AdminDashboardPage.tsx"
+  "packages/core/src/components/audio/VoiceGenerationCard.tsx"
+  "packages/core/src/components/generation/MaterialVariantsCard.tsx"
+  "packages/core/src/components/content/ContentPreviewCard.tsx"
+  "packages/core/src/components/assets/AssetList.tsx"
+  "packages/core/src/pages/generation/EnvironmentGenerationPage.tsx"
+  "packages/core/src/pages/generation/PropGenerationPage.tsx"
+  "packages/core/src/pages/generation/CharacterGenerationPage.tsx"
+  "packages/core/src/components/audio/MusicGenerationCard.tsx"
+  "packages/core/src/components/audio/SFXGenerationCard.tsx"
+  "packages/core/src/components/content/LoreGenerationCard.tsx"
+  "packages/core/src/components/content/DialogueGenerationCard.tsx"
+  "packages/core/src/components/content/QuestGenerationCard.tsx"
+  "packages/core/src/components/content/NPCGenerationCard.tsx"
+  "packages/core/src/components/content/LibraryCard.tsx"
+  "packages/core/src/components/prompts/SavePromptModal.tsx"
+  "packages/core/src/components/projects/CreateProjectModal.tsx"
+  "packages/core/src/pages/HandRiggingPage.tsx"
+  "packages/core/src/pages/GenerationPage.tsx"
+  "packages/core/src/components/hand-rigging/HandAvatarSelector.tsx"
+  "packages/core/src/pages/SettingsPage.tsx"
+  "packages/core/src/components/settings/ApiKeySettings.tsx"
+  "packages/core/src/pages/generation/WorldBuilderPage.tsx"
+  "packages/core/src/components/user/UserProfileModal.tsx"
+  "packages/core/src/pages/ProjectsPage.tsx"
+  "packages/core/src/components/projects/EditProjectModal.tsx"
+  "packages/core/src/components/armor-fitting/ArmorAssetList.tsx"
+  "packages/core/src/components/generation/PipelineProgressCard.tsx"
+  "packages/core/src/components/assets/SpriteGenerationModal.tsx"
+  "packages/core/src/components/world-config/WorldConfigSelector.tsx"
+  "packages/core/src/components/content/EditLoreModal.tsx"
+  "packages/core/src/components/content/EditDialogueModal.tsx"
+  "packages/core/src/components/content/EditQuestModal.tsx"
+  "packages/core/src/components/content/EditNPCModal.tsx"
+  "packages/core/src/components/shared/AnimationPlayer.tsx"
+  "packages/core/src/components/equipment/GripDetectionPanel.tsx"
+  "packages/core/src/components/equipment/AssetSelectionPanel.tsx"
+  "packages/core/src/components/generation/SpritesDisplay.tsx"
+  "packages/core/src/components/world-config/shared/StepNavigation.tsx"
+  "packages/core/src/components/playtester/PlaytestConfigCard.tsx"
+  "packages/core/src/components/content/LoreGenerationModal.tsx"
+  "packages/core/src/components/content/QuestGenerationModal.tsx"
+  "packages/core/src/components/materials/MaterialPresetEditor.tsx"
+  "packages/core/src/components/playtester/TesterProfileList.tsx"
+  "packages/core/src/components/assets/RegenerateModal.tsx"
+)
+
+echo "Files to process: ${#FILES[@]}"
+for file in "${FILES[@]}"; do
+  echo "- $file"
+done

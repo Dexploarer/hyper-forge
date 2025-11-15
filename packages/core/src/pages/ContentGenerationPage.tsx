@@ -1,9 +1,14 @@
 import React, { useState } from "react";
-import { ChevronLeft, List } from "lucide-react";
+import {
+  ChevronLeft,
+  List,
+  Settings,
+  Activity,
+  CheckCircle,
+} from "lucide-react";
 
 import {
   ContentTypeSelector,
-  TabNavigation,
   NPCGenerationCard,
   QuestGenerationCard,
   DialogueGenerationCard,
@@ -11,7 +16,7 @@ import {
   GeneratedContentList,
   ContentPreviewCard,
 } from "@/components/content";
-import { Button, Drawer } from "@/components/common";
+import { Button, Drawer, TabNavigation } from "@/components/common";
 import {
   DialogueData,
   GeneratedContent,
@@ -127,8 +132,18 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
         <div className="mb-3">
           <TabNavigation
             activeView={activeView}
-            generatedContentsCount={generatedContents.length}
+            tabs={[
+              { id: "config", icon: Settings, label: "Configuration" },
+              { id: "progress", icon: Activity, label: "Progress" },
+              {
+                id: "results",
+                icon: CheckCircle,
+                label: "Results",
+                badge: generatedContents.length,
+              },
+            ]}
             onTabChange={setActiveView}
+            variant="underline"
           />
         </div>
 

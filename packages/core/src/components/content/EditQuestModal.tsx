@@ -3,13 +3,12 @@
  * Modal for editing Quest content
  */
 
-import React, { useState, useEffect } from "react";
-import { Scroll, Loader2, Save, Plus, Trash2 } from "lucide-react";
+import React from "react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   Modal,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   ModalSection,
   Button,
   Input,
@@ -17,6 +16,8 @@ import {
   Select,
 } from "../common";
 import { useContent } from "@/hooks/useContent";
+import { useContentEditForm } from "@/hooks/useContentEditForm";
+import { EditModalFooter } from "./EditModalFooter";
 
 interface EditQuestModalProps {
   open: boolean;
@@ -31,31 +32,61 @@ interface QuestObjective {
   count: number;
 }
 
+interface QuestFormData {
+  title: string;
+  description: string;
+  objectives: QuestObjective[];
+  rewardsExperience: number;
+  rewardsGold: number;
+  rewardsItems: string;
+  requirementsLevel: number;
+  requirementsPreviousQuests: string;
+  npcs: string;
+  location: string;
+  story: string;
+}
+
 export const EditQuestModal: React.FC<EditQuestModalProps> = ({
   open,
   onClose,
   quest,
 }) => {
   const { updateQuest } = useContent();
-  const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    objectives: [] as QuestObjective[],
-    rewardsExperience: 0,
-    rewardsGold: 0,
-    rewardsItems: "",
-    requirementsLevel: 1,
-    requirementsPreviousQuests: "",
-    npcs: "",
-    location: "",
-    story: "",
-  });
 
-  // Initialize form data when modal opens
-  useEffect(() => {
-    if (open && quest) {
-      setFormData({
+  const { formData, setFormData, isSaving, handleSave, isValid } =
+    useContentEditForm<QuestFormData, any>({
+      initialData: quest,
+      open,
+      onUpdate: updateQuest,
+      onClose,
+      validator: (data) => !!data.title.trim(),
+      transformer: (data) => ({
+        title: data.title,
+        description: data.description,
+        objectives: data.objectives,
+        rewards: {
+          experience: data.rewardsExperience,
+          gold: data.rewardsGold,
+          items: data.rewardsItems
+            .split(",")
+            .map((i) => i.trim())
+            .filter(Boolean),
+        },
+        requirements: {
+          level: data.requirementsLevel,
+          previousQuests: data.requirementsPreviousQuests
+            .split(",")
+            .map((q) => q.trim())
+            .filter(Boolean),
+        },
+        npcs: data.npcs
+          .split(",")
+          .map((n) => n.trim())
+          .filter(Boolean),
+        location: data.location,
+        story: data.story,
+      }),
+      initializer: (quest) => ({
         title: quest.title || "",
         description: quest.description || "",
         objectives: Array.isArray(quest.objectives) ? quest.objectives : [],
@@ -73,53 +104,8 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
         npcs: Array.isArray(quest.npcs) ? quest.npcs.join(", ") : "",
         location: quest.location || "",
         story: quest.story || "",
-      });
-    }
-  }, [open, quest]);
-
-  const handleSave = async () => {
-    if (!formData.title.trim()) {
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-
-      const updates = {
-        title: formData.title,
-        description: formData.description,
-        objectives: formData.objectives,
-        rewards: {
-          experience: formData.rewardsExperience,
-          gold: formData.rewardsGold,
-          items: formData.rewardsItems
-            .split(",")
-            .map((i) => i.trim())
-            .filter(Boolean),
-        },
-        requirements: {
-          level: formData.requirementsLevel,
-          previousQuests: formData.requirementsPreviousQuests
-            .split(",")
-            .map((q) => q.trim())
-            .filter(Boolean),
-        },
-        npcs: formData.npcs
-          .split(",")
-          .map((n) => n.trim())
-          .filter(Boolean),
-        location: formData.location,
-        story: formData.story,
-      };
-
-      await updateQuest(quest.id, updates);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save quest:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+      }),
+    });
 
   const addObjective = () => {
     setFormData({
@@ -429,27 +415,12 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
         </div>
       </ModalBody>
 
-      <ModalFooter>
-        <Button variant="secondary" onClick={onClose} disabled={isSaving}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving || !formData.title.trim()}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </>
-          )}
-        </Button>
-      </ModalFooter>
+      <EditModalFooter
+        onClose={onClose}
+        onSave={handleSave}
+        isSaving={isSaving}
+        isValid={isValid}
+      />
     </Modal>
   );
 };

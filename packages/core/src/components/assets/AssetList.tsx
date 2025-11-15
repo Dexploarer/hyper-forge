@@ -16,7 +16,6 @@ import {
   Star,
   CheckSquare,
   Square,
-  Loader2,
   LayoutGrid,
   List,
   Keyboard,
@@ -31,6 +30,7 @@ import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 import { apiFetch } from "@/utils/api";
 import { useApp } from "@/contexts/AppContext";
 import { AssetService } from "@/services/api/AssetService";
+import { LoadingSpinner } from "@/components/common";
 import { OptimizedAssetCard } from "./OptimizedAssetCard";
 import { QuickFiltersBar } from "./QuickFiltersBar";
 import { BulkActionsBar } from "./BulkActionsBar";
@@ -897,10 +897,7 @@ const AssetList: React.FC<AssetListProps> = ({ assets, onAssetDelete }) => {
               {/* Loading indicator */}
               {isLoadingMore && (
                 <div className="flex items-center justify-center p-4 mt-4">
-                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                  <span className="ml-2 text-sm text-text-secondary">
-                    Loading more assets...
-                  </span>
+                  <LoadingSpinner size="md" text="Loading more assets..." />
                 </div>
               )}
             </div>
@@ -1674,10 +1671,7 @@ const AssetList: React.FC<AssetListProps> = ({ assets, onAssetDelete }) => {
               {/* Loading indicator for list view */}
               {isLoadingMore && (
                 <div className="flex items-center justify-center p-4">
-                  <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                  <span className="ml-2 text-sm text-text-secondary">
-                    Loading more assets...
-                  </span>
+                  <LoadingSpinner size="md" text="Loading more assets..." />
                 </div>
               )}
             </div>

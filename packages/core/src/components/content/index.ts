@@ -1,5 +1,4 @@
 export { ContentTypeSelector } from "./ContentTypeSelector";
-export { TabNavigation } from "./TabNavigation";
 export { NPCGenerationCard } from "./NPCGenerationCard";
 export { QuestGenerationCard } from "./QuestGenerationCard";
 export { DialogueGenerationCard } from "./DialogueGenerationCard";

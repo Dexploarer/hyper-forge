@@ -2,7 +2,7 @@ import { Grid3x3, Download, Sparkles, Loader2 } from 'lucide-react'
 import React from 'react'
 
 import { GeneratedAsset } from '../../types'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button } from '../common'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, LoadingSpinner} from '../common'
 
 interface Sprite {
   angle: number
@@ -70,7 +70,7 @@ export const SpritesDisplay: React.FC<SpritesDisplayProps> = ({
               >
                 {isGeneratingSprites ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <LoadingSpinner size="sm" className="mr-2" />
                     Generating...
                   </>
                 ) : (

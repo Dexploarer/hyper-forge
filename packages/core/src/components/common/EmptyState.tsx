@@ -1,39 +1,49 @@
-import { LucideIcon } from "lucide-react";
 import React from "react";
+import { cn } from "@/styles";
+import { Button } from "./Button";
 
-interface EmptyStateProps {
-  icon: LucideIcon;
+export interface EmptyStateProps {
+  icon: React.ComponentType<{ className?: string; size?: number }>;
   title: string;
-  description: string;
-  iconSize?: number;
+  description?: string;
+  action?:
+    | React.ReactNode
+    | {
+        label: string;
+        onClick: () => void;
+      };
   className?: string;
-  action?: React.ReactNode;
+  iconSize?: number;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
   icon: Icon,
   title,
   description,
-  iconSize = 80,
-  className = "",
   action,
+  className,
+  iconSize = 48,
 }) => {
   return (
-    <div className={`text-center p-8 ${className}`}>
-      <div className="relative">
-        <div className="absolute inset-0 bg-primary opacity-20 blur-3xl animate-pulse" />
-        <Icon
-          size={iconSize}
-          className="text-text-muted mb-6 mx-auto relative z-10 animate-float"
-        />
-      </div>
-      <h3 className="text-2xl font-semibold text-text-primary mb-2">{title}</h3>
-      <p className="text-text-tertiary text-lg max-w-md mx-auto">
-        {description}
-      </p>
-      {action && <div className="mt-6">{action}</div>}
+    <div className={cn("text-center py-12 text-text-tertiary", className)}>
+      <Icon className="mx-auto mb-3 opacity-50" size={iconSize} />
+      <p className="text-sm text-text-primary">{title}</p>
+      {description && (
+        <p className="text-xs text-text-tertiary mt-1">{description}</p>
+      )}
+      {action && (
+        <>
+          {typeof action === "object" &&
+          "label" in action &&
+          "onClick" in action ? (
+            <Button onClick={action.onClick} className="mt-4">
+              {action.label}
+            </Button>
+          ) : (
+            action
+          )}
+        </>
+      )}
     </div>
   );
 };
-
-export default EmptyState;

@@ -13,6 +13,7 @@ import {
   Input,
   Textarea,
   Button,
+  LoadingSpinner,
 } from "@/components/common";
 import { ProjectCreateData } from "@/services/api/ProjectService";
 
@@ -144,7 +145,7 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
             Cancel
           </Button>
           <Button type="submit" variant="primary" disabled={loading}>
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {loading && <LoadingSpinner size="sm" className="mr-2" />}
             Create Project
           </Button>
         </ModalFooter>

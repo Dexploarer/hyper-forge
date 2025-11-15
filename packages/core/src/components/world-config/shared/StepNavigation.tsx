@@ -1,7 +1,9 @@
 import { ChevronLeft, ChevronRight, Save, Loader2 } from "lucide-react";
 import React from "react";
 
-import { Button } from "@/components/common";
+import { Button,
+  LoadingSpinner,
+} from "@/components/common";
 
 interface StepNavigationProps {
   currentStep: number;
@@ -67,7 +69,7 @@ export const StepNavigation: React.FC<StepNavigationProps> = ({
           <Button onClick={onSave} disabled={!canGoNext || isSaving}>
             {isSaving ? (
               <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <LoadingSpinner size="sm" className="mr-2" />
                 Saving...
               </>
             ) : (

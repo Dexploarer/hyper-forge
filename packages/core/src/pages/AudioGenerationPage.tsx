@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { List } from "lucide-react";
+import { List, Settings, Loader2, ListMusic } from "lucide-react";
 
 import {
   AudioTypeSelector,
-  TabNavigation,
   VoiceGenerationCard,
   SFXGenerationCard,
   MusicGenerationCard,
   GeneratedAudioList,
   AudioPreviewCard,
 } from "@/components/audio";
-import { Button, Drawer } from "@/components/common";
+import { Button, Drawer, TabNavigation } from "@/components/common";
 import type { AudioType, AudioView, GeneratedAudio } from "@/types/audio";
 import { notify } from "@/utils/notify";
 import { api } from "@/lib/api-client";
@@ -222,8 +221,18 @@ export const AudioGenerationPage: React.FC<AudioGenerationPageProps> = ({
         <div className="mb-3">
           <TabNavigation
             activeView={activeView}
-            generatedAudiosCount={generatedAudios.length}
+            tabs={[
+              { id: "config", icon: Settings, label: "Configure" },
+              { id: "progress", icon: Loader2, label: "Progress" },
+              {
+                id: "results",
+                icon: ListMusic,
+                label: "Results",
+                badge: generatedAudios.length,
+              },
+            ]}
             onTabChange={setActiveView}
+            variant="pills"
           />
         </div>
 

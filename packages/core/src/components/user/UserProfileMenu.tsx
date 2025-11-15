@@ -13,6 +13,7 @@ import type { User } from "@/services/api/UsersAPIClient";
 import { cn } from "@/styles";
 import { Badge } from "@/components/common";
 import { focusManager } from "@/styles/utils";
+import { formatDateWithTime } from "@/utils";
 
 interface UserProfileMenuProps {
   user: User | null;
@@ -72,16 +73,6 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
       .join("")
       .toUpperCase()
       .substring(0, 2);
-  };
-
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return "Never";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   const isProfileComplete = Boolean(
@@ -210,7 +201,7 @@ export const UserProfileMenu: React.FC<UserProfileMenuProps> = ({
           {/* Last Login */}
           <div className="px-4 py-2 bg-bg-secondary/50">
             <p className="text-xs text-text-tertiary">
-              Last login: {formatDate(user.lastLoginAt)}
+              Last login: {formatDateWithTime(user.lastLoginAt)}
             </p>
           </div>
 

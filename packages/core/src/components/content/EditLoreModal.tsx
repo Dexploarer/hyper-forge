@@ -3,24 +3,33 @@
  * Modal for editing Lore content
  */
 
-import React, { useState, useEffect } from "react";
-import { BookOpen, Loader2, Save } from "lucide-react";
+import React from "react";
 import {
   Modal,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   ModalSection,
-  Button,
   Input,
   Textarea,
 } from "../common";
 import { useContent } from "@/hooks/useContent";
+import { useContentEditForm } from "@/hooks/useContentEditForm";
+import { EditModalFooter } from "./EditModalFooter";
 
 interface EditLoreModalProps {
   open: boolean;
   onClose: () => void;
   lore: any;
+}
+
+interface LoreFormData {
+  title: string;
+  category: string;
+  content: string;
+  summary: string;
+  relatedTopics: string;
+  timeline: string;
+  characters: string;
 }
 
 export const EditLoreModal: React.FC<EditLoreModalProps> = ({
@@ -29,21 +38,30 @@ export const EditLoreModal: React.FC<EditLoreModalProps> = ({
   lore,
 }) => {
   const { updateLore } = useContent();
-  const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    title: "",
-    category: "",
-    content: "",
-    summary: "",
-    relatedTopics: "",
-    timeline: "",
-    characters: "",
-  });
 
-  // Initialize form data when modal opens
-  useEffect(() => {
-    if (open && lore) {
-      setFormData({
+  const { formData, setFormData, isSaving, handleSave, isValid } =
+    useContentEditForm<LoreFormData, any>({
+      initialData: lore,
+      open,
+      onUpdate: updateLore,
+      onClose,
+      validator: (data) => !!data.title.trim() && !!data.content.trim(),
+      transformer: (data) => ({
+        title: data.title,
+        category: data.category,
+        content: data.content,
+        summary: data.summary,
+        relatedTopics: data.relatedTopics
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+        timeline: data.timeline || undefined,
+        characters: data.characters
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean),
+      }),
+      initializer: (lore) => ({
         title: lore.title || "",
         category: lore.category || "",
         content: lore.content || "",
@@ -55,42 +73,8 @@ export const EditLoreModal: React.FC<EditLoreModalProps> = ({
         characters: Array.isArray(lore.characters)
           ? lore.characters.join(", ")
           : "",
-      });
-    }
-  }, [open, lore]);
-
-  const handleSave = async () => {
-    if (!formData.title.trim() || !formData.content.trim()) {
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-
-      const updates = {
-        title: formData.title,
-        category: formData.category,
-        content: formData.content,
-        summary: formData.summary,
-        relatedTopics: formData.relatedTopics
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        timeline: formData.timeline || undefined,
-        characters: formData.characters
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean),
-      };
-
-      await updateLore(lore.id, updates);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save lore:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+      }),
+    });
 
   return (
     <Modal open={open} onClose={onClose} size="xl">
@@ -219,29 +203,12 @@ export const EditLoreModal: React.FC<EditLoreModalProps> = ({
         </div>
       </ModalBody>
 
-      <ModalFooter>
-        <Button variant="secondary" onClick={onClose} disabled={isSaving}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={
-            isSaving || !formData.title.trim() || !formData.content.trim()
-          }
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </>
-          )}
-        </Button>
-      </ModalFooter>
+      <EditModalFooter
+        onClose={onClose}
+        onSave={handleSave}
+        isSaving={isSaving}
+        isValid={isValid}
+      />
     </Modal>
   );
 };

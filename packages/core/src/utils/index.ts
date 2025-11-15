@@ -4,10 +4,7 @@
  */
 
 // API utilities
-export {
-  apiFetch,
-  type RequestOptions,
-} from './api'
+export { apiFetch, type RequestOptions } from "./api";
 
 // Asset statistics
 export {
@@ -19,19 +16,19 @@ export {
   getStartOfMonth,
   filterByDateRange,
   groupAssetsByDate,
-  getRelativeTimeString,
+  getRelativeTimeString as formatRelativeTime,
   type TypeCount,
   type StatusCount,
   type DateRangeStats,
   type AssetStatistics,
   type GroupedAssets,
-} from './assetStats'
+} from "./assetStats";
 
 // Format utilities
-export { formatAssetName } from './formatAssetName'
+export { formatAssetName } from "./formatAssetName";
 
 // Generation config builder
-export { buildGenerationConfig } from './generationConfigBuilder'
+export { buildGenerationConfig } from "./generationConfigBuilder";
 
 // General helpers
 export {
@@ -48,10 +45,14 @@ export {
   generateTierBatch,
   MATERIAL_TIERS,
   DIFFICULTY_LEVELS,
-} from './helpers'
+  formatDate,
+  formatDateTime,
+  formatTime,
+  formatDateWithTime,
+} from "./helpers";
 
 // Notification utilities
-export { notify } from './notify'
+export { notify } from "./notify";
 
 // Optimistic update utilities
 export {
@@ -60,14 +61,14 @@ export {
   type OptimisticUpdateConfig,
   type OptimisticUpdateResult,
   type ListOptimisticConfig,
-} from './optimistic'
+} from "./optimistic";
 
 // Performance monitoring
 export {
   performanceMonitor,
   usePerformanceMeasure,
   measureComponentRender,
-} from './performance'
+} from "./performance";
 
 // Retry utilities
 export {
@@ -75,23 +76,20 @@ export {
   createRetryableFetch,
   type RetryOptions,
   type RetryResult,
-} from './retry'
+} from "./retry";
 
 // Sprite generator client
 export {
   SpriteGeneratorClient,
   spriteGeneratorClient,
   type SpriteMetadata,
-} from './sprite-generator-client'
+} from "./sprite-generator-client";
 
 // Typed event emitter
-export { TypedEventEmitter } from './TypedEventEmitter'
+export { TypedEventEmitter } from "./TypedEventEmitter";
 
 // View transitions
-export {
-  startViewTransition,
-  useViewTransition,
-} from './viewTransitions'
+export { startViewTransition, useViewTransition } from "./viewTransitions";
 
 // Weapon utilities
 export {
@@ -103,5 +101,4 @@ export {
   findBone,
   getWorldScale,
   getAttachedBone,
-} from './weaponUtils'
-
+} from "./weaponUtils";

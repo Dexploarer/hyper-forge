@@ -5,7 +5,18 @@
 
 import React, { useState, useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { Key, Eye, EyeOff, Save, Trash2, CheckCircle, XCircle, Loader2, AlertCircle } from "lucide-react";
+import {
+  Key,
+  Eye,
+  EyeOff,
+  Save,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
+import { LoadingSpinner } from "@/components/common";
 
 interface ApiKeyStatus {
   meshyApiKey: boolean;
@@ -60,7 +71,9 @@ export const ApiKeySettings: React.FC = () => {
       setKeyStatus(data.keysConfigured);
     } catch (err) {
       console.error("Failed to fetch API key status:", err);
-      setError(err instanceof Error ? err.message : "Failed to load API key status");
+      setError(
+        err instanceof Error ? err.message : "Failed to load API key status",
+      );
     } finally {
       setLoading(false);
     }
@@ -81,8 +94,10 @@ export const ApiKeySettings: React.FC = () => {
       // Only send keys that have values
       const keysToSave: any = {};
       if (meshyApiKey.trim()) keysToSave.meshyApiKey = meshyApiKey.trim();
-      if (aiGatewayApiKey.trim()) keysToSave.aiGatewayApiKey = aiGatewayApiKey.trim();
-      if (elevenLabsApiKey.trim()) keysToSave.elevenLabsApiKey = elevenLabsApiKey.trim();
+      if (aiGatewayApiKey.trim())
+        keysToSave.aiGatewayApiKey = aiGatewayApiKey.trim();
+      if (elevenLabsApiKey.trim())
+        keysToSave.elevenLabsApiKey = elevenLabsApiKey.trim();
 
       if (Object.keys(keysToSave).length === 0) {
         setError("Please enter at least one API key");
@@ -125,7 +140,11 @@ export const ApiKeySettings: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!confirm("Are you sure you want to delete all your API keys? You will need to re-enter them to use AI generation features.")) {
+    if (
+      !confirm(
+        "Are you sure you want to delete all your API keys? You will need to re-enter them to use AI generation features.",
+      )
+    ) {
       return;
     }
 
@@ -159,7 +178,9 @@ export const ApiKeySettings: React.FC = () => {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error("Failed to delete API keys:", err);
-      setError(err instanceof Error ? err.message : "Failed to delete API keys");
+      setError(
+        err instanceof Error ? err.message : "Failed to delete API keys",
+      );
     } finally {
       setDeleting(false);
     }
@@ -169,7 +190,7 @@ export const ApiKeySettings: React.FC = () => {
     return (
       <div className="card p-6">
         <div className="flex items-center justify-center h-32">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          <LoadingSpinner size="lg" className="text-primary" />
         </div>
       </div>
     );
@@ -183,7 +204,9 @@ export const ApiKeySettings: React.FC = () => {
           <Key className="w-5 h-5 text-primary" />
         </div>
         <div>
-          <h2 className="text-xl font-semibold text-text-primary">API Key Settings</h2>
+          <h2 className="text-xl font-semibold text-text-primary">
+            API Key Settings
+          </h2>
           <p className="text-sm text-text-secondary mt-1">
             Configure your own API keys for AI generation services
           </p>
@@ -211,8 +234,9 @@ export const ApiKeySettings: React.FC = () => {
         <div className="text-sm text-blue-300">
           <p className="font-medium mb-1">Why provide your own API keys?</p>
           <p>
-            By providing your own API keys, you maintain direct control over your AI service usage and billing.
-            Your keys are encrypted and stored securely.
+            By providing your own API keys, you maintain direct control over
+            your AI service usage and billing. Your keys are encrypted and
+            stored securely.
           </p>
         </div>
       </div>
@@ -225,7 +249,9 @@ export const ApiKeySettings: React.FC = () => {
             <label className="text-sm font-medium text-text-primary">
               Meshy API Key
               {keyStatus?.meshyApiKey && (
-                <span className="ml-2 text-xs text-green-400">(Configured)</span>
+                <span className="ml-2 text-xs text-green-400">
+                  (Configured)
+                </span>
               )}
             </label>
             <a
@@ -264,7 +290,9 @@ export const ApiKeySettings: React.FC = () => {
             <label className="text-sm font-medium text-text-primary">
               Vercel AI Gateway API Key
               {keyStatus?.aiGatewayApiKey && (
-                <span className="ml-2 text-xs text-green-400">(Configured)</span>
+                <span className="ml-2 text-xs text-green-400">
+                  (Configured)
+                </span>
               )}
             </label>
             <a
@@ -303,7 +331,9 @@ export const ApiKeySettings: React.FC = () => {
             <label className="text-sm font-medium text-text-primary">
               ElevenLabs API Key (Optional)
               {keyStatus?.elevenLabsApiKey && (
-                <span className="ml-2 text-xs text-green-400">(Configured)</span>
+                <span className="ml-2 text-xs text-green-400">
+                  (Configured)
+                </span>
               )}
             </label>
             <a
@@ -341,12 +371,14 @@ export const ApiKeySettings: React.FC = () => {
       <div className="flex gap-3 mt-6 pt-6 border-t border-border-primary">
         <button
           onClick={handleSave}
-          disabled={saving || (!meshyApiKey && !aiGatewayApiKey && !elevenLabsApiKey)}
+          disabled={
+            saving || (!meshyApiKey && !aiGatewayApiKey && !elevenLabsApiKey)
+          }
           className="flex-1 px-4 py-2 rounded-lg bg-primary hover:bg-primary-hover text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
         >
           {saving ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <LoadingSpinner size="sm" />
               Saving...
             </>
           ) : (
@@ -357,31 +389,35 @@ export const ApiKeySettings: React.FC = () => {
           )}
         </button>
 
-        {keyStatus && (keyStatus.meshyApiKey || keyStatus.aiGatewayApiKey || keyStatus.elevenLabsApiKey) && (
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            {deleting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Deleting...
-              </>
-            ) : (
-              <>
-                <Trash2 className="w-4 h-4" />
-                Delete All Keys
-              </>
-            )}
-          </button>
-        )}
+        {keyStatus &&
+          (keyStatus.meshyApiKey ||
+            keyStatus.aiGatewayApiKey ||
+            keyStatus.elevenLabsApiKey) && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="px-4 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            >
+              {deleting ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  Delete All Keys
+                </>
+              )}
+            </button>
+          )}
       </div>
 
       {/* Security Note */}
       <div className="mt-4 p-3 bg-bg-tertiary rounded-lg">
         <p className="text-xs text-text-tertiary">
-          <strong>Security:</strong> Your API keys are encrypted using AES-256-GCM before storage and are never exposed in plain text.
+          <strong>Security:</strong> Your API keys are encrypted using
+          AES-256-GCM before storage and are never exposed in plain text.
         </p>
       </div>
     </div>

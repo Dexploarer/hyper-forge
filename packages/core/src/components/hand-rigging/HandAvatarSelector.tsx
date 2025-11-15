@@ -22,6 +22,7 @@ import {
   CardContent,
   Badge,
   Input,
+  LoadingSpinner,
 } from "../common";
 
 export function HandAvatarSelector() {
@@ -107,7 +108,7 @@ export function HandAvatarSelector() {
         <div className="max-h-80 overflow-y-auto custom-scrollbar space-y-2">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-32 gap-3">
-              <Loader2 className="animate-spin text-primary" size={28} />
+              <LoadingSpinner size="lg" className="text-primary" />
               <p className="text-sm text-text-tertiary">Loading avatars...</p>
             </div>
           ) : filteredAvatars.length === 0 ? (

@@ -23,7 +23,14 @@ import {
 } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 
-import { Card, CardHeader, CardTitle, CardContent, Button } from "../common";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Button,
+  LoadingSpinner,
+} from "../common";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
 import { AudioAPIClient } from "@/services/api/AudioAPIClient";
 import { notify } from "@/utils/notify";
@@ -563,7 +570,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
               >
                 {isGeneratingPortrait || isGeneratingVoice ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    <LoadingSpinner size="md" className="mr-2" />
                     Generating...
                   </>
                 ) : (
@@ -665,7 +672,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
                     >
                       {isSavingPortrait ? (
                         <>
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          <LoadingSpinner size="xs" className="mr-1" />
                           Saving...
                         </>
                       ) : (
@@ -688,7 +695,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
                         >
                           {isSavingVoice ? (
                             <>
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              <LoadingSpinner size="xs" className="mr-1" />
                               Saving...
                             </>
                           ) : (

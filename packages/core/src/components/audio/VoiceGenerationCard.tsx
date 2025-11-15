@@ -20,6 +20,7 @@ import {
   Button,
   Input,
   Textarea,
+  LoadingSpinner,
 } from "../common";
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
 import { AudioAPIClient } from "@/services/api/AudioAPIClient";
@@ -474,7 +475,7 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
 
               {isLoadingVoices ? (
                 <div className="text-center py-8 text-text-secondary">
-                  <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
+                  <LoadingSpinner size="lg" className="mx-auto mb-2" />
                   <p className="text-sm">Loading voices...</p>
                 </div>
               ) : (
@@ -643,7 +644,7 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  <LoadingSpinner size="md" className="mr-2" />
                   Generating...
                 </>
               ) : (
@@ -681,7 +682,7 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
             >
               {isDesigning ? (
                 <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  <LoadingSpinner size="md" className="mr-2" />
                   Designing Voice...
                 </>
               ) : (
@@ -754,7 +755,7 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
                     >
                       {isSaving ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <LoadingSpinner size="sm" className="mr-2" />
                           Saving...
                         </>
                       ) : (

@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Project } from "@/services/api/ProjectService";
 import { Badge } from "@/components/common";
 import { projectsQueries } from "@/queries/projects.queries";
+import { formatDate } from "@/utils";
 
 export interface ProjectCardProps {
   project: Project;
@@ -37,14 +38,6 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const isArchived = project.status === "archived";
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   // Prefetch project details on hover for instant loading
   const prefetchProjectDetails = () => {

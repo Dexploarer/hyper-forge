@@ -29,11 +29,11 @@ import {
   Share2,
   RefreshCw,
   Upload,
-  Loader2,
   Mic,
   Sparkles as SparklesIcon,
   Image as ImageIcon,
 } from "lucide-react";
+import { LoadingSpinner } from "@/components/common";
 import { cn } from "@/styles";
 import { ContentItem, type ContentType } from "@/hooks/useContent";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
@@ -461,7 +461,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                   title="Generate Portrait"
                 >
                   {isGeneratingPortrait || isSavingPortrait ? (
-                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                    <LoadingSpinner size="lg" className="text-white" />
                   ) : (
                     <>
                       <SparklesIcon className="w-8 h-8 text-white" />
@@ -750,7 +750,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
                 title="Generate Banner"
               >
                 {isGeneratingBanner || isSavingBanner ? (
-                  <Loader2 className="w-10 h-10 text-white animate-spin" />
+                  <LoadingSpinner size="lg" className="text-white" />
                 ) : (
                   <>
                     <SparklesIcon className="w-10 h-10 text-white" />

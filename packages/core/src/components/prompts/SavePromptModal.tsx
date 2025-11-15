@@ -8,6 +8,7 @@ import {
   Input,
   Textarea,
   Button,
+  LoadingSpinner,
 } from "@/components/common";
 import {
   usePromptLibrary,
@@ -283,7 +284,7 @@ export const SavePromptModal: React.FC<SavePromptModalProps> = ({
             disabled={loading || isCheckingDuplicate}
           >
             {(loading || isCheckingDuplicate) && (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              <LoadingSpinner size="sm" className="mr-2" />
             )}
             {isCheckingDuplicate
               ? "Checking..."

@@ -19,6 +19,7 @@ import {
   Input,
   Textarea,
   SelectOrCustom,
+  LoadingSpinner,
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
@@ -358,7 +359,7 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
         >
           {isGenerating ? (
             <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              <LoadingSpinner size="md" className="mr-2" />
               Generating Lore...
             </>
           ) : (

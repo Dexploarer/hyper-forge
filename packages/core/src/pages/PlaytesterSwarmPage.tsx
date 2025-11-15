@@ -1,72 +1,79 @@
-import React, { useState, useEffect } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, Settings, Clock, FileText } from "lucide-react";
 
 import {
   ContentTypeSelector,
-  TabNavigation,
   PlaytestConfigCard,
   PlaytestReportCard,
   TesterProfileList,
-  GeneratedPlaytestList
-} from '@/components/playtester'
-import { Button } from '@/components/common'
-import { useNavigation } from '@/hooks/useNavigation'
-import type { PlaytestContentType, PlaytestView, GeneratedPlaytest, PlaytestResult } from '@/types/playtester'
+  GeneratedPlaytestList,
+} from "@/components/playtester";
+import { Button, TabNavigation } from "@/components/common";
+import { useNavigation } from "@/hooks/useNavigation";
+import type {
+  PlaytestContentType,
+  PlaytestView,
+  GeneratedPlaytest,
+  PlaytestResult,
+} from "@/types/playtester";
 
 export const PlaytesterSwarmPage: React.FC = () => {
-  const { importedPlaytestContent } = useNavigation()
-  
+  const { importedPlaytestContent } = useNavigation();
+
   // Content type selection - use imported content type if available
   const [contentType, setContentType] = useState<PlaytestContentType | null>(
-    importedPlaytestContent?.contentType || null
-  )
-  
+    importedPlaytestContent?.contentType || null,
+  );
+
   // Pre-filled content from import
   const [importedContent, setImportedContent] = useState<unknown | null>(
-    importedPlaytestContent?.content || null
-  )
-  
+    importedPlaytestContent?.content || null,
+  );
+
   // Set content type and imported content when navigation provides it
   useEffect(() => {
     if (importedPlaytestContent) {
-      setContentType(importedPlaytestContent.contentType)
-      setImportedContent(importedPlaytestContent.content)
+      setContentType(importedPlaytestContent.contentType);
+      setImportedContent(importedPlaytestContent.content);
     }
-  }, [importedPlaytestContent])
+  }, [importedPlaytestContent]);
 
   // View management
-  const [activeView, setActiveView] = useState<PlaytestView>('config')
+  const [activeView, setActiveView] = useState<PlaytestView>("config");
 
   // Tester profile selection
-  const [selectedProfiles, setSelectedProfiles] = useState<string[]>([])
+  const [selectedProfiles, setSelectedProfiles] = useState<string[]>([]);
 
   // Generated playtests
-  const [generatedPlaytests, setGeneratedPlaytests] = useState<GeneratedPlaytest[]>([])
-  const [selectedPlaytest, setSelectedPlaytest] = useState<GeneratedPlaytest | null>(null)
+  const [generatedPlaytests, setGeneratedPlaytests] = useState<
+    GeneratedPlaytest[]
+  >([]);
+  const [selectedPlaytest, setSelectedPlaytest] =
+    useState<GeneratedPlaytest | null>(null);
 
   // Handle playtest completion
   const handleTestCompleted = (result: PlaytestResult) => {
-    const id = result.sessionId
-    const name = `${result.contentType.charAt(0).toUpperCase()}${result.contentType.slice(1)} Test`
+    const id = result.sessionId;
+    const name = `${result.contentType.charAt(0).toUpperCase()}${result.contentType.slice(1)} Test`;
 
     const newPlaytest: GeneratedPlaytest = {
       id,
       contentType: result.contentType as PlaytestContentType,
       name,
       result,
-      createdAt: new Date().toISOString()
-    }
+      createdAt: new Date().toISOString(),
+    };
 
-    setGeneratedPlaytests(prev => [newPlaytest, ...prev])
-    setSelectedPlaytest(newPlaytest)
-    setActiveView('results')
-  }
+    setGeneratedPlaytests((prev) => [newPlaytest, ...prev]);
+    setSelectedPlaytest(newPlaytest);
+    setActiveView("results");
+  };
 
   // Reset to type selection
   const handleBack = () => {
-    setContentType(null)
-    setActiveView('config')
-  }
+    setContentType(null);
+    setActiveView("config");
+  };
 
   // Show type selector if no type selected
   if (!contentType) {
@@ -74,7 +81,7 @@ export const PlaytesterSwarmPage: React.FC = () => {
       <div className="h-full overflow-y-auto">
         <ContentTypeSelector onSelectType={setContentType} />
       </div>
-    )
+    );
   }
 
   return (
@@ -84,13 +91,23 @@ export const PlaytesterSwarmPage: React.FC = () => {
         <div className="mb-4">
           <TabNavigation
             activeView={activeView}
-            generatedTestsCount={generatedPlaytests.length}
+            tabs={[
+              { id: "config", icon: Settings, label: "Config" },
+              { id: "progress", icon: Clock, label: "Progress" },
+              {
+                id: "results",
+                icon: FileText,
+                label: "Results",
+                badge: generatedPlaytests.length,
+              },
+            ]}
             onTabChange={setActiveView}
+            variant="minimal"
           />
         </div>
 
         {/* Config View */}
-        {activeView === 'config' && (
+        {activeView === "config" && (
           <div className="animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Main Configuration Card */}
@@ -124,7 +141,7 @@ export const PlaytesterSwarmPage: React.FC = () => {
                 {generatedPlaytests.length > 0 && (
                   <Button
                     variant="ghost"
-                    onClick={() => setActiveView('results')}
+                    onClick={() => setActiveView("results")}
                     className="w-full"
                   >
                     View All Results ({generatedPlaytests.length})
@@ -136,17 +153,20 @@ export const PlaytesterSwarmPage: React.FC = () => {
         )}
 
         {/* Progress View */}
-        {activeView === 'progress' && (
+        {activeView === "progress" && (
           <div className="animate-fade-in text-center py-12">
-            <p className="text-text-secondary">Progress tracking coming soon...</p>
+            <p className="text-text-secondary">
+              Progress tracking coming soon...
+            </p>
             <p className="text-xs text-text-tertiary mt-2">
-              Tests currently run in real-time. Check the Results tab after testing completes.
+              Tests currently run in real-time. Check the Results tab after
+              testing completes.
             </p>
           </div>
         )}
 
         {/* Results View */}
-        {activeView === 'results' && (
+        {activeView === "results" && (
           <div className="animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               {/* Playtests List */}
@@ -171,7 +191,7 @@ export const PlaytesterSwarmPage: React.FC = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default PlaytesterSwarmPage
+export default PlaytesterSwarmPage;

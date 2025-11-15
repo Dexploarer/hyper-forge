@@ -18,7 +18,9 @@ import { Project } from "@/services/api/ProjectService";
 import { ProjectList } from "@/components/projects/ProjectList";
 import { CreateProjectModal } from "@/components/projects/CreateProjectModal";
 import { EditProjectModal } from "@/components/projects/EditProjectModal";
-import { EmptyState, Badge } from "@/components/common";
+import { EmptyState, Badge,
+  LoadingSpinner,
+} from "@/components/common";
 
 export const ProjectsPage: React.FC = () => {
   const [showArchived, setShowArchived] = useState(false);
@@ -177,7 +179,7 @@ export const ProjectsPage: React.FC = () => {
         {loading && (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-2" />
+              <LoadingSpinner size="lg" className="text-primary mx-auto mb-2" />
               <p className="text-sm text-text-secondary">Loading projects...</p>
             </div>
           </div>

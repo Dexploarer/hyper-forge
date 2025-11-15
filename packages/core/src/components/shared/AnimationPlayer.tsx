@@ -1,7 +1,7 @@
 import { Play, Pause, RotateCcw, Activity, Loader2, Eye, FileText, X, Download } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { Button, Modal } from '../common'
+import { Button, Modal, LoadingSpinner} from '../common'
 
 import ThreeViewer, { ThreeViewerRef } from './ThreeViewer'
 
@@ -301,7 +301,7 @@ export const AnimationPlayer: React.FC<AnimationPlayerProps> = ({
             <Activity className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-text-primary">Animations</span>
             {isLoading && (
-              <Loader2 className="w-3 h-3 text-text-secondary animate-spin" />
+              <LoadingSpinner size="xs" className="text-text-secondary" />
             )}
           </div>
           

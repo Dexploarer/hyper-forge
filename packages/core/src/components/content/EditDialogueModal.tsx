@@ -3,19 +3,20 @@
  * Modal for editing Dialogue content
  */
 
-import React, { useState, useEffect } from "react";
-import { FileText, Loader2, Save, Plus, Trash2 } from "lucide-react";
+import React from "react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   Modal,
   ModalHeader,
   ModalBody,
-  ModalFooter,
   ModalSection,
   Button,
   Input,
   Textarea,
 } from "../common";
 import { useContent } from "@/hooks/useContent";
+import { useContentEditForm } from "@/hooks/useContentEditForm";
+import { EditModalFooter } from "./EditModalFooter";
 
 interface EditDialogueModalProps {
   open: boolean;
@@ -34,52 +35,37 @@ interface DialogueNode {
   responses?: DialogueResponse[];
 }
 
+interface DialogueFormData {
+  npcName: string;
+  context: string;
+  nodes: DialogueNode[];
+}
+
 export const EditDialogueModal: React.FC<EditDialogueModalProps> = ({
   open,
   onClose,
   dialogue,
 }) => {
   const { updateDialogue } = useContent();
-  const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormData] = useState({
-    npcName: "",
-    context: "",
-    nodes: [] as DialogueNode[],
-  });
 
-  // Initialize form data when modal opens
-  useEffect(() => {
-    if (open && dialogue) {
-      setFormData({
+  const { formData, setFormData, isSaving, handleSave, isValid } =
+    useContentEditForm<DialogueFormData, any>({
+      initialData: dialogue,
+      open,
+      onUpdate: updateDialogue,
+      onClose,
+      validator: (data) => data.nodes.length > 0,
+      transformer: (data) => ({
+        npcName: data.npcName,
+        context: data.context,
+        nodes: data.nodes,
+      }),
+      initializer: (dialogue) => ({
         npcName: dialogue.npcName || "",
         context: dialogue.context || "",
         nodes: Array.isArray(dialogue.nodes) ? dialogue.nodes : [],
-      });
-    }
-  }, [open, dialogue]);
-
-  const handleSave = async () => {
-    if (formData.nodes.length === 0) {
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-
-      const updates = {
-        npcName: formData.npcName,
-        context: formData.context,
-        nodes: formData.nodes,
-      };
-
-      await updateDialogue(dialogue.id, updates);
-      onClose();
-    } catch (error) {
-      console.error("Failed to save dialogue:", error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+      }),
+    });
 
   const addNode = () => {
     const newNodeId = `node_${Date.now()}`;
@@ -306,27 +292,12 @@ export const EditDialogueModal: React.FC<EditDialogueModalProps> = ({
         </div>
       </ModalBody>
 
-      <ModalFooter>
-        <Button variant="secondary" onClick={onClose} disabled={isSaving}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving || formData.nodes.length === 0}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Saving...
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Save Changes
-            </>
-          )}
-        </Button>
-      </ModalFooter>
+      <EditModalFooter
+        onClose={onClose}
+        onSave={handleSave}
+        isSaving={isSaving}
+        isValid={isValid}
+      />
     </Modal>
   );
 };

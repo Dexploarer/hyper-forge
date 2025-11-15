@@ -5,6 +5,7 @@ import {
   worldConfigClient,
   type WorldConfigurationData,
 } from "@/services/api/WorldConfigAPIClient";
+import { LoadingSpinner } from "@/components/common";
 
 interface WorldConfigSelectorProps {
   value?: string | null;
@@ -71,7 +72,7 @@ export const WorldConfigSelector: React.FC<WorldConfigSelectorProps> = ({
           World Configuration
         </label>
         <div className="w-full px-4 py-2.5 bg-bg-tertiary border border-border-primary/50 rounded-lg flex items-center gap-2 text-text-secondary">
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <LoadingSpinner size="sm" />
           <span>Loading configurations...</span>
         </div>
       </div>

@@ -21,6 +21,7 @@ import {
   Button,
   Input,
   Textarea,
+  LoadingSpinner,
 } from "../common";
 
 interface CustomMaterial {
@@ -111,7 +112,7 @@ export const MaterialVariantsCard: React.FC<MaterialVariantsCardProps> = ({
               <div className="grid grid-cols-3 gap-2 relative">
                 {isLoadingMaterials ? (
                   <div className="col-span-3 flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-text-secondary" />
+                    <LoadingSpinner size="md" className="text-text-secondary" />
                     <span className="ml-2 text-sm text-text-secondary">
                       Loading materials...
                     </span>

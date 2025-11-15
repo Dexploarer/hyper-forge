@@ -3,7 +3,7 @@ import React from 'react'
 
 import { cn } from '../../styles'
 import { Asset } from '../../types'
-import { Badge, Input } from '../common'
+import { Badge, Input, LoadingSpinner} from '../common'
 
 interface AssetSelectionPanelProps {
   assets: Asset[]
@@ -127,7 +127,7 @@ export const AssetSelectionPanel: React.FC<AssetSelectionPanelProps> = ({
         <div className="p-2 pt-4">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-32 gap-3">
-              <Loader2 className="animate-spin text-primary" size={28} />
+              <LoadingSpinner size="lg" className="text-primary" />
               <p className="text-sm text-text-tertiary">Loading assets...</p>
             </div>
           ) : filteredAssets.length === 0 ? (

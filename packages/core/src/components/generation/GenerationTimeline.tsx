@@ -3,6 +3,7 @@ import React from 'react'
 
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../common'
 
+import { formatTime } from '@/utils';
 export const GenerationTimeline: React.FC = () => {
   return (
     <Card className="overflow-hidden bg-gradient-to-br from-bg-primary via-bg-primary to-primary/5 border-border-primary shadow-lg">
@@ -22,7 +23,7 @@ export const GenerationTimeline: React.FC = () => {
           <div className="flex justify-between items-center p-3 bg-bg-secondary/50 rounded-lg border border-border-primary/50">
             <span className="text-sm text-text-secondary">Started</span>
             <span className="text-sm font-medium text-text-primary">
-              {new Date().toLocaleTimeString()}
+              {formatTime(new Date())}
             </span>
           </div>
           <div className="flex justify-between items-center p-3 bg-bg-secondary/50 rounded-lg border border-border-primary/50">

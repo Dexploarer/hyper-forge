@@ -37,6 +37,7 @@ import {
   CardContent,
   CollapsibleSection,
   Drawer,
+  LoadingSpinner,
 } from "@/components/common";
 import { cn } from "@/styles";
 import { notify } from "@/utils/notify";
@@ -307,7 +308,7 @@ export const SettingsPage: React.FC = () => {
     return (
       <div className="h-full flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+          <LoadingSpinner size="lg" className="mx-auto mb-4 text-primary" />
           <p className="text-text-secondary">Loading user data...</p>
         </div>
       </div>
@@ -448,7 +449,7 @@ export const SettingsPage: React.FC = () => {
                     >
                       {isSaving ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <LoadingSpinner size="sm" />
                           Saving...
                         </>
                       ) : (
@@ -765,7 +766,7 @@ export const SettingsPage: React.FC = () => {
                   >
                     {isSaving ? (
                       <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <LoadingSpinner size="sm" />
                         Saving...
                       </>
                     ) : (
@@ -878,7 +879,7 @@ export const SettingsPage: React.FC = () => {
                       >
                         {isSaving ? (
                           <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <LoadingSpinner size="sm" />
                             Saving...
                           </>
                         ) : (
@@ -1038,7 +1039,7 @@ export const SettingsPage: React.FC = () => {
 
                       {isLoadingPrompts ? (
                         <div className="flex flex-col items-center justify-center py-12 text-text-secondary">
-                          <Loader2 className="w-8 h-8 animate-spin mb-3" />
+                          <LoadingSpinner size="lg" className="mb-3" />
                           <p className="text-sm">Loading prompts...</p>
                         </div>
                       ) : activeCategoryData ? (

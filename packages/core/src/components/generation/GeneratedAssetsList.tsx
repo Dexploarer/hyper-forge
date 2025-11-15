@@ -3,6 +3,7 @@ import React from "react";
 
 import { cn } from "../../styles";
 import { GeneratedAsset } from "../../types";
+import { formatTime } from "../../utils";
 import {
   Card,
   CardHeader,
@@ -28,11 +29,6 @@ export const GeneratedAssetsList: React.FC<GeneratedAssetsListProps> = ({
       .split("-")
       .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
-  };
-
-  const formatDate = (date: string | undefined) => {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleTimeString();
   };
 
   return (
@@ -77,7 +73,7 @@ export const GeneratedAssetsList: React.FC<GeneratedAssetsListProps> = ({
                   <div className="flex items-center gap-2 mt-2">
                     <Clock className="w-3 h-3 text-text-tertiary" />
                     <p className="text-xs text-text-tertiary">
-                      {formatDate(asset.createdAt)}
+                      {formatTime(asset.createdAt || null)}
                     </p>
                   </div>
                 </div>

@@ -7,6 +7,7 @@
 import React, { ReactNode } from "react";
 import { Edit, Trash2, Calendar } from "lucide-react";
 import { cn } from "@/styles";
+import { formatDate } from "@/utils";
 
 export interface LibraryCardBaseProps {
   // Visual
@@ -89,7 +90,7 @@ export const LibraryCardBase: React.FC<LibraryCardBaseProps> = ({
         <div className="flex items-center justify-between text-xs text-text-tertiary group-hover:text-text-tertiary pt-2">
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
-            {createdAt.toLocaleDateString()}
+            {formatDate(createdAt)}
           </div>
           {footerExtra}
         </div>

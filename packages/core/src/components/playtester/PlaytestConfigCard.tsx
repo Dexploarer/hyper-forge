@@ -1,7 +1,7 @@
 import { TestTube2, Loader2, Zap, Shield, Sparkles, AlertCircle } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Textarea, Checkbox } from '../common'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Textarea, Checkbox, LoadingSpinner} from '../common'
 import { PlaytesterAPIClient } from '@/services/api/PlaytesterAPIClient'
 import { notify } from '@/utils/notify'
 import type { PlaytestContentType, PlaytestResult } from '@/types/playtester'
@@ -251,7 +251,7 @@ export const PlaytestConfigCard: React.FC<PlaytestConfigCardProps> = ({
         >
           {isRunning ? (
             <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              <LoadingSpinner size="md" className="mr-2" />
               Running Playtest ({selectedProfiles.length} testers)...
             </>
           ) : (

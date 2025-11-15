@@ -10,6 +10,7 @@ import {
   Button,
   Textarea,
   Checkbox,
+  LoadingSpinner,
 } from "../common";
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
 import { AudioAPIClient } from "@/services/api/AudioAPIClient";
@@ -254,7 +255,7 @@ export const MusicGenerationCard: React.FC<MusicGenerationCardProps> = ({
         >
           {isGenerating ? (
             <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+              <LoadingSpinner size="md" className="mr-2" />
               Generating Music...
             </>
           ) : (

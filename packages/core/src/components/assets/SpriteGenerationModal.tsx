@@ -21,10 +21,12 @@ import {
   Button,
   Select,
   Badge,
+  LoadingSpinner,
 } from "../common";
 
 import { apiFetch } from "@/utils/api";
 
+import { formatDate } from '@/utils';
 interface SpriteGenerationModalProps {
   asset: Asset;
   onClose: () => void;
@@ -269,7 +271,7 @@ const SpriteGenerationModal: React.FC<SpriteGenerationModalProps> = ({
       <ModalBody>
         {status === "loading" && (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+            <LoadingSpinner size="md" className="w-12 h-12 text-primary" />
             <p className="text-sm text-text-secondary">{message}</p>
           </div>
         )}
@@ -469,7 +471,7 @@ const SpriteGenerationModal: React.FC<SpriteGenerationModalProps> = ({
 
         {status === "generating" && (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Loader2 className="w-12 h-12 text-primary animate-spin" />
+            <LoadingSpinner size="md" className="w-12 h-12 text-primary" />
             <h4 className="text-lg font-semibold text-text-primary">
               Generating Sprites
             </h4>
@@ -613,7 +615,7 @@ const SpriteGenerationModal: React.FC<SpriteGenerationModalProps> = ({
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <LoadingSpinner size="sm" />
                   Saving...
                 </>
               ) : (
