@@ -56,7 +56,15 @@ export class ContentAPIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to generate NPC: ${response.statusText}`);
+      let errorMessage = `Failed to generate NPC`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        // If response body isn't JSON, use statusText
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -81,9 +89,14 @@ export class ContentAPIClient {
     );
 
     if (!response.ok) {
-      throw new Error(
-        `Failed to generate NPC portrait: ${response.statusText}`,
-      );
+      let errorMessage = `Failed to generate NPC portrait`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -109,9 +122,14 @@ export class ContentAPIClient {
     );
 
     if (!response.ok) {
-      throw new Error(
-        `Failed to generate quest banner: ${response.statusText}`,
-      );
+      let errorMessage = `Failed to generate quest banner`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -132,7 +150,14 @@ export class ContentAPIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to generate quest: ${response.statusText}`);
+      let errorMessage = `Failed to generate quest`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -153,7 +178,14 @@ export class ContentAPIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to generate dialogue: ${response.statusText}`);
+      let errorMessage = `Failed to generate dialogue`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();
@@ -174,7 +206,14 @@ export class ContentAPIClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to generate lore: ${response.statusText}`);
+      let errorMessage = `Failed to generate lore`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
     }
 
     return await response.json();
