@@ -7,91 +7,6 @@
 
 import React from "react";
 import { X } from "lucide-react";
-import styled from "styled-components";
-
-const PanelContainer = styled.div<{
-  $isOpen: boolean;
-  $side: "left" | "right";
-}>`
-  position: absolute;
-  ${(props) => (props.$side === "left" ? "left: 0;" : "right: 0;")}
-  top: 0;
-  bottom: 0;
-  width: 280px;
-  background: rgba(26, 26, 26, 0.95);
-  backdrop-filter: blur(10px);
-  ${(props) =>
-    props.$side === "left"
-      ? "border-right: 1px solid rgba(255, 255, 255, 0.1);"
-      : "border-left: 1px solid rgba(255, 255, 255, 0.1);"}
-  transform: translateX(${(props) => {
-    if (props.$side === "left") {
-      return props.$isOpen ? "0" : "-100%";
-    } else {
-      return props.$isOpen ? "0" : "100%";
-    }
-  }});
-  transition: transform 0.3s ease-out;
-  display: flex;
-  flex-direction: column;
-  z-index: 10;
-`;
-
-const PanelHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-`;
-
-const PanelTitle = styled.h3`
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-`;
-
-const CloseButton = styled.button`
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-  }
-`;
-
-const PanelContent = styled.div`
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.2);
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
-  }
-`;
 
 interface ThreeDPanelProps {
   isOpen: boolean;
@@ -109,14 +24,28 @@ export const ThreeDPanel: React.FC<ThreeDPanelProps> = ({
   side = "left",
 }) => {
   return (
-    <PanelContainer $isOpen={isOpen} $side={side}>
-      <PanelHeader>
-        <PanelTitle>{title}</PanelTitle>
-        <CloseButton onClick={onClose} aria-label="Close panel">
+    <div
+      className={`absolute top-0 bottom-0 w-[280px] bg-bg-secondary/95 backdrop-blur-md flex flex-col z-10 transition-transform duration-300 ease-out ${
+        side === "left"
+          ? `left-0 border-r border-border-primary ${isOpen ? "translate-x-0" : "-translate-x-full"}`
+          : `right-0 border-l border-border-primary ${isOpen ? "translate-x-0" : "translate-x-full"}`
+      }`}
+    >
+      <div className="flex items-center justify-between p-4 border-b border-border-primary">
+        <h3 className="text-text-primary text-base font-semibold m-0">
+          {title}
+        </h3>
+        <button
+          onClick={onClose}
+          className="bg-transparent border-none text-text-secondary cursor-pointer p-1 flex items-center justify-center rounded transition-all hover:bg-white/10 hover:text-text-primary"
+          aria-label="Close panel"
+        >
           <X size={20} />
-        </CloseButton>
-      </PanelHeader>
-      <PanelContent>{children}</PanelContent>
-    </PanelContainer>
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-black/20 [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
+        {children}
+      </div>
+    </div>
   );
 };

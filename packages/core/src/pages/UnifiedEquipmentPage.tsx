@@ -525,7 +525,8 @@ export const UnifiedEquipmentPage: React.FC = () => {
                 />
               )}
             </div>
-          </ThreeDPanel>
+          </div>
+        </ThreeDPanel>
       )}
     </>
   );
