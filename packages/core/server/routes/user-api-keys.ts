@@ -11,6 +11,7 @@ import { getEncryptionService } from "../services/ApiKeyEncryptionService";
 import { db } from "../db";
 import { users } from "../db/schema/users.schema";
 import { eq } from "drizzle-orm";
+import { ActivityLogService } from "../services/ActivityLogService";
 
 export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
   // Save user API keys (encrypted)
@@ -68,6 +69,21 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           },
           "User updated API keys",
         );
+
+        // Log API key updates
+        const updatedKeys = [];
+        if (meshyApiKey) updatedKeys.push("Meshy");
+        if (aiGatewayApiKey) updatedKeys.push("AI Gateway");
+        if (elevenLabsApiKey) updatedKeys.push("ElevenLabs");
+
+        for (const keyType of updatedKeys) {
+          await ActivityLogService.logApiKeyUpdated({
+            userId: authUser.id,
+            keyType,
+            action: "updated",
+            request,
+          });
+        }
 
         return {
           success: true,
@@ -205,6 +221,14 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
           { context: "UserApiKeys" },
           "User ${authUser.id} deleted all API keys",
         );
+
+        // Log API key deletion
+        await ActivityLogService.logApiKeyUpdated({
+          userId: authUser.id,
+          keyType: "All API Keys",
+          action: "removed",
+          request,
+        });
 
         return {
           success: true,

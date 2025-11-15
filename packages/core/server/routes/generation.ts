@@ -11,6 +11,7 @@ import { UnauthorizedError, InternalServerError } from "../errors";
 import { createChildLogger } from "../utils/logger";
 import { generationJobService } from "../services/GenerationJobService";
 import { redisQueueService } from "../services/RedisQueueService";
+import { ActivityLogService } from "../services/ActivityLogService";
 
 const logger = createChildLogger("GenerationRoutes");
 
@@ -92,6 +93,15 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                 { pipelineId, userId, priority },
                 "Pipeline job queued successfully",
               );
+
+              // Log generation started
+              await ActivityLogService.logGenerationStarted({
+                userId,
+                pipelineId,
+                generationType: body.type || "3d-asset",
+                assetName: body.name,
+                request,
+              });
 
               // Return immediately with queued status
               return {

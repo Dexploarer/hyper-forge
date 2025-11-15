@@ -8,6 +8,7 @@ import { logger } from "../utils/logger";
 import type { AssetService } from "../services/AssetService";
 import * as Models from "../models";
 import { requireAuth } from "../middleware/auth";
+import { ActivityLogService } from "../services/ActivityLogService";
 
 export const createAssetRoutes = (
   rootDir: string,
@@ -74,8 +75,23 @@ export const createAssetRoutes = (
               return { error: "Unauthorized" };
             }
 
+            // Get asset details before deleting for logging
+            const assets = await assetService.listAssets();
+            const asset = assets.find((a) => a.id === id);
+
             const includeVariants = query.includeVariants === "true";
             await assetService.deleteAsset(id, includeVariants);
+
+            // Log asset deletion
+            if (asset) {
+              await ActivityLogService.logAssetDeleted({
+                userId: authResult.user.id,
+                assetId: id,
+                assetName: asset.metadata.name || id,
+                assetType: asset.metadata.type || "unknown",
+                request: context.request,
+              });
+            }
 
             return {
               success: true,
@@ -125,6 +141,20 @@ export const createAssetRoutes = (
               set.status = 404;
               return { error: "Asset not found" };
             }
+
+            // Log asset update
+            await ActivityLogService.log({
+              userId: authResult.user.id,
+              action: "asset_updated",
+              entityType: "asset",
+              entityId: id,
+              details: {
+                assetName: updatedAsset.name,
+                assetType: updatedAsset.type,
+                updatedFields: Object.keys(body),
+              },
+              request: context.request,
+            });
 
             return updatedAsset;
           },

@@ -8,6 +8,7 @@ import { logger } from "../utils/logger";
 import { GenerationJobService } from "../services/GenerationJobService";
 import { GenerationService } from "../services/GenerationService";
 import { generationPipelineRepository } from "../repositories/GenerationPipelineRepository";
+import { ActivityLogService } from "../services/ActivityLogService";
 
 const MAX_RETRIES = parseInt(process.env.MAX_JOB_RETRIES || "3", 10);
 const POLL_TIMEOUT = parseInt(process.env.QUEUE_POLL_TIMEOUT || "5", 10);
@@ -151,6 +152,16 @@ export class GenerationWorker {
             stages: status.stages as unknown as Record<string, unknown>,
             results: status.results,
           });
+
+          // Log generation completed
+          const userId = (job.config as any)?.user?.userId;
+          if (userId) {
+            await ActivityLogService.logGenerationCompleted({
+              userId,
+              pipelineId: queueJob.pipelineId,
+              success: true,
+            });
+          }
         }
       }
 
@@ -212,6 +223,16 @@ export class GenerationWorker {
           progress: 0,
           error: errorMessage,
         });
+
+        // Log generation failed
+        const userId = (job.config as any)?.user?.userId;
+        if (userId) {
+          await ActivityLogService.logGenerationCompleted({
+            userId,
+            pipelineId: queueJob.pipelineId,
+            success: false,
+          });
+        }
 
         console.error(
           `[Worker ${this.workerId}] Job ${queueJob.pipelineId} failed after ${MAX_RETRIES} attempts`,

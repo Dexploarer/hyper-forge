@@ -7,6 +7,7 @@ import { Elysia, t } from "elysia";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/requireAdmin";
 import { userService } from "../services/UserService";
+import { ActivityLogService } from "../services/ActivityLogService";
 
 export const usersRoutes = new Elysia({ prefix: "/api/users" })
   // Get current user profile (requires authentication)
@@ -69,6 +70,15 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
         updateData,
         markCompleted,
       );
+
+      // Log profile update
+      const changes = Object.keys(updateData);
+      if (markCompleted) changes.push("profileCompleted");
+      await ActivityLogService.logProfileUpdated({
+        userId: authUser.id,
+        changes,
+        request,
+      });
 
       return { user: updatedUser };
     },

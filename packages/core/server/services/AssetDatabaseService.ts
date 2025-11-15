@@ -11,6 +11,7 @@ import { eq } from "drizzle-orm";
 import type { AssetMetadataType } from "../models";
 import { embeddingService } from "./EmbeddingService";
 import { qdrantService } from "./QdrantService";
+import { ActivityLogService } from "./ActivityLogService";
 
 export class AssetDatabaseService {
   /**
@@ -53,6 +54,14 @@ export class AssetDatabaseService {
         );
 
         return newAsset;
+      });
+
+      // Log asset creation
+      await ActivityLogService.logAssetCreated({
+        userId: ownerId,
+        assetId: asset.id,
+        assetName: metadata.name || assetId,
+        assetType: metadata.type || "unknown",
       });
 
       // Generate and index embedding (async, don't block)

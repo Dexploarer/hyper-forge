@@ -15,6 +15,7 @@ import { NotFoundError, InternalServerError, ForbiddenError } from "../errors";
 import { createChildLogger } from "../utils/logger";
 import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
 import { requireAuth } from "../middleware/auth";
+import { ActivityLogService } from "../services/ActivityLogService";
 
 const logger = createChildLogger("ContentGenerationRoutes");
 
@@ -209,6 +210,17 @@ export const contentGenerationRoutes = new Elysia({
               { questId: quest.id, title: result.quest.title },
               "Quest generated successfully",
             );
+
+            // Log content creation
+            if (user?.id) {
+              await ActivityLogService.logContentCreated({
+                userId: user.id,
+                contentType: "quest",
+                contentId: quest.id,
+                title: result.quest.title,
+              });
+            }
+
             return { ...result, id: quest.id };
           },
           {
@@ -268,6 +280,17 @@ export const contentGenerationRoutes = new Elysia({
               { loreId: lore.id, title: result.lore.title },
               "Lore generated successfully",
             );
+
+            // Log content creation
+            if (user?.id) {
+              await ActivityLogService.logContentCreated({
+                userId: user.id,
+                contentType: "lore",
+                contentId: lore.id,
+                title: result.lore.title,
+              });
+            }
+
             return { ...result, id: lore.id };
           },
           {
@@ -754,7 +777,22 @@ export const contentGenerationRoutes = new Elysia({
               return { error: "Unauthorized - authentication required" };
             }
 
+            // Get quest details before deleting for logging
+            const quest = await contentDatabaseService.getQuest(params.id);
+
             await contentDatabaseService.deleteQuest(params.id);
+
+            // Log content deletion
+            if (quest) {
+              await ActivityLogService.logContentDeleted({
+                userId: authResult.user.id,
+                contentType: "quest",
+                contentId: params.id,
+                title: quest.title,
+                request,
+              });
+            }
+
             return { success: true, message: "Quest deleted" };
           },
           {
@@ -1030,7 +1068,22 @@ export const contentGenerationRoutes = new Elysia({
               return { error: "Unauthorized - authentication required" };
             }
 
+            // Get lore details before deleting for logging
+            const lore = await contentDatabaseService.getLore(params.id);
+
             await contentDatabaseService.deleteLore(params.id);
+
+            // Log content deletion
+            if (lore) {
+              await ActivityLogService.logContentDeleted({
+                userId: authResult.user.id,
+                contentType: "lore",
+                contentId: params.id,
+                title: lore.title,
+                request,
+              });
+            }
+
             return { success: true, message: "Lore deleted" };
           },
           {
