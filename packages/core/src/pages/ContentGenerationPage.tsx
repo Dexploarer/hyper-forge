@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  ChevronLeft,
-  List,
-  Settings,
-  Activity,
-  CheckCircle,
-} from "lucide-react";
+import { List, Settings, Activity, CheckCircle } from "lucide-react";
 
 import {
   ContentTypeSelector,
@@ -110,12 +104,6 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
     setActiveView("results");
   };
 
-  // Reset to type selection
-  const handleBack = () => {
-    setContentType(null);
-    setActiveView("config");
-  };
-
   // Show type selector if no type selected
   if (!contentType) {
     return (
@@ -150,20 +138,9 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
         {/* Config View */}
         {activeView === "config" && (
           <div className="animate-fade-in">
-            <div className="flex items-center justify-between mb-3">
-              {/* Back Button */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="text-text-secondary hover:text-text-primary"
-              >
-                <ChevronLeft className="w-4 h-4 mr-1" />
-                Back to content types
-              </Button>
-
-              {/* Content List Button */}
-              {generatedContents.length > 0 && (
+            {/* Content List Button */}
+            {generatedContents.length > 0 && (
+              <div className="flex items-center justify-end mb-3">
                 <Button
                   variant="secondary"
                   size="sm"
@@ -173,8 +150,8 @@ export const ContentGenerationPage: React.FC<ContentGenerationPageProps> = ({
                   <List className="w-4 h-4" />
                   <span>Recent Content ({generatedContents.length})</span>
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Main Generation Card */}
             <div className="mx-auto">

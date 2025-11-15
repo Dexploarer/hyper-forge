@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Command, Search } from "lucide-react";
 import { NavigationView } from "@/types";
 import { NAVIGATION_VIEWS, VIEW_TITLES } from "@/constants";
@@ -25,48 +25,30 @@ export function FloatingTopBar({ currentView }: FloatingTopBarProps) {
     window.location.reload();
   };
 
-  // Check for overlays using data-overlay attribute
-  const checkForOverlays = useCallback(() => {
-    const hasOverlay = document.querySelector('[data-overlay="true"]') !== null;
-    // Only update state if the value has changed
-    setIsHidden((prev) => (prev === hasOverlay ? prev : hasOverlay));
-  }, []);
-
-  // Debounce ref to prevent excessive state updates
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  // Simple polling-based overlay detection
   useEffect(() => {
-    // Debounced check to reduce re-render frequency
-    const debouncedCheck = () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      debounceTimerRef.current = setTimeout(checkForOverlays, 50);
+    const checkForOverlays = () => {
+      const overlayElements = document.querySelectorAll(
+        '[data-overlay="true"]',
+      );
+      const hasVisibleOverlay = Array.from(overlayElements).some(
+        (el) => el instanceof HTMLElement && el.offsetParent !== null,
+      );
+      setIsHidden(hasVisibleOverlay);
     };
 
     // Check immediately
     checkForOverlays();
 
-    // Use MutationObserver to watch for DOM changes
-    const observer = new MutationObserver(debouncedCheck);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["class"],
-    });
+    // Check periodically (every 100ms is reasonable for UI responsiveness)
+    const interval = setInterval(checkForOverlays, 100);
 
-    return () => {
-      observer.disconnect();
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [checkForOverlays]);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
-      {/* Floating Header - Only visible when no overlays are present */}
+      {/* Floating Header - Auto-hides when modals/overlays are open */}
       <header
         className={cn(
           "absolute top-4 left-4 right-4 h-12 px-4 rounded-xl",

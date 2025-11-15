@@ -59,32 +59,32 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
       open,
       onUpdate: updateQuest,
       onClose,
-      validator: (data) => !!data.title.trim(),
+      validator: (data) => !!data.title?.trim(),
       transformer: (data) => ({
-        title: data.title,
-        description: data.description,
-        objectives: data.objectives,
+        title: data.title || "",
+        description: data.description || "",
+        objectives: data.objectives || [],
         rewards: {
-          experience: data.rewardsExperience,
-          gold: data.rewardsGold,
-          items: data.rewardsItems
+          experience: data.rewardsExperience || 0,
+          gold: data.rewardsGold || 0,
+          items: (data.rewardsItems || "")
             .split(",")
             .map((i) => i.trim())
             .filter(Boolean),
         },
         requirements: {
-          level: data.requirementsLevel,
-          previousQuests: data.requirementsPreviousQuests
+          level: data.requirementsLevel || 1,
+          previousQuests: (data.requirementsPreviousQuests || "")
             .split(",")
             .map((q) => q.trim())
             .filter(Boolean),
         },
-        npcs: data.npcs
+        npcs: (data.npcs || "")
           .split(",")
           .map((n) => n.trim())
           .filter(Boolean),
-        location: data.location,
-        story: data.story,
+        location: data.location || "",
+        story: data.story || "",
       }),
       initializer: (quest) => ({
         title: quest.title || "",
@@ -111,7 +111,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
     setFormData({
       ...formData,
       objectives: [
-        ...formData.objectives,
+        ...(formData.objectives || []),
         { description: "", type: "kill", target: "", count: 1 },
       ],
     });
@@ -120,7 +120,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
   const removeObjective = (index: number) => {
     setFormData({
       ...formData,
-      objectives: formData.objectives.filter((_, i) => i !== index),
+      objectives: (formData.objectives || []).filter((_, i) => i !== index),
     });
   };
 
@@ -129,7 +129,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
     field: keyof QuestObjective,
     value: any,
   ) => {
-    const updated = [...formData.objectives];
+    const updated = [...(formData.objectives || [])];
     updated[index] = { ...updated[index], [field]: value };
     setFormData({ ...formData, objectives: updated });
   };
@@ -148,7 +148,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                 </label>
                 <Input
                   type="text"
-                  value={formData.title}
+                  value={formData.title || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, title: e.target.value })
                   }
@@ -162,7 +162,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                   Description
                 </label>
                 <Textarea
-                  value={formData.description}
+                  value={formData.description || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
@@ -177,7 +177,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                 </label>
                 <Input
                   type="text"
-                  value={formData.location}
+                  value={formData.location || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, location: e.target.value })
                   }
@@ -191,7 +191,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                   Story Arc
                 </label>
                 <Textarea
-                  value={formData.story}
+                  value={formData.story || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, story: e.target.value })
                   }
@@ -206,7 +206,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                 </label>
                 <Input
                   type="text"
-                  value={formData.npcs}
+                  value={formData.npcs || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, npcs: e.target.value })
                   }
@@ -219,7 +219,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
 
           <ModalSection title="Objectives">
             <div className="space-y-3">
-              {formData.objectives.map((obj, index) => (
+              {(formData.objectives || []).map((obj, index) => (
                 <div
                   key={index}
                   className="p-4 bg-bg-tertiary/30 border border-border-primary rounded-lg space-y-3"
@@ -243,7 +243,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                       </label>
                       <Input
                         type="text"
-                        value={obj.description}
+                        value={obj.description || ""}
                         onChange={(e) =>
                           updateObjective(index, "description", e.target.value)
                         }
@@ -257,7 +257,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                         Type
                       </label>
                       <Select
-                        value={obj.type}
+                        value={obj.type || "kill"}
                         onChange={(e) =>
                           updateObjective(index, "type", e.target.value)
                         }
@@ -276,7 +276,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                       </label>
                       <Input
                         type="text"
-                        value={obj.target}
+                        value={obj.target || ""}
                         onChange={(e) =>
                           updateObjective(index, "target", e.target.value)
                         }
@@ -291,7 +291,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                       </label>
                       <Input
                         type="number"
-                        value={obj.count}
+                        value={obj.count || 1}
                         onChange={(e) =>
                           updateObjective(
                             index,
@@ -326,7 +326,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                 </label>
                 <Input
                   type="number"
-                  value={formData.rewardsExperience}
+                  value={formData.rewardsExperience || 0}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -344,7 +344,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                 </label>
                 <Input
                   type="number"
-                  value={formData.rewardsGold}
+                  value={formData.rewardsGold || 0}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -362,7 +362,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                 </label>
                 <Input
                   type="text"
-                  value={formData.rewardsItems}
+                  value={formData.rewardsItems || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, rewardsItems: e.target.value })
                   }
@@ -381,7 +381,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                 </label>
                 <Input
                   type="number"
-                  value={formData.requirementsLevel}
+                  value={formData.requirementsLevel || 1}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -399,7 +399,7 @@ export const EditQuestModal: React.FC<EditQuestModalProps> = ({
                 </label>
                 <Input
                   type="text"
-                  value={formData.requirementsPreviousQuests}
+                  value={formData.requirementsPreviousQuests || ""}
                   onChange={(e) =>
                     setFormData({
                       ...formData,

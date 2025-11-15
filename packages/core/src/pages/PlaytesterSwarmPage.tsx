@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, Settings, Clock, FileText } from "lucide-react";
+import { Settings, Clock, FileText, ChevronDown } from "lucide-react";
 
 import {
-  ContentTypeSelector,
   PlaytestConfigCard,
   PlaytestReportCard,
   TesterProfileList,
@@ -17,13 +16,34 @@ import type {
   PlaytestResult,
 } from "@/types/playtester";
 
+const CONTENT_TYPES: Array<{
+  value: PlaytestContentType;
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "quest",
+    label: "Quest",
+    description: "Test quest objectives and flow",
+  },
+  {
+    value: "dialogue",
+    label: "Dialogue",
+    description: "Test conversation trees",
+  },
+  { value: "npc", label: "NPC", description: "Test character interactions" },
+  { value: "combat", label: "Combat", description: "Test combat encounters" },
+  { value: "puzzle", label: "Puzzle", description: "Test puzzle mechanics" },
+];
+
 export const PlaytesterSwarmPage: React.FC = () => {
   const { importedPlaytestContent } = useNavigation();
 
-  // Content type selection - use imported content type if available
-  const [contentType, setContentType] = useState<PlaytestContentType | null>(
-    importedPlaytestContent?.contentType || null,
+  // Content type selection - default to quest, or use imported content type
+  const [contentType, setContentType] = useState<PlaytestContentType>(
+    importedPlaytestContent?.contentType || "quest",
   );
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
 
   // Pre-filled content from import
   const [importedContent, setImportedContent] = useState<unknown | null>(
@@ -69,24 +89,66 @@ export const PlaytesterSwarmPage: React.FC = () => {
     setActiveView("results");
   };
 
-  // Reset to type selection
-  const handleBack = () => {
-    setContentType(null);
-    setActiveView("config");
-  };
-
-  // Show type selector if no type selected
-  if (!contentType) {
-    return (
-      <div className="h-full overflow-y-auto">
-        <ContentTypeSelector onSelectType={setContentType} />
-      </div>
-    );
-  }
+  const selectedType = CONTENT_TYPES.find((t) => t.value === contentType)!;
 
   return (
     <div className="h-full overflow-y-auto">
       <div className="max-w-7xl mx-auto py-4 pb-6">
+        {/* Content Type Selector Dropdown */}
+        <div className="mb-4">
+          <div className="relative inline-block">
+            <button
+              onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+              className="flex items-center gap-3 px-4 py-2.5 bg-bg-secondary hover:bg-bg-tertiary border border-border-primary rounded-lg transition-colors group"
+            >
+              <div>
+                <div className="text-sm font-semibold text-text-primary capitalize">
+                  {selectedType.label} Testing
+                </div>
+                <div className="text-xs text-text-tertiary">
+                  {selectedType.description}
+                </div>
+              </div>
+              <ChevronDown
+                className={`w-4 h-4 text-text-secondary transition-transform ${showTypeDropdown ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showTypeDropdown && (
+              <>
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setShowTypeDropdown(false)}
+                />
+                <div className="absolute top-full left-0 mt-2 w-72 bg-bg-primary border border-border-primary rounded-lg shadow-xl z-20 overflow-hidden">
+                  {CONTENT_TYPES.map((type) => (
+                    <button
+                      key={type.value}
+                      onClick={() => {
+                        setContentType(type.value);
+                        setShowTypeDropdown(false);
+                      }}
+                      className={`w-full px-4 py-3 text-left transition-colors border-b border-border-primary last:border-b-0 ${
+                        contentType === type.value
+                          ? "bg-primary/10 text-primary"
+                          : "hover:bg-bg-hover text-text-primary"
+                      }`}
+                    >
+                      <div className="font-medium text-sm capitalize">
+                        {type.label}
+                      </div>
+                      <div className="text-xs text-text-tertiary mt-0.5">
+                        {type.description}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
         {/* Header with tabs */}
         <div className="mb-4">
           <TabNavigation
@@ -112,17 +174,6 @@ export const PlaytesterSwarmPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Main Configuration Card */}
               <div className="lg:col-span-2">
-                {/* Back Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBack}
-                  className="mb-4 text-text-secondary hover:text-text-primary"
-                >
-                  <ChevronLeft className="w-4 h-4 mr-1" />
-                  Back to content types
-                </Button>
-
                 <PlaytestConfigCard
                   contentType={contentType}
                   selectedProfiles={selectedProfiles}

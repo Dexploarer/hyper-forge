@@ -45,18 +45,18 @@ export const EditLoreModal: React.FC<EditLoreModalProps> = ({
       open,
       onUpdate: updateLore,
       onClose,
-      validator: (data) => !!data.title.trim() && !!data.content.trim(),
+      validator: (data) => !!data.title?.trim() && !!data.content?.trim(),
       transformer: (data) => ({
-        title: data.title,
-        category: data.category,
-        content: data.content,
-        summary: data.summary,
-        relatedTopics: data.relatedTopics
+        title: data.title || "",
+        category: data.category || "",
+        content: data.content || "",
+        summary: data.summary || "",
+        relatedTopics: (data.relatedTopics || "")
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
         timeline: data.timeline || undefined,
-        characters: data.characters
+        characters: (data.characters || "")
           .split(",")
           .map((c) => c.trim())
           .filter(Boolean),
@@ -146,7 +146,7 @@ export const EditLoreModal: React.FC<EditLoreModalProps> = ({
                 />
                 <p className="text-xs text-text-tertiary mt-1">
                   Word count:{" "}
-                  {formData.content.split(/\s+/).filter(Boolean).length}
+                  {(formData.content || "").split(/\s+/).filter(Boolean).length}
                 </p>
               </div>
             </div>

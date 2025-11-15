@@ -13,6 +13,9 @@ import {
   WorldConfigList,
   TabNavigation,
   WorldConfigEditor,
+  WorldConfigCreateTab,
+  WorldConfigTemplatesTab,
+  WorldConfigImportTab,
   type WorldConfigTab,
 } from "@/components/world-config";
 import {
@@ -225,32 +228,19 @@ export const WorldConfigPage: React.FC = () => {
             />
           )}
 
-          {/* Create Tab - Removed, now using drawer editor */}
+          {/* Create Tab */}
+          {activeTab === "create" && (
+            <WorldConfigCreateTab onConfigCreated={loadConfigurations} />
+          )}
 
           {/* Templates Tab */}
           {activeTab === "templates" && (
-            <div className="p-8 bg-bg-secondary border border-border-primary rounded-xl text-center">
-              <Settings className="w-12 h-12 text-text-tertiary mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold text-text-primary mb-2">
-                Configuration Templates
-              </h3>
-              <p className="text-sm text-text-secondary">
-                Pre-made templates will be available in the next sprint.
-              </p>
-            </div>
+            <WorldConfigTemplatesTab onTemplateUsed={loadConfigurations} />
           )}
 
           {/* Import Tab */}
           {activeTab === "import" && (
-            <div className="p-8 bg-bg-secondary border border-border-primary rounded-xl text-center">
-              <Download className="w-12 h-12 text-text-tertiary mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold text-text-primary mb-2">
-                Import Configuration
-              </h3>
-              <p className="text-sm text-text-secondary">
-                Import functionality will be available in the next sprint.
-              </p>
-            </div>
+            <WorldConfigImportTab onConfigImported={loadConfigurations} />
           )}
         </div>
       </div>
