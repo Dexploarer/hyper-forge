@@ -6,10 +6,11 @@
 
 const API_URL =
   process.env.VITE_API_URL || "https://hyperforge-production.up.railway.app";
-const PRIVY_APP_SECRET = process.env.PRIVY_APP_SECRET;
+const CDN_API_KEY = process.env.CDN_API_KEY;
 
-if (!PRIVY_APP_SECRET) {
-  console.error("Error: PRIVY_APP_SECRET not found in environment");
+if (!CDN_API_KEY) {
+  console.error("Error: CDN_API_KEY not found in environment");
+  console.error("Please set CDN_API_KEY in your .env file");
   process.exit(1);
 }
 
@@ -24,10 +25,10 @@ async function runImport() {
 
     const response = await fetch(`${API_URL}/api/admin/import-cdn-assets`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // TODO: Add authentication header when needed
-      },
+      headers: [
+        ["Content-Type", "application/json"],
+        ["X-API-Key", CDN_API_KEY ?? ""],
+      ],
     });
 
     const data = await response.json();
