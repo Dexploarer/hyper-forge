@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Command, Search } from "lucide-react";
 import { NavigationView } from "@/types";
 import { NAVIGATION_VIEWS } from "@/constants";
@@ -72,24 +72,36 @@ export function FloatingTopBar({ currentView }: FloatingTopBarProps) {
   };
 
   // Check for high z-index elements (overlays/modals/panels) and hide the bar
-  useEffect(() => {
-    const checkForOverlays = () => {
-      // Check if there are any elements with very high z-index (modals, panels, etc.)
-      const highZIndexElements = document.querySelectorAll('[class*="z-[9"]');
-      const hasOverlay = Array.from(highZIndexElements).some((el) => {
-        const computed = window.getComputedStyle(el);
-        const zIndex = parseInt(computed.zIndex);
-        return !isNaN(zIndex) && zIndex >= 9000;
-      });
+  // Memoize the check function to prevent recreation on every render
+  const checkForOverlays = useCallback(() => {
+    // Check if there are any elements with very high z-index (modals, panels, etc.)
+    const highZIndexElements = document.querySelectorAll('[class*="z-[9"]');
+    const hasOverlay = Array.from(highZIndexElements).some((el) => {
+      const computed = window.getComputedStyle(el);
+      const zIndex = parseInt(computed.zIndex);
+      return !isNaN(zIndex) && zIndex >= 9000;
+    });
 
-      setIsHidden(hasOverlay);
+    setIsHidden(hasOverlay);
+  }, []);
+
+  // Debounce ref to prevent excessive state updates
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // Debounced check to reduce re-render frequency
+    const debouncedCheck = () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(checkForOverlays, 50);
     };
 
     // Check immediately
     checkForOverlays();
 
     // Use MutationObserver to watch for DOM changes
-    const observer = new MutationObserver(checkForOverlays);
+    const observer = new MutationObserver(debouncedCheck);
     observer.observe(document.body, {
       childList: true,
       subtree: true,
@@ -97,8 +109,13 @@ export function FloatingTopBar({ currentView }: FloatingTopBarProps) {
       attributeFilter: ["class"],
     });
 
-    return () => observer.disconnect();
-  }, []);
+    return () => {
+      observer.disconnect();
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [checkForOverlays]);
 
   return (
     <>

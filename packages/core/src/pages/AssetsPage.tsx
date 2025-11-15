@@ -1,4 +1,4 @@
-import { Activity, Edit3, Layers, Palette, RefreshCw } from "lucide-react";
+import { Activity, Edit3, Layers, RefreshCw } from "lucide-react";
 import React, {
   useRef,
   useCallback,
@@ -18,7 +18,6 @@ import {
   AssetStatisticsCard,
   BulkActionsBar,
   EmptyAssetState,
-  GenerationHistoryTimeline,
   RegenerateModal,
   RetextureModal,
   SpriteGenerationModal,
@@ -27,7 +26,6 @@ import {
   ViewerControls,
 } from "@/components/assets";
 import { Tray, SkeletonList } from "@/components/common";
-import { MaterialPresetEditor } from "@/components/materials";
 import { AnimationPlayer } from "@/components/shared/AnimationPlayer";
 import ThreeViewer, { ThreeViewerRef } from "@/components/shared/ThreeViewer";
 import { useAssetActions } from "@/hooks";
@@ -46,37 +44,41 @@ export const AssetsPage: React.FC = () => {
     }
   }, [selectedAssetIds.size]);
 
-  // Register asset-specific commands
-  useCommandRegistration(
-    React.useMemo(
-      () => [
-        {
-          id: "assets-reload",
-          label: "Reload Assets",
-          description: "Refresh the asset library",
-          icon: RefreshCw,
-          category: "Assets",
-          keywords: ["reload", "refresh", "assets"],
-          action: () => reloadAssets(),
+  // Memoize reloadAssets to prevent command re-registration
+  const stableReloadAssets = useCallback(() => {
+    reloadAssets();
+  }, [reloadAssets]);
+
+  // Register asset-specific commands with stable dependencies
+  const commands = useMemo(
+    () => [
+      {
+        id: "assets-reload",
+        label: "Reload Assets",
+        description: "Refresh the asset library",
+        icon: RefreshCw,
+        category: "Assets",
+        keywords: ["reload", "refresh", "assets"],
+        action: stableReloadAssets,
+      },
+      {
+        id: "assets-toggle-selection",
+        label: "Toggle Selection Mode",
+        description: "Enter/exit bulk selection mode",
+        icon: Edit3,
+        category: "Assets",
+        keywords: ["select", "selection", "bulk"],
+        action: () => {
+          useAssetsStore.getState().toggleSelectionMode();
         },
-        {
-          id: "assets-toggle-selection",
-          label: "Toggle Selection Mode",
-          description: "Enter/exit bulk selection mode",
-          icon: Edit3,
-          category: "Assets",
-          keywords: ["select", "selection", "bulk"],
-          action: () => {
-            useAssetsStore.getState().toggleSelectionMode();
-          },
-        },
-      ],
-      [reloadAssets],
-    ),
+      },
+    ],
+    [stableReloadAssets],
   );
 
+  useCommandRegistration(commands);
+
   // Local state for modals
-  const [showPresetEditor, setShowPresetEditor] = useState(false);
   const [showVariantTree, setShowVariantTree] = useState(false);
 
   // Get state and actions from store
@@ -169,25 +171,11 @@ export const AssetsPage: React.FC = () => {
             {/* Asset Statistics */}
             <AssetStatisticsCard assets={assets} />
 
-            {/* Generation History Timeline */}
-            <GenerationHistoryTimeline assets={assets} />
-
-            {/* Filters */}
+            {/* Filters (Search Bar Only) */}
             <AssetFilters
               totalAssets={assets.length}
               filteredCount={filteredAssets.length}
             />
-
-            {/* Material Preset Editor Button */}
-            <button
-              onClick={() => setShowPresetEditor(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500/10 to-purple-600/10 hover:from-purple-500/20 hover:to-purple-600/20 border border-purple-500/30 hover:border-purple-500/50 rounded-lg transition-all duration-200 group"
-            >
-              <Palette className="w-4 h-4 text-purple-400 group-hover:text-purple-300 transition-colors" />
-              <span className="text-sm font-medium text-purple-400 group-hover:text-purple-300 transition-colors">
-                Edit Material Presets
-              </span>
-            </button>
 
             {/* Asset List */}
             <AssetList assets={filteredAssets} />
@@ -385,15 +373,6 @@ export const AssetsPage: React.FC = () => {
           }}
         />
       )}
-
-      {/* Material Preset Editor */}
-      <MaterialPresetEditor
-        open={showPresetEditor}
-        onClose={() => setShowPresetEditor(false)}
-        onSuccess={() => {
-          // Presets saved successfully - filters will reload them automatically
-        }}
-      />
 
       {/* Variant Tree Viewer */}
       {showVariantTree && (
