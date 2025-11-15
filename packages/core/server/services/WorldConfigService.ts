@@ -71,7 +71,9 @@ export class WorldConfigService {
 
       return results;
     } catch (error) {
-      logger.error({ err: error }, "[WorldConfigService] Error listing configurations"
+      logger.error(
+        { err: error },
+        "[WorldConfigService] Error listing configurations",
       );
       // Return empty array instead of throwing - world config is optional
       return [];
@@ -91,7 +93,10 @@ export class WorldConfigService {
 
       return results[0] || null;
     } catch (error) {
-      logger.error({ err: error }, `[WorldConfigService] Error getting configuration ${id}`);
+      logger.error(
+        { err: error },
+        `[WorldConfigService] Error getting configuration ${id}`,
+      );
       throw new Error("Failed to get configuration");
     }
   }
@@ -109,7 +114,9 @@ export class WorldConfigService {
 
       return results[0] || null;
     } catch (error) {
-      logger.error({ err: error }, "[WorldConfigService] Error getting active configuration"
+      logger.error(
+        { err: error },
+        "[WorldConfigService] Error getting active configuration",
       );
       // Return null instead of throwing - world config is optional
       return null;
@@ -179,7 +186,9 @@ export class WorldConfigService {
       );
       return created;
     } catch (error) {
-      logger.error({ err: error }, "[WorldConfigService] Error creating configuration"
+      logger.error(
+        { err: error },
+        "[WorldConfigService] Error creating configuration",
       );
       throw new Error("Failed to create configuration");
     }
@@ -232,7 +241,10 @@ export class WorldConfigService {
       );
       return updated;
     } catch (error) {
-      logger.error({ err: error }, `[WorldConfigService] Error updating configuration ${id}`);
+      logger.error(
+        { err: error },
+        `[WorldConfigService] Error updating configuration ${id}`,
+      );
       throw new Error("Failed to update configuration");
     }
   }
@@ -287,7 +299,10 @@ export class WorldConfigService {
       );
       return updated;
     } catch (error) {
-      logger.error({ err: error }, `[WorldConfigService] Error updating section ${section} for ${id}`);
+      logger.error(
+        { err: error },
+        `[WorldConfigService] Error updating section ${section} for ${id}`,
+      );
       throw new Error("Failed to update section");
     }
   }
@@ -315,7 +330,10 @@ export class WorldConfigService {
         `Deleted configuration: ${id}`,
       );
     } catch (error) {
-      logger.error({ err: error }, `[WorldConfigService] Error deleting configuration ${id}`);
+      logger.error(
+        { err: error },
+        `[WorldConfigService] Error deleting configuration ${id}`,
+      );
       throw error;
     }
   }
@@ -360,7 +378,10 @@ export class WorldConfigService {
       );
       return activated;
     } catch (error) {
-      logger.error({ err: error }, `[WorldConfigService] Error activating configuration ${id}`);
+      logger.error(
+        { err: error },
+        `[WorldConfigService] Error activating configuration ${id}`,
+      );
       throw new Error("Failed to activate configuration");
     }
   }
@@ -493,7 +514,9 @@ export class WorldConfigService {
         createdBy,
       );
     } catch (error) {
-      logger.error({ err: error }, "[WorldConfigService] Error creating from template"
+      logger.error(
+        { err: error },
+        "[WorldConfigService] Error creating from template",
       );
       throw error;
     }
@@ -524,7 +547,10 @@ export class WorldConfigService {
 
       return exportData;
     } catch (error) {
-      logger.error({ err: error }, `[WorldConfigService] Error exporting configuration ${id}`);
+      logger.error(
+        { err: error },
+        `[WorldConfigService] Error exporting configuration ${id}`,
+      );
       throw new Error("Failed to export configuration");
     }
   }
@@ -598,7 +624,9 @@ export class WorldConfigService {
       );
       return imported;
     } catch (error) {
-      logger.error({ err: error }, "[WorldConfigService] Error importing configuration"
+      logger.error(
+        { err: error },
+        "[WorldConfigService] Error importing configuration",
       );
       throw new Error("Failed to import configuration");
     }
@@ -700,7 +728,10 @@ export class WorldConfigService {
 
       return { valid, errors };
     } catch (error) {
-      logger.error({ err: error }, `[WorldConfigService] Error validating configuration ${id}`);
+      logger.error(
+        { err: error },
+        `[WorldConfigService] Error validating configuration ${id}`,
+      );
       throw new Error("Failed to validate configuration");
     }
   }
@@ -768,64 +799,90 @@ export class WorldConfigService {
         : "No NPC categories defined.";
 
       // Quest Config
-      sections.questConfig = `Quest Configuration:
-Types: ${config.questConfig.types
-        .filter((t) => t.enabled)
-        .map((t) => t.name)
-        .join(", ")}
-Difficulties: ${config.questConfig.difficulties
-        .filter((d) => d.enabled)
-        .map((d) => d.name)
-        .join(", ")}
-Objective Types: ${config.questConfig.objectiveTypes.join(", ")}
-Default Rewards: ${config.questConfig.defaultRewards.experienceBase} XP, ${config.questConfig.defaultRewards.goldBase} Gold`;
+      if (config.questConfig) {
+        sections.questConfig = `Quest Configuration:
+Types: ${
+          (config.questConfig.types || [])
+            .filter((t) => t.enabled)
+            .map((t) => t.name)
+            .join(", ") || "None"
+        }
+Difficulties: ${
+          (config.questConfig.difficulties || [])
+            .filter((d) => d.enabled)
+            .map((d) => d.name)
+            .join(", ") || "None"
+        }
+Objective Types: ${(config.questConfig.objectiveTypes || []).join(", ") || "None"}
+Default Rewards: ${config.questConfig.defaultRewards?.experienceBase || 0} XP, ${config.questConfig.defaultRewards?.goldBase || 0} Gold`;
+      }
 
       // Items Config
-      sections.itemsConfig = `Items Configuration:
-Categories: ${config.itemsConfig.categories
-        .filter((c) => c.enabled)
-        .map((c) => c.name)
-        .join(", ")}
-Rarities: ${config.itemsConfig.rarities
-        .filter((r) => r.enabled)
-        .map((r) => r.name)
-        .join(", ")}
-Enchantments: ${config.itemsConfig.enchantments
-        .filter((e) => e.enabled)
-        .map((e) => e.name)
-        .join(", ")}`;
+      if (config.itemsConfig) {
+        sections.itemsConfig = `Items Configuration:
+Categories: ${
+          (config.itemsConfig.categories || [])
+            .filter((c) => c.enabled)
+            .map((c) => c.name)
+            .join(", ") || "None"
+        }
+Rarities: ${
+          (config.itemsConfig.rarities || [])
+            .filter((r) => r.enabled)
+            .map((r) => r.name)
+            .join(", ") || "None"
+        }
+Enchantments: ${
+          (config.itemsConfig.enchantments || [])
+            .filter((e) => e.enabled)
+            .map((e) => e.name)
+            .join(", ") || "None"
+        }`;
+      }
 
       // Locations Config
-      sections.locationsConfig = `Locations Configuration:
-Biomes: ${config.locationsConfig.biomes
-        .filter((b) => b.enabled)
-        .map((b) => b.name)
-        .join(", ")}
-Settlement Types: ${config.locationsConfig.settlementTypes
-        .filter((s) => s.enabled)
-        .map((s) => s.name)
-        .join(", ")}
-Dungeon Types: ${config.locationsConfig.dungeonTypes
-        .filter((d) => d.enabled)
-        .map((d) => d.name)
-        .join(", ")}`;
+      if (config.locationsConfig) {
+        sections.locationsConfig = `Locations Configuration:
+Biomes: ${
+          (config.locationsConfig.biomes || [])
+            .filter((b) => b.enabled)
+            .map((b) => b.name)
+            .join(", ") || "None"
+        }
+Settlement Types: ${
+          (config.locationsConfig.settlementTypes || [])
+            .filter((s) => s.enabled)
+            .map((s) => s.name)
+            .join(", ") || "None"
+        }
+Dungeon Types: ${
+          (config.locationsConfig.dungeonTypes || [])
+            .filter((d) => d.enabled)
+            .map((d) => d.name)
+            .join(", ") || "None"
+        }`;
+      }
 
       // Economy Settings
-      sections.economySettings = `Economy Settings:
-Currency: ${config.economySettings.currencyName}
+      if (config.economySettings) {
+        sections.economySettings = `Economy Settings:
+Currency: ${config.economySettings.currencyName || "Gold"}
 Trading: ${config.economySettings.tradingEnabled ? "Enabled" : "Disabled"}
 Bartering: ${config.economySettings.barterEnabled ? "Enabled" : "Disabled"}
-Inflation Rate: ${config.economySettings.inflationRate}`;
+Inflation Rate: ${config.economySettings.inflationRate || 0}`;
+      }
 
       // AI Preferences
-      sections.aiPreferences = `AI Generation Preferences:
-Quality: ${config.aiPreferences.defaultQuality}
-Narrative Tone: ${config.aiPreferences.toneAndStyle.narrative}
-Dialogue Formality: ${config.aiPreferences.toneAndStyle.dialogueFormality}
-Detail Level: ${config.aiPreferences.toneAndStyle.detailLevel}
-Violence Level: ${config.aiPreferences.contentGuidelines.violenceLevel}
-Magic Prevalence: ${config.aiPreferences.contentGuidelines.magicPrevalence}
-Technology Level: ${config.aiPreferences.contentGuidelines.technologyLevel}`;
+      if (config.aiPreferences) {
+        sections.aiPreferences = `AI Generation Preferences:
+Quality: ${config.aiPreferences.defaultQuality || "balanced"}
+Narrative Tone: ${config.aiPreferences.toneAndStyle?.narrative || "serious"}
+Dialogue Formality: ${config.aiPreferences.toneAndStyle?.dialogueFormality || "mixed"}
+Detail Level: ${config.aiPreferences.toneAndStyle?.detailLevel || "moderate"}
+Violence Level: ${config.aiPreferences.contentGuidelines?.violenceLevel || "moderate"}
+Magic Prevalence: ${config.aiPreferences.contentGuidelines?.magicPrevalence || "common"}
+Technology Level: ${config.aiPreferences.contentGuidelines?.technologyLevel || "medieval"}`;
+      }
 
       // Enhanced Configuration (Optional sections)
       if (config.characterClasses && config.characterClasses.length > 0) {
@@ -901,7 +958,10 @@ Use this world configuration as the foundation for all generated content. Ensure
 
       return { context, sections };
     } catch (error) {
-      logger.error({ err: error }, `[WorldConfigService] Error building AI context for ${id}`);
+      logger.error(
+        { err: error },
+        `[WorldConfigService] Error building AI context for ${id}`,
+      );
       throw new Error("Failed to build AI context");
     }
   }
@@ -927,7 +987,10 @@ Use this world configuration as the foundation for all generated content. Ensure
 
       return results;
     } catch (error) {
-      logger.error({ err: error }, `[WorldConfigService] Error getting history for ${configId}`);
+      logger.error(
+        { err: error },
+        `[WorldConfigService] Error getting history for ${configId}`,
+      );
       throw new Error("Failed to get configuration history");
     }
   }

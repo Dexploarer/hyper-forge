@@ -150,7 +150,7 @@ export const contentGenerationRoutes = new Elysia({
               { npcId: npc.id, npcName: result.npc.name },
               "NPC generated successfully",
             );
-            return { ...result, id: npc.id };
+            return result;
           },
           {
             body: Models.GenerateNPCRequest,
