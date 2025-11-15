@@ -340,7 +340,7 @@ export const QuestConfigStep: React.FC<QuestConfigStepProps> = ({
               notify.error(
                 'Invalid level range format. Please use valid JSON like: {"min": 1, "max": 10}',
               );
-              return; // Don't save if JSON is invalid
+              return false; // Keep modal open for user to fix
             }
           }
 

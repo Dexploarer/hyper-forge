@@ -33,7 +33,7 @@ interface Field {
 interface ArrayItemEditorProps<T> {
   open: boolean;
   onClose: () => void;
-  onSave: (item: T) => void;
+  onSave: (item: T) => void | boolean;
   item: T | null;
   fields: Field[];
   title: string;
@@ -105,8 +105,12 @@ export function ArrayItemEditor<T extends Record<string, any>>({
       createdAt: formData.createdAt || new Date().toISOString(),
     } as unknown as T;
 
-    onSave(savedItem);
-    onClose();
+    const result = onSave(savedItem);
+    // Only close if onSave returns true or undefined (backward compatible)
+    // Return false to keep modal open (e.g., for validation errors)
+    if (result !== false) {
+      onClose();
+    }
   };
 
   const handleFieldChange = (fieldName: string, value: any) => {
