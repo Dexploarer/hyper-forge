@@ -183,17 +183,16 @@ class AssetServiceClass {
       return null;
     }
 
-    // Priority 1: Use CDN concept art URL
+    // Use CDN concept art URL only
     if (asset.cdnConceptArtUrl) {
       return asset.cdnConceptArtUrl;
     }
 
-    // Priority 2: Check legacy concept art path
+    // Legacy concept art paths are no longer supported - all assets must be on CDN
     if (asset.conceptArtPath) {
       console.warn(
-        `[AssetService] Asset ${asset.id} using legacy concept art path`,
+        `[AssetService] Asset ${asset.id} has legacy concept art path but no CDN URL - concept art unavailable`,
       );
-      return `/gdd-assets/${asset.id}/${asset.conceptArtPath}`;
     }
 
     return null;

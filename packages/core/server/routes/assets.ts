@@ -341,37 +341,16 @@ export const createAssetRoutes = (
               });
             }
 
-            // Fallback: Try to find model file in legacy storage
-            // This path is for backward compatibility with old assets
-            const path = await import("path");
-            const fs = await import("fs/promises");
-
-            const ASSETS_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
-              ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
-              : path.join(rootDir, "gdd-assets");
-
-            const modelPath = path.join(ASSETS_DIR, id, "model.glb");
-
-            try {
-              const fileData = await fs.readFile(modelPath);
-              set.headers["Content-Type"] = "model/gltf-binary";
-              set.headers["Content-Disposition"] =
-                `inline; filename="${id}.glb"`;
-              return new Response(fileData, {
-                headers: {
-                  "Content-Type": "model/gltf-binary",
-                  "Content-Disposition": `inline; filename="${id}.glb"`,
-                },
-              });
-            } catch (error) {
-              logger.error({ err: error, assetId: id }, "Model file not found");
-              set.status = 404;
-              return {
-                error: "Model file not found - asset may need CDN migration",
-                assetId: id,
-                cdnUrl: asset.cdnUrl || null,
-              };
-            }
+            // No CDN URL - asset not available
+            logger.warn(
+              { assetId: id },
+              "Asset has no CDN URL - model not available",
+            );
+            set.status = 404;
+            return {
+              error: "Model file not available - asset must be uploaded to CDN",
+              assetId: id,
+            };
           },
           {
             params: t.Object({
@@ -408,25 +387,9 @@ export const createAssetRoutes = (
               return;
             }
 
-            // Check legacy storage
-            const path = await import("path");
-            const fs = await import("fs/promises");
-
-            const ASSETS_DIR = process.env.RAILWAY_VOLUME_MOUNT_PATH
-              ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
-              : path.join(rootDir, "gdd-assets");
-
-            const modelPath = path.join(ASSETS_DIR, id, "model.glb");
-
-            try {
-              await fs.access(modelPath);
-              set.status = 200;
-              set.headers["Content-Type"] = "model/gltf-binary";
-              return;
-            } catch {
-              set.status = 404;
-              return;
-            }
+            // No CDN URL - model does not exist
+            set.status = 404;
+            return;
           },
           {
             params: t.Object({
