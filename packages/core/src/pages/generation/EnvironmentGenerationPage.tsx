@@ -25,6 +25,7 @@ import {
 } from "@/components/generation";
 import { SavePromptModal, PromptLibraryModal } from "@/components/prompts";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
+import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
 
 interface EnvironmentGenerationPageProps {
   onNavigateToAssets?: () => void;
@@ -166,9 +167,14 @@ export function EnvironmentGenerationPage({
   const [mood, setMood] = useState<string>("bright");
 
   // Prompt library
-  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const {
+    savePrompt,
+    updatePrompt,
+    isLoading: isSavingPrompt,
+  } = usePromptLibrary();
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<any>(null);
 
   // Set generation type to environment on mount
   useEffect(() => {
@@ -287,26 +293,53 @@ export function EnvironmentGenerationPage({
     description?: string;
     isPublic?: boolean;
   }) => {
-    await savePrompt({
-      type: "environment",
-      name: data.name,
-      content: {
-        prompt: description,
-        assetName,
-        environmentType,
-        customEnvironmentType,
-        biome,
-        customBiome,
-        scale,
-        mood,
-      },
-      description: data.description,
-      isPublic: data.isPublic,
-      metadata: {
-        quality,
-      },
-    });
-    setShowSavePrompt(false);
+    if (editingPrompt) {
+      // UPDATE existing prompt
+      await updatePrompt(editingPrompt.id, {
+        type: "environment",
+        name: data.name,
+        content: {
+          prompt: description,
+          assetName,
+          environmentType,
+          customEnvironmentType,
+          biome,
+          customBiome,
+          scale,
+          mood,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+        metadata: {
+          quality,
+        },
+      });
+      setEditingPrompt(null);
+      setShowSavePrompt(false);
+      notify.success(`Updated prompt: ${data.name}`);
+    } else {
+      // CREATE new prompt
+      await savePrompt({
+        type: "environment",
+        name: data.name,
+        content: {
+          prompt: description,
+          assetName,
+          environmentType,
+          customEnvironmentType,
+          biome,
+          customBiome,
+          scale,
+          mood,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+        metadata: {
+          quality,
+        },
+      });
+      setShowSavePrompt(false);
+    }
   };
 
   const handleLoadPrompt = (loadedPrompt: any) => {
@@ -335,6 +368,29 @@ export function EnvironmentGenerationPage({
     }
     notify.success(`Loaded prompt: ${loadedPrompt.name}`);
   };
+
+  const handleEditPrompt = (prompt: any) => {
+    // Load the prompt's content into the form
+    handleLoadPrompt(prompt);
+
+    // Set editing state
+    setEditingPrompt(prompt);
+
+    // Close library modal and open save modal
+    setShowLoadPrompt(false);
+    setShowSavePrompt(true);
+  };
+
+  // Keyboard shortcuts for prompt library
+  usePromptKeyboardShortcuts({
+    onSave: () => {
+      if (description) {
+        setShowSavePrompt(true);
+      }
+    },
+    onLoad: () => setShowLoadPrompt(true),
+    enabled: true,
+  });
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
@@ -717,7 +773,10 @@ export function EnvironmentGenerationPage({
       {/* Prompt Library Modals */}
       <SavePromptModal
         open={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
+        onClose={() => {
+          setShowSavePrompt(false);
+          setEditingPrompt(null);
+        }}
         onSave={handleSavePrompt}
         promptType="environment"
         currentContent={{
@@ -731,12 +790,23 @@ export function EnvironmentGenerationPage({
           mood,
         }}
         loading={isSavingPrompt}
+        editingPrompt={
+          editingPrompt
+            ? {
+                id: editingPrompt.id,
+                name: editingPrompt.name,
+                description: editingPrompt.description,
+                isPublic: editingPrompt.isPublic,
+              }
+            : undefined
+        }
       />
 
       <PromptLibraryModal
         open={showLoadPrompt}
         onClose={() => setShowLoadPrompt(false)}
         onLoad={handleLoadPrompt}
+        onEdit={handleEditPrompt}
         promptType="environment"
       />
     </div>

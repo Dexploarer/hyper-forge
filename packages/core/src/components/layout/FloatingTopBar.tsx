@@ -82,7 +82,8 @@ export function FloatingTopBar({ currentView }: FloatingTopBarProps) {
       return !isNaN(zIndex) && zIndex >= 9000;
     });
 
-    setIsHidden(hasOverlay);
+    // Only update state if the value has changed
+    setIsHidden((prev) => (prev === hasOverlay ? prev : hasOverlay));
   }, []);
 
   // Debounce ref to prevent excessive state updates

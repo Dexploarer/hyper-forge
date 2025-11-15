@@ -24,6 +24,7 @@ import {
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
 import { AudioAPIClient } from "@/services/api/AudioAPIClient";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
+import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
 import { notify } from "@/utils/notify";
 import type {
   Voice,
@@ -92,9 +93,14 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
   const [isSaving, setIsSaving] = useState(false);
 
   // Prompt library
-  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const {
+    savePrompt,
+    updatePrompt,
+    isLoading: isSavingPrompt,
+  } = usePromptLibrary();
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<any>(null);
 
   // Audio preview
   const [playingPreview, setPlayingPreview] = useState<string | null>(null);
@@ -303,19 +309,38 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
     description?: string;
     isPublic?: boolean;
   }) => {
-    await savePrompt({
-      type: "voice",
-      name: data.name,
-      content: {
-        mode,
-        text: ttsText || undefined,
-        voiceId: selectedVoice || undefined,
-        voiceDescription: voiceDescription || undefined,
-        settings,
-      },
-      description: data.description,
-      isPublic: data.isPublic,
-    });
+    if (editingPrompt) {
+      // UPDATE existing prompt
+      await updatePrompt(editingPrompt.id, {
+        type: "voice",
+        name: data.name,
+        content: {
+          mode,
+          text: ttsText || undefined,
+          voiceId: selectedVoice || undefined,
+          voiceDescription: voiceDescription || undefined,
+          settings,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+      });
+      setEditingPrompt(null);
+    } else {
+      // CREATE new prompt
+      await savePrompt({
+        type: "voice",
+        name: data.name,
+        content: {
+          mode,
+          text: ttsText || undefined,
+          voiceId: selectedVoice || undefined,
+          voiceDescription: voiceDescription || undefined,
+          settings,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+      });
+    }
     setShowSavePrompt(false);
   };
 
@@ -333,6 +358,30 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
     }
     notify.success(`Loaded prompt: ${loadedPrompt.name}`);
   };
+
+  const handleEditPrompt = (prompt: any) => {
+    // Load the prompt's content into the form
+    handleLoadPrompt(prompt);
+
+    // Set editing state
+    setEditingPrompt(prompt);
+
+    // Close library modal and open save modal
+    setShowLoadPrompt(false);
+    setShowSavePrompt(true);
+  };
+
+  // Keyboard shortcuts for prompt library
+  usePromptKeyboardShortcuts({
+    onSave: () => {
+      // VoiceGenerationCard has two modes with different fields
+      if (ttsText || voiceDescription) {
+        setShowSavePrompt(true);
+      }
+    },
+    onLoad: () => setShowLoadPrompt(true),
+    enabled: true,
+  });
 
   return (
     <Card className="bg-gradient-to-br from-bg-primary via-bg-secondary to-blue-500/5 border-border-primary shadow-lg">
@@ -731,7 +780,10 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
       {/* Prompt Library Modals */}
       <SavePromptModal
         open={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
+        onClose={() => {
+          setShowSavePrompt(false);
+          setEditingPrompt(null);
+        }}
         onSave={handleSavePrompt}
         promptType="voice"
         currentContent={{
@@ -742,12 +794,23 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
           settings,
         }}
         loading={isSavingPrompt}
+        editingPrompt={
+          editingPrompt
+            ? {
+                id: editingPrompt.id,
+                name: editingPrompt.name,
+                description: editingPrompt.description,
+                isPublic: editingPrompt.isPublic,
+              }
+            : undefined
+        }
       />
 
       <PromptLibraryModal
         open={showLoadPrompt}
         onClose={() => setShowLoadPrompt(false)}
         onLoad={handleLoadPrompt}
+        onEdit={handleEditPrompt}
         promptType="voice"
       />
     </Card>

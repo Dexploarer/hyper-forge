@@ -13,6 +13,7 @@ import {
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
 import { AudioAPIClient } from "@/services/api/AudioAPIClient";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
+import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
 import { notify } from "@/utils/notify";
 
 interface SFXGenerationCardProps {
@@ -38,9 +39,14 @@ export const SFXGenerationCard: React.FC<SFXGenerationCardProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Prompt library
-  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const {
+    savePrompt,
+    updatePrompt,
+    isLoading: isSavingPrompt,
+  } = usePromptLibrary();
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<any>(null);
 
   const handleGenerate = async () => {
     if (!description) {
@@ -77,19 +83,38 @@ export const SFXGenerationCard: React.FC<SFXGenerationCardProps> = ({
     description?: string;
     isPublic?: boolean;
   }) => {
-    await savePrompt({
-      type: "sfx",
-      name: data.name,
-      content: {
-        prompt: description,
-        settings: {
-          duration,
-          promptInfluence,
+    if (editingPrompt) {
+      // UPDATE existing prompt
+      await updatePrompt(editingPrompt.id, {
+        type: "sfx",
+        name: data.name,
+        content: {
+          prompt: description,
+          settings: {
+            duration,
+            promptInfluence,
+          },
         },
-      },
-      description: data.description,
-      isPublic: data.isPublic,
-    });
+        description: data.description,
+        isPublic: data.isPublic,
+      });
+      setEditingPrompt(null);
+    } else {
+      // CREATE new prompt
+      await savePrompt({
+        type: "sfx",
+        name: data.name,
+        content: {
+          prompt: description,
+          settings: {
+            duration,
+            promptInfluence,
+          },
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+      });
+    }
     setShowSavePrompt(false);
   };
 
@@ -103,6 +128,29 @@ export const SFXGenerationCard: React.FC<SFXGenerationCardProps> = ({
     }
     notify.success(`Loaded prompt: ${loadedPrompt.name}`);
   };
+
+  const handleEditPrompt = (prompt: any) => {
+    // Load the prompt's content into the form
+    handleLoadPrompt(prompt);
+
+    // Set editing state
+    setEditingPrompt(prompt);
+
+    // Close library modal and open save modal
+    setShowLoadPrompt(false);
+    setShowSavePrompt(true);
+  };
+
+  // Keyboard shortcuts for prompt library
+  usePromptKeyboardShortcuts({
+    onSave: () => {
+      if (description) {
+        setShowSavePrompt(true);
+      }
+    },
+    onLoad: () => setShowLoadPrompt(true),
+    enabled: true,
+  });
 
   return (
     <Card className="bg-gradient-to-br from-bg-primary via-bg-secondary to-purple-500/5 border-border-primary shadow-lg">
@@ -220,7 +268,10 @@ export const SFXGenerationCard: React.FC<SFXGenerationCardProps> = ({
       {/* Prompt Library Modals */}
       <SavePromptModal
         open={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
+        onClose={() => {
+          setShowSavePrompt(false);
+          setEditingPrompt(null);
+        }}
         onSave={handleSavePrompt}
         promptType="sfx"
         currentContent={{
@@ -231,12 +282,23 @@ export const SFXGenerationCard: React.FC<SFXGenerationCardProps> = ({
           },
         }}
         loading={isSavingPrompt}
+        editingPrompt={
+          editingPrompt
+            ? {
+                id: editingPrompt.id,
+                name: editingPrompt.name,
+                description: editingPrompt.description,
+                isPublic: editingPrompt.isPublic,
+              }
+            : undefined
+        }
       />
 
       <PromptLibraryModal
         open={showLoadPrompt}
         onClose={() => setShowLoadPrompt(false)}
         onLoad={handleLoadPrompt}
+        onEdit={handleEditPrompt}
         promptType="sfx"
       />
     </Card>

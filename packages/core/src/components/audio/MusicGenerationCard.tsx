@@ -14,6 +14,7 @@ import {
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
 import { AudioAPIClient } from "@/services/api/AudioAPIClient";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
+import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
 import { notify } from "@/utils/notify";
 
 interface MusicGenerationCardProps {
@@ -39,9 +40,14 @@ export const MusicGenerationCard: React.FC<MusicGenerationCardProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Prompt library
-  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const {
+    savePrompt,
+    updatePrompt,
+    isLoading: isSavingPrompt,
+  } = usePromptLibrary();
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<any>(null);
 
   const handleGenerate = async () => {
     if (!prompt) {
@@ -78,20 +84,41 @@ export const MusicGenerationCard: React.FC<MusicGenerationCardProps> = ({
     description?: string;
     isPublic?: boolean;
   }) => {
-    await savePrompt({
-      type: "music",
-      name: data.name,
-      content: {
-        prompt,
-        settings: {
-          lengthSeconds,
-          forceInstrumental,
+    if (editingPrompt) {
+      // UPDATE existing prompt
+      await updatePrompt(editingPrompt.id, {
+        type: "music",
+        name: data.name,
+        content: {
+          prompt,
+          settings: {
+            lengthSeconds,
+            forceInstrumental,
+          },
         },
-      },
-      description: data.description,
-      isPublic: data.isPublic,
-    });
-    setShowSavePrompt(false);
+        description: data.description,
+        isPublic: data.isPublic,
+      });
+      setEditingPrompt(null);
+      setShowSavePrompt(false);
+      notify.success(`Updated prompt: ${data.name}`);
+    } else {
+      // CREATE new prompt
+      await savePrompt({
+        type: "music",
+        name: data.name,
+        content: {
+          prompt,
+          settings: {
+            lengthSeconds,
+            forceInstrumental,
+          },
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+      });
+      setShowSavePrompt(false);
+    }
   };
 
   const handleLoadPrompt = (loadedPrompt: any) => {
@@ -104,6 +131,29 @@ export const MusicGenerationCard: React.FC<MusicGenerationCardProps> = ({
     }
     notify.success(`Loaded prompt: ${loadedPrompt.name}`);
   };
+
+  const handleEditPrompt = (prompt: any) => {
+    // Load the prompt's content into the form
+    handleLoadPrompt(prompt);
+
+    // Set editing state
+    setEditingPrompt(prompt);
+
+    // Close library modal and open save modal
+    setShowLoadPrompt(false);
+    setShowSavePrompt(true);
+  };
+
+  // Keyboard shortcuts for prompt library
+  usePromptKeyboardShortcuts({
+    onSave: () => {
+      if (prompt) {
+        setShowSavePrompt(true);
+      }
+    },
+    onLoad: () => setShowLoadPrompt(true),
+    enabled: true,
+  });
 
   return (
     <Card className="bg-gradient-to-br from-bg-primary via-bg-secondary to-orange-500/5 border-border-primary shadow-lg">
@@ -223,7 +273,10 @@ export const MusicGenerationCard: React.FC<MusicGenerationCardProps> = ({
       {/* Prompt Library Modals */}
       <SavePromptModal
         open={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
+        onClose={() => {
+          setShowSavePrompt(false);
+          setEditingPrompt(null);
+        }}
         onSave={handleSavePrompt}
         promptType="music"
         currentContent={{
@@ -234,12 +287,23 @@ export const MusicGenerationCard: React.FC<MusicGenerationCardProps> = ({
           },
         }}
         loading={isSavingPrompt}
+        editingPrompt={
+          editingPrompt
+            ? {
+                id: editingPrompt.id,
+                name: editingPrompt.name,
+                description: editingPrompt.description,
+                isPublic: editingPrompt.isPublic,
+              }
+            : undefined
+        }
       />
 
       <PromptLibraryModal
         open={showLoadPrompt}
         onClose={() => setShowLoadPrompt(false)}
         onLoad={handleLoadPrompt}
+        onEdit={handleEditPrompt}
         promptType="music"
       />
     </Card>

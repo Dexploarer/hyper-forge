@@ -25,6 +25,7 @@ import { SavePromptModal, PromptLibraryModal } from "../prompts";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
 import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
+import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
 import { notify } from "@/utils/notify";
 import { useNavigation } from "@/hooks/useNavigation";
 import type { DialogueNode, QualityLevel } from "@/types/content";
@@ -52,9 +53,14 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
   >(null);
 
   // Prompt library
-  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const {
+    savePrompt,
+    updatePrompt,
+    isLoading: isSavingPrompt,
+  } = usePromptLibrary();
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<any>(null);
 
   // Fetch world config options
   const worldConfigOptions = useWorldConfigOptions(worldConfigId);
@@ -99,22 +105,44 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
     description?: string;
     isPublic?: boolean;
   }) => {
-    await savePrompt({
-      type: "dialogue",
-      name: data.name,
-      content: {
-        prompt,
-        npcName: npcName || undefined,
-        personality: personality || undefined,
-        context: context || undefined,
-      },
-      description: data.description,
-      isPublic: data.isPublic,
-      metadata: {
-        quality,
-        worldConfigId: worldConfigId || undefined,
-      },
-    });
+    if (editingPrompt) {
+      // UPDATE existing prompt
+      await updatePrompt(editingPrompt.id, {
+        type: "dialogue",
+        name: data.name,
+        content: {
+          prompt,
+          npcName: npcName || undefined,
+          personality: personality || undefined,
+          context: context || undefined,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+        metadata: {
+          quality,
+          worldConfigId: worldConfigId || undefined,
+        },
+      });
+      setEditingPrompt(null);
+    } else {
+      // CREATE new prompt
+      await savePrompt({
+        type: "dialogue",
+        name: data.name,
+        content: {
+          prompt,
+          npcName: npcName || undefined,
+          personality: personality || undefined,
+          context: context || undefined,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+        metadata: {
+          quality,
+          worldConfigId: worldConfigId || undefined,
+        },
+      });
+    }
     setShowSavePrompt(false);
   };
 
@@ -131,6 +159,29 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
     }
     notify.success(`Loaded prompt: ${loadedPrompt.name}`);
   };
+
+  const handleEditPrompt = (prompt: any) => {
+    // Load the prompt's content into the form
+    handleLoadPrompt(prompt);
+
+    // Set editing state
+    setEditingPrompt(prompt);
+
+    // Close library modal and open save modal
+    setShowLoadPrompt(false);
+    setShowSavePrompt(true);
+  };
+
+  // Keyboard shortcuts for prompt library
+  usePromptKeyboardShortcuts({
+    onSave: () => {
+      if (prompt) {
+        setShowSavePrompt(true);
+      }
+    },
+    onLoad: () => setShowLoadPrompt(true),
+    enabled: true,
+  });
 
   return (
     <Card className="bg-gradient-to-br from-bg-primary via-bg-secondary to-green-500/5 border-border-primary shadow-lg">
@@ -359,7 +410,10 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
       {/* Prompt Library Modals */}
       <SavePromptModal
         open={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
+        onClose={() => {
+          setShowSavePrompt(false);
+          setEditingPrompt(null);
+        }}
         onSave={handleSavePrompt}
         promptType="dialogue"
         currentContent={{
@@ -369,12 +423,23 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
           context: context || undefined,
         }}
         loading={isSavingPrompt}
+        editingPrompt={
+          editingPrompt
+            ? {
+                id: editingPrompt.id,
+                name: editingPrompt.name,
+                description: editingPrompt.description,
+                isPublic: editingPrompt.isPublic,
+              }
+            : undefined
+        }
       />
 
       <PromptLibraryModal
         open={showLoadPrompt}
         onClose={() => setShowLoadPrompt(false)}
         onLoad={handleLoadPrompt}
+        onEdit={handleEditPrompt}
         promptType="dialogue"
       />
     </Card>

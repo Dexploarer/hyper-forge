@@ -137,8 +137,34 @@ export const PromptLibraryModal: React.FC<PromptLibraryModalProps> = ({
 
           {/* Prompt List */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+              {/* Skeleton loaders */}
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-lg border-2 border-border-primary bg-bg-tertiary/30 animate-pulse"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="h-4 bg-bg-hover rounded w-1/3 mb-2"></div>
+                      <div className="h-3 bg-bg-hover rounded w-2/3"></div>
+                    </div>
+                    <div className="flex gap-1">
+                      <div className="w-6 h-6 bg-bg-hover rounded"></div>
+                      <div className="w-6 h-6 bg-bg-hover rounded"></div>
+                      <div className="w-6 h-6 bg-bg-hover rounded"></div>
+                    </div>
+                  </div>
+                  <div className="p-2 bg-bg-secondary/50 rounded">
+                    <div className="h-3 bg-bg-hover rounded w-full mb-1"></div>
+                    <div className="h-3 bg-bg-hover rounded w-4/5"></div>
+                  </div>
+                  <div className="flex gap-3 mt-2">
+                    <div className="h-2 bg-bg-hover rounded w-16"></div>
+                    <div className="h-2 bg-bg-hover rounded w-20"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredPrompts.length === 0 ? (
             <div className="text-center py-12">

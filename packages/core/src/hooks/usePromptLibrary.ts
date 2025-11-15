@@ -65,7 +65,9 @@ export function usePromptLibrary() {
 
       try {
         setIsLoading(true);
-        const response = await api.api.prompts.custom.user[user.id].get();
+        const response = await (api.api.prompts.custom.user as any)[
+          user.id
+        ].get();
 
         if (response.error) {
           console.error(
@@ -146,7 +148,7 @@ export function usePromptLibrary() {
     ): Promise<SavedPrompt | null> => {
       try {
         setIsLoading(true);
-        const response = await api.api.prompts.custom[id].put({
+        const response = await (api.api.prompts.custom as any)[id].put({
           name: updates.name!,
           content: updates.content as any,
           description: updates.description,
@@ -183,7 +185,7 @@ export function usePromptLibrary() {
   const deletePrompt = useCallback(async (id: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const response = await api.api.prompts.custom[id].delete();
+      const response = await (api.api.prompts.custom as any)[id].delete();
 
       if (response.error) {
         console.error(

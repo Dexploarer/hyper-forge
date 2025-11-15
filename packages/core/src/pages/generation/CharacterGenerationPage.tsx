@@ -26,6 +26,7 @@ import {
 } from "@/components/generation";
 import { SavePromptModal, PromptLibraryModal } from "@/components/prompts";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
+import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
 
 interface CharacterGenerationPageProps {
   onNavigateToAssets?: () => void;
@@ -140,9 +141,14 @@ export function CharacterGenerationPage({
   const [customCharacterClass, setCustomCharacterClass] = useState<string>("");
 
   // Prompt library
-  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const {
+    savePrompt,
+    updatePrompt,
+    isLoading: isSavingPrompt,
+  } = usePromptLibrary();
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<any>(null);
 
   // Set generation type to avatar on mount
   useEffect(() => {
@@ -260,26 +266,53 @@ export function CharacterGenerationPage({
     description?: string;
     isPublic?: boolean;
   }) => {
-    await savePrompt({
-      type: "character",
-      name: data.name,
-      content: {
-        prompt: description,
-        assetName,
-        characterType,
-        customCharacterType,
-        characterClass,
-        customCharacterClass,
-        characterHeight,
-        enableRigging,
-      },
-      description: data.description,
-      isPublic: data.isPublic,
-      metadata: {
-        quality,
-      },
-    });
-    setShowSavePrompt(false);
+    if (editingPrompt) {
+      // UPDATE existing prompt
+      await updatePrompt(editingPrompt.id, {
+        type: "character",
+        name: data.name,
+        content: {
+          prompt: description,
+          assetName,
+          characterType,
+          customCharacterType,
+          characterClass,
+          customCharacterClass,
+          characterHeight,
+          enableRigging,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+        metadata: {
+          quality,
+        },
+      });
+      setEditingPrompt(null);
+      setShowSavePrompt(false);
+      notify.success(`Updated prompt: ${data.name}`);
+    } else {
+      // CREATE new prompt
+      await savePrompt({
+        type: "character",
+        name: data.name,
+        content: {
+          prompt: description,
+          assetName,
+          characterType,
+          customCharacterType,
+          characterClass,
+          customCharacterClass,
+          characterHeight,
+          enableRigging,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+        metadata: {
+          quality,
+        },
+      });
+      setShowSavePrompt(false);
+    }
   };
 
   const handleLoadPrompt = (loadedPrompt: any) => {
@@ -308,6 +341,29 @@ export function CharacterGenerationPage({
     }
     notify.success(`Loaded prompt: ${loadedPrompt.name}`);
   };
+
+  const handleEditPrompt = (prompt: any) => {
+    // Load the prompt's content into the form
+    handleLoadPrompt(prompt);
+
+    // Set editing state
+    setEditingPrompt(prompt);
+
+    // Close library modal and open save modal
+    setShowLoadPrompt(false);
+    setShowSavePrompt(true);
+  };
+
+  // Keyboard shortcuts for prompt library
+  usePromptKeyboardShortcuts({
+    onSave: () => {
+      if (description) {
+        setShowSavePrompt(true);
+      }
+    },
+    onLoad: () => setShowLoadPrompt(true),
+    enabled: true,
+  });
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
@@ -679,7 +735,10 @@ export function CharacterGenerationPage({
       {/* Prompt Library Modals */}
       <SavePromptModal
         open={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
+        onClose={() => {
+          setShowSavePrompt(false);
+          setEditingPrompt(null);
+        }}
         onSave={handleSavePrompt}
         promptType="character"
         currentContent={{
@@ -693,12 +752,23 @@ export function CharacterGenerationPage({
           enableRigging,
         }}
         loading={isSavingPrompt}
+        editingPrompt={
+          editingPrompt
+            ? {
+                id: editingPrompt.id,
+                name: editingPrompt.name,
+                description: editingPrompt.description,
+                isPublic: editingPrompt.isPublic,
+              }
+            : undefined
+        }
       />
 
       <PromptLibraryModal
         open={showLoadPrompt}
         onClose={() => setShowLoadPrompt(false)}
         onLoad={handleLoadPrompt}
+        onEdit={handleEditPrompt}
         promptType="character"
       />
     </div>

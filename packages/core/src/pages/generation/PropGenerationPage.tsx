@@ -31,6 +31,7 @@ import { AssetService } from "@/services/api/AssetService";
 import { MaterialPreset } from "@/types";
 import { SavePromptModal, PromptLibraryModal } from "@/components/prompts";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
+import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
 
 interface PropGenerationPageProps {
   onNavigateToAssets?: () => void;
@@ -199,9 +200,14 @@ export function PropGenerationPage({
   const [itemSize, setItemSize] = useState<string>("medium");
 
   // Prompt library
-  const { savePrompt, isLoading: isSavingPrompt } = usePromptLibrary();
+  const {
+    savePrompt,
+    updatePrompt,
+    isLoading: isSavingPrompt,
+  } = usePromptLibrary();
   const [showSavePrompt, setShowSavePrompt] = useState(false);
   const [showLoadPrompt, setShowLoadPrompt] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<any>(null);
 
   // Set generation type to item on mount and update asset type when category changes
   useEffect(() => {
@@ -360,29 +366,59 @@ export function PropGenerationPage({
     description?: string;
     isPublic?: boolean;
   }) => {
-    await savePrompt({
-      type: "prop",
-      name: data.name,
-      content: {
-        prompt: description,
-        assetName,
-        propCategory,
-        customPropCategory,
-        itemStyle,
-        customItemStyle,
-        itemSize,
-        enableRetexturing,
-        selectedMaterials,
-        customMaterials,
-        materialPromptOverrides,
-      },
-      description: data.description,
-      isPublic: data.isPublic,
-      metadata: {
-        quality,
-      },
-    });
-    setShowSavePrompt(false);
+    if (editingPrompt) {
+      // UPDATE existing prompt
+      await updatePrompt(editingPrompt.id, {
+        type: "prop",
+        name: data.name,
+        content: {
+          prompt: description,
+          assetName,
+          propCategory,
+          customPropCategory,
+          itemStyle,
+          customItemStyle,
+          itemSize,
+          enableRetexturing,
+          selectedMaterials,
+          customMaterials,
+          materialPromptOverrides,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+        metadata: {
+          quality,
+        },
+      });
+      setEditingPrompt(null);
+      setShowSavePrompt(false);
+      notify.success(`Updated prompt: ${data.name}`);
+    } else {
+      // CREATE new prompt
+      await savePrompt({
+        type: "prop",
+        name: data.name,
+        content: {
+          prompt: description,
+          assetName,
+          propCategory,
+          customPropCategory,
+          itemStyle,
+          customItemStyle,
+          itemSize,
+          enableRetexturing,
+          selectedMaterials,
+          customMaterials,
+          materialPromptOverrides,
+        },
+        description: data.description,
+        isPublic: data.isPublic,
+        metadata: {
+          quality,
+        },
+      });
+      setShowSavePrompt(false);
+    }
   };
 
   const handleLoadPrompt = (loadedPrompt: any) => {
@@ -420,6 +456,29 @@ export function PropGenerationPage({
     }
     notify.success(`Loaded prompt: ${loadedPrompt.name}`);
   };
+
+  const handleEditPrompt = (prompt: any) => {
+    // Load the prompt's content into the form
+    handleLoadPrompt(prompt);
+
+    // Set editing state
+    setEditingPrompt(prompt);
+
+    // Close library modal and open save modal
+    setShowLoadPrompt(false);
+    setShowSavePrompt(true);
+  };
+
+  // Keyboard shortcuts for prompt library
+  usePromptKeyboardShortcuts({
+    onSave: () => {
+      if (description) {
+        setShowSavePrompt(true);
+      }
+    },
+    onLoad: () => setShowLoadPrompt(true),
+    enabled: true,
+  });
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
@@ -823,7 +882,10 @@ export function PropGenerationPage({
       {/* Prompt Library Modals */}
       <SavePromptModal
         open={showSavePrompt}
-        onClose={() => setShowSavePrompt(false)}
+        onClose={() => {
+          setShowSavePrompt(false);
+          setEditingPrompt(null);
+        }}
         onSave={handleSavePrompt}
         promptType="prop"
         currentContent={{
@@ -840,12 +902,23 @@ export function PropGenerationPage({
           materialPromptOverrides,
         }}
         loading={isSavingPrompt}
+        editingPrompt={
+          editingPrompt
+            ? {
+                id: editingPrompt.id,
+                name: editingPrompt.name,
+                description: editingPrompt.description,
+                isPublic: editingPrompt.isPublic,
+              }
+            : undefined
+        }
       />
 
       <PromptLibraryModal
         open={showLoadPrompt}
         onClose={() => setShowLoadPrompt(false)}
         onLoad={handleLoadPrompt}
+        onEdit={handleEditPrompt}
         promptType="prop"
       />
     </div>
