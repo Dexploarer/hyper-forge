@@ -1,30 +1,30 @@
-import { Search, Filter, ChevronDown, ChevronUp, X, Star } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import { Search, Filter, ChevronDown, ChevronUp, X, Star } from "lucide-react";
+import React, { useState, useEffect } from "react";
 
-import { useAssetsStore } from '../../store'
+import { useAssetsStore } from "../../store";
 
-import { apiFetch } from '@/utils/api'
+import { apiFetch } from "@/utils/api";
 
 interface MaterialPreset {
-  id: string
-  displayName: string
-  category: string
-  tier: number
-  color: string
+  id: string;
+  displayName: string;
+  category: string;
+  tier: number;
+  color: string;
 }
 
 interface AssetFiltersProps {
-  totalAssets: number
-  filteredCount: number
+  totalAssets: number;
+  filteredCount: number;
 }
 
 const AssetFilters: React.FC<AssetFiltersProps> = ({
   totalAssets,
-  filteredCount
+  filteredCount,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [materialPresets, setMaterialPresets] = useState<MaterialPreset[]>([])
-  
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [materialPresets, setMaterialPresets] = useState<MaterialPreset[]>([]);
+
   // Get filter state and actions from store
   const {
     searchTerm,
@@ -34,31 +34,34 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
     setSearchTerm,
     setTypeFilter,
     setMaterialFilter,
-    toggleFavoritesFilter
-  } = useAssetsStore()
+    toggleFavoritesFilter,
+  } = useAssetsStore();
 
   // Load material presets
   useEffect(() => {
-    apiFetch('/api/prompts/material-presets')
-      .then(res => res.json())
-      .then(data => {
+    apiFetch("/api/material-presets")
+      .then((res) => res.json())
+      .then((data) => {
         // Ensure data is an array before sorting
         if (Array.isArray(data)) {
           // Sort by tier to display in logical order
-          const sorted = data.sort((a: MaterialPreset, b: MaterialPreset) => a.tier - b.tier)
-          setMaterialPresets(sorted)
+          const sorted = data.sort(
+            (a: MaterialPreset, b: MaterialPreset) => a.tier - b.tier,
+          );
+          setMaterialPresets(sorted);
         } else {
-          console.error('Material presets response is not an array:', data)
-          setMaterialPresets([])
+          console.error("Material presets response is not an array:", data);
+          setMaterialPresets([]);
         }
       })
-      .catch(err => {
-        console.error('Failed to load material presets:', err)
-        setMaterialPresets([])
-      })
-  }, [])
-  
-  const hasActiveFilters = searchTerm || typeFilter || materialFilter || showFavoritesOnly
+      .catch((err) => {
+        console.error("Failed to load material presets:", err);
+        setMaterialPresets([]);
+      });
+  }, []);
+
+  const hasActiveFilters =
+    searchTerm || typeFilter || materialFilter || showFavoritesOnly;
 
   return (
     <div className="card bg-gradient-to-br from-bg-primary to-bg-secondary border-border-primary animate-scale-in">
@@ -70,7 +73,9 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
               <Filter size={16} className="text-primary" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-text-primary">Filters</h2>
+              <h2 className="text-base font-semibold text-text-primary">
+                Filters
+              </h2>
               {!isExpanded && hasActiveFilters && (
                 <p className="text-xs text-primary">Active</p>
               )}
@@ -104,28 +109,32 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
             onClick={toggleFavoritesFilter}
             className={`w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all duration-200 border ${
               showFavoritesOnly
-                ? 'bg-yellow-500/10 border-yellow-500/30 hover:border-yellow-500/50'
-                : 'bg-bg-primary border-border-primary hover:border-border-secondary'
+                ? "bg-yellow-500/10 border-yellow-500/30 hover:border-yellow-500/50"
+                : "bg-bg-primary border-border-primary hover:border-border-secondary"
             }`}
           >
             <Star
               size={16}
               className={`transition-colors ${
-                showFavoritesOnly ? 'text-yellow-400 fill-yellow-400' : 'text-text-tertiary'
+                showFavoritesOnly
+                  ? "text-yellow-400 fill-yellow-400"
+                  : "text-text-tertiary"
               }`}
             />
-            <span className={`text-sm font-medium ${
-              showFavoritesOnly ? 'text-yellow-400' : 'text-text-secondary'
-            }`}>
-              {showFavoritesOnly ? 'Showing Favorites' : 'Show Favorites Only'}
+            <span
+              className={`text-sm font-medium ${
+                showFavoritesOnly ? "text-yellow-400" : "text-text-secondary"
+              }`}
+            >
+              {showFavoritesOnly ? "Showing Favorites" : "Show Favorites Only"}
             </span>
           </button>
 
           {/* Search */}
           <div className="relative">
-            <Search 
-              size={16} 
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary pointer-events-none" 
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary pointer-events-none"
             />
             <input
               type="text"
@@ -139,17 +148,22 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
             />
             {searchTerm && (
               <button
-                onClick={() => setSearchTerm('')}
+                onClick={() => setSearchTerm("")}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-bg-secondary rounded transition-colors"
               >
-                <X size={14} className="text-text-tertiary hover:text-text-primary" />
+                <X
+                  size={14}
+                  className="text-text-tertiary hover:text-text-primary"
+                />
               </button>
             )}
           </div>
 
           {/* Type Filter */}
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5">Type</label>
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">
+              Type
+            </label>
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
@@ -172,7 +186,9 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
 
           {/* Material Filter */}
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1.5">Material</label>
+            <label className="block text-xs font-medium text-text-secondary mb-1.5">
+              Material
+            </label>
             <select
               value={materialFilter}
               onChange={(e) => setMaterialFilter(e.target.value)}
@@ -182,7 +198,7 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
                        transition-all duration-200 cursor-pointer hover:border-border-secondary"
             >
               <option value="">All Materials</option>
-              {materialPresets.map(preset => (
+              {materialPresets.map((preset) => (
                 <option key={preset.id} value={preset.id}>
                   {preset.displayName}
                 </option>
@@ -194,10 +210,10 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
           {hasActiveFilters && (
             <button
               onClick={() => {
-                setSearchTerm('')
-                setTypeFilter('')
-                setMaterialFilter('')
-                if (showFavoritesOnly) toggleFavoritesFilter()
+                setSearchTerm("");
+                setTypeFilter("");
+                setMaterialFilter("");
+                if (showFavoritesOnly) toggleFavoritesFilter();
               }}
               className="w-full py-2 text-sm text-text-secondary hover:text-primary
                        bg-bg-primary hover:bg-primary hover:bg-opacity-10
@@ -210,7 +226,7 @@ const AssetFilters: React.FC<AssetFiltersProps> = ({
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default AssetFilters
+export default AssetFilters;

@@ -10,11 +10,14 @@
  * - Maintained backward-compatible API for existing components
  */
 
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { projectsQueries } from "@/queries/projects.queries";
+import { getAuthToken, onTokenUpdate } from "@/utils/auth-token-store";
 
 /**
  * Fetch all projects for the current user
+ * REQUIRES AUTHENTICATION - query is disabled when user is not authenticated
  *
  * Modern API:
  * ```typescript
@@ -29,7 +32,21 @@ import { projectsQueries } from "@/queries/projects.queries";
  * @param includeArchived - Whether to include archived projects (default: false)
  */
 export const useProjects = (includeArchived: boolean = false) => {
-  const query = useQuery(projectsQueries.list(includeArchived));
+  // Subscribe to auth token changes for reactive enabled state
+  const [hasToken, setHasToken] = useState(() => !!getAuthToken());
+
+  useEffect(() => {
+    // Update state when token changes
+    const unsubscribe = onTokenUpdate((token) => {
+      setHasToken(!!token);
+    });
+    return unsubscribe;
+  }, []);
+
+  const query = useQuery({
+    ...projectsQueries.list(includeArchived),
+    enabled: hasToken, // Only fetch when user is authenticated
+  });
 
   return {
     // Modern React Query API
@@ -45,6 +62,7 @@ export const useProjects = (includeArchived: boolean = false) => {
 
 /**
  * Fetch a single project by ID
+ * REQUIRES AUTHENTICATION - query is disabled when user is not authenticated
  *
  * Modern API:
  * ```typescript
@@ -59,9 +77,20 @@ export const useProjects = (includeArchived: boolean = false) => {
  * @param projectId - UUID of the project to fetch (nullable for conditional fetching)
  */
 export const useProject = (projectId: string | null) => {
+  // Subscribe to auth token changes for reactive enabled state
+  const [hasToken, setHasToken] = useState(() => !!getAuthToken());
+
+  useEffect(() => {
+    // Update state when token changes
+    const unsubscribe = onTokenUpdate((token) => {
+      setHasToken(!!token);
+    });
+    return unsubscribe;
+  }, []);
+
   const query = useQuery({
     ...projectsQueries.detail(projectId!),
-    enabled: !!projectId, // Only fetch if projectId is provided
+    enabled: !!projectId && hasToken, // Only fetch if projectId provided AND user is authenticated
   });
 
   return {

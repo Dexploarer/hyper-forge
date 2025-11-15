@@ -19,6 +19,7 @@ import { queryKeys } from "./query-keys";
  *
  * Fetches all projects for the current user.
  * Supports filtering by archived status.
+ * REQUIRES AUTHENTICATION - configure enabled option in useQuery hook.
  *
  * @param includeArchived - Whether to include archived projects in results
  *
@@ -43,6 +44,7 @@ export const projectsQueries = {
    * Single Project Query
    *
    * Fetches a specific project by ID with all its details.
+   * REQUIRES AUTHENTICATION - configure enabled option in useQuery hook.
    *
    * @param projectId - UUID of the project to fetch
    *
@@ -55,7 +57,7 @@ export const projectsQueries = {
     queryOptions({
       queryKey: queryKeys.projects.detail(projectId),
       queryFn: () => ProjectService.getProjectById(projectId),
-      enabled: !!projectId,
+      enabled: !!projectId, // Only fetch if projectId provided (auth checked in hook)
       staleTime: 60 * 1000,
     }),
 };
