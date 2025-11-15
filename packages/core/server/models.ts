@@ -665,6 +665,7 @@ export const GenerateDialogueRequest = t.Object({
   existingNodes: t.Optional(t.Array(DialogueNodeResponse)),
   quality: t.Optional(ModelQuality),
   worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+  useActiveWorldConfig: t.Optional(t.Boolean()), // If true, use active world config when worldConfigId not provided
 });
 
 export const GenerateDialogueResponse = t.Object({
@@ -705,6 +706,7 @@ export const GenerateNPCRequest = t.Object({
   context: t.Optional(t.String({ maxLength: 5000 })),
   quality: t.Optional(ModelQuality),
   worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+  useActiveWorldConfig: t.Optional(t.Boolean()), // If true, use active world config when worldConfigId not provided
 });
 
 export const GenerateNPCResponse = t.Object({
@@ -755,6 +757,7 @@ export const GenerateQuestRequest = t.Object({
   context: t.Optional(t.String({ maxLength: 5000 })),
   quality: t.Optional(ModelQuality),
   worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+  useActiveWorldConfig: t.Optional(t.Boolean()), // If true, use active world config when worldConfigId not provided
 });
 
 export const GenerateQuestResponse = t.Object({
@@ -782,6 +785,7 @@ export const GenerateLoreRequest = t.Object({
   context: t.Optional(t.String({ maxLength: 5000 })),
   quality: t.Optional(ModelQuality),
   worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+  useActiveWorldConfig: t.Optional(t.Boolean()), // If true, use active world config when worldConfigId not provided
 });
 
 export const GenerateLoreResponse = t.Object({
@@ -840,6 +844,8 @@ export const GenerateWorldRequest = t.Object({
   description: t.Optional(t.String({ maxLength: 5000 })),
   customPrompt: t.Optional(t.String()),
   quality: t.Optional(ModelQuality),
+  worldConfigId: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+  useActiveWorldConfig: t.Optional(t.Boolean()), // If true, use active world config when worldConfigId not provided (Note: world generation typically doesn't use world config)
 });
 
 export const GenerateWorldResponse = t.Object({

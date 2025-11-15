@@ -106,20 +106,17 @@ const ASSETS_DIR = env.RAILWAY_VOLUME_MOUNT_PATH
   : env.ASSETS_DIR || path.join(ROOT_DIR, "assets-legacy");
 
 // Validate required environment variables for API server
-// Note: Workers don't need these, so they're optional in env.ts schema
 
 // Authentication is REQUIRED for API server
 if (!env.PRIVY_APP_ID || !env.PRIVY_APP_SECRET) {
   throw new Error(
-    "PRIVY_APP_ID and PRIVY_APP_SECRET are required for API server. Workers don't need these.",
+    "PRIVY_APP_ID and PRIVY_APP_SECRET are required for API server",
   );
 }
 
 // API key encryption is REQUIRED for API server
 if (!env.API_KEY_ENCRYPTION_SECRET) {
-  throw new Error(
-    "API_KEY_ENCRYPTION_SECRET is required for API server. Workers don't need this.",
-  );
+  throw new Error("API_KEY_ENCRYPTION_SECRET is required for API server");
 }
 
 // CDN_URL and IMAGE_SERVER_URL must be set in production
@@ -161,8 +158,6 @@ const generationService = new GenerationService({
 // @ts-ignore TS2742 - Transitive dependency issue with @elysiajs/cron -> croner (safe for apps)
 const app = new Elysia()
   // ==================== LIFECYCLE HOOKS ====================
-  // Optional: Start workers in same process if ENABLE_EMBEDDED_WORKERS=true
-  // For production, use separate worker service on Railway (better isolation & scaling)
   .onStart(async () => {
     logger.info(
       { context: "Startup" },
@@ -905,7 +900,7 @@ const app = new Elysia()
   .use(createSeedDataRoutes())
   .use(worldConfigRoutes)
   .use(debugStorageRoute)
-  .use(createCDNRoutes(ASSETS_DIR, CDN_URL))
+  .use(createCDNRoutes(CDN_URL))
   .use(errorMonitoringRoutes)
 
   // Prometheus metrics endpoint (after all routes)

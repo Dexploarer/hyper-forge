@@ -73,6 +73,7 @@ export const contentGenerationRoutes = new Elysia({
               existingNodes: body.existingNodes,
               quality: body.quality,
               worldConfigId: body.worldConfigId,
+              useActiveWorldConfig: body.useActiveWorldConfig,
             });
 
             // Save to database
@@ -127,6 +128,7 @@ export const contentGenerationRoutes = new Elysia({
               context: body.context,
               quality: body.quality,
               worldConfigId: body.worldConfigId,
+              useActiveWorldConfig: body.useActiveWorldConfig,
             });
 
             // Save to database
@@ -186,6 +188,7 @@ export const contentGenerationRoutes = new Elysia({
               context: body.context,
               quality: body.quality,
               worldConfigId: body.worldConfigId,
+              useActiveWorldConfig: body.useActiveWorldConfig,
             });
 
             // Save to database
@@ -256,6 +259,7 @@ export const contentGenerationRoutes = new Elysia({
               context: body.context,
               quality: body.quality,
               worldConfigId: body.worldConfigId,
+              useActiveWorldConfig: body.useActiveWorldConfig,
             });
 
             // Save to database
@@ -1567,6 +1571,8 @@ export const contentGenerationRoutes = new Elysia({
               complexity: body.complexity,
               customPrompt: body.customPrompt,
               quality: body.quality,
+              worldConfigId: body.worldConfigId,
+              useActiveWorldConfig: body.useActiveWorldConfig,
             });
 
             logger.info(

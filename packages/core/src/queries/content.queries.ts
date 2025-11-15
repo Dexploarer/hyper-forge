@@ -19,7 +19,7 @@ import {
   useQueryClient,
   type UseMutationResult,
 } from "@tanstack/react-query";
-import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { api } from "@/lib/api-client";
 import type {
   NPCData,
   QuestData,
@@ -43,9 +43,10 @@ export const contentQueries = {
     queryOptions({
       queryKey: queryKeys.content.list("npc"),
       queryFn: async () => {
-        const client = new ContentAPIClient();
-        const result = await client.listNPCs();
-        return result.npcs || [];
+        const result = await api.api.content.npcs.get();
+        if (result.error)
+          throw new Error(result.error.message || "Failed to fetch NPCs");
+        return result.data?.npcs || [];
       },
       staleTime: 60 * 1000,
     }),
@@ -59,9 +60,10 @@ export const contentQueries = {
     queryOptions({
       queryKey: queryKeys.content.list("quest"),
       queryFn: async () => {
-        const client = new ContentAPIClient();
-        const result = await client.listQuests();
-        return result.quests || [];
+        const result = await api.api.content.quests.get();
+        if (result.error)
+          throw new Error(result.error.message || "Failed to fetch quests");
+        return result.data?.quests || [];
       },
       staleTime: 60 * 1000,
     }),
@@ -75,9 +77,10 @@ export const contentQueries = {
     queryOptions({
       queryKey: queryKeys.content.list("dialogue"),
       queryFn: async () => {
-        const client = new ContentAPIClient();
-        const result = await client.listDialogues();
-        return result.dialogues || [];
+        const result = await api.api.content.dialogues.get();
+        if (result.error)
+          throw new Error(result.error.message || "Failed to fetch dialogues");
+        return result.data?.dialogues || [];
       },
       staleTime: 60 * 1000,
     }),
@@ -91,9 +94,10 @@ export const contentQueries = {
     queryOptions({
       queryKey: queryKeys.content.list("lore"),
       queryFn: async () => {
-        const client = new ContentAPIClient();
-        const result = await client.listLores();
-        return result.lores || [];
+        const result = await api.api.content.lores.get();
+        if (result.error)
+          throw new Error(result.error.message || "Failed to fetch lores");
+        return result.data?.lores || [];
       },
       staleTime: 60 * 1000,
     }),
@@ -107,9 +111,10 @@ export const contentQueries = {
     queryOptions({
       queryKey: queryKeys.content.detail(id),
       queryFn: async () => {
-        const client = new ContentAPIClient();
-        const result = await client.getNPC(id);
-        return result.npc || null;
+        const result = await api.api.content.npcs({ id }).get();
+        if (result.error)
+          throw new Error(result.error.message || "Failed to fetch NPC");
+        return result.data?.npc || null;
       },
       enabled: !!id,
       staleTime: 60 * 1000,
@@ -124,9 +129,10 @@ export const contentQueries = {
     queryOptions({
       queryKey: queryKeys.content.detail(id),
       queryFn: async () => {
-        const client = new ContentAPIClient();
-        const result = await client.getQuest(id);
-        return result.quest || null;
+        const result = await api.api.content.quests({ id }).get();
+        if (result.error)
+          throw new Error(result.error.message || "Failed to fetch quest");
+        return result.data?.quest || null;
       },
       enabled: !!id,
       staleTime: 60 * 1000,
@@ -141,9 +147,10 @@ export const contentQueries = {
     queryOptions({
       queryKey: queryKeys.content.detail(id),
       queryFn: async () => {
-        const client = new ContentAPIClient();
-        const result = await client.getDialogue(id);
-        return result.dialogue || null;
+        const result = await api.api.content.dialogues({ id }).get();
+        if (result.error)
+          throw new Error(result.error.message || "Failed to fetch dialogue");
+        return result.data?.dialogue || null;
       },
       enabled: !!id,
       staleTime: 60 * 1000,
@@ -158,9 +165,10 @@ export const contentQueries = {
     queryOptions({
       queryKey: queryKeys.content.detail(id),
       queryFn: async () => {
-        const client = new ContentAPIClient();
-        const result = await client.getLore(id);
-        return result.lore || null;
+        const result = await api.api.content.lores({ id }).get();
+        if (result.error)
+          throw new Error(result.error.message || "Failed to fetch lore");
+        return result.data?.lore || null;
       },
       enabled: !!id,
       staleTime: 60 * 1000,
@@ -187,8 +195,10 @@ export function useDeleteNPCMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const client = new ContentAPIClient();
-      return await client.deleteNPC(id);
+      const result = await api.api.content.npcs({ id }).delete();
+      if (result.error)
+        throw new Error(result.error.message || "Failed to delete NPC");
+      return result.data!;
     },
     onMutate: async (id) => {
       // Cancel outgoing refetches
@@ -246,8 +256,10 @@ export function useDeleteQuestMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const client = new ContentAPIClient();
-      return await client.deleteQuest(id);
+      const result = await api.api.content.quests({ id }).delete();
+      if (result.error)
+        throw new Error(result.error.message || "Failed to delete quest");
+      return result.data!;
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });
@@ -299,8 +311,10 @@ export function useDeleteDialogueMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const client = new ContentAPIClient();
-      return await client.deleteDialogue(id);
+      const result = await api.api.content.dialogues({ id }).delete();
+      if (result.error)
+        throw new Error(result.error.message || "Failed to delete dialogue");
+      return result.data!;
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });
@@ -352,8 +366,10 @@ export function useDeleteLoreMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const client = new ContentAPIClient();
-      return await client.deleteLore(id);
+      const result = await api.api.content.lores({ id }).delete();
+      if (result.error)
+        throw new Error(result.error.message || "Failed to delete lore");
+      return result.data!;
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });
@@ -405,8 +421,10 @@ export function useUpdateNPCMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ id, updates }) => {
-      const client = new ContentAPIClient();
-      return await client.updateNPC(id, updates);
+      const result = await api.api.content.npcs({ id }).put(updates as any);
+      if (result.error)
+        throw new Error(result.error.message || "Failed to update NPC");
+      return result.data!;
     },
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });
@@ -460,8 +478,10 @@ export function useUpdateQuestMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ id, updates }) => {
-      const client = new ContentAPIClient();
-      return await client.updateQuest(id, updates);
+      const result = await api.api.content.quests({ id }).put(updates as any);
+      if (result.error)
+        throw new Error(result.error.message || "Failed to update quest");
+      return result.data!;
     },
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });
@@ -515,8 +535,12 @@ export function useUpdateDialogueMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ id, updates }) => {
-      const client = new ContentAPIClient();
-      return await client.updateDialogue(id, updates);
+      const result = await api.api.content
+        .dialogues({ id })
+        .put(updates as any);
+      if (result.error)
+        throw new Error(result.error.message || "Failed to update dialogue");
+      return result.data!;
     },
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });
@@ -570,8 +594,10 @@ export function useUpdateLoreMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async ({ id, updates }) => {
-      const client = new ContentAPIClient();
-      return await client.updateLore(id, updates);
+      const result = await api.api.content.lores({ id }).put(updates as any);
+      if (result.error)
+        throw new Error(result.error.message || "Failed to update lore");
+      return result.data!;
     },
     onMutate: async ({ id, updates }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });

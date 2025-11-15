@@ -4,7 +4,7 @@
  */
 
 import fs from "fs/promises";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import path from "path";
 import fetch from "node-fetch";
 import type { UserContextType, AssetMetadataType } from "../models";
@@ -392,7 +392,7 @@ export class RetextureService {
         // Image-based retexturing (takes precedence)
         imageStyleUrl = imageUrl;
         mode = "image reference";
-        logger.info({ }, '🎨 Starting image-based retexture for ${baseAssetId}');
+        logger.info({}, "🎨 Starting image-based retexture for ${baseAssetId}");
       } else if (customPrompt) {
         // Custom prompt retexturing
         textPrompt = customPrompt;
@@ -425,13 +425,13 @@ export class RetextureService {
         enableOriginalUV: true,
       });
 
-      logger.info({ }, '🎨 Retexture task started: ${taskId}');
+      logger.info({}, "🎨 Retexture task started: ${taskId}");
 
       // Wait for completion with progress updates
       const result = await this.meshyClient.waitForCompletion(
         taskId,
         (progress) => {
-          logger.info({ }, '⏳ Retexture Progress: ${progress}%');
+          logger.info({}, "⏳ Retexture Progress: ${progress}%");
         },
       );
 
@@ -474,7 +474,7 @@ export class RetextureService {
         asset: savedAsset,
       };
     } catch (error) {
-      logger.error({ err: error }, 'Retexturing failed:');
+      logger.error({ err: error }, "Retexturing failed:");
       const err = error as Error;
 
       // Provide more detailed error information
@@ -507,7 +507,7 @@ export class RetextureService {
     }
 
     // Download model using MeshyClient
-    logger.info({ }, '📥 Downloading retextured model...');
+    logger.info({}, "📥 Downloading retextured model...");
     const modelBuffer = await this.meshyClient!.downloadModel(
       result.model_urls.glb,
     );
@@ -594,40 +594,46 @@ export class RetextureService {
     // Upload to CDN (webhook will create database record and link to base)
     await this.uploadToCDN(variantName, filesToUpload);
 
-    logger.info({ }, '✅ Successfully retextured and uploaded: ${variantName}');
+    logger.info({}, "✅ Successfully retextured and uploaded: ${variantName}");
 
     return variantMetadata as AssetMetadataType;
   }
 
   /**
-   * Get asset metadata from CDN or fallback to local filesystem
-   * Note: In CDN-first mode, this should query the database instead
+   * Get asset metadata from CDN (CDN-first architecture)
+   * In CDN-first mode, metadata is stored on CDN, not local filesystem
    */
   async getAssetMetadata(
     assetId: string,
-    assetsDir: string,
+    _assetsDir: string, // Deprecated parameter, kept for backward compatibility
   ): Promise<AssetMetadataType> {
-    // Try CDN first if configured
+    // Try CDN metadata
     const CDN_URL = process.env.CDN_URL;
-    if (CDN_URL) {
-      try {
-        const metadataUrl = `${CDN_URL}/models/${assetId}/metadata.json`;
-        const response = await this.fetchFn(metadataUrl);
-        if (response.ok) {
-          return (await response.json()) as AssetMetadataType;
-        }
-      } catch (error) {
-        logger.warn(
-          `Failed to fetch metadata from CDN, falling back to local: ${error}`,
-        );
-      }
+    if (!CDN_URL) {
+      throw new Error(
+        "CDN_URL must be configured for asset metadata retrieval",
+      );
     }
 
-    // Fallback to local filesystem (for backwards compatibility)
-    const metadataPath = path.join(assetsDir, assetId, "metadata.json");
-    return JSON.parse(
-      await fs.readFile(metadataPath, "utf-8"),
-    ) as AssetMetadataType;
+    try {
+      const metadataUrl = `${CDN_URL}/models/${assetId}/metadata.json`;
+      const response = await this.fetchFn(metadataUrl);
+      if (response.ok) {
+        return (await response.json()) as AssetMetadataType;
+      }
+
+      throw new Error(
+        `Asset metadata not found on CDN: ${response.status} ${metadataUrl}`,
+      );
+    } catch (error) {
+      logger.error(
+        { err: error, assetId },
+        "Failed to fetch metadata from CDN",
+      );
+      throw new Error(
+        `Asset ${assetId} metadata not available on CDN. Asset must be uploaded to CDN first.`,
+      );
+    }
   }
 
   async regenerateBase({ baseAssetId, assetsDir }: RegenerateBaseParams) {
@@ -639,7 +645,7 @@ export class RetextureService {
 
     // For now, return a simulated success response
     // Full implementation would regenerate the base model from scratch
-    logger.info({ }, '🔄 Regenerating base model: ${baseAssetId}');
+    logger.info({}, "🔄 Regenerating base model: ${baseAssetId}");
 
     // Simulate processing time
     await new Promise((resolve) => setTimeout(resolve, 3000));

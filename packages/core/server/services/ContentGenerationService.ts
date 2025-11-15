@@ -4,7 +4,7 @@
  */
 
 import { generateText } from "ai";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { aiSDKService } from "./AISDKService";
 
 export interface DialogueNode {
@@ -84,7 +84,7 @@ export class ContentGenerationService {
       );
     }
 
-    logger.info({ }, '[ContentGenerationService] Initialized with AI Gateway');
+    logger.info({}, "[ContentGenerationService] Initialized with AI Gateway");
   }
 
   /**
@@ -101,19 +101,31 @@ export class ContentGenerationService {
   async injectWorldContext(
     basePrompt: string,
     worldConfigId?: string,
+    useActiveConfig: boolean = false,
   ): Promise<string> {
-    if (!worldConfigId) {
-      // Try to get active configuration
+    // If no worldConfigId and not explicitly requesting active config, return base prompt
+    if (!worldConfigId && !useActiveConfig) {
+      return basePrompt;
+    }
+
+    // If no worldConfigId but useActiveConfig is true, try to fetch active config
+    if (!worldConfigId && useActiveConfig) {
       const { WorldConfigService } = await import("./WorldConfigService");
       const configService = new WorldConfigService();
       const activeConfig = await configService.getActiveConfiguration();
 
       if (!activeConfig) {
-        // No world config, use base prompt
+        // No active config available, use base prompt
         return basePrompt;
       }
 
       worldConfigId = activeConfig.id;
+    }
+
+    // At this point we have a worldConfigId (either explicit or from active config)
+    if (!worldConfigId) {
+      // This should never happen due to above logic, but satisfies TypeScript
+      return basePrompt;
     }
 
     const { WorldConfigService } = await import("./WorldConfigService");
@@ -134,6 +146,7 @@ export class ContentGenerationService {
     existingNodes?: DialogueNode[];
     quality?: "quality" | "speed" | "balanced";
     worldConfigId?: string;
+    useActiveWorldConfig?: boolean;
   }): Promise<{
     nodes: DialogueNode[];
     rawResponse: string;
@@ -146,6 +159,7 @@ export class ContentGenerationService {
       existingNodes = [],
       quality = "speed",
       worldConfigId,
+      useActiveWorldConfig = false,
     } = params;
 
     const model = await this.getConfiguredModel(quality);
@@ -158,7 +172,11 @@ export class ContentGenerationService {
       existingNodes,
     );
 
-    const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
+    const aiPrompt = await this.injectWorldContext(
+      basePrompt,
+      worldConfigId,
+      useActiveWorldConfig,
+    );
 
     logger.info(
       `[ContentGeneration] Generating dialogue${npcName ? ` for NPC: ${npcName}` : ""}`,
@@ -173,7 +191,10 @@ export class ContentGenerationService {
 
     const nodes = this.parseDialogueResponse(result.text);
 
-    logger.info({ context: 'ContentGeneration' }, `Generated ${nodes.length} dialogue nodes`);
+    logger.info(
+      { context: "ContentGeneration" },
+      `Generated ${nodes.length} dialogue nodes`,
+    );
 
     return {
       nodes,
@@ -190,6 +211,7 @@ export class ContentGenerationService {
     context?: string;
     quality?: "quality" | "speed" | "balanced";
     worldConfigId?: string;
+    useActiveWorldConfig?: boolean;
   }): Promise<{
     npc: NPCData & { id: string; metadata: any };
     rawResponse: string;
@@ -200,12 +222,17 @@ export class ContentGenerationService {
       context,
       quality = "quality",
       worldConfigId,
+      useActiveWorldConfig = false,
     } = params;
 
     const model = await this.getConfiguredModel(quality);
 
     const basePrompt = this.buildNPCPrompt(userPrompt, archetype, context);
-    const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
+    const aiPrompt = await this.injectWorldContext(
+      basePrompt,
+      worldConfigId,
+      useActiveWorldConfig,
+    );
 
     logger.info(
       `[ContentGeneration] Generating NPC${archetype ? ` with archetype: ${archetype}` : ""}`,
@@ -232,7 +259,10 @@ export class ContentGenerationService {
       },
     };
 
-    logger.info({ context: 'ContentGeneration' }, `Generated NPC: ${completeNPC.name}`);
+    logger.info(
+      { context: "ContentGeneration" },
+      `Generated NPC: ${completeNPC.name}`,
+    );
 
     return {
       npc: completeNPC,
@@ -251,6 +281,7 @@ export class ContentGenerationService {
     context?: string;
     quality?: "quality" | "speed" | "balanced";
     worldConfigId?: string;
+    useActiveWorldConfig?: boolean;
   }): Promise<{
     quest: QuestData & {
       id: string;
@@ -268,6 +299,7 @@ export class ContentGenerationService {
       context,
       quality = "quality",
       worldConfigId,
+      useActiveWorldConfig = false,
     } = params;
 
     const model = await this.getConfiguredModel(quality);
@@ -280,7 +312,11 @@ export class ContentGenerationService {
       context,
     );
 
-    const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
+    const aiPrompt = await this.injectWorldContext(
+      basePrompt,
+      worldConfigId,
+      useActiveWorldConfig,
+    );
 
     logger.info(
       `[ContentGeneration] Generating${difficulty ? ` ${difficulty}` : ""}${questType ? ` ${questType}` : ""} quest`,
@@ -308,7 +344,10 @@ export class ContentGenerationService {
       },
     };
 
-    logger.info({ context: 'ContentGeneration' }, `Generated quest: ${completeQuest.title}`);
+    logger.info(
+      { context: "ContentGeneration" },
+      `Generated quest: ${completeQuest.title}`,
+    );
 
     return {
       quest: completeQuest,
@@ -326,6 +365,7 @@ export class ContentGenerationService {
     context?: string;
     quality?: "quality" | "speed" | "balanced";
     worldConfigId?: string;
+    useActiveWorldConfig?: boolean;
   }): Promise<{
     lore: LoreData & { id: string; metadata: any };
     rawResponse: string;
@@ -337,6 +377,7 @@ export class ContentGenerationService {
       context,
       quality = "balanced",
       worldConfigId,
+      useActiveWorldConfig = false,
     } = params;
 
     const model = await this.getConfiguredModel(quality);
@@ -347,7 +388,11 @@ export class ContentGenerationService {
       topic,
       context,
     );
-    const aiPrompt = await this.injectWorldContext(basePrompt, worldConfigId);
+    const aiPrompt = await this.injectWorldContext(
+      basePrompt,
+      worldConfigId,
+      useActiveWorldConfig,
+    );
 
     logger.info(
       `[ContentGeneration] Generating lore${category ? ` for: ${category}` : ""}${topic ? ` - ${topic}` : ""}`,
@@ -373,7 +418,10 @@ export class ContentGenerationService {
       },
     };
 
-    logger.info({ context: 'ContentGeneration' }, `Generated lore: ${completeLore.title}`);
+    logger.info(
+      { context: "ContentGeneration" },
+      `Generated lore: ${completeLore.title}`,
+    );
 
     return {
       lore: completeLore,
@@ -389,6 +437,8 @@ export class ContentGenerationService {
     complexity?: "simple" | "medium" | "complex" | "epic";
     customPrompt?: string;
     quality?: "quality" | "speed" | "balanced";
+    worldConfigId?: string;
+    useActiveWorldConfig?: boolean;
   }): Promise<{
     world: any;
     rawResponse: string;
@@ -398,13 +448,18 @@ export class ContentGenerationService {
       complexity = "medium",
       customPrompt,
       quality = "quality",
+      worldConfigId,
+      useActiveWorldConfig = false,
     } = params;
 
     const model = await this.getConfiguredModel(quality);
 
     const aiPrompt = this.buildWorldPrompt(theme, complexity, customPrompt);
 
-    logger.info({ context: 'ContentGeneration' }, `Generating ${complexity} ${theme} world`);
+    logger.info(
+      { context: "ContentGeneration" },
+      `Generating ${complexity} ${theme} world`,
+    );
 
     const result = await generateText({
       model,
@@ -639,7 +694,10 @@ Return ONLY the JSON object, no explanation.`;
       const parsed = JSON.parse(cleaned);
       return Array.isArray(parsed) ? parsed : [parsed];
     } catch (error) {
-      logger.error({ err: error }, '[Parse Error] Failed to parse dialogue response:');
+      logger.error(
+        { err: error },
+        "[Parse Error] Failed to parse dialogue response:",
+      );
       throw new Error("Invalid JSON response from AI");
     }
   }
@@ -649,7 +707,10 @@ Return ONLY the JSON object, no explanation.`;
       let cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      logger.error({ err: error }, '[Parse Error] Failed to parse NPC response:');
+      logger.error(
+        { err: error },
+        "[Parse Error] Failed to parse NPC response:",
+      );
       throw new Error("Invalid JSON response from AI");
     }
   }
@@ -659,7 +720,10 @@ Return ONLY the JSON object, no explanation.`;
       let cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      logger.error({ err: error }, '[Parse Error] Failed to parse quest response:');
+      logger.error(
+        { err: error },
+        "[Parse Error] Failed to parse quest response:",
+      );
       throw new Error("Invalid JSON response from AI");
     }
   }
@@ -669,7 +733,10 @@ Return ONLY the JSON object, no explanation.`;
       let cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      logger.error({ err: error }, '[Parse Error] Failed to parse lore response:');
+      logger.error(
+        { err: error },
+        "[Parse Error] Failed to parse lore response:",
+      );
       throw new Error("Invalid JSON response from AI");
     }
   }
@@ -679,7 +746,10 @@ Return ONLY the JSON object, no explanation.`;
       let cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);
     } catch (error) {
-      logger.error({ err: error }, '[Parse Error] Failed to parse world response:');
+      logger.error(
+        { err: error },
+        "[Parse Error] Failed to parse world response:",
+      );
       throw new Error("Invalid JSON response from AI");
     }
   }

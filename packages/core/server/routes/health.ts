@@ -95,16 +95,11 @@ async function checkQdrant(): Promise<HealthCheckResult> {
  */
 async function checkDiskSpace(): Promise<HealthCheckResult> {
   try {
-    // Get temp directory stats (where we store uploads)
+    // Get temp directory stats (where we store temporary processing files)
     const tmpDir = os.tmpdir();
-    const assetsDir =
-      process.env.ASSETS_DIR || path.join(process.cwd(), "gdd-assets");
 
-    // Check both temp and assets directories
-    const checks = await Promise.allSettled([
-      fs.stat(tmpDir),
-      fs.stat(assetsDir).catch(() => null), // Assets dir might not exist yet
-    ]);
+    // Check temp directory
+    const checks = await Promise.allSettled([fs.stat(tmpDir)]);
 
     // Get filesystem stats (Note: statvfs not available in Node.js, use process)
     // We'll check available system memory as a proxy for disk health
@@ -127,8 +122,6 @@ async function checkDiskSpace(): Promise<HealthCheckResult> {
         freeGB: parseFloat(freeMemGB.toFixed(2)),
         usedPercent: parseFloat(usedMemPercent.toFixed(2)),
         tmpDirExists: checks[0].status === "fulfilled",
-        assetsDirExists:
-          checks[1].status === "fulfilled" && checks[1].value !== null,
       },
     };
   } catch (error) {

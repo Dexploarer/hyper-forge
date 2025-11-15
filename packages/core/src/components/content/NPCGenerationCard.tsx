@@ -24,7 +24,7 @@ import {
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
-import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { api } from "@/lib/api-client";
 import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
 import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
