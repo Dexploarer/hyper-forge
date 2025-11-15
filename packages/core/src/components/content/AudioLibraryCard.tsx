@@ -86,12 +86,8 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
   const colors = getAudioTypeColors(audioFile.type);
   const Icon = colors.icon;
 
-  // Check if URL is valid (not null and not a /gdd-assets path)
-  const audioUrl =
-    audioFile.cdnUrl ||
-    (audioFile.fileUrl && !audioFile.fileUrl.startsWith("/gdd-assets")
-      ? audioFile.fileUrl
-      : null);
+  // Use CDN URL if available, otherwise fall back to file URL
+  const audioUrl = audioFile.cdnUrl || audioFile.fileUrl || null;
 
   useEffect(() => {
     const audioEl = audioRef.current;

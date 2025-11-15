@@ -384,6 +384,89 @@ export class GenerationService extends EventEmitter {
   }
 
   /**
+   * Process a pipeline from an existing GenerationJob (no worker queue needed)
+   * This is called directly from the route handler for synchronous processing
+   */
+  async processPipelineFromJob(
+    job: import("../services/GenerationJobService").GenerationJob,
+  ): Promise<void> {
+    const { generationJobService } = await import(
+      "../services/GenerationJobService"
+    );
+    const { ActivityLogService } = await import(
+      "../services/ActivityLogService"
+    );
+
+    const pipelineId = job.pipelineId;
+    const config = job.config as any as PipelineConfig;
+
+    logger.info({ pipelineId }, "processPipelineFromJob() called");
+
+    // Update job to processing
+    await generationJobService.updateJob(pipelineId, {
+      status: "processing",
+      startedAt: new Date(),
+    });
+
+    try {
+      // Create pipeline record in pipelineRepo for processPipeline() to work with
+      // This is a bridge until we fully migrate away from pipelineRepo
+      await this.pipelineRepo.create({
+        id: pipelineId,
+        userId: config.user?.userId || "anonymous",
+        config: config as any,
+        status: "processing",
+        progress: 0,
+        results: {},
+        createdAt: new Date(),
+      });
+
+      // Run the actual processing logic
+      await this.processPipeline(pipelineId);
+
+      // Get final results from pipeline
+      const dbPipeline = await this.pipelineRepo.findById(pipelineId);
+
+      // Sync results back to job
+      await generationJobService.updateJob(pipelineId, {
+        status: "completed",
+        progress: 100,
+        results: dbPipeline?.results as any,
+        completedAt: new Date(),
+      });
+
+      // Clean up pipeline record (we only needed it for processing)
+      await this.pipelineRepo.delete(pipelineId);
+
+      // Log success
+      const userId = config.user?.userId;
+      if (userId) {
+        await ActivityLogService.logGenerationCompleted({
+          userId,
+          pipelineId,
+          success: true,
+        });
+      }
+    } catch (error) {
+      // Update job as failed
+      await generationJobService.updateJob(pipelineId, {
+        status: "failed",
+        error: (error as Error).message,
+        completedAt: new Date(),
+      });
+
+      // Clean up pipeline record if it exists
+      try {
+        await this.pipelineRepo.delete(pipelineId);
+      } catch {
+        // Ignore cleanup errors
+      }
+
+      throw error; // Re-throw for route handler's catch block
+    }
+  }
+
+  /**
    * Get pipeline status
    */
   async getPipelineStatus(pipelineId: string): Promise<PipelineStatusResponse> {

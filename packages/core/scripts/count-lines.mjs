@@ -25,7 +25,6 @@ const EXCLUDE_DIRS = [
   '.git',
   '.cursor',
   'temp-images',
-  'gdd-assets', // These are asset files, not code
 ]
 
 // Files to exclude

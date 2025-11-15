@@ -69,19 +69,14 @@ import { achievementsRoutes } from "./routes/achievements";
 import { vectorSearchRoutes } from "./routes/vector-search";
 import { createSeedDataRoutes } from "./routes/seed-data";
 import { worldConfigRoutes } from "./routes/world-config";
-import { generationQueueRoutes } from "./routes/generation-queue";
 import { publicProfilesRoutes } from "./routes/public-profiles";
 import { debugStorageRoute } from "./routes/debug-storage";
 import { createCDNRoutes } from "./routes/cdn";
 import { errorMonitoringRoutes } from "./routes/error-monitoring";
-import { migrateMediaRoute } from "./routes/migrate-media";
 
 // Cron and job cleanup
 import { cron } from "@elysiajs/cron";
 import { generationJobService } from "./services/GenerationJobService";
-
-// Worker system for background job processing
-import { GenerationWorker } from "./workers/generation-worker";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -221,35 +216,6 @@ const app = new Elysia()
         );
       }
     }, 2000); // Wait 2 seconds for server to fully start
-
-    // Check if we should run workers embedded in API process (dev mode)
-    if (process.env.ENABLE_EMBEDDED_WORKERS === "true" && env.REDIS_URL) {
-      const WORKER_CONCURRENCY = env.WORKER_CONCURRENCY || 2;
-      logger.info(
-        {},
-        `[Workers] Starting ${WORKER_CONCURRENCY} embedded workers...`,
-      );
-
-      // Store worker references for cleanup
-      const workers: GenerationWorker[] = [];
-      for (let i = 0; i < WORKER_CONCURRENCY; i++) {
-        const worker = new GenerationWorker(`embedded-${i + 1}`);
-        worker.start();
-        workers.push(worker);
-      }
-
-      // Store in app context for shutdown
-      (app as any).workers = workers;
-      logger.info(
-        {},
-        `[Workers] ${WORKER_CONCURRENCY} workers started successfully`,
-      );
-    } else {
-      logger.info(
-        {},
-        "[Workers] Using separate worker service (production mode)",
-      );
-    }
   })
   .onStop(async (ctx) => {
     logger.info({}, "[Shutdown] Stopping Elysia server...");
@@ -262,19 +228,6 @@ const app = new Elysia()
       logger.info({}, "[CDN WebSocket] Disconnecting...");
       cdnWebSocket.disconnect();
       logger.info({}, "[CDN WebSocket] Disconnected");
-    }
-
-    // Stop embedded workers if they exist
-    const workers = (ctx as any).workers as GenerationWorker[] | undefined;
-    if (workers && workers.length > 0) {
-      logger.info(
-        { context: "Workers" },
-        `Stopping ${workers.length} embedded workers...`,
-      );
-      for (const worker of workers) {
-        worker.stop();
-      }
-      logger.info({}, "[Workers] All workers stopped");
     }
   })
 
@@ -727,76 +680,6 @@ const app = new Elysia()
     }),
   )
 
-  // NOTE: Media assets stored in gdd-assets volume
-  // Serve media files (voice, music, sfx, portraits, banners) from Railway volume
-  // Migration to CDN in progress - this endpoint provides fallback access
-  .get("/gdd-assets/*", async ({ params, set }) => {
-    const relativePath = (params as any)["*"] || "";
-    // Media files are stored at gdd-assets/, not assets-legacy/
-    const GDD_ASSETS_DIR = env.RAILWAY_VOLUME_MOUNT_PATH
-      ? path.join(env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
-      : env.ASSETS_DIR
-        ? path.join(path.dirname(env.ASSETS_DIR), "gdd-assets")
-        : path.join(ROOT_DIR, "gdd-assets");
-    const filePath = path.join(GDD_ASSETS_DIR, relativePath);
-    const file = Bun.file(filePath);
-
-    if (!(await file.exists())) {
-      set.status = 404;
-      return new Response("File not found", { status: 404 });
-    }
-
-    // Set appropriate content type based on file extension
-    const ext = path.extname(relativePath).toLowerCase();
-    const contentType =
-      ext === ".mp3"
-        ? "audio/mpeg"
-        : ext === ".wav"
-          ? "audio/wav"
-          : ext === ".ogg"
-            ? "audio/ogg"
-            : ext === ".png"
-              ? "image/png"
-              : "application/octet-stream";
-
-    return new Response(file, {
-      headers: { "Content-Type": contentType },
-    });
-  })
-  .head("/gdd-assets/*", async ({ params }) => {
-    const relativePath = (params as any)["*"] || "";
-    // Media files are stored at gdd-assets/, not assets-legacy/
-    const GDD_ASSETS_DIR = env.RAILWAY_VOLUME_MOUNT_PATH
-      ? path.join(env.RAILWAY_VOLUME_MOUNT_PATH, "gdd-assets")
-      : env.ASSETS_DIR
-        ? path.join(path.dirname(env.ASSETS_DIR), "gdd-assets")
-        : path.join(ROOT_DIR, "gdd-assets");
-    const filePath = path.join(GDD_ASSETS_DIR, relativePath);
-    const file = Bun.file(filePath);
-
-    if (!(await file.exists())) {
-      return new Response(null, { status: 404 });
-    }
-
-    // Set appropriate content type based on file extension
-    const ext = path.extname(relativePath).toLowerCase();
-    const contentType =
-      ext === ".mp3"
-        ? "audio/mpeg"
-        : ext === ".wav"
-          ? "audio/wav"
-          : ext === ".ogg"
-            ? "audio/ogg"
-            : ext === ".png"
-              ? "image/png"
-              : "application/octet-stream";
-
-    return new Response(null, {
-      status: 200,
-      headers: { "Content-Type": contentType },
-    });
-  })
-
   .get("/temp-images/*", async ({ params, set }) => {
     const relativePath = (params as any)["*"] || "";
     const filePath = path.join(ROOT_DIR, "temp-images", relativePath);
@@ -1021,11 +904,9 @@ const app = new Elysia()
   .use(vectorSearchRoutes)
   .use(createSeedDataRoutes())
   .use(worldConfigRoutes)
-  .use(generationQueueRoutes)
   .use(debugStorageRoute)
   .use(createCDNRoutes(ASSETS_DIR, CDN_URL))
   .use(errorMonitoringRoutes)
-  .use(migrateMediaRoute)
 
   // Prometheus metrics endpoint (after all routes)
   .use(
@@ -1319,7 +1200,6 @@ try {
   if (env.MESHY_API_KEY) services.push("Meshy");
   if (env.ELEVENLABS_API_KEY) services.push("ElevenLabs");
   if (env.QDRANT_URL) services.push("Qdrant");
-  if (env.REDIS_URL) services.push("Redis");
 
   if (services.length > 0) {
     logger.info({ context: "Server" }, `Services: ${services.join(", ")}`);

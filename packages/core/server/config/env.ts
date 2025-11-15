@@ -207,40 +207,6 @@ const envSchema = z.object({
   RAILWAY_VOLUME_MOUNT_PATH: z.string().optional(),
 
   // =========================================
-  // Redis Queue
-  // =========================================
-  REDIS_URL: z
-    .string()
-    .optional()
-    .refine(
-      (val) => !val || val === "" || z.string().url().safeParse(val).success,
-      { message: "Must be a valid URL if provided" },
-    ),
-
-  // =========================================
-  // Worker Configuration
-  // =========================================
-  WORKER_CONCURRENCY: z
-    .string()
-    .optional()
-    .default("3")
-    .transform((val) => parseInt(val, 10))
-    .pipe(z.number().int().positive()),
-  MAX_JOB_RETRIES: z
-    .string()
-    .optional()
-    .default("3")
-    .transform((val) => parseInt(val, 10))
-    .pipe(z.number().int().positive()),
-  QUEUE_POLL_TIMEOUT: z
-    .string()
-    .optional()
-    .default("5")
-    .transform((val) => parseInt(val, 10))
-    .pipe(z.number().int().positive()),
-  WORKER_ID: z.string().optional(),
-
-  // =========================================
   // Meshy Configuration
   // =========================================
   MESHY_MODEL_DEFAULT: z.string().optional(),

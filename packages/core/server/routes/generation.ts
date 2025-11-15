@@ -14,7 +14,6 @@ import {
 } from "../errors";
 import { createChildLogger } from "../utils/logger";
 import { generationJobService } from "../services/GenerationJobService";
-import { redisQueueService } from "../services/RedisQueueService";
 import { ActivityLogService } from "../services/ActivityLogService";
 
 const logger = createChildLogger("GenerationRoutes");
@@ -83,19 +82,14 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
               };
 
               // Create job in database
-              await generationJobService.createJob(
+              const job = await generationJobService.createJob(
                 pipelineId,
                 configWithUser as any,
               );
 
-              // Enqueue job for worker processing
-              // Use high priority for paid tiers, normal for default
-              const priority = body.tier && body.tier >= 4 ? "high" : "normal";
-              await redisQueueService.enqueue(pipelineId, pipelineId, priority);
-
               logger.info(
-                { pipelineId, userId, priority },
-                "Pipeline job queued successfully",
+                { pipelineId, userId },
+                "Pipeline job created, starting processing",
               );
 
               // Log generation started
@@ -107,11 +101,33 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                 request,
               });
 
-              // Return immediately with queued status
+              // Start processing asynchronously (no worker queue needed)
+              generationService
+                .processPipelineFromJob(job)
+                .catch(async (error) => {
+                  logger.error(
+                    { err: error, pipelineId },
+                    "Pipeline processing failed",
+                  );
+                  await generationJobService.updateJob(pipelineId, {
+                    status: "failed",
+                    error: error.message,
+                    completedAt: new Date(),
+                  });
+
+                  // Log generation failed
+                  await ActivityLogService.logGenerationCompleted({
+                    userId,
+                    pipelineId,
+                    success: false,
+                  });
+                });
+
+              // Return immediately with processing status
               return {
                 pipelineId,
-                status: "queued",
-                message: "Generation pipeline queued successfully",
+                status: "processing",
+                message: "Generation pipeline started successfully",
                 stages: {
                   conceptArt: "pending",
                   model3D: "pending",
@@ -181,12 +197,12 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                       "application/json": {
                         examples: {
                           success: {
-                            summary: "Pipeline queued",
+                            summary: "Pipeline started",
                             value: {
                               pipelineId: "pipe_abc123xyz",
-                              status: "queued",
+                              status: "processing",
                               message:
-                                "Generation pipeline queued successfully",
+                                "Generation pipeline started successfully",
                               stages: {
                                 conceptArt: "pending",
                                 model3D: "pending",

@@ -10,7 +10,7 @@
  */
 
 import { Elysia } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import * as Models from "../models";
 import { db, queryClient } from "../db/db";
 import { qdrantService } from "../services/QdrantService";
@@ -80,45 +80,6 @@ async function checkQdrant(): Promise<HealthCheckResult> {
     return {
       status: isHealthy ? "healthy" : "unhealthy",
       latency,
-    };
-  } catch (error) {
-    return {
-      status: "unhealthy",
-      latency: Date.now() - startTime,
-      message: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
-/**
- * Check Redis queue health
- */
-async function checkRedis(): Promise<HealthCheckResult> {
-  if (!process.env.REDIS_URL) {
-    return {
-      status: "healthy",
-      message: "Not configured (optional)",
-    };
-  }
-
-  const startTime = Date.now();
-
-  try {
-    // Dynamic import to avoid loading Redis if not configured
-    const { RedisQueueService } = await import("../services/RedisQueueService");
-    const redis = new RedisQueueService();
-
-    // Get queue stats (this internally uses Redis commands)
-    const stats = await redis.getStats();
-    const latency = Date.now() - startTime;
-
-    return {
-      status: latency < 100 ? "healthy" : "degraded",
-      latency,
-      details: {
-        connected: true,
-        queues: stats,
-      },
     };
   } catch (error) {
     return {
@@ -301,7 +262,7 @@ export const healthRoutes = new Elysia({ prefix: "/api", name: "health" })
         await db.execute(sql`SELECT 1`);
         checks.database = true;
       } catch (e) {
-        logger.error({ err: e }, '[Health] Database check failed:');
+        logger.error({ err: e }, "[Health] Database check failed:");
       }
 
       try {
@@ -395,18 +356,16 @@ export const healthRoutes = new Elysia({ prefix: "/api", name: "health" })
       const startTime = Date.now();
 
       // Run all health checks in parallel
-      const [database, qdrant, redis, disk, memory, externalAPIs] =
-        await Promise.all([
-          checkDatabase(),
-          checkQdrant(),
-          checkRedis(),
-          checkDiskSpace(),
-          checkMemory(),
-          checkExternalAPIs(),
-        ]);
+      const [database, qdrant, disk, memory, externalAPIs] = await Promise.all([
+        checkDatabase(),
+        checkQdrant(),
+        checkDiskSpace(),
+        checkMemory(),
+        checkExternalAPIs(),
+      ]);
 
       // Determine overall status
-      const allChecks = [database, qdrant, redis, disk, memory];
+      const allChecks = [database, qdrant, disk, memory];
       const hasUnhealthy = allChecks.some(
         (check) => check.status === "unhealthy",
       );
@@ -436,7 +395,6 @@ export const healthRoutes = new Elysia({ prefix: "/api", name: "health" })
         checks: {
           database,
           qdrant,
-          redis,
           disk,
           memory,
           externalAPIs,
