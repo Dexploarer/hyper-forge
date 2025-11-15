@@ -445,9 +445,7 @@ Return JSON: {"music": {...Music data...}, "relationshipType": "plays_in|theme_f
         relationships: [relationship],
       };
     } catch (error) {
-      logger.error(
-        "[Parse Error] Failed to parse linked content response:",
-        error,
+      logger.error({ err: error }, "[Parse Error] Failed to parse linked content response"
       );
       throw new Error("Invalid JSON response from AI");
     }

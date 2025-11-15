@@ -1,87 +1,33 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Command, Search } from "lucide-react";
 import { NavigationView } from "@/types";
-import { NAVIGATION_VIEWS } from "@/constants";
+import { NAVIGATION_VIEWS, VIEW_TITLES } from "@/constants";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCommandPalette } from "@/contexts/CommandPaletteContext";
 import { UserProfileMenu, UserProfileModal } from "@/components/user";
 import { ThemeSwitcher } from "@/components/common";
+import { useSessionId } from "@/hooks";
 import { cn } from "@/styles";
 
 interface FloatingTopBarProps {
   currentView: NavigationView;
 }
 
-const VIEW_TITLES: Record<NavigationView, string> = {
-  // Core
-  [NAVIGATION_VIEWS.DASHBOARD]: "Dashboard",
-  [NAVIGATION_VIEWS.ASSETS]: "Asset Library",
-  [NAVIGATION_VIEWS.PROJECTS]: "Projects",
-  [NAVIGATION_VIEWS.CONTENT_LIBRARY]: "Content Library",
-  // 3D Generation
-  [NAVIGATION_VIEWS.GENERATION_CHARACTER]: "Character Generation",
-  [NAVIGATION_VIEWS.GENERATION_PROP]: "Prop & Item Generation",
-  [NAVIGATION_VIEWS.GENERATION_ENVIRONMENT]: "Environment Generation",
-  [NAVIGATION_VIEWS.GENERATION_WORLD]: "World Builder",
-  // Content Generation
-  [NAVIGATION_VIEWS.CONTENT_NPC]: "NPC Generation",
-  [NAVIGATION_VIEWS.CONTENT_QUEST]: "Quest Generation",
-  [NAVIGATION_VIEWS.CONTENT_DIALOGUE]: "Dialogue Generation",
-  [NAVIGATION_VIEWS.CONTENT_LORE]: "Lore Generation",
-  // Audio Generation
-  [NAVIGATION_VIEWS.AUDIO_VOICE]: "Voice Generation",
-  [NAVIGATION_VIEWS.AUDIO_SFX]: "Sound Effects Generation",
-  [NAVIGATION_VIEWS.AUDIO_MUSIC]: "Music Generation",
-  // Tools
-  [NAVIGATION_VIEWS.PLAYTESTER]: "AI Playtester Swarm",
-  [NAVIGATION_VIEWS.EQUIPMENT]: "Equipment Fitting",
-  [NAVIGATION_VIEWS.HAND_RIGGING]: "Hand Rigging",
-  [NAVIGATION_VIEWS.RETARGET_ANIMATE]: "Animation Retargeting",
-  [NAVIGATION_VIEWS.WORLD_CONFIG]: "World Configuration",
-  // System
-  [NAVIGATION_VIEWS.SETTINGS]: "Settings & Configuration",
-  [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin Dashboard",
-  // Public profiles
-  [NAVIGATION_VIEWS.PUBLIC_PROFILE]: "Public Profile",
-  // Legacy
-  [NAVIGATION_VIEWS.GENERATION]: "Generation",
-  [NAVIGATION_VIEWS.AUDIO]: "Audio Generation",
-  [NAVIGATION_VIEWS.CONTENT]: "Content Generation",
-  [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",
-};
-
 export function FloatingTopBar({ currentView }: FloatingTopBarProps) {
   const { user, logout } = useAuth();
   const { openPalette } = useCommandPalette();
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
-
-  // Get session ID from localStorage (same as AuthContext)
-  const getSessionId = (): string => {
-    let sessionId = localStorage.getItem("asset_forge_session");
-    if (!sessionId) {
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      localStorage.setItem("asset_forge_session", sessionId);
-    }
-    return sessionId;
-  };
+  const sessionId = useSessionId();
 
   const handleProfileSuccess = async () => {
     // Reload the page to refresh user data from AuthContext
     window.location.reload();
   };
 
-  // Check for high z-index elements (overlays/modals/panels) and hide the bar
-  // Memoize the check function to prevent recreation on every render
+  // Check for overlays using data-overlay attribute
   const checkForOverlays = useCallback(() => {
-    // Check if there are any elements with very high z-index (modals, panels, etc.)
-    const highZIndexElements = document.querySelectorAll('[class*="z-[9"]');
-    const hasOverlay = Array.from(highZIndexElements).some((el) => {
-      const computed = window.getComputedStyle(el);
-      const zIndex = parseInt(computed.zIndex);
-      return !isNaN(zIndex) && zIndex >= 9000;
-    });
-
+    const hasOverlay = document.querySelector('[data-overlay="true"]') !== null;
     // Only update state if the value has changed
     setIsHidden((prev) => (prev === hasOverlay ? prev : hasOverlay));
   }, []);
@@ -125,7 +71,7 @@ export function FloatingTopBar({ currentView }: FloatingTopBarProps) {
         className={cn(
           "absolute top-4 left-4 right-4 h-12 px-4 rounded-xl",
           "bg-bg-primary/80 backdrop-blur-md border border-border-primary shadow-lg",
-          "flex items-center justify-between gap-4 z-50",
+          "flex items-center justify-between gap-4 z-header",
           "transition-all duration-300",
           isHidden ? "opacity-0 pointer-events-none" : "opacity-100",
         )}
@@ -179,7 +125,7 @@ export function FloatingTopBar({ currentView }: FloatingTopBarProps) {
         <UserProfileModal
           open={showProfileModal}
           user={user}
-          sessionId={getSessionId()}
+          sessionId={sessionId}
           onClose={() => setShowProfileModal(false)}
           onSuccess={handleProfileSuccess}
         />

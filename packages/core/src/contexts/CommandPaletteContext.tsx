@@ -23,11 +23,8 @@ interface CommandPaletteContextValue {
   openPalette: () => void;
   closePalette: () => void;
   isOpen: boolean;
-  addCommand: (command: CommandPaletteItem) => void;
-  removeCommand: (id: string) => void;
   addCommands: (commands: CommandPaletteItem[]) => void;
   removeCommands: (ids: string[]) => void;
-  clearCommands: () => void;
 }
 
 const CommandPaletteContext = createContext<CommandPaletteContextValue | null>(
@@ -145,17 +142,6 @@ export const CommandPaletteProvider: React.FC<{ children: ReactNode }> = ({
   const openPalette = useCallback(() => setIsOpen(true), []);
   const closePalette = useCallback(() => setIsOpen(false), []);
 
-  const addCommand = useCallback((command: CommandPaletteItem) => {
-    setCommands((prev) => [
-      ...prev.filter((c) => c.id !== command.id),
-      command,
-    ]);
-  }, []);
-
-  const removeCommand = useCallback((id: string) => {
-    setCommands((prev) => prev.filter((c) => c.id !== id));
-  }, []);
-
   const addCommands = useCallback((newCommands: CommandPaletteItem[]) => {
     setCommands((prev) => {
       const existingIds = new Set(newCommands.map((c) => c.id));
@@ -167,10 +153,6 @@ export const CommandPaletteProvider: React.FC<{ children: ReactNode }> = ({
     setCommands((prev) => prev.filter((c) => !ids.includes(c.id)));
   }, []);
 
-  const clearCommands = useCallback(() => {
-    setCommands([]);
-  }, []);
-
   const allCommands = [...defaultCommands, ...commands];
 
   return (
@@ -179,11 +161,8 @@ export const CommandPaletteProvider: React.FC<{ children: ReactNode }> = ({
         openPalette,
         closePalette,
         isOpen,
-        addCommand,
-        removeCommand,
         addCommands,
         removeCommands,
-        clearCommands,
       }}
     >
       {children}

@@ -30,11 +30,12 @@ import {
   RefreshCw,
   Upload,
   Loader2,
+  Mic,
   Sparkles as SparklesIcon,
   Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/styles";
-import { ContentItem } from "@/hooks/useContent";
+import { ContentItem, type ContentType } from "@/hooks/useContent";
 import { ContentAPIClient } from "@/services/api/ContentAPIClient";
 import { notify } from "@/utils/notify";
 import type {
@@ -1141,17 +1142,21 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     }
   };
 
-  const typeIcons = {
+  const typeIcons: Record<ContentType, any> = {
     npc: User,
     quest: Scroll,
     dialogue: FileText,
     lore: BookOpen,
+    audio: Mic,
   };
 
   const TypeIcon = typeIcons[item.type];
 
   return (
-    <div className="fixed inset-x-0 top-0 bottom-16 lg:top-16 lg:bottom-0 z-[10000] flex items-center justify-center pointer-events-none">
+    <div
+      className="fixed inset-x-0 top-0 bottom-16 lg:top-16 lg:bottom-0 z-modal flex items-center justify-center pointer-events-none"
+      data-overlay="true"
+    >
       {/* Backdrop - only covers content area, not the navigation (top header on desktop, bottom nav on mobile) */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 pointer-events-auto"

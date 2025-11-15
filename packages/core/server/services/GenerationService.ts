@@ -510,8 +510,8 @@ export class GenerationService extends EventEmitter {
           );
         } catch (error) {
           logger.warn(
-            `⚠️ [Pipeline ${pipelineId}] GPT-4 enhancement failed, using original prompt:`,
-            error,
+            { err: error },
+            `⚠️ [Pipeline ${pipelineId}] GPT-4 enhancement failed, using original prompt`,
           );
           pipeline.stages.promptOptimization.status = "completed";
           pipeline.stages.promptOptimization.progress = 100;
@@ -640,8 +640,8 @@ export class GenerationService extends EventEmitter {
           );
         } catch (error) {
           logger.error(
-            `❌ [Pipeline ${pipelineId}] Image generation failed:`,
-            error,
+            { err: error },
+            `❌ [Pipeline ${pipelineId}] Image generation failed`,
           );
           pipeline.stages.imageGeneration.status = "failed";
           pipeline.stages.imageGeneration.error = (error as Error).message;
@@ -702,10 +702,7 @@ export class GenerationService extends EventEmitter {
               "Image uploaded to public URL",
             );
           } catch (uploadError) {
-            logger.error(
-              "❌ Failed to upload image:",
-              (uploadError as Error).message,
-            );
+            logger.error({ err: uploadError }, "❌ Failed to upload image");
             logger.info(ImageHostingService.getSetupInstructions());
             throw new Error(
               "Cannot make image publicly accessible. See instructions above.",
@@ -814,8 +811,8 @@ export class GenerationService extends EventEmitter {
             // Continue polling for PENDING or IN_PROGRESS
           } catch (error) {
             logger.error(
-              `⚠️ Error polling Meshy task (attempt ${attempts}/${maxAttempts}):`,
-              error,
+              { err: error },
+              `⚠️ Error polling Meshy task (attempt ${attempts}/${maxAttempts})`,
             );
             // Continue polling unless it's the last attempt
             if (attempts >= maxAttempts) {
@@ -878,8 +875,8 @@ export class GenerationService extends EventEmitter {
                 normalized.metadata.dimensions;
             } catch (error) {
               logger.warn(
-                "⚠️ Normalization failed, using raw model:",
-                (error as Error).message,
+                { err: error },
+                "⚠️ Normalization failed, using raw model",
               );
               normalizedBuffer = modelBuffer;
               await fs.writeFile(normalizedModelPath, normalizedBuffer);
@@ -915,8 +912,8 @@ export class GenerationService extends EventEmitter {
               };
             } catch (error) {
               logger.warn(
-                "⚠️ Weapon normalization failed, using raw model:",
-                (error as Error).message,
+                { err: error },
+                "⚠️ Weapon normalization failed, using raw model",
               );
               normalizedBuffer = modelBuffer;
               await fs.writeFile(normalizedModelPath, normalizedBuffer);
@@ -1185,8 +1182,8 @@ export class GenerationService extends EventEmitter {
             });
           } catch (error) {
             logger.error(
-              `Failed to generate variant ${preset.displayName}:`,
-              error,
+              { err: error },
+              `Failed to generate variant ${preset.displayName}`,
             );
             variants.push({
               id: `${config.assetId}-${preset.id}`,
@@ -1346,8 +1343,8 @@ export class GenerationService extends EventEmitter {
                   );
                 } catch (tposeError) {
                   logger.error(
-                    "⚠️ Failed to extract T-pose:",
-                    (tposeError as Error).message,
+                    { err: tposeError },
+                    "⚠️ Failed to extract T-pose",
                   );
                   // Continue anyway - not critical for the pipeline
                 }
@@ -1451,8 +1448,8 @@ export class GenerationService extends EventEmitter {
             ]);
           } catch (metadataError) {
             logger.error(
-              "Failed to upload metadata after rigging failure:",
-              metadataError,
+              { err: metadataError },
+              "Failed to upload metadata after rigging failure",
             );
           }
 

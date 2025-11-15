@@ -137,7 +137,6 @@ async function importCDNAssets() {
             fileCount: files.length,
             cdnAssetId: assetId, // Store original directory name
           },
-          isPublic: true, // Make imported assets public by default
           createdAt: new Date(modelFile.modified),
           updatedAt: new Date(),
         });

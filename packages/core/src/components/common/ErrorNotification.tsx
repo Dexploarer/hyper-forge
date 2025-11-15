@@ -1,16 +1,19 @@
-import { AlertCircle, X } from 'lucide-react'
-import React from 'react'
+import { AlertCircle, X } from "lucide-react";
+import React from "react";
 
-import { Card, CardContent } from './Card'
+import { Card, CardContent } from "./Card";
 
 interface ErrorNotificationProps {
-  error: string
-  onClose: () => void
+  error: string;
+  onClose: () => void;
 }
 
-export const ErrorNotification: React.FC<ErrorNotificationProps> = ({ error, onClose }) => {
+export const ErrorNotification: React.FC<ErrorNotificationProps> = ({
+  error,
+  onClose,
+}) => {
   return (
-    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 animate-slide-down">
+    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-notification animate-slide-down">
       <Card className="bg-red-500/10 border-red-500/20 ">
         <CardContent className="py-3 px-4">
           <div className="flex items-center gap-3">
@@ -26,7 +29,7 @@ export const ErrorNotification: React.FC<ErrorNotificationProps> = ({ error, onC
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default ErrorNotification 
+export default ErrorNotification;

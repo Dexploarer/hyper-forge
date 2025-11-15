@@ -31,7 +31,7 @@ export const ImageEnlargeModal: React.FC<ImageEnlargeModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-50 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-sm"
+          className="absolute top-4 right-4 z-tooltip p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-sm"
           aria-label="Close"
         >
           <X className="w-6 h-6" />
@@ -39,7 +39,7 @@ export const ImageEnlargeModal: React.FC<ImageEnlargeModalProps> = ({
 
         {/* Title */}
         {title && (
-          <div className="absolute top-4 left-4 z-50">
+          <div className="absolute top-4 left-4 z-tooltip">
             <h3 className="text-lg font-semibold text-white backdrop-blur-sm bg-black/50 px-4 py-2 rounded-lg">
               {title}
             </h3>
@@ -57,7 +57,7 @@ export const ImageEnlargeModal: React.FC<ImageEnlargeModalProps> = ({
 
         {/* Download Button */}
         {onDownload && (
-          <div className="absolute bottom-4 right-4 z-50">
+          <div className="absolute bottom-4 right-4 z-tooltip">
             <Button
               onClick={onDownload}
               variant="secondary"

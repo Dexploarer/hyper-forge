@@ -1,52 +1,55 @@
-import { UserCircle, Mail, Sparkles, Check } from 'lucide-react'
-import React, { useState } from 'react'
+import { UserCircle, Mail, Sparkles, Check } from "lucide-react";
+import React, { useState } from "react";
 
-import { Button, Input } from '../common'
+import { Button, Input } from "../common";
 
 interface ProfileCompletionModalProps {
   onComplete: (profile: {
-    displayName: string
-    email: string
-    discordUsername?: string
-  }) => Promise<void>
+    displayName: string;
+    email: string;
+    discordUsername?: string;
+  }) => Promise<void>;
 }
 
 export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
   onComplete,
 }) => {
-  const [displayName, setDisplayName] = useState('')
-  const [email, setEmail] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
 
     // Validation
     if (!displayName.trim()) {
-      setError('Please enter your name')
-      return
+      setError("Please enter your name");
+      return;
     }
-    if (!email.trim() || !email.includes('@')) {
-      setError('Please enter a valid email')
-      return
+    if (!email.trim() || !email.includes("@")) {
+      setError("Please enter a valid email");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       await onComplete({
         displayName: displayName.trim(),
         email: email.trim(),
-      })
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save profile')
-      setIsSubmitting(false)
+      setError(err instanceof Error ? err.message : "Failed to save profile");
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-x-0 top-14 bottom-16 lg:top-16 lg:bottom-0 z-50 flex items-center justify-center bg-black/60 overflow-hidden">
+    <div
+      className="fixed inset-x-0 top-14 bottom-16 lg:top-16 lg:bottom-0 z-modal flex items-center justify-center bg-black/60 overflow-hidden"
+      data-overlay="true"
+    >
       <div className="w-full max-w-md mx-4 bg-gradient-to-br from-bg-primary to-bg-secondary border border-border-primary rounded-2xl shadow-2xl">
         {/* Header */}
         <div className="p-6 border-b border-border-primary">
@@ -55,8 +58,12 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
               <Sparkles className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-text-primary">Welcome to Asset Forge!</h2>
-              <p className="text-sm text-text-secondary">Set up your profile to start creating 3D assets</p>
+              <h2 className="text-2xl font-bold text-text-primary">
+                Welcome to Asset Forge!
+              </h2>
+              <p className="text-sm text-text-secondary">
+                Set up your profile to start creating 3D assets
+              </p>
             </div>
           </div>
         </div>
@@ -130,10 +137,11 @@ export const ProfileCompletionModal: React.FC<ProfileCompletionModalProps> = ({
         {/* Footer Note */}
         <div className="px-6 pb-6">
           <p className="text-xs text-text-tertiary text-center">
-            Ready to start generating amazing 3D assets for your game? Let's begin!
+            Ready to start generating amazing 3D assets for your game? Let's
+            begin!
           </p>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

@@ -97,7 +97,7 @@ class AssetServiceClass {
       throw new Error("Failed to fetch material presets");
     }
 
-    return data as MaterialPreset[];
+    return data as unknown as MaterialPreset[];
   }
 
   async retexture(request: RetextureRequest): Promise<RetextureResponse> {

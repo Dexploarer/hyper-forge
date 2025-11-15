@@ -81,7 +81,8 @@ const Drawer: React.FC<DrawerProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex"
+      className="fixed inset-0 z-modal flex"
+      data-overlay="true"
       onClick={(e) => {
         if (closeOnOverlayClick && e.target === e.currentTarget) {
           onClose();
@@ -100,7 +101,7 @@ const Drawer: React.FC<DrawerProps> = ({
       <div
         ref={drawerRef}
         className={cn(
-          "absolute z-[101] bg-bg-secondary border-border-primary shadow-2xl",
+          "absolute z-modal bg-bg-secondary border-border-primary shadow-2xl",
           "transition-transform duration-300 ease-out",
           sideClasses[side],
           sizes[size],

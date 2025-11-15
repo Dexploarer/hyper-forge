@@ -61,19 +61,20 @@ export const KeyboardShortcutsModal: React.FC<KeyboardShortcutsModalProps> = ({
 
   return (
     <div
-      className="fixed inset-x-0 top-14 bottom-16 lg:top-16 lg:bottom-0 z-[300] flex items-center justify-center p-4 overflow-hidden"
+      className="fixed inset-x-0 top-14 bottom-16 lg:top-16 lg:bottom-0 z-modal flex items-center justify-center p-4 overflow-hidden"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
         }
       }}
+      data-overlay="true"
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
 
       {/* Modal */}
       <div
-        className="relative z-[301] w-full max-w-4xl solid-overlay rounded-xl shadow-2xl overflow-hidden flex flex-col h-full max-h-full"
+        className="relative z-modal w-full max-w-4xl solid-overlay rounded-xl shadow-2xl overflow-hidden flex flex-col h-full max-h-full"
         role="dialog"
         aria-modal="true"
         aria-labelledby="shortcuts-title"

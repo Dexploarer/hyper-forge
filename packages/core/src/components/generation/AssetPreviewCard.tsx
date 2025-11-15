@@ -56,7 +56,7 @@ export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
             <>
               {isRiggedAvatar ? (
                 <AnimationPlayer
-                  modelUrl={modelUrl}
+                  modelUrl={modelUrl || ""}
                   animations={
                     hasAnimations(selectedAsset)
                       ? selectedAsset.metadata.animations
@@ -67,7 +67,7 @@ export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
                 />
               ) : (
                 <ThreeViewer
-                  modelUrl={modelUrl}
+                  modelUrl={modelUrl || ""}
                   assetInfo={{
                     name: selectedAsset.name,
                     type: selectedAsset.type || "character",

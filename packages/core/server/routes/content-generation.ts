@@ -593,7 +593,7 @@ export const contentGenerationRoutes = new Elysia({
         // DELETE /api/content/npcs/:id
         .delete(
           "/npcs/:id",
-          async ({ params, request, headers }) => {
+          async ({ params, request, headers, set }) => {
             // Require authentication (any authenticated user can delete)
             const authResult = await requireAuth({ request, headers });
             if (authResult instanceof Response) {
@@ -746,7 +746,7 @@ export const contentGenerationRoutes = new Elysia({
         // DELETE /api/content/quests/:id
         .delete(
           "/quests/:id",
-          async ({ params, request, headers }) => {
+          async ({ params, request, headers, set }) => {
             // Require authentication (any authenticated user can delete)
             const authResult = await requireAuth({ request, headers });
             if (authResult instanceof Response) {
@@ -879,7 +879,7 @@ export const contentGenerationRoutes = new Elysia({
         // DELETE /api/content/dialogues/:id
         .delete(
           "/dialogues/:id",
-          async ({ params, request, headers }) => {
+          async ({ params, request, headers, set }) => {
             // Require authentication (any authenticated user can delete)
             const authResult = await requireAuth({ request, headers });
             if (authResult instanceof Response) {
@@ -1022,7 +1022,7 @@ export const contentGenerationRoutes = new Elysia({
         // DELETE /api/content/lores/:id
         .delete(
           "/lores/:id",
-          async ({ params, request, headers }) => {
+          async ({ params, request, headers, set }) => {
             // Require authentication (any authenticated user can delete)
             const authResult = await requireAuth({ request, headers });
             if (authResult instanceof Response) {

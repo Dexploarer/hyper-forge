@@ -60,9 +60,10 @@ const Modal: React.FC<ModalProps> = ({
   return (
     <div
       className={cn(
-        "fixed inset-x-0 top-0 bottom-16 lg:top-16 lg:bottom-0 z-50 flex items-center justify-center p-4 animate-fade-in",
+        "fixed inset-x-0 top-0 bottom-16 lg:top-16 lg:bottom-0 z-modal flex items-center justify-center p-4 animate-fade-in",
         "bg-black/75 light-theme:bg-black/60",
       )}
+      data-overlay="true"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();

@@ -135,12 +135,13 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[9998]"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-overlay"
+        data-overlay="true"
         onClick={onClose}
       />
 
       {/* Sliding Panel */}
-      <div className="fixed top-0 right-0 h-screen w-[400px] bg-bg-primary shadow-2xl z-[9999] flex flex-col border-l border-border-primary">
+      <div className="fixed top-0 right-0 h-screen w-[400px] bg-bg-primary shadow-2xl z-modal flex flex-col border-l border-border-primary">
         {/* Header with Preview Image */}
         <div className="relative h-48 bg-gradient-to-br from-bg-secondary to-bg-tertiary flex-shrink-0">
           {hasPreview ? (
@@ -497,7 +498,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
 
                 {/* Share Menu Dropdown */}
                 {showShareMenu && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-bg-primary border border-border-primary rounded-lg shadow-xl overflow-hidden z-50">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-bg-primary border border-border-primary rounded-lg shadow-xl overflow-hidden z-dropdown">
                     <button
                       onClick={handleShareOnX}
                       className="w-full px-4 py-3 hover:bg-bg-hover text-text-primary transition-colors flex items-center gap-3 text-sm font-medium border-b border-border-primary"

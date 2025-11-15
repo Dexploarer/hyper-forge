@@ -1706,7 +1706,8 @@ const AssetList: React.FC<AssetListProps> = ({ assets, onAssetDelete }) => {
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center animate-fade-in"
+            className="fixed inset-0 bg-black bg-opacity-50 z-modal flex items-center justify-center animate-fade-in"
+            data-overlay="true"
             onClick={() => setShowKeyboardHelp(false)}
           >
             {/* Modal */}

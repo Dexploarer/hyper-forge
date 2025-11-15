@@ -288,16 +288,16 @@ const ThreeViewerComponent = forwardRef(
         // The target rig has Mixamo names, but we need to map TO the retargeted model's DEF- names
         const map = buildTargetBoneMap();
 
-        console.log("[remapClipToTarget] Bone map size:", map.size);
-        console.log(
+        console.log("[ThreeViewer] ", "[remapClipToTarget] Bone map size:", map.size);
+        console.log("[ThreeViewer] ", 
           "[remapClipToTarget] Full bone map:",
           Object.fromEntries(map),
         );
-        console.log(
+        console.log("[ThreeViewer] ", 
           "[remapClipToTarget] Original clip tracks:",
           clip.tracks.length,
         );
-        console.log(
+        console.log("[ThreeViewer] ", 
           "[remapClipToTarget] First 10 track names:",
           clip.tracks.slice(0, 10).map((t) => t.name),
         );
@@ -311,7 +311,7 @@ const ThreeViewerComponent = forwardRef(
             const targetName = map.get(normalized) || node;
             const newName = `${targetName}.${rest}`;
 
-            console.log(
+            console.log("[ThreeViewer] ", 
               `[remapClipToTarget] Track: "${track.name}" -> node="${node}" -> normalized="${normalized}" -> targetName="${targetName}" -> newName="${newName}"`,
             );
 
@@ -376,7 +376,7 @@ const ThreeViewerComponent = forwardRef(
 
     // Export T-pose model function
     const exportTPoseModel = useCallback(() => {
-      console.log("🎯 Exporting T-pose model...");
+      console.log("[ThreeViewer] ", "🎯 Exporting T-pose model...");
 
       // Check if we have a server-side asset with t-pose.glb file available
       // Only try to download from server if we have an asset ID (not a local file)
@@ -385,7 +385,7 @@ const ThreeViewerComponent = forwardRef(
         // The URL should be something like /api/assets/{assetId}/t-pose.glb
         const tposeUrl = `/api/assets/${assetInfo.name}/t-pose.glb`;
 
-        console.log(`Attempting to download t-pose.glb from: ${tposeUrl}`);
+        console.log("[ThreeViewer] ", `Attempting to download t-pose.glb from: ${tposeUrl}`);
 
         // Create a link and trigger download
         const link = document.createElement("a");
@@ -393,17 +393,17 @@ const ThreeViewerComponent = forwardRef(
         link.href = tposeUrl;
         link.click();
 
-        console.log("✅ T-pose file download initiated");
+        console.log("[ThreeViewer] ", "✅ T-pose file download initiated");
         return;
       }
 
       // Fallback to exporting from the current model (for local files or when no server file exists)
       if (!modelRef.current) {
-        console.error("No model loaded to export");
+        console.error("[ThreeViewer] ", "No model loaded to export");
         return;
       }
 
-      console.log("Using fallback export method for local model...");
+      console.log("[ThreeViewer] ", "Using fallback export method for local model...");
 
       // Create a new root group with proper name
       const exportRoot = new THREE.Group();
@@ -433,7 +433,7 @@ const ThreeViewerComponent = forwardRef(
       const targetHeight = 1.8;
       const scaleNormalization = targetHeight / height;
 
-      console.log(
+      console.log("[ThreeViewer] ", 
         `📏 Model height: ${height.toFixed(2)}m, normalizing to ${targetHeight}m (scale: ${scaleNormalization.toFixed(4)})`,
       );
       modelToExport.scale.set(
@@ -446,7 +446,7 @@ const ThreeViewerComponent = forwardRef(
       exportRoot.add(modelToExport);
 
       // CRITICAL: Remove problematic bones that cause Three.js Editor import errors
-      console.log("🧹 Cleaning up problematic bones before export...");
+      console.log("[ThreeViewer] ", "🧹 Cleaning up problematic bones before export...");
       const problematicBoneNames = [
         "head_end",
         "headfront",
@@ -468,7 +468,7 @@ const ThreeViewerComponent = forwardRef(
 
       // Remove problematic bones from scene and skeletons
       if (bonesToRemove.length > 0) {
-        console.log(
+        console.log("[ThreeViewer] ", 
           `  Found ${bonesToRemove.length} problematic bones to remove:`,
         );
 
@@ -482,7 +482,7 @@ const ThreeViewerComponent = forwardRef(
             bonesToRemove.forEach((boneToRemove) => {
               const index = bones.indexOf(boneToRemove);
               if (index !== -1) {
-                console.log(
+                console.log("[ThreeViewer] ", 
                   `    Removing ${boneToRemove.name} from skeleton at index ${index}`,
                 );
 
@@ -518,7 +518,7 @@ const ThreeViewerComponent = forwardRef(
 
         // Then remove from scene hierarchy
         bonesToRemove.forEach((bone) => {
-          console.log(`    Removing ${bone.name} from scene`);
+          console.log("[ThreeViewer] ", `    Removing ${bone.name} from scene`);
 
           // Re-parent children
           const children = [...bone.children];
@@ -535,12 +535,12 @@ const ThreeViewerComponent = forwardRef(
           }
         });
 
-        console.log("  ✅ Problematic bones removed");
+        console.log("[ThreeViewer] ", "  ✅ Problematic bones removed");
       }
 
       // CRITICAL: Ensure clean node structure for Three.js Editor compatibility
       // Since we're not cloning, the skeleton should be intact
-      console.log("🔧 Validating model structure...");
+      console.log("[ThreeViewer] ", "🔧 Validating model structure...");
 
       // Just do a simple validation
       let totalBones = 0;
@@ -550,7 +550,7 @@ const ThreeViewerComponent = forwardRef(
         if (child instanceof THREE.SkinnedMesh) totalSkinnedMeshes++;
       });
 
-      console.log(
+      console.log("[ThreeViewer] ", 
         `  ✅ Export validation: ${totalBones} bones, ${totalSkinnedMeshes} skinned meshes`,
       );
 
@@ -567,7 +567,7 @@ const ThreeViewerComponent = forwardRef(
           child.scale &&
           (child.scale.x !== 1 || child.scale.y !== 1 || child.scale.z !== 1)
         ) {
-          console.log(
+          console.log("[ThreeViewer] ", 
             `Normalizing scale for ${child.name}: ${child.scale.x}, ${child.scale.y}, ${child.scale.z} -> 1, 1, 1`,
           );
           // For meshes, we want to preserve the visual size but normalize the scale
@@ -603,7 +603,7 @@ const ThreeViewerComponent = forwardRef(
           // Reset to bind pose (T-pose)
           child.skeleton.pose();
           child.updateMatrixWorld(true);
-          console.log(`Reset ${child.name} to T-pose`);
+          console.log("[ThreeViewer] ", `Reset ${child.name} to T-pose`);
         }
 
         // Ensure materials are properly set and have names
@@ -630,13 +630,13 @@ const ThreeViewerComponent = forwardRef(
       exportRoot.traverse((obj) => {
         if (!obj.name || obj.name === "") {
           obj.name = `Unnamed_${obj.type}_${unnamed++}`;
-          console.warn(
+          console.warn("[ThreeViewer] ", 
             `Found unnamed object of type ${obj.type}, assigned name: ${obj.name}`,
           );
         }
       });
 
-      console.log(
+      console.log("[ThreeViewer] ", 
         "Export validation complete. Root:",
         exportRoot.name,
         "Children:",
@@ -652,16 +652,16 @@ const ThreeViewerComponent = forwardRef(
       exportRoot.traverse((node) => {
         nodeMap.set(node, nodeCount++);
       });
-      console.log(`📊 Final node count before export: ${nodeCount}`);
+      console.log("[ThreeViewer] ", `📊 Final node count before export: ${nodeCount}`);
 
       // Log skeleton structure
       exportRoot.traverse((child) => {
         if (child instanceof THREE.SkinnedMesh && child.skeleton) {
-          console.log(`📦 ${child.name} skeleton:`);
-          console.log(`  - Bones: ${child.skeleton.bones.length}`);
+          console.log("[ThreeViewer] ", `📦 ${child.name} skeleton:`);
+          console.log("[ThreeViewer] ", `  - Bones: ${child.skeleton.bones.length}`);
           child.skeleton.bones.forEach((bone, idx) => {
             const nodeIdx = nodeMap.get(bone);
-            console.log(`    ${idx}: ${bone.name} -> Node ${nodeIdx}`);
+            console.log("[ThreeViewer] ", `    ${idx}: ${bone.name} -> Node ${nodeIdx}`);
           });
         }
       });
@@ -700,7 +700,7 @@ const ThreeViewerComponent = forwardRef(
           link.click();
           URL.revokeObjectURL(url);
 
-          console.log("✅ T-pose model exported successfully");
+          console.log("[ThreeViewer] ", "✅ T-pose model exported successfully");
 
           // Restore model to original state
           if (originalParent) {
@@ -711,7 +711,7 @@ const ThreeViewerComponent = forwardRef(
           modelToExport.scale.copy(originalScale);
         },
         (error) => {
-          console.error("Export error:", error);
+          console.error("[ThreeViewer] ", "Export error:", error);
 
           // Restore model to original state even on error
           if (originalParent) {
@@ -740,17 +740,17 @@ const ThreeViewerComponent = forwardRef(
               editingSkeletonRootRef.current.parent
             ) {
               box.expandByObject(editingSkeletonRootRef.current);
-              console.log("📷 Including skeleton in camera framing");
+              console.log("[ThreeViewer] ", "📷 Including skeleton in camera framing");
             }
 
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
 
-            console.log("📷 Manual camera reset:");
-            console.log(
+            console.log("[ThreeViewer] ", "📷 Manual camera reset:");
+            console.log("[ThreeViewer] ", 
               `   Model size: ${size.x.toFixed(2)}m x ${size.y.toFixed(2)}m x ${size.z.toFixed(2)}m`,
             );
-            console.log(
+            console.log("[ThreeViewer] ", 
               `   Model center: (${center.x.toFixed(2)}, ${center.y.toFixed(2)}, ${center.z.toFixed(2)})`,
             );
 
@@ -804,10 +804,10 @@ const ThreeViewerComponent = forwardRef(
             controlsRef.current.target.copy(center);
             controlsRef.current.update();
 
-            console.log(
+            console.log("[ThreeViewer] ", 
               `   New camera pos: (${cameraRef.current.position.x.toFixed(2)}, ${cameraRef.current.position.y.toFixed(2)}, ${cameraRef.current.position.z.toFixed(2)})`,
             );
-            console.log(`   Camera distance: ${distance.toFixed(2)}m`);
+            console.log("[ThreeViewer] ", `   Camera distance: ${distance.toFixed(2)}m`);
           }
         },
         takeScreenshot: () => {
@@ -1058,17 +1058,17 @@ const ThreeViewerComponent = forwardRef(
               );
 
               if (!animationClip) {
-                console.warn(
+                console.warn("[ThreeViewer] ", 
                   `Animation "${name}" not found in file. Available animations:`,
                   gltf.animations.map((a) => a.name),
                 );
-                console.log(
+                console.log("[ThreeViewer] ", 
                   `Using first animation instead: ${gltf.animations[0].name}`,
                 );
                 animationClip = gltf.animations[0];
               }
 
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `Loaded animation: ${animationClip.name} with ${animationClip.tracks.length} tracks`,
               );
 
@@ -1086,41 +1086,41 @@ const ThreeViewerComponent = forwardRef(
                   return [...existing, animationClip];
                 });
 
-                console.log(
+                console.log("[ThreeViewer] ", 
                   `Successfully loaded animation: ${animationClip.name}`,
                 );
                 return animationClip;
               } catch (error) {
-                console.error(`Failed to setup animation ${name}:`, error);
+                console.error("[ThreeViewer] ", `Failed to setup animation ${name}:`, error);
                 throw error;
               }
             }
             return null;
           } catch (error) {
-            console.error(`Failed to load animation from ${url}:`, error);
+            console.error("[ThreeViewer] ", `Failed to load animation from ${url}:`, error);
             throw error;
           }
         },
         playAnimation: (name: string) => {
           if (!mixerRef.current || !animations.length) {
-            console.log(
+            console.log("[ThreeViewer] ", 
               `Cannot play animation: mixer=${!!mixerRef.current}, animations=${animations.length}`,
             );
             return;
           }
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             `Available animations: ${animations.map((a) => a.name).join(", ")}`,
           );
           const animation = animations.find((anim) => anim.name === name);
           if (!animation) {
-            console.error(`Animation "${name}" not found`);
-            console.error(
+            console.error("[ThreeViewer] ", `Animation "${name}" not found`);
+            console.error("[ThreeViewer] ", 
               `Available animations: ${animations.map((a) => a.name).join(", ")}`,
             );
             // If the requested animation is not found but we have animations, play the first one
             if (animations.length > 0) {
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `Playing first available animation instead: ${animations[0].name}`,
               );
               const firstAnimation = animations[0];
@@ -1138,9 +1138,9 @@ const ThreeViewerComponent = forwardRef(
             return;
           }
 
-          console.log(`Playing animation: ${name}`);
-          console.log(`Current model visible: ${modelRef.current?.visible}`);
-          console.log(
+          console.log("[ThreeViewer] ", `Playing animation: ${name}`);
+          console.log("[ThreeViewer] ", `Current model visible: ${modelRef.current?.visible}`);
+          console.log("[ThreeViewer] ", 
             `Model children count before play: ${modelRef.current?.children.length}`,
           );
 
@@ -1155,13 +1155,13 @@ const ThreeViewerComponent = forwardRef(
             clockRef.current = new THREE.Clock();
           }
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             `Animation started. Model children count after play: ${modelRef.current?.children.length}`,
           );
         },
         playAnimationRetargeted: (nameOrClip: string | THREE.AnimationClip) => {
           if (!mixerRef.current || !modelRef.current) {
-            console.error("Cannot play animation: no mixer or model");
+            console.error("[ThreeViewer] ", "Cannot play animation: no mixer or model");
             return;
           }
 
@@ -1170,7 +1170,7 @@ const ThreeViewerComponent = forwardRef(
           if (typeof nameOrClip === "string") {
             clip = animations.find((a) => a.name === nameOrClip);
             if (!clip) {
-              console.error(
+              console.error("[ThreeViewer] ", 
                 `Animation "${nameOrClip}" not found in animations array`,
                 animations.map((a) => a.name),
               );
@@ -1180,10 +1180,10 @@ const ThreeViewerComponent = forwardRef(
             clip = nameOrClip;
           }
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             `[playAnimationRetargeted] Playing animation: ${clip.name}`,
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             `[playAnimationRetargeted] Animation has ${clip.tracks.length} tracks`,
           );
 
@@ -1196,11 +1196,11 @@ const ThreeViewerComponent = forwardRef(
               );
             }
           });
-          console.log(
+          console.log("[ThreeViewer] ", 
             "[playAnimationRetargeted] Available bones in model (first 10):",
             availableBones.slice(0, 10),
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             "[playAnimationRetargeted] Animation track names (first 10):",
             clip.tracks.slice(0, 10).map((t) => t.name),
           );
@@ -1217,19 +1217,19 @@ const ThreeViewerComponent = forwardRef(
           setIsPlaying(true);
           if (!clockRef.current) clockRef.current = new THREE.Clock();
 
-          console.log("[playAnimationRetargeted] Animation action started");
+          console.log("[ThreeViewer] ", "[playAnimationRetargeted] Animation action started");
         },
         setTargetRigFromURL: async (url: string) => {
-          console.log(`🎯 Loading target rig from: ${url}`);
+          console.log("[ThreeViewer] ", `🎯 Loading target rig from: ${url}`);
           const loader = new GLTFLoader();
           const gltf = await loader.loadAsync(url);
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             "Rig GLTF loaded, scene children:",
             gltf.scene.children.length,
           );
           gltf.scene.traverse((child) => {
-            console.log(`  - ${child.type}: ${child.name}`);
+            console.log("[ThreeViewer] ", `  - ${child.type}: ${child.name}`);
           });
 
           // Extract skeleton from target rig
@@ -1242,7 +1242,7 @@ const ThreeViewerComponent = forwardRef(
           gltf.scene.traverse((child) => {
             if (child instanceof THREE.SkinnedMesh) {
               skinnedMeshes.push(child);
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `Found SkinnedMesh: ${child.name}, bones: ${child.skeleton.bones.length}`,
               );
             }
@@ -1261,12 +1261,12 @@ const ThreeViewerComponent = forwardRef(
             });
           } else {
             // Fallback: try to build skeleton from bone hierarchy directly
-            console.log("No SkinnedMesh found, looking for bones...");
+            console.log("[ThreeViewer] ", "No SkinnedMesh found, looking for bones...");
             const bones: THREE.Bone[] = [];
             gltf.scene.traverse((child) => {
               if (child instanceof THREE.Bone) {
                 bones.push(child);
-                console.log(`  Found bone: ${child.name}`);
+                console.log("[ThreeViewer] ", `  Found bone: ${child.name}`);
               }
             });
 
@@ -1284,11 +1284,11 @@ const ThreeViewerComponent = forwardRef(
 
           targetRigMapRef.current = rigMap;
           targetSkeletonRef.current = extractedSkeleton;
-          console.log(
+          console.log("[ThreeViewer] ", 
             `✅ Target rig loaded. Mapped ${rigMap.size} bones, skeleton: ${extractedSkeleton ? "YES" : "NO"}`,
           );
           if (extractedSkeleton) {
-            console.log(
+            console.log("[ThreeViewer] ", 
               `   Skeleton has ${extractedSkeleton.bones.length} bones`,
             );
           }
@@ -1301,7 +1301,7 @@ const ThreeViewerComponent = forwardRef(
             !sceneRef.current ||
             !targetSkeletonRef.current
           ) {
-            console.warn(
+            console.warn("[ThreeViewer] ", 
               "Missing model, scene, or target skeleton for retargeting",
             );
             return false;
@@ -1316,53 +1316,53 @@ const ThreeViewerComponent = forwardRef(
             modelRef.current,
           );
           if (sourceMeshes.length === 0) {
-            console.warn("No skinned meshes found in model to retarget");
+            console.warn("[ThreeViewer] ", "No skinned meshes found in model to retarget");
             return false;
           }
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             `🔄 Starting skeleton retargeting for ${sourceMeshes.length} meshes`,
           );
-          console.log("=== DEBUG: Source Model State ===");
-          console.log("Model scale:", modelRef.current.scale.toArray());
-          console.log("Model position:", modelRef.current.position.toArray());
+          console.log("[ThreeViewer] ", "=== DEBUG: Source Model State ===");
+          console.log("[ThreeViewer] ", "Model scale:", modelRef.current.scale.toArray());
+          console.log("[ThreeViewer] ", "Model position:", modelRef.current.position.toArray());
           const modelBBox = new THREE.Box3().setFromObject(modelRef.current);
-          console.log(
+          console.log("[ThreeViewer] ", 
             "Model world bounds:",
             modelBBox.min.toArray(),
             "to",
             modelBBox.max.toArray(),
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             "Model world size:",
             modelBBox.getSize(new THREE.Vector3()).toArray(),
           );
 
           sourceMeshes.forEach((mesh, i) => {
-            console.log(`Source mesh ${i}: "${mesh.name}"`);
-            console.log(
+            console.log("[ThreeViewer] ", `Source mesh ${i}: "${mesh.name}"`);
+            console.log("[ThreeViewer] ", 
               "  World scale:",
               new THREE.Vector3()
                 .setFromMatrixScale(mesh.matrixWorld)
                 .toArray(),
             );
-            console.log("  Local scale:", mesh.scale.toArray());
-            console.log("  Skeleton bones:", mesh.skeleton.bones.length);
+            console.log("[ThreeViewer] ", "  Local scale:", mesh.scale.toArray());
+            console.log("[ThreeViewer] ", "  Skeleton bones:", mesh.skeleton.bones.length);
             const meshBBox = new THREE.Box3().setFromObject(mesh);
-            console.log(
+            console.log("[ThreeViewer] ", 
               "  Mesh world size:",
               meshBBox.getSize(new THREE.Vector3()).toArray(),
             );
           });
 
-          console.log("=== DEBUG: Target Skeleton State ===");
-          console.log(
+          console.log("[ThreeViewer] ", "=== DEBUG: Target Skeleton State ===");
+          console.log("[ThreeViewer] ", 
             "Target skeleton bones:",
             targetSkeletonRef.current.bones.length,
           );
           const targetRoot = targetSkeletonRef.current.bones[0];
-          console.log("Root bone scale:", targetRoot.scale.toArray());
-          console.log("Root bone position:", targetRoot.position.toArray());
+          console.log("[ThreeViewer] ", "Root bone scale:", targetRoot.scale.toArray());
+          console.log("[ThreeViewer] ", "Root bone position:", targetRoot.position.toArray());
           targetRoot.updateMatrixWorld(true);
           const targetBBox = new THREE.Box3();
           targetSkeletonRef.current.bones.forEach((bone) => {
@@ -1370,13 +1370,13 @@ const ThreeViewerComponent = forwardRef(
             bone.getWorldPosition(pos);
             targetBBox.expandByPoint(pos);
           });
-          console.log(
+          console.log("[ThreeViewer] ", 
             "Target skeleton world bounds:",
             targetBBox.min.toArray(),
             "to",
             targetBBox.max.toArray(),
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             "Target skeleton world size:",
             targetBBox.getSize(new THREE.Vector3()).toArray(),
           );
@@ -1402,7 +1402,7 @@ const ThreeViewerComponent = forwardRef(
           retargetedMesh.updateMatrix();
           retargetedMesh.updateMatrixWorld(true);
 
-          console.log("Retargeted mesh transform:", {
+          console.log("[ThreeViewer] ", "Retargeted mesh transform:", {
             position: retargetedMesh.position.toArray(),
             rotation: retargetedMesh.rotation.toArray(),
             scale: retargetedMesh.scale.toArray(),
@@ -1476,12 +1476,12 @@ const ThreeViewerComponent = forwardRef(
             editingSkeletonRootRef.current = editableSkeleton;
             editableSkeleton.updateMatrixWorld(true);
 
-            console.log(`✅ Created editable skeleton (overlay):`);
-            console.log("   Position:", worldPos.toArray());
-            console.log("   Quaternion:", worldQuat.toArray());
-            console.log("   Scale:", worldScale.toArray());
-            console.log("   Bone count:", editableSkeleton.children.length);
-            console.log(
+            console.log("[ThreeViewer] ", `✅ Created editable skeleton (overlay):`);
+            console.log("[ThreeViewer] ", "   Position:", worldPos.toArray());
+            console.log("[ThreeViewer] ", "   Quaternion:", worldQuat.toArray());
+            console.log("[ThreeViewer] ", "   Scale:", worldScale.toArray());
+            console.log("[ThreeViewer] ", "   Bone count:", editableSkeleton.children.length);
+            console.log("[ThreeViewer] ", 
               "   In scene:",
               sceneRef.current.children.includes(editableSkeleton),
             );
@@ -1497,11 +1497,11 @@ const ThreeViewerComponent = forwardRef(
             sceneRef.current.add(helper);
             skeletonHelperRef.current = helper;
             setShowSkeleton(true);
-            console.log(
+            console.log("[ThreeViewer] ", 
               `Created CustomSkeletonHelper with ${helper.bones.length} bones (separate editable skeleton)`,
             );
           } else {
-            console.warn("No root bone found for skeleton helper");
+            console.warn("[ThreeViewer] ", "No root bone found for skeleton helper");
           }
 
           // Make mesh semi-transparent to see skeleton better
@@ -1521,7 +1521,7 @@ const ThreeViewerComponent = forwardRef(
 
           // TransformControls helper is already in scene from init - no need to re-add
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             "✅ Skeleton retargeting complete - skeleton helper created",
           );
           return true;
@@ -1532,11 +1532,11 @@ const ThreeViewerComponent = forwardRef(
             !sceneRef.current ||
             !targetSkeletonRef.current
           ) {
-            console.warn("Missing model or target skeleton for editing");
+            console.warn("[ThreeViewer] ", "Missing model or target skeleton for editing");
             return false;
           }
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             "🎯 Loading skeleton for manual adjustment (mesh2motion workflow)",
           );
 
@@ -1550,7 +1550,7 @@ const ThreeViewerComponent = forwardRef(
           );
 
           if (sourceMeshes.length === 0) {
-            console.warn("No skinned meshes found");
+            console.warn("[ThreeViewer] ", "No skinned meshes found");
             return false;
           }
 
@@ -1560,17 +1560,17 @@ const ThreeViewerComponent = forwardRef(
           // This skeleton has the ORIGINAL weights from Meshy that we want to preserve!
           if (sourceMesh.skeleton) {
             sourceSkeletonRef.current = sourceMesh.skeleton.clone();
-            console.log(
+            console.log("[ThreeViewer] ", 
               "✅ Stored source skeleton:",
               sourceMesh.skeleton.bones.length,
               "bones",
             );
-            console.log(
+            console.log("[ThreeViewer] ", 
               "   Sample bone names:",
               sourceMesh.skeleton.bones.slice(0, 5).map((b) => b.name),
             );
           } else {
-            console.warn("⚠️ Source mesh has no skeleton!");
+            console.warn("[ThreeViewer] ", "⚠️ Source mesh has no skeleton!");
           }
 
           // CRITICAL: Follow mesh2motion-app approach
@@ -1581,7 +1581,7 @@ const ThreeViewerComponent = forwardRef(
             ? sourceMesh.material.map((m) => m.clone())
             : sourceMesh.material.clone();
 
-          console.log("Stored geometry for later binding (in bind pose):", {
+          console.log("[ThreeViewer] ", "Stored geometry for later binding (in bind pose):", {
             vertices: unboundGeometryRef.current.attributes.position.count,
             hasUV: !!unboundGeometryRef.current.attributes.uv,
             hasSkinWeights: !!unboundGeometryRef.current.attributes.skinWeight,
@@ -1632,15 +1632,15 @@ const ThreeViewerComponent = forwardRef(
           const finalMeshBBox = new THREE.Box3().setFromObject(previewMesh);
           const finalMeshSize = finalMeshBBox.getSize(new THREE.Vector3());
 
-          console.log("📐 Preview mesh scaled:");
-          console.log("  Bind pose size:", previewSize.toArray());
-          console.log("  Base scale factor:", baseScaleFactor);
-          console.log(
+          console.log("[ThreeViewer] ", "📐 Preview mesh scaled:");
+          console.log("[ThreeViewer] ", "  Bind pose size:", previewSize.toArray());
+          console.log("[ThreeViewer] ", "  Base scale factor:", baseScaleFactor);
+          console.log("[ThreeViewer] ", 
             "  User scale multiplier:",
             skeletonScaleMultiplierRef.current,
           );
-          console.log("  Final mesh scale:", meshScaleFactor);
-          console.log("  Final mesh size:", finalMeshSize.toArray());
+          console.log("[ThreeViewer] ", "  Final mesh scale:", meshScaleFactor);
+          console.log("[ThreeViewer] ", "  Final mesh size:", finalMeshSize.toArray());
 
           // Clone the TARGET skeleton for editing (this will become the retargeted skeleton)
           const clonedSkeleton = targetSkeletonRef.current.clone();
@@ -1682,17 +1682,17 @@ const ThreeViewerComponent = forwardRef(
             skeletonScaleZ,
           );
 
-          console.log(`🎯 Calculating skeleton scale to fit within mesh:`);
-          console.log(
+          console.log("[ThreeViewer] ", `🎯 Calculating skeleton scale to fit within mesh:`);
+          console.log("[ThreeViewer] ", 
             `  Natural skeleton size: (${naturalSkelSize.x.toFixed(2)}, ${naturalSkelSize.y.toFixed(2)}, ${naturalSkelSize.z.toFixed(2)})`,
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             `  Target mesh size: (${finalMeshSize.x.toFixed(2)}, ${finalMeshSize.y.toFixed(2)}, ${finalMeshSize.z.toFixed(2)})`,
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             `  Scale ratios: X=${skeletonScaleX.toFixed(3)}, Y=${skeletonScaleY.toFixed(3)}, Z=${skeletonScaleZ.toFixed(3)}`,
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             `  Using minimum scale: ${skeletonScaleFactor.toFixed(3)}`,
           );
 
@@ -1726,17 +1726,17 @@ const ThreeViewerComponent = forwardRef(
           rootBone.position.add(offset);
           rootBone.updateMatrixWorld(true);
 
-          console.log(`✅ Skeleton scaled and positioned:`);
-          console.log(
+          console.log("[ThreeViewer] ", `✅ Skeleton scaled and positioned:`);
+          console.log("[ThreeViewer] ", 
             `  Scale: ${skeletonScaleFactor.toFixed(3)} (fits within mesh bounds)`,
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             `  Position: (${rootBone.position.x.toFixed(2)}, ${rootBone.position.y.toFixed(2)}, ${rootBone.position.z.toFixed(2)})`,
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             `  Final skeleton size: (${scaledSkelSize.x.toFixed(2)}, ${scaledSkelSize.y.toFixed(2)}, ${scaledSkelSize.z.toFixed(2)})`,
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             `  Final mesh size: (${finalMeshSize.x.toFixed(2)}, ${finalMeshSize.y.toFixed(2)}, ${finalMeshSize.z.toFixed(2)})`,
           );
 
@@ -1768,8 +1768,8 @@ const ThreeViewerComponent = forwardRef(
           // Ensure the original model is visible
           if (modelRef.current) {
             modelRef.current.visible = true;
-            console.log("Model visibility:", modelRef.current.visible);
-            console.log("Model position:", modelRef.current.position.toArray());
+            console.log("[ThreeViewer] ", "Model visibility:", modelRef.current.visible);
+            console.log("[ThreeViewer] ", "Model position:", modelRef.current.position.toArray());
           }
 
           // Log final positions for debugging
@@ -1782,19 +1782,19 @@ const ThreeViewerComponent = forwardRef(
           const finalSkelCenter = finalSkelBBox.getCenter(new THREE.Vector3());
           const finalSkelSize = finalSkelBBox.getSize(new THREE.Vector3());
 
-          console.log("Final skeleton center:", finalSkelCenter.toArray());
-          console.log("Final skeleton size:", finalSkelSize.toArray());
-          console.log(
+          console.log("[ThreeViewer] ", "Final skeleton center:", finalSkelCenter.toArray());
+          console.log("[ThreeViewer] ", "Final skeleton size:", finalSkelSize.toArray());
+          console.log("[ThreeViewer] ", 
             "Mesh scale:",
             meshScaleFactor.toFixed(3),
             "| Skeleton scale:",
             skeletonScaleFactor.toFixed(3),
           );
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             "✅ Skeleton loaded for editing. User can now adjust bone positions.",
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             "   Model and skeleton should now be aligned and both visible.",
           );
 
@@ -1807,13 +1807,13 @@ const ThreeViewerComponent = forwardRef(
             !unboundMaterialRef.current ||
             !sceneRef.current
           ) {
-            console.error(
+            console.error("[ThreeViewer] ", 
               "Missing skeleton, geometry, or material for retargeting",
             );
             return false;
           }
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             "🔄 Applying retargeting with WEIGHT TRANSFER (production technique)...",
           );
 
@@ -1822,12 +1822,12 @@ const ThreeViewerComponent = forwardRef(
             "PreviewMesh",
           ) as THREE.Mesh;
           if (!previewMeshForWeights) {
-            console.error("Preview mesh not found!");
+            console.error("[ThreeViewer] ", "Preview mesh not found!");
             return false;
           }
 
           const previewScale = previewMeshForWeights.scale.x; // Uniform scale
-          console.log("📐 Preview mesh scale for geometry:", previewScale);
+          console.log("[ThreeViewer] ", "📐 Preview mesh scale for geometry:", previewScale);
 
           // CRITICAL: Create scaled geometry (same as preview mesh)
           // This geometry will receive the TRANSFERRED weights (not recalculated!)
@@ -1836,15 +1836,15 @@ const ThreeViewerComponent = forwardRef(
           scaleMatrix.makeScale(previewScale, previewScale, previewScale);
           scaledGeometry.applyMatrix4(scaleMatrix);
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             "📊 Transferring weights from source skeleton to target skeleton...",
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             "  Source skeleton:",
             sourceSkeletonRef.current?.bones.length,
             "bones",
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             "  Target skeleton:",
             editableSkeletonRef.current.bones.length,
             "bones",
@@ -1868,7 +1868,7 @@ const ThreeViewerComponent = forwardRef(
 
             // Check if bone mapping is good enough
             if (transferSolver.isMappingQualityGood()) {
-              console.log(
+              console.log("[ThreeViewer] ", 
                 "✅ Bone mapping quality is good - using weight transfer",
               );
               const transferred = transferSolver.transferWeights();
@@ -1876,7 +1876,7 @@ const ThreeViewerComponent = forwardRef(
               skinWeights = transferred.skinWeights;
             } else {
               // Fallback to distance-based calculation
-              console.warn(
+              console.warn("[ThreeViewer] ", 
                 "⚠️  Bone mapping quality poor - falling back to distance calculation",
               );
               const { SkeletonRetargeter } = await import(
@@ -1893,7 +1893,7 @@ const ThreeViewerComponent = forwardRef(
             }
           } else {
             // No source skeleton - must calculate from scratch
-            console.warn(
+            console.warn("[ThreeViewer] ", 
               "⚠️  No source skeleton - calculating weights from scratch",
             );
             const { SkeletonRetargeter } = await import(
@@ -1909,7 +1909,7 @@ const ThreeViewerComponent = forwardRef(
             skinWeights = result.skinWeights;
           }
 
-          console.log("Weight processing complete:", {
+          console.log("[ThreeViewer] ", "Weight processing complete:", {
             totalVertices: scaledGeometry.attributes.position.count,
             weightsGenerated: skinWeights.length / 4,
           });
@@ -1929,13 +1929,13 @@ const ThreeViewerComponent = forwardRef(
           // Scale applied via geometry matrix (baked) and skeleton transform (not baked)
           const rootBone = editableSkeletonRef.current.bones[0];
 
-          console.log("📐 Option A: Geometry and skeleton at matching scales");
-          console.log(
+          console.log("[ThreeViewer] ", "📐 Option A: Geometry and skeleton at matching scales");
+          console.log("[ThreeViewer] ", 
             "  Geometry: Scaled by",
             previewScale,
             "(baked into vertices)",
           );
-          console.log(
+          console.log("[ThreeViewer] ", 
             "  Skeleton scale (kept as transform):",
             rootBone.scale.toArray(),
           );
@@ -1950,12 +1950,12 @@ const ThreeViewerComponent = forwardRef(
           retargetedMesh.castShadow = true;
           retargetedMesh.receiveShadow = true;
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             "Pre-binding transforms (Option A - scale kept as transform):",
           );
-          console.log("  Root bone position:", rootBone.position.toArray());
-          console.log("  Root bone rotation:", rootBone.rotation.toArray());
-          console.log("  Root bone scale:", rootBone.scale.toArray());
+          console.log("[ThreeViewer] ", "  Root bone position:", rootBone.position.toArray());
+          console.log("[ThreeViewer] ", "  Root bone rotation:", rootBone.rotation.toArray());
+          console.log("[ThreeViewer] ", "  Root bone scale:", rootBone.scale.toArray());
 
           // CRITICAL: Option A approach - DO NOT bake scale!
           // Keep scale as transform property during binding
@@ -1970,11 +1970,11 @@ const ThreeViewerComponent = forwardRef(
           const skeletonScaleFactor = rootBone.scale.x;
           (retargetedMesh as any).__skeletonScaleFactor = skeletonScaleFactor;
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             "✓ Keeping skeleton scale as transform property:",
             skeletonScaleFactor,
           );
-          console.log("  Root bone scale will be preserved during binding");
+          console.log("[ThreeViewer] ", "  Root bone scale will be preserved during binding");
 
           rootBone.updateMatrixWorld(true);
 
@@ -1993,11 +1993,11 @@ const ThreeViewerComponent = forwardRef(
           // This creates bind matrices based on current bone transforms
           retargetedMesh.bind(editableSkeletonRef.current);
 
-          console.log("✅ Mesh bound to skeleton:");
-          console.log("  - Mesh position:", retargetedMesh.position.toArray());
-          console.log("  - Mesh scale:", retargetedMesh.scale.toArray());
-          console.log("  - Mesh rotation:", retargetedMesh.rotation.toArray());
-          console.log(
+          console.log("[ThreeViewer] ", "✅ Mesh bound to skeleton:");
+          console.log("[ThreeViewer] ", "  - Mesh position:", retargetedMesh.position.toArray());
+          console.log("[ThreeViewer] ", "  - Mesh scale:", retargetedMesh.scale.toArray());
+          console.log("[ThreeViewer] ", "  - Mesh rotation:", retargetedMesh.rotation.toArray());
+          console.log("[ThreeViewer] ", 
             "  - Skeleton bones:",
             editableSkeletonRef.current.bones.length,
           );
@@ -2006,7 +2006,7 @@ const ThreeViewerComponent = forwardRef(
           const previewMesh = sceneRef.current.getObjectByName("PreviewMesh");
           if (previewMesh) {
             sceneRef.current.remove(previewMesh);
-            console.log("Removed preview mesh");
+            console.log("[ThreeViewer] ", "Removed preview mesh");
           }
 
           // Replace old model in scene
@@ -2033,7 +2033,7 @@ const ThreeViewerComponent = forwardRef(
 
           // Auto-load animations from human-base-animations.glb
           try {
-            console.log(
+            console.log("[ThreeViewer] ", 
               "📦 Loading animations from human-base-animations.glb...",
             );
             const loader = new GLTFLoader();
@@ -2042,7 +2042,7 @@ const ThreeViewerComponent = forwardRef(
             );
 
             if (gltf.animations && gltf.animations.length > 0) {
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `✅ Loaded ${gltf.animations.length} animations from base animations file`,
               );
 
@@ -2050,28 +2050,28 @@ const ThreeViewerComponent = forwardRef(
               // The skeleton has scale as a TRANSFORM PROPERTY (not baked)
               // Three.js will automatically apply the skeleton's scale transform during animation
               // Scaling keyframes would cause DOUBLE-SCALING
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `🎬 Using animations as-is (skeleton scale: ${skeletonScaleFactor})`,
               );
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `   Skeleton scale transform will be applied automatically by Three.js`,
               );
 
               setAnimations(gltf.animations);
 
               // Log all animation names
-              console.log(
+              console.log("[ThreeViewer] ", 
                 "Available animations:",
                 gltf.animations.map((a) => a.name).join(", "),
               );
             } else {
-              console.warn("No animations found in base animations file");
+              console.warn("[ThreeViewer] ", "No animations found in base animations file");
             }
           } catch (error) {
-            console.error("Failed to load animations:", error);
+            console.error("[ThreeViewer] ", "Failed to load animations:", error);
           }
 
-          console.log("✅ Retargeting applied! Mesh bound to edited skeleton.");
+          console.log("[ThreeViewer] ", "✅ Retargeting applied! Mesh bound to edited skeleton.");
 
           return true;
         },
@@ -2092,13 +2092,13 @@ const ThreeViewerComponent = forwardRef(
            */
 
           if (!modelRef.current || !sceneRef.current) {
-            console.error("No character loaded!");
+            console.error("[ThreeViewer] ", "No character loaded!");
             return false;
           }
 
-          console.log("🎬 Starting Animation Retargeting workflow...");
-          console.log("  Character stays bound to original skeleton");
-          console.log("  Retargeting animations only (not mesh)");
+          console.log("[ThreeViewer] ", "🎬 Starting Animation Retargeting workflow...");
+          console.log("[ThreeViewer] ", "  Character stays bound to original skeleton");
+          console.log("[ThreeViewer] ", "  Retargeting animations only (not mesh)");
 
           // Get character's skeleton
           let characterSkeleton: THREE.Skeleton | null = null;
@@ -2113,24 +2113,24 @@ const ThreeViewerComponent = forwardRef(
           });
 
           if (!characterSkeleton) {
-            console.error("❌ Character has no skeleton!");
+            console.error("[ThreeViewer] ", "❌ Character has no skeleton!");
             return false;
           }
 
           // TypeScript type narrowing - characterSkeleton is now THREE.Skeleton (not null)
           const charSkeleton: THREE.Skeleton = characterSkeleton;
-          console.log(
+          console.log("[ThreeViewer] ", 
             "✅ Character skeleton:",
             charSkeleton.bones.length,
             "bones",
           );
-          console.log("🔍 ALL CHARACTER BONE NAMES:");
+          console.log("[ThreeViewer] ", "🔍 ALL CHARACTER BONE NAMES:");
           charSkeleton.bones.forEach((bone: THREE.Bone, i: number) => {
-            console.log(`  [${i}] ${bone.name}`);
+            console.log("[ThreeViewer] ", `  [${i}] ${bone.name}`);
           });
 
           // Load animation rig (Mixamo)
-          console.log("📦 Loading animation rig from:", animationRigUrl);
+          console.log("[ThreeViewer] ", "📦 Loading animation rig from:", animationRigUrl);
           const loader = new GLTFLoader();
           const rigGltf = await loader.loadAsync(animationRigUrl);
 
@@ -2141,31 +2141,31 @@ const ThreeViewerComponent = forwardRef(
             extractSkeletonFromGLTF(rigGltf);
 
           if (!animationSkeleton) {
-            console.error("❌ Animation rig has no skeleton!");
+            console.error("[ThreeViewer] ", "❌ Animation rig has no skeleton!");
             return false;
           }
 
           // TypeScript now knows animationSkeleton is THREE.Skeleton (not null)
-          console.log(
+          console.log("[ThreeViewer] ", 
             "✅ Animation skeleton:",
             animationSkeleton.bones.length,
             "bones",
           );
-          console.log("🔍 ALL ANIMATION BONE NAMES:");
+          console.log("[ThreeViewer] ", "🔍 ALL ANIMATION BONE NAMES:");
           animationSkeleton.bones.forEach((bone: THREE.Bone, i: number) => {
-            console.log(`  [${i}] ${bone.name}`);
+            console.log("[ThreeViewer] ", `  [${i}] ${bone.name}`);
           });
 
           // Load animations
-          console.log("📦 Loading animations from:", animationsUrl);
+          console.log("[ThreeViewer] ", "📦 Loading animations from:", animationsUrl);
           const animGltf = await loader.loadAsync(animationsUrl);
 
           if (!animGltf.animations || animGltf.animations.length === 0) {
-            console.error("❌ No animations found!");
+            console.error("[ThreeViewer] ", "❌ No animations found!");
             return false;
           }
 
-          console.log("✅ Loaded", animGltf.animations.length, "animations");
+          console.log("[ThreeViewer] ", "✅ Loaded", animGltf.animations.length, "animations");
 
           // Retarget animations
           const { AnimationRetargeter } = await import(
@@ -2180,11 +2180,11 @@ const ThreeViewerComponent = forwardRef(
           const retargetedAnimations = retargeter.retargetAll();
 
           if (retargetedAnimations.length === 0) {
-            console.error("❌ Failed to retarget any animations!");
+            console.error("[ThreeViewer] ", "❌ Failed to retarget any animations!");
             return false;
           }
 
-          console.log(
+          console.log("[ThreeViewer] ", 
             "✅ Successfully retargeted",
             retargetedAnimations.length,
             "animations",
@@ -2193,11 +2193,11 @@ const ThreeViewerComponent = forwardRef(
           // Debug: Show retargeted track names for first animation
           if (retargetedAnimations.length > 0) {
             const firstClip = retargetedAnimations[0].clip;
-            console.log("🔍 First retargeted clip track names:");
+            console.log("[ThreeViewer] ", "🔍 First retargeted clip track names:");
             firstClip.tracks
               .slice(0, 10)
               .forEach((track: THREE.KeyframeTrack) => {
-                console.log(`  ${track.name}`);
+                console.log("[ThreeViewer] ", `  ${track.name}`);
               });
           }
 
@@ -2234,13 +2234,13 @@ const ThreeViewerComponent = forwardRef(
             setShowSkeleton(true);
             setHasRiggedModel(true);
 
-            console.log("✅ Skeleton helper shown by default");
+            console.log("[ThreeViewer] ", "✅ Skeleton helper shown by default");
           }
 
-          console.log("✅ Animation retargeting complete!");
-          console.log("   Character mesh: Unchanged (original skeleton)");
-          console.log("   Animations: Retargeted to character skeleton");
-          console.log(
+          console.log("[ThreeViewer] ", "✅ Animation retargeting complete!");
+          console.log("[ThreeViewer] ", "   Character mesh: Unchanged (original skeleton)");
+          console.log("[ThreeViewer] ", "   Animations: Retargeted to character skeleton");
+          console.log("[ThreeViewer] ", 
             "   Available animations:",
             clips.map((c) => c.name).join(", "),
           );
@@ -2400,18 +2400,18 @@ const ThreeViewerComponent = forwardRef(
                     }
                   }
                 });
-                console.log(
+                console.log("[ThreeViewer] ", 
                   `Skeleton helper created for mesh with ${meshWithBones.skeleton.bones.length} bones`,
                 );
               }
             } else {
-              console.log("No skinned meshes found in the model");
+              console.log("[ThreeViewer] ", "No skinned meshes found in the model");
             }
           }
         },
         logBoneStructure: () => {
           if (!modelRef.current) {
-            console.log("No model loaded");
+            console.log("[ThreeViewer] ", "No model loaded");
             return null;
           }
 
@@ -2444,7 +2444,7 @@ const ThreeViewerComponent = forwardRef(
           });
 
           if (!foundBones) {
-            console.log("No bones/skeleton found in the model");
+            console.log("[ThreeViewer] ", "No bones/skeleton found in the model");
             return null;
           }
 
@@ -2452,11 +2452,11 @@ const ThreeViewerComponent = forwardRef(
         },
         debugSceneContents: () => {
           if (!sceneRef.current) {
-            console.log("No scene available");
+            console.log("[ThreeViewer] ", "No scene available");
             return;
           }
 
-          console.log("=== Scene Contents Debug ===");
+          console.log("[ThreeViewer] ", "=== Scene Contents Debug ===");
           const meshes: THREE.Mesh[] = [];
           const skinnedMeshes: THREE.SkinnedMesh[] = [];
 
@@ -2468,22 +2468,22 @@ const ThreeViewerComponent = forwardRef(
             }
           });
 
-          console.log(`Total Meshes: ${meshes.length}`);
-          console.log(`Total SkinnedMeshes: ${skinnedMeshes.length}`);
+          console.log("[ThreeViewer] ", `Total Meshes: ${meshes.length}`);
+          console.log("[ThreeViewer] ", `Total SkinnedMeshes: ${skinnedMeshes.length}`);
 
-          console.log("\nDetailed breakdown:");
+          console.log("[ThreeViewer] ", "\nDetailed breakdown:");
           skinnedMeshes.forEach((mesh, i) => {
             const material = mesh.material;
             const opacity = Array.isArray(material)
               ? material[0]?.opacity
               : material?.opacity;
-            console.log(
+            console.log("[ThreeViewer] ", 
               `SkinnedMesh ${i}: ${mesh.name || "unnamed"}, visible: ${mesh.visible}, opacity: ${opacity}`,
             );
           });
           meshes.forEach((mesh, i) => {
             if (mesh.name !== "groundPlane") {
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `Mesh ${i}: ${mesh.name || "unnamed"}, visible: ${mesh.visible}`,
               );
             }
@@ -2531,7 +2531,7 @@ const ThreeViewerComponent = forwardRef(
                 sceneRef.current.add(helper);
                 skeletonHelperRef.current = helper;
 
-                console.log(
+                console.log("[ThreeViewer] ", 
                   `✅ Skeleton helper refreshed with ${meshWithBones.skeleton.bones.length} bones`,
                 );
               }
@@ -2540,12 +2540,12 @@ const ThreeViewerComponent = forwardRef(
         },
         // Bone editing controls - ONLY works when explicitly enabled
         enableBoneEditing: (enabled: boolean) => {
-          console.log(`[bone-edit] Enable bone editing: ${enabled}`);
+          console.log("[ThreeViewer] ", `[bone-edit] Enable bone editing: ${enabled}`);
           setBoneEditEnabled(enabled);
           boneEditEnabledRef.current = enabled; // Update ref for closures
 
           if (!transformControlsRef.current || !rendererRef.current) {
-            console.warn("[bone-edit] TransformControls or renderer not ready");
+            console.warn("[ThreeViewer] ", "[bone-edit] TransformControls or renderer not ready");
             return;
           }
 
@@ -2553,14 +2553,14 @@ const ThreeViewerComponent = forwardRef(
           if (enabled && skeletonHelperRef.current) {
             skeletonHelperRef.current.visible = true;
             setShowSkeleton(true);
-            console.log("[bone-edit] ✅ Skeleton helper made visible");
+            console.log("[ThreeViewer] ", "[bone-edit] ✅ Skeleton helper made visible");
           }
 
           // Ensure we have bones to edit
           if (enabled) {
             const editRoot = editingSkeletonRootRef.current ?? modelRef.current;
             if (!editRoot) {
-              console.error(
+              console.error("[ThreeViewer] ", 
                 "[bone-edit] ❌ No editable skeleton or model found!",
               );
               return;
@@ -2571,9 +2571,9 @@ const ThreeViewerComponent = forwardRef(
               if (child instanceof THREE.Bone) bones.push(child);
             });
 
-            console.log(`[bone-edit] Found ${bones.length} bones to edit`);
+            console.log("[ThreeViewer] ", `[bone-edit] Found ${bones.length} bones to edit`);
             if (bones.length === 0) {
-              console.error("[bone-edit] ❌ No bones found in skeleton!");
+              console.error("[ThreeViewer] ", "[bone-edit] ❌ No bones found in skeleton!");
               alert(
                 "No skeleton bones found. Please load a model with a skeleton first.",
               );
@@ -2592,19 +2592,19 @@ const ThreeViewerComponent = forwardRef(
             }
           }
 
-          console.log("[bone-edit] TransformControls state:");
-          console.log("  - enabled:", transformControlsRef.current.enabled);
-          console.log("  - mode:", transformControlsRef.current.mode);
+          console.log("[ThreeViewer] ", "[bone-edit] TransformControls state:");
+          console.log("[ThreeViewer] ", "  - enabled:", transformControlsRef.current.enabled);
+          console.log("[ThreeViewer] ", "  - mode:", transformControlsRef.current.mode);
 
           // Detach from any object when disabling
           if (!enabled && transformControlsRef.current.object) {
             transformControlsRef.current.detach();
-            console.log("  - Detached from object");
+            console.log("[ThreeViewer] ", "  - Detached from object");
           }
 
           // CRITICAL: Stop all animations when editing bones to prevent mesh deformation
           if (enabled) {
-            console.log(
+            console.log("[ThreeViewer] ", 
               "[bone-edit] Stopping animations to prevent mesh deformation",
             );
             if (mixerRef.current) {
@@ -2633,7 +2633,7 @@ const ThreeViewerComponent = forwardRef(
               const radius = Math.max(size.x, size.y, size.z);
               // Scale to 12% of model size for good visibility
               transformControlsRef.current.size = Math.max(radius * 0.12, 0.3);
-              console.log(
+              console.log("[ThreeViewer] ", 
                 "[bone-edit] Initial gizmo size:",
                 transformControlsRef.current.size,
                 "for model radius:",
@@ -2643,7 +2643,7 @@ const ThreeViewerComponent = forwardRef(
               transformControlsRef.current.size = 0.5;
             }
           }
-          console.log("[bone-edit] TransformControls enabled set to:", enabled);
+          console.log("[ThreeViewer] ", "[bone-edit] TransformControls enabled set to:", enabled);
 
           // Only set up click listener once
           const canvas = rendererRef.current.domElement;
@@ -2654,20 +2654,20 @@ const ThreeViewerComponent = forwardRef(
             canvas.addEventListener(
               "pointerdown",
               (event: PointerEvent) => {
-                console.log(
+                console.log("[ThreeViewer] ", 
                   "[bone-edit] 🖱️ Canvas clicked! Bone editing enabled:",
                   boneEditEnabledRef.current,
                 );
 
                 // ONLY respond to clicks when bone editing is enabled (use ref to avoid closure stale value)
                 if (!boneEditEnabledRef.current) {
-                  console.log(
+                  console.log("[ThreeViewer] ", 
                     "[bone-edit] Click ignored - bone editing not enabled",
                   );
                   return;
                 }
 
-                console.log("[bone-edit] Processing bone selection click...");
+                console.log("[ThreeViewer] ", "[bone-edit] Processing bone selection click...");
 
                 if (
                   !modelRef.current ||
@@ -2682,7 +2682,7 @@ const ThreeViewerComponent = forwardRef(
                 const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
                 pointer.current.set(x, y);
 
-                console.log(
+                console.log("[ThreeViewer] ", 
                   `[selection] Mouse down at NDC: (${x.toFixed(3)}, ${y.toFixed(3)})`,
                 );
 
@@ -2695,10 +2695,10 @@ const ThreeViewerComponent = forwardRef(
                   if (child instanceof THREE.Bone) bones.push(child);
                 });
 
-                console.log(`[selection] Found ${bones.length} bones`);
+                console.log("[ThreeViewer] ", `[selection] Found ${bones.length} bones`);
 
                 if (bones.length === 0) {
-                  console.warn("[selection] No bones found!");
+                  console.warn("[ThreeViewer] ", "[selection] No bones found!");
                   return;
                 }
 
@@ -2732,7 +2732,7 @@ const ThreeViewerComponent = forwardRef(
                 }
 
                 if (closestBone) {
-                  console.log(
+                  console.log("[ThreeViewer] ", 
                     `[selection] ✅ Selected "${closestBone.name}" (dist: ${closestDistance.toFixed(3)})`,
                   );
                   setSelectedBone(closestBone);
@@ -2748,7 +2748,7 @@ const ThreeViewerComponent = forwardRef(
                     closestBone.getWorldPosition(worldPos);
                     boneHighlightSphereRef.current.position.copy(worldPos);
                     boneHighlightSphereRef.current.visible = true;
-                    console.log(
+                    console.log("[ThreeViewer] ", 
                       `[selection] 🔵 Highlight sphere positioned at bone location`,
                     );
                   }
@@ -2764,7 +2764,7 @@ const ThreeViewerComponent = forwardRef(
                     sceneRef.current &&
                     !sceneRef.current.children.includes(helper)
                   ) {
-                    console.log(
+                    console.log("[ThreeViewer] ", 
                       "[selection] 🔧 Manually adding helper to scene",
                     );
                     sceneRef.current.add(helper);
@@ -2791,7 +2791,7 @@ const ThreeViewerComponent = forwardRef(
                       radius * 0.12,
                       0.3,
                     );
-                    console.log(
+                    console.log("[ThreeViewer] ", 
                       `[selection] 📏 Gizmo size set to ${transformControlsRef.current.size.toFixed(2)} (model size: ${radius.toFixed(2)})`,
                     );
                   } else {
@@ -2800,26 +2800,26 @@ const ThreeViewerComponent = forwardRef(
                   }
 
                   // Gizmo should now be visible - TransformControls handles its own rendering
-                  console.log(
+                  console.log("[ThreeViewer] ", 
                     "[selection] ✅ Gizmo attached and should be visible",
                   );
 
-                  console.log(
+                  console.log("[ThreeViewer] ", 
                     `[selection] 🎯 3-Axis Gizmo attached to bone "${closestBone.name}"`,
                   );
-                  console.log(
+                  console.log("[ThreeViewer] ", 
                     "  - Mode:",
                     transformControlsRef.current.mode,
                     "(drag arrows to move)",
                   );
-                  console.log("  - Space:", transformControlsRef.current.space);
-                  console.log("  - Size:", transformControlsRef.current.size);
-                  console.log(
+                  console.log("[ThreeViewer] ", "  - Space:", transformControlsRef.current.space);
+                  console.log("[ThreeViewer] ", "  - Size:", transformControlsRef.current.size);
+                  console.log("[ThreeViewer] ", 
                     "  - Attached object position:",
                     closestBone.position.toArray(),
                   );
                 } else {
-                  console.log(
+                  console.log("[ThreeViewer] ", 
                     `[selection] ❌ No bone within ${closestDistance}m`,
                   );
                 }
@@ -2836,19 +2836,19 @@ const ThreeViewerComponent = forwardRef(
           boneTransformModeStateRef.current = mode; // Update ref for closures
           if (transformControlsRef.current)
             transformControlsRef.current.setMode(mode);
-          console.log("[bone-edit] Transform mode set to:", mode);
+          console.log("[ThreeViewer] ", "[bone-edit] Transform mode set to:", mode);
         },
         setBoneTransformSpace: (space: "world" | "local") => {
           setBoneTransformSpaceState(space);
           if (transformControlsRef.current)
             transformControlsRef.current.setSpace(space);
-          console.log("[bone-edit] Transform space set to:", space);
+          console.log("[ThreeViewer] ", "[bone-edit] Transform space set to:", space);
         },
         setBoneMirrorEnabled: (enabled: boolean) => {
           setBoneMirrorEnabledState(enabled);
           boneMirrorEnabledRef.current = enabled; // Update ref for closures
-          console.log("[bone-edit] Mirror mode set to:", enabled);
-          console.log(
+          console.log("[ThreeViewer] ", "[bone-edit] Mirror mode set to:", enabled);
+          console.log("[ThreeViewer] ", 
             "[bone-edit] Mirror ref updated to:",
             boneMirrorEnabledRef.current,
           );
@@ -2859,7 +2859,7 @@ const ThreeViewerComponent = forwardRef(
             selectedBoneRef.current &&
             applyMirrorModeRef.current
           ) {
-            console.log(
+            console.log("[ThreeViewer] ", 
               "[mirror] 🎯 Mirror enabled - applying immediately to current selection",
             );
             applyMirrorModeRef.current(
@@ -2890,49 +2890,49 @@ const ThreeViewerComponent = forwardRef(
           });
         },
         debugGizmo: () => {
-          console.log("=== GIZMO DEBUG ===");
-          console.log("TransformControls ref:", !!transformControlsRef.current);
+          console.log("[ThreeViewer] ", "=== GIZMO DEBUG ===");
+          console.log("[ThreeViewer] ", "TransformControls ref:", !!transformControlsRef.current);
           if (transformControlsRef.current) {
             const tc = transformControlsRef.current;
-            console.log("  enabled:", tc.enabled);
-            console.log("  mode:", tc.mode);
-            console.log("  space:", tc.space);
-            console.log("  size:", tc.size);
-            console.log("  object attached:", tc.object?.name);
+            console.log("[ThreeViewer] ", "  enabled:", tc.enabled);
+            console.log("[ThreeViewer] ", "  mode:", tc.mode);
+            console.log("[ThreeViewer] ", "  space:", tc.space);
+            console.log("[ThreeViewer] ", "  size:", tc.size);
+            console.log("[ThreeViewer] ", "  object attached:", tc.object?.name);
 
             const helper = tc.getHelper();
-            console.log("  helper:", !!helper);
+            console.log("[ThreeViewer] ", "  helper:", !!helper);
             if (helper) {
-              console.log("    helper visible:", helper.visible);
-              console.log(
+              console.log("[ThreeViewer] ", "    helper visible:", helper.visible);
+              console.log("[ThreeViewer] ", 
                 "    helper in scene:",
                 sceneRef.current?.children.includes(helper),
               );
-              console.log("    helper children:", helper.children.length);
-              console.log("    helper position:", helper.position.toArray());
+              console.log("[ThreeViewer] ", "    helper children:", helper.children.length);
+              console.log("[ThreeViewer] ", "    helper position:", helper.position.toArray());
             }
           }
 
-          console.log("\n=== SCENE OBJECTS ===");
+          console.log("[ThreeViewer] ", "\n=== SCENE OBJECTS ===");
           if (sceneRef.current) {
-            console.log(
+            console.log("[ThreeViewer] ", 
               "Total scene children:",
               sceneRef.current.children.length,
             );
             sceneRef.current.children.forEach((child, i) => {
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `  ${i}: ${child.type} "${child.name}" visible:${child.visible}`,
               );
             });
 
             const testCube = sceneRef.current.getObjectByName("TestCube");
-            console.log("\nTest cube:", !!testCube);
+            console.log("[ThreeViewer] ", "\nTest cube:", !!testCube);
             if (testCube) {
-              console.log("  position:", testCube.position.toArray());
-              console.log("  visible:", testCube.visible);
+              console.log("[ThreeViewer] ", "  position:", testCube.position.toArray());
+              console.log("[ThreeViewer] ", "  visible:", testCube.visible);
             }
           }
-          console.log("=== END DEBUG ===");
+          console.log("[ThreeViewer] ", "=== END DEBUG ===");
         },
         getSourceSkeleton: () => {
           // Get skeleton from the currently loaded model
@@ -3051,9 +3051,9 @@ const ThreeViewerComponent = forwardRef(
             rootBone.position.add(offset);
             rootBone.updateMatrixWorld(true);
 
-            console.log("📐 Skeleton scale updated:", scale);
-            console.log("  Mesh scale factor:", meshScaleFactor);
-            console.log(
+            console.log("[ThreeViewer] ", "📐 Skeleton scale updated:", scale);
+            console.log("[ThreeViewer] ", "  Mesh scale factor:", meshScaleFactor);
+            console.log("[ThreeViewer] ", 
               "  Skeleton scale factor:",
               skeletonScaleFactor,
               "(fits within mesh bounds)",
@@ -3074,7 +3074,7 @@ const ThreeViewerComponent = forwardRef(
     // Initialize Three.js scene with professional setup
 
     useEffect(() => {
-      console.log("🎬 ThreeViewer mounting...");
+      console.log("[ThreeViewer] ", "🎬 ThreeViewer mounting...");
       mountedRef.current = true;
 
       if (!containerRef.current) return;
@@ -3170,11 +3170,11 @@ const ThreeViewerComponent = forwardRef(
         const isDragging = event.value;
         controls.enabled = !isDragging;
 
-        console.log(
+        console.log("[ThreeViewer] ", 
           `[drag] ${isDragging ? "🎯 Started" : "✅ Stopped"} dragging bone`,
         );
-        console.log("  - OrbitControls enabled:", controls.enabled);
-        console.log("  - TransformControls enabled:", tControls.enabled);
+        console.log("[ThreeViewer] ", "  - OrbitControls enabled:", controls.enabled);
+        console.log("[ThreeViewer] ", "  - TransformControls enabled:", tControls.enabled);
 
         if (!isDragging) {
           // Update skeleton helper after drag completes
@@ -3203,7 +3203,7 @@ const ThreeViewerComponent = forwardRef(
         const isRight = /[_\-.]?(r|right)[_\-.]?/i.test(selectedBone.name);
 
         if (!isLeft && !isRight) {
-          console.log(
+          console.log("[ThreeViewer] ", 
             `[mirror] ${selectedBone.name} is not a left/right bone (center bone), skipping`,
           );
           return; // Center bone, no mirror
@@ -3238,7 +3238,7 @@ const ThreeViewerComponent = forwardRef(
         }
 
         if (!mirrorBone) {
-          console.log(`[mirror] No mirror bone found for ${selectedBone.name}`);
+          console.log("[ThreeViewer] ", `[mirror] No mirror bone found for ${selectedBone.name}`);
           return;
         }
 
@@ -3260,16 +3260,16 @@ const ThreeViewerComponent = forwardRef(
         mirrorBone.updateMatrix();
         mirrorBone.updateMatrixWorld(true);
 
-        console.log(
+        console.log("[ThreeViewer] ", 
           `[mirror] ✅ Mirrored ${selectedBone.name} → ${mirrorBone.name}`,
         );
-        console.log(`[mirror]   Transform: ${transformMode}`);
+        console.log("[ThreeViewer] ", `[mirror]   Transform: ${transformMode}`);
         if (transformMode === "translate") {
-          console.log(
+          console.log("[ThreeViewer] ", 
             `[mirror]   Position: (${mirrorBone.position.x.toFixed(3)}, ${mirrorBone.position.y.toFixed(3)}, ${mirrorBone.position.z.toFixed(3)})`,
           );
         } else {
-          console.log(
+          console.log("[ThreeViewer] ", 
             `[mirror]   Rotation: (${mirrorBone.rotation.x.toFixed(3)}, ${mirrorBone.rotation.y.toFixed(3)}, ${mirrorBone.rotation.z.toFixed(3)})`,
           );
         }
@@ -3281,23 +3281,23 @@ const ThreeViewerComponent = forwardRef(
 
       // When bone is dragged, sync the actual rig bones (Mesh2Motion pattern)
       tControls.addEventListener("change", () => {
-        console.log("[bone-edit] Change event fired");
-        console.log(
+        console.log("[ThreeViewer] ", "[bone-edit] Change event fired");
+        console.log("[ThreeViewer] ", 
           "[bone-edit] Reading ref directly inside listener:",
           boneMirrorEnabledRef,
         );
-        console.log(
+        console.log("[ThreeViewer] ", 
           "[bone-edit] Reading ref.current:",
           boneMirrorEnabledRef.current,
         );
 
         if (!selectedBoneRef.current) {
-          console.log("[bone-edit] No selected bone");
+          console.log("[ThreeViewer] ", "[bone-edit] No selected bone");
           return;
         }
 
         const draggedBone = selectedBoneRef.current;
-        console.log(
+        console.log("[ThreeViewer] ", 
           `[bone-edit] Editing overlay bone: ${draggedBone.name}, position:`,
           draggedBone.position.toArray(),
         );
@@ -3312,11 +3312,11 @@ const ThreeViewerComponent = forwardRef(
         }
 
         // Apply mirror mode if enabled (use refs to avoid stale closure values)
-        console.log(
+        console.log("[ThreeViewer] ", 
           `[bone-edit] Mirror check - enabled: ${boneMirrorEnabledRef.current}, bone: ${selectedBoneRef.current?.name}`,
         );
         if (boneMirrorEnabledRef.current && selectedBoneRef.current) {
-          console.log(
+          console.log("[ThreeViewer] ", 
             `[mirror] Attempting to mirror ${selectedBoneRef.current.name}...`,
           );
           applyMirrorMode(
@@ -3325,10 +3325,10 @@ const ThreeViewerComponent = forwardRef(
           );
         } else {
           if (!boneMirrorEnabledRef.current) {
-            console.log(`[mirror] Skipped - mirror mode disabled`);
+            console.log("[ThreeViewer] ", `[mirror] Skipped - mirror mode disabled`);
           }
           if (!selectedBoneRef.current) {
-            console.log(`[mirror] Skipped - no bone selected`);
+            console.log("[ThreeViewer] ", `[mirror] Skipped - no bone selected`);
           }
         }
       });
@@ -3336,9 +3336,9 @@ const ThreeViewerComponent = forwardRef(
       // Store TransformControls reference (it manages its own rendering, no need to add to scene)
       transformControlsRef.current = tControls;
 
-      console.log("✅ TransformControls initialized");
-      console.log("   TransformControls enabled:", tControls.enabled);
-      console.log("   TransformControls size:", tControls.size);
+      console.log("[ThreeViewer] ", "✅ TransformControls initialized");
+      console.log("[ThreeViewer] ", "   TransformControls enabled:", tControls.enabled);
+      console.log("[ThreeViewer] ", "   TransformControls size:", tControls.size);
 
       // Create bone highlight sphere (will be positioned on selected bone)
       const highlightSphere = new THREE.Mesh(
@@ -3355,14 +3355,14 @@ const ThreeViewerComponent = forwardRef(
       highlightSphere.renderOrder = 998; // Render before gizmo
       scene.add(highlightSphere);
       boneHighlightSphereRef.current = highlightSphere;
-      console.log("✅ Bone highlight sphere created");
+      console.log("[ThreeViewer] ", "✅ Bone highlight sphere created");
 
       // Create labels group for bone names (will be populated when bones are visible)
       const labelsGroup = new THREE.Group();
       labelsGroup.name = "BoneLabels";
       scene.add(labelsGroup);
       boneLabelsGroupRef.current = labelsGroup;
-      console.log("✅ Bone labels group created");
+      console.log("[ThreeViewer] ", "✅ Bone labels group created");
 
       // Professional lighting setup
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -3410,9 +3410,9 @@ const ThreeViewerComponent = forwardRef(
         if (showHandControlsRef.current) {
           // Debug if we're even entering this block (use ref to avoid spam)
           if (!handControlsLoggedRef.current) {
-            console.log("🚀 Hand controls ARE enabled in animation loop");
-            console.log("  handBones:", handBonesRef.current);
-            console.log("  handRotations:", handRotationsRef.current);
+            console.log("[ThreeViewer] ", "🚀 Hand controls ARE enabled in animation loop");
+            console.log("[ThreeViewer] ", "  handBones:", handBonesRef.current);
+            console.log("[ThreeViewer] ", "  handRotations:", handRotationsRef.current);
             handControlsLoggedRef.current = true;
           }
 
@@ -3422,10 +3422,10 @@ const ThreeViewerComponent = forwardRef(
             currentRotation !== 0 &&
             !(window as ExtendedWindow)._rotationLogged
           ) {
-            console.log(`🎯 Non-zero rotation detected!`);
-            console.log(`  Bone exists: ${!!handBonesRef.current.leftPalm}`);
-            console.log(`  Rotation value: ${currentRotation}°`);
-            console.log(`  Axis: ${rotationAxisRef.current}`);
+            console.log("[ThreeViewer] ", `🎯 Non-zero rotation detected!`);
+            console.log("[ThreeViewer] ", `  Bone exists: ${!!handBonesRef.current.leftPalm}`);
+            console.log("[ThreeViewer] ", `  Rotation value: ${currentRotation}°`);
+            console.log("[ThreeViewer] ", `  Axis: ${rotationAxisRef.current}`);
             (window as ExtendedWindow)._rotationLogged = true;
           }
 
@@ -3434,10 +3434,10 @@ const ThreeViewerComponent = forwardRef(
             handRotationsRef.current.leftPalm !==
             prevHandRotationsRef.current.leftPalm
           ) {
-            console.log(`🎯 Rotation CHANGED for leftPalm bone`);
-            console.log(`  Old: ${prevHandRotationsRef.current.leftPalm}°`);
-            console.log(`  New: ${handRotationsRef.current.leftPalm}°`);
-            console.log(`  Axis: ${rotationAxisRef.current}`);
+            console.log("[ThreeViewer] ", `🎯 Rotation CHANGED for leftPalm bone`);
+            console.log("[ThreeViewer] ", `  Old: ${prevHandRotationsRef.current.leftPalm}°`);
+            console.log("[ThreeViewer] ", `  New: ${handRotationsRef.current.leftPalm}°`);
+            console.log("[ThreeViewer] ", `  Axis: ${rotationAxisRef.current}`);
 
             // Check if the bone is in any skeleton
             if (handBonesRef.current.leftPalm && modelRef.current) {
@@ -3449,17 +3449,17 @@ const ThreeViewerComponent = forwardRef(
                   );
                   if (boneIndex !== -1) {
                     foundInSkeleton = true;
-                    console.log(
+                    console.log("[ThreeViewer] ", 
                       `  ✓ Bone found in skeleton at index: ${boneIndex}`,
                     );
-                    console.log(
+                    console.log("[ThreeViewer] ", 
                       `  Skeleton has ${child.skeleton.bones.length} bones total`,
                     );
                   }
                 }
               });
               if (!foundInSkeleton) {
-                console.log(`  ❌ Bone NOT found in any skeleton!`);
+                console.log("[ThreeViewer] ", `  ❌ Bone NOT found in any skeleton!`);
               }
             }
 
@@ -3494,13 +3494,13 @@ const ThreeViewerComponent = forwardRef(
               (window as ExtendedWindow)._lastLoggedRotation !== radians
             ) {
               if (radians !== 0) {
-                console.log(`  💫 Rotation applied to leftPalm!`);
-                console.log(
+                console.log("[ThreeViewer] ", `  💫 Rotation applied to leftPalm!`);
+                console.log("[ThreeViewer] ", 
                   `    Slider value: ${handRotationsRef.current.leftPalm}°`,
                 );
-                console.log(`    Radians: ${radians.toFixed(3)}`);
-                console.log(`    Axis: ${rotationAxisRef.current}`);
-                console.log(
+                console.log("[ThreeViewer] ", `    Radians: ${radians.toFixed(3)}`);
+                console.log("[ThreeViewer] ", `    Axis: ${rotationAxisRef.current}`);
+                console.log("[ThreeViewer] ", 
                   `    Bone rotation: x=${currentRot.x.toFixed(3)}, y=${currentRot.y.toFixed(3)}, z=${currentRot.z.toFixed(3)}`,
                 );
                 (window as ExtendedWindow)._lastLoggedRotation = radians;
@@ -3559,7 +3559,7 @@ const ThreeViewerComponent = forwardRef(
               (window as ExtendedWindow)._lastSkeletonRotation !==
                 currentRotationSum
             ) {
-              console.log("📐 Updating skeleton after rotation");
+              console.log("[ThreeViewer] ", "📐 Updating skeleton after rotation");
               (window as ExtendedWindow)._skeletonUpdateLogged = true;
               (window as ExtendedWindow)._lastSkeletonRotation =
                 currentRotationSum;
@@ -3849,7 +3849,7 @@ const ThreeViewerComponent = forwardRef(
       window.addEventListener("keydown", handleKeydown);
 
       return () => {
-        console.log("🧹 ThreeViewer unmounting...");
+        console.log("[ThreeViewer] ", "🧹 ThreeViewer unmounting...");
         if (resizeTimeout) cancelAnimationFrame(resizeTimeout);
         window.removeEventListener("resize", debouncedResize);
         window.removeEventListener("keydown", handleKeydown);
@@ -3974,14 +3974,14 @@ const ThreeViewerComponent = forwardRef(
 
       // Prevent loading the same model twice
       if (currentModelUrlRef.current === modelUrl) {
-        console.log(`🚫 Model already loaded/loading: ${modelUrl}`);
+        console.log("[ThreeViewer] ", `🚫 Model already loaded/loading: ${modelUrl}`);
         return;
       }
 
       // Reset reference scale when loading a new model (different character)
       if (!assetInfo?.isAnimationFile) {
         referenceScaleRef.current = null;
-        console.log("🔄 Reset reference scale for new asset");
+        console.log("[ThreeViewer] ", "🔄 Reset reference scale for new asset");
       }
 
       currentModelUrlRef.current = modelUrl;
@@ -4104,12 +4104,12 @@ const ThreeViewerComponent = forwardRef(
             const model = gltf.scene;
 
             // GLTF scenes sometimes have weird nested scales - let's normalize them
-            console.log("🎯 GLTF scene loaded, checking for scale issues...");
+            console.log("[ThreeViewer] ", "🎯 GLTF scene loaded, checking for scale issues...");
 
             // IMPORTANT: DON'T reset the scene scale!
             // The scale is intentional and affects the retargeting workflow
             // If we reset it, the preview mesh will be too small
-            console.log(
+            console.log("[ThreeViewer] ", 
               `  Scene scale: (${model.scale.x}, ${model.scale.y}, ${model.scale.z})`,
             );
             // DON'T DO THIS: model.scale.set(1, 1, 1)
@@ -4117,22 +4117,22 @@ const ThreeViewerComponent = forwardRef(
             // Update matrices before we start
             model.updateMatrixWorld(true);
 
-            console.log(`Loading model from: ${modelUrl}`);
-            console.log(`Model children count: ${model.children.length}`);
-            console.log(
+            console.log("[ThreeViewer] ", `Loading model from: ${modelUrl}`);
+            console.log("[ThreeViewer] ", `Model children count: ${model.children.length}`);
+            console.log("[ThreeViewer] ", 
               `Model initial scale: x=${model.scale.x}, y=${model.scale.y}, z=${model.scale.z}`,
             );
-            console.log(
+            console.log("[ThreeViewer] ", 
               `Model initial position: x=${model.position.x}, y=${model.position.y}, z=${model.position.z}`,
             );
-            console.log(
+            console.log("[ThreeViewer] ", 
               `Model initial rotation: x=${model.rotation.x}, y=${model.rotation.y}, z=${model.rotation.z}`,
             );
 
             // Debug: Traverse entire hierarchy to find scale issues (disabled for performance)
             const debugScaleIssues = false; // Set to true to enable verbose scale logging
             if (debugScaleIssues) {
-              console.log("🔍 Full hierarchy inspection:");
+              console.log("[ThreeViewer] ", "🔍 Full hierarchy inspection:");
               const inspectHierarchy = (
                 obj: THREE.Object3D,
                 depth: number = 0,
@@ -4140,7 +4140,7 @@ const ThreeViewerComponent = forwardRef(
                 const indent = "  ".repeat(depth);
                 const worldScale = new THREE.Vector3();
                 obj.getWorldScale(worldScale);
-                console.log(
+                console.log("[ThreeViewer] ", 
                   `${indent}${obj.type} "${obj.name}": localScale=(${obj.scale.x.toFixed(3)}, ${obj.scale.y.toFixed(3)}, ${obj.scale.z.toFixed(3)}), worldScale=(${worldScale.x.toFixed(3)}, ${worldScale.y.toFixed(3)}, ${worldScale.z.toFixed(3)})`,
                 );
 
@@ -4155,7 +4155,7 @@ const ThreeViewerComponent = forwardRef(
                     Math.abs(matrixScale.y - 1) > 0.001 ||
                     Math.abs(matrixScale.z - 1) > 0.001
                   ) {
-                    console.log(
+                    console.log("[ThreeViewer] ", 
                       `${indent}  ⚠️ Matrix has scale: (${matrixScale.x.toFixed(3)}, ${matrixScale.y.toFixed(3)}, ${matrixScale.z.toFixed(3)})`,
                     );
                   }
@@ -4170,7 +4170,7 @@ const ThreeViewerComponent = forwardRef(
 
             // Fix any embedded scales in the model
             if (debugScaleIssues) {
-              console.log("🔧 Checking for embedded scales to fix...");
+              console.log("[ThreeViewer] ", "🔧 Checking for embedded scales to fix...");
             }
 
             // For animation files with tiny armature scales, we need visual compensation
@@ -4178,12 +4178,12 @@ const ThreeViewerComponent = forwardRef(
               let visualCompensation = 1;
               model.traverse((child) => {
                 if (child.name === "Armature" && child.scale.x < 0.02) {
-                  console.log(
+                  console.log("[ThreeViewer] ", 
                     `⚠️ Found Armature with tiny scale: ${child.scale.x}`,
                   );
                   // Calculate how much we need to scale up visually
                   visualCompensation = 1 / child.scale.x;
-                  console.log(
+                  console.log("[ThreeViewer] ", 
                     `📏 Visual compensation needed: ${visualCompensation}x`,
                   );
                 }
@@ -4192,14 +4192,14 @@ const ThreeViewerComponent = forwardRef(
               // Store the compensation factor for later use
               if (visualCompensation > 1) {
                 model.userData.visualCompensation = visualCompensation;
-                console.log(
+                console.log("[ThreeViewer] ", 
                   `💾 Stored visual compensation factor: ${visualCompensation}`,
                 );
               }
             } else {
               // For non-animation models, fix any weird scales
               if (debugScaleIssues) {
-                console.log("  Checking for other scales to fix");
+                console.log("[ThreeViewer] ", "  Checking for other scales to fix");
               }
               model.traverse((child) => {
                 if (
@@ -4208,7 +4208,7 @@ const ThreeViewerComponent = forwardRef(
                   child.scale.z !== 1
                 ) {
                   if (debugScaleIssues) {
-                    console.log(
+                    console.log("[ThreeViewer] ", 
                       `  Found scale on ${child.type} "${child.name}": (${child.scale.x}, ${child.scale.y}, ${child.scale.z})`,
                     );
                   }
@@ -4218,7 +4218,7 @@ const ThreeViewerComponent = forwardRef(
                     child.name !== "Armature"
                   ) {
                     if (debugScaleIssues) {
-                      console.log(`  Resetting to (1, 1, 1)`);
+                      console.log("[ThreeViewer] ", `  Resetting to (1, 1, 1)`);
                     }
                     child.scale.set(1, 1, 1);
                   }
@@ -4236,7 +4236,7 @@ const ThreeViewerComponent = forwardRef(
                   child instanceof THREE.Mesh ||
                   child instanceof THREE.SkinnedMesh
                 ) {
-                  console.log(
+                  console.log("[ThreeViewer] ", 
                     `  - ${child.type}: ${child.name || "unnamed"} (scale: ${child.scale.x}, ${child.scale.y}, ${child.scale.z})`,
                   );
                 }
@@ -4258,7 +4258,7 @@ const ThreeViewerComponent = forwardRef(
               box = new THREE.Box3().setFromObject(model);
               size = box.getSize(new THREE.Vector3());
             } catch (error) {
-              console.warn(
+              console.warn("[ThreeViewer] ", 
                 "Error calculating bounding box, using fallback:",
                 error,
               );
@@ -4300,7 +4300,7 @@ const ThreeViewerComponent = forwardRef(
               const currentHeight = size.y;
               const targetHeight = assetInfo?.characterHeight || 1.7; // Default character height: 1.7m
               scale = targetHeight / currentHeight;
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `🎯 Character scaled: ${currentHeight.toFixed(2)}m → ${targetHeight}m (${scale.toFixed(2)}x)`,
               );
             } else {
@@ -4326,12 +4326,12 @@ const ThreeViewerComponent = forwardRef(
                 const verifySize = verifyBox.getSize(new THREE.Vector3());
                 const targetHeight = assetInfo?.characterHeight || 1.7;
                 if (Math.abs(verifySize.y - targetHeight) > 0.05) {
-                  console.warn(
+                  console.warn("[ThreeViewer] ", 
                     `⚠️ Scale mismatch: expected ${targetHeight}m, got ${verifySize.y.toFixed(3)}m`,
                   );
                 }
               } catch (error) {
-                console.warn("Error verifying final model size:", error);
+                console.warn("[ThreeViewer] ", "Error verifying final model size:", error);
               }
             }
 
@@ -4432,7 +4432,7 @@ const ThreeViewerComponent = forwardRef(
               const isAnimationFile = assetInfo?.isAnimationFile || false;
 
               if (shouldStripAnimations || isAnimationFile) {
-                console.log(
+                console.log("[ThreeViewer] ", 
                   "Animation file detected - setting up for T-pose display",
                 );
 
@@ -4466,7 +4466,7 @@ const ThreeViewerComponent = forwardRef(
                         child instanceof THREE.SkinnedMesh &&
                         child.skeleton
                       ) {
-                        console.log(
+                        console.log("[ThreeViewer] ", 
                           `🦴 Resetting skeleton to bind pose for: ${child.name}`,
                         );
 
@@ -4481,14 +4481,14 @@ const ThreeViewerComponent = forwardRef(
                         child.updateMatrix();
                         child.updateMatrixWorld(true);
 
-                        console.log(
+                        console.log("[ThreeViewer] ", 
                           `   Bones: ${child.skeleton.bones.length}, Root: ${child.skeleton.bones[0]?.name || "unnamed"}`,
                         );
 
                         // Debug: Check T-pose bounding box
                         const tposeBox = new THREE.Box3().setFromObject(child);
                         const tposeSize = tposeBox.getSize(new THREE.Vector3());
-                        console.log(
+                        console.log("[ThreeViewer] ", 
                           `   T-pose bounds: ${tposeSize.x.toFixed(3)} x ${tposeSize.y.toFixed(3)} x ${tposeSize.z.toFixed(3)}`,
                         );
                       }
@@ -4507,7 +4507,7 @@ const ThreeViewerComponent = forwardRef(
                       modelUrl.includes("walking.glb") ||
                       modelUrl.includes("running.glb")
                     ) {
-                      console.log(`Auto-playing animation for ${modelUrl}`);
+                      console.log("[ThreeViewer] ", `Auto-playing animation for ${modelUrl}`);
                       const action = mixer.clipAction(animationClip);
                       action.reset();
                       action.setLoop(THREE.LoopRepeat, Infinity);
@@ -4560,7 +4560,7 @@ const ThreeViewerComponent = forwardRef(
             });
 
             if (existingModels.length > 0) {
-              console.log(
+              console.log("[ThreeViewer] ", 
                 `⚠️ Found ${existingModels.length} existing models before adding new one! Removing them...`,
               );
               existingModels.forEach((obj) => {
@@ -4769,7 +4769,7 @@ const ThreeViewerComponent = forwardRef(
                   assetInfo?.characterHeight &&
                   finalWorldSize.y < assetInfo.characterHeight * 0.9
                 ) {
-                  console.error(
+                  console.error("[ThreeViewer] ", 
                     `❌ Model scale error: expected ${assetInfo.characterHeight}m, got ${finalWorldSize.y.toFixed(3)}m`,
                   );
 
@@ -4805,7 +4805,7 @@ const ThreeViewerComponent = forwardRef(
             }
           },
           (error) => {
-            console.error("Error loading model:", error);
+            console.error("[ThreeViewer] ", "Error loading model:", error);
             setLoading(false);
             const errorMessage =
               error instanceof Error
@@ -4832,7 +4832,7 @@ const ThreeViewerComponent = forwardRef(
             loadModel(fileSize);
           })
           .catch((error) => {
-            console.error("Error fetching file size:", error);
+            console.error("[ThreeViewer] ", "Error fetching file size:", error);
             // Continue loading even if we can't get file size
             loadModel();
           });
@@ -4840,7 +4840,7 @@ const ThreeViewerComponent = forwardRef(
 
       // Cleanup function
       return () => {
-        console.log(`🧹 Cleaning up model load for: ${modelUrl}`);
+        console.log("[ThreeViewer] ", `🧹 Cleaning up model load for: ${modelUrl}`);
         // Reset the URL ref so next load works
         if (currentModelUrlRef.current === modelUrl) {
           currentModelUrlRef.current = null;
@@ -5302,10 +5302,10 @@ const ThreeViewerComponent = forwardRef(
                     value={handRotations.leftPalm}
                     onChange={(e) => {
                       const value = Number(e.target.value);
-                      console.log(
+                      console.log("[ThreeViewer] ", 
                         `🎚️ Left palm rotation changed to: ${value}°`,
                       );
-                      console.log(`  Hand bones state:`, handBones);
+                      console.log("[ThreeViewer] ", `  Hand bones state:`, handBones);
                       setHandRotations((prev) => ({
                         ...prev,
                         leftPalm: value,
@@ -5440,12 +5440,12 @@ const ThreeViewerComponent = forwardRef(
               onClick={() => {
                 if (!modelRef.current) return;
 
-                console.log("=== Hand Bone Diagnostics ===");
+                console.log("[ThreeViewer] ", "=== Hand Bone Diagnostics ===");
 
                 modelRef.current.traverse((child) => {
                   if (child instanceof THREE.SkinnedMesh) {
-                    console.log(`\nSkinnedMesh: ${child.name}`);
-                    console.log(
+                    console.log("[ThreeViewer] ", `\nSkinnedMesh: ${child.name}`);
+                    console.log("[ThreeViewer] ", 
                       `  Total bones: ${child.skeleton.bones.length}`,
                     );
 
@@ -5457,20 +5457,20 @@ const ThreeViewerComponent = forwardRef(
                       if (!bone) return;
 
                       const boneIndex = child.skeleton.bones.indexOf(bone);
-                      console.log(`  ${name}:`);
-                      console.log(`    - Index in skeleton: ${boneIndex}`);
-                      console.log(
+                      console.log("[ThreeViewer] ", `  ${name}:`);
+                      console.log("[ThreeViewer] ", `    - Index in skeleton: ${boneIndex}`);
+                      console.log("[ThreeViewer] ", 
                         `    - Parent: ${bone.parent?.name || "none"}`,
                       );
-                      console.log(`    - Position: ${bone.position.toArray()}`);
-                      console.log(
+                      console.log("[ThreeViewer] ", `    - Position: ${bone.position.toArray()}`);
+                      console.log("[ThreeViewer] ", 
                         `    - World Position: ${(() => {
                           const wp = new THREE.Vector3();
                           bone.getWorldPosition(wp);
                           return wp.toArray();
                         })()}`,
                       );
-                      console.log(
+                      console.log("[ThreeViewer] ", 
                         `    - Has updates: ${bone.matrixWorldNeedsUpdate}`,
                       );
                     };
@@ -5481,15 +5481,15 @@ const ThreeViewerComponent = forwardRef(
                     checkBone(handBones.rightFingers, "Right Fingers");
 
                     // Check if skeleton is bound properly
-                    console.log(
+                    console.log("[ThreeViewer] ", 
                       `  Skeleton bound: ${child.skeleton === child.skeleton}`,
                     );
-                    console.log(`  Bind matrix: ${child.bindMatrix.elements}`);
-                    console.log(`  Bind mode: ${child.bindMode}`);
+                    console.log("[ThreeViewer] ", `  Bind matrix: ${child.bindMatrix.elements}`);
+                    console.log("[ThreeViewer] ", `  Bind mode: ${child.bindMode}`);
                   }
                 });
 
-                console.log("=== End Diagnostics ===");
+                console.log("[ThreeViewer] ", "=== End Diagnostics ===");
               }}
               className="w-full px-3 py-1.5 bg-bg-tertiary hover:bg-bg-hover text-text-secondary hover:text-text-primary text-xs rounded transition-colors"
             >

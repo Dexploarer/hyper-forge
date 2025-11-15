@@ -1,4 +1,4 @@
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 /**
  * Image Hosting Service
@@ -7,64 +7,79 @@ import { logger } from '../utils/logger';
 
 interface UploadOptions {
   // Future options for image upload configuration
-  maxSize?: number
-  format?: string
+  maxSize?: number;
+  format?: string;
 }
 
 interface ImgurUploadResponse {
   data: {
-    link: string
-    id: string
-    deletehash: string
-  }
-  success: boolean
-  status: number
+    link: string;
+    id: string;
+    deletehash: string;
+  };
+  success: boolean;
+  status: number;
 }
 
 interface ImgurUploadRequest {
-  image: string
-  type: 'base64' | 'url'
+  image: string;
+  type: "base64" | "url";
 }
 
 export class ImageHostingService {
-  private readonly imgurClientId: string | null
+  private readonly imgurClientId: string | null;
 
   constructor() {
-    this.imgurClientId = process.env.IMGUR_CLIENT_ID || null
+    this.imgurClientId = process.env.IMGUR_CLIENT_ID || null;
   }
 
   /**
    * Upload image to a public hosting service
    * Falls back to data URI if no hosting service is available
    */
-  async uploadImage(imageDataOrPath: string, options: UploadOptions = {}): Promise<string> {
+  async uploadImage(
+    imageDataOrPath: string,
+    options: UploadOptions = {},
+  ): Promise<string> {
     try {
       // If we have Imgur configured, use it
       if (this.imgurClientId) {
-        return await this.uploadToImgur(imageDataOrPath)
+        return await this.uploadToImgur(imageDataOrPath);
       }
 
       // If it's already a URL, return it
-      if (typeof imageDataOrPath === 'string' && imageDataOrPath.startsWith('http')) {
-        return imageDataOrPath
+      if (
+        typeof imageDataOrPath === "string" &&
+        imageDataOrPath.startsWith("http")
+      ) {
+        return imageDataOrPath;
       }
 
       // If it's a data URI and small enough, return it
-      if (typeof imageDataOrPath === 'string' && imageDataOrPath.startsWith('data:')) {
-        if (imageDataOrPath.length < 5000000) { // Less than 5MB
-          logger.info('📸 Using data URI directly (no public hosting configured)')
-          return imageDataOrPath
+      if (
+        typeof imageDataOrPath === "string" &&
+        imageDataOrPath.startsWith("data:")
+      ) {
+        if (imageDataOrPath.length < 5000000) {
+          // Less than 5MB
+          logger.info(
+            "📸 Using data URI directly (no public hosting configured)",
+          );
+          return imageDataOrPath;
         } else {
-          throw new Error('Image too large for data URI and no public hosting configured')
+          throw new Error(
+            "Image too large for data URI and no public hosting configured",
+          );
         }
       }
 
       // Otherwise, we need a public hosting service
-      throw new Error('No public image hosting service configured. Set IMGUR_CLIENT_ID in .env or use ngrok.')
-
+      throw new Error(
+        "No public image hosting service configured. Set IMGUR_CLIENT_ID in .env or use ngrok.",
+      );
     } catch (error) {
-      logger.error('Failed to upload image:', error)
-      throw error
+      logger.error({ err: error }, "Failed to upload image");
+      throw error;
     }
   }
 
@@ -73,38 +88,37 @@ export class ImageHostingService {
    */
   async uploadToImgur(imageData: string): Promise<string> {
     try {
-      let base64Data = imageData
+      let base64Data = imageData;
 
       // Convert to base64 if needed
-      if (imageData.startsWith('data:')) {
-        base64Data = imageData.split(',')[1]!
+      if (imageData.startsWith("data:")) {
+        base64Data = imageData.split(",")[1]!;
       }
 
       const requestBody: ImgurUploadRequest = {
         image: base64Data,
-        type: 'base64'
-      }
+        type: "base64",
+      };
 
-      const response = await fetch('https://api.imgur.com/3/image', {
-        method: 'POST',
+      const response = await fetch("https://api.imgur.com/3/image", {
+        method: "POST",
         headers: {
-          'Authorization': `Client-ID ${this.imgurClientId}`,
-          'Content-Type': 'application/json'
+          Authorization: `Client-ID ${this.imgurClientId}`,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody)
-      })
+        body: JSON.stringify(requestBody),
+      });
 
       if (!response.ok) {
-        throw new Error(`Imgur upload failed: ${response.statusText}`)
+        throw new Error(`Imgur upload failed: ${response.statusText}`);
       }
 
-      const data = await response.json() as ImgurUploadResponse
-      logger.info('✅ Image uploaded to Imgur:', data.data.link)
-      return data.data.link
-
+      const data = (await response.json()) as ImgurUploadResponse;
+      logger.info({ link: data.data.link }, "✅ Image uploaded to Imgur");
+      return data.data.link;
     } catch (error) {
-      logger.error('Imgur upload error:', error)
-      throw error
+      logger.error({ err: error }, "Imgur upload error");
+      throw error;
     }
   }
 
@@ -132,6 +146,6 @@ Option 3: Use data URIs (automatic fallback)
   - May not work with all APIs
 
 For production, use AWS S3, Cloudinary, or similar.
-`
+`;
   }
 }

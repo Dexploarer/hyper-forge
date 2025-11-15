@@ -10,7 +10,10 @@ import { userService } from "../services/UserService";
 import { env } from "../config/env";
 
 // Initialize Privy client
-const privy = new PrivyClient(env.PRIVY_APP_ID, env.PRIVY_APP_SECRET);
+const privy = new PrivyClient(
+  env.PRIVY_APP_ID || "",
+  env.PRIVY_APP_SECRET || "",
+);
 
 export interface AuthUser {
   id: string;

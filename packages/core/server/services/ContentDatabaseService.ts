@@ -355,8 +355,8 @@ export class ContentDatabaseService {
       return dialogue;
     } catch (error) {
       logger.error(
-        `[ContentDatabaseService] Failed to create Dialogue:`,
-        error,
+        { err: error },
+        "[ContentDatabaseService] Failed to create Dialogue",
       );
       throw error;
     }
@@ -397,10 +397,7 @@ export class ContentDatabaseService {
 
       return result;
     } catch (error) {
-      logger.error(
-        `[ContentDatabaseService] Failed to list Dialogues:`,
-        error,
-      );
+      logger.error({ err: error }, `[ContentDatabaseService] Failed to list Dialogues`);
       return [];
     }
   }
@@ -436,10 +433,7 @@ export class ContentDatabaseService {
 
       return dialogue;
     } catch (error) {
-      logger.error(
-        `[ContentDatabaseService] Failed to update Dialogue:`,
-        error,
-      );
+      logger.error({ err: error }, `[ContentDatabaseService] Failed to update Dialogue`);
       throw error;
     }
   }
@@ -465,10 +459,7 @@ export class ContentDatabaseService {
         });
       }
     } catch (error) {
-      logger.error(
-        `[ContentDatabaseService] Failed to delete Dialogue:`,
-        error,
-      );
+      logger.error({ err: error }, `[ContentDatabaseService] Failed to delete Dialogue`);
       throw error;
     }
   }
@@ -655,10 +646,7 @@ export class ContentDatabaseService {
         `Indexed NPC to Qdrant: ${npc.id}`,
       );
     } catch (error) {
-      logger.error(
-        `[ContentDatabaseService] Error indexing NPC ${npc.id} to Qdrant:`,
-        error,
-      );
+      logger.error({ err: error }, `[ContentDatabaseService] Error indexing NPC ${npc.id} to Qdrant`);
       throw error;
     }
   }
@@ -694,10 +682,7 @@ export class ContentDatabaseService {
         `[ContentDatabaseService] Indexed Quest to Qdrant: ${quest.id}`,
       );
     } catch (error) {
-      logger.error(
-        `[ContentDatabaseService] Error indexing Quest ${quest.id} to Qdrant:`,
-        error,
-      );
+      logger.error({ err: error }, `[ContentDatabaseService] Error indexing Quest ${quest.id} to Qdrant`);
       throw error;
     }
   }
@@ -733,10 +718,7 @@ export class ContentDatabaseService {
         `[ContentDatabaseService] Indexed Lore to Qdrant: ${lore.id}`,
       );
     } catch (error) {
-      logger.error(
-        `[ContentDatabaseService] Error indexing Lore ${lore.id} to Qdrant:`,
-        error,
-      );
+      logger.error({ err: error }, `[ContentDatabaseService] Error indexing Lore ${lore.id} to Qdrant`);
       throw error;
     }
   }
@@ -770,10 +752,7 @@ export class ContentDatabaseService {
         `[ContentDatabaseService] Indexed Dialogue to Qdrant: ${dialogue.id}`,
       );
     } catch (error) {
-      logger.error(
-        `[ContentDatabaseService] Error indexing Dialogue ${dialogue.id} to Qdrant:`,
-        error,
-      );
+      logger.error({ err: error }, `[ContentDatabaseService] Error indexing Dialogue ${dialogue.id} to Qdrant`);
       throw error;
     }
   }

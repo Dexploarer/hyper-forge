@@ -4,7 +4,7 @@
  */
 
 import { db } from "../db/db";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import {
   achievements,
   userAchievements,
@@ -51,8 +51,8 @@ export class AchievementService {
       return allAchievements;
     } catch (error) {
       logger.error(
-        "[AchievementService] Failed to get all achievements:",
-        error,
+        { err: error },
+        "[AchievementService] Failed to get all achievements",
       );
       throw error;
     }
@@ -70,8 +70,8 @@ export class AchievementService {
       return achievement || null;
     } catch (error) {
       logger.error(
+        { err: error },
         `[AchievementService] Failed to get achievement by code: ${code}`,
-        error,
       );
       throw error;
     }
@@ -125,8 +125,8 @@ export class AchievementService {
       return progress;
     } catch (error) {
       logger.error(
+        { err: error },
         `[AchievementService] Failed to get user achievements: ${userId}`,
-        error,
       );
       throw error;
     }
@@ -194,8 +194,8 @@ export class AchievementService {
       };
     } catch (error) {
       logger.error(
+        { err: error },
         `[AchievementService] Failed to get user achievement summary: ${userId}`,
-        error,
       );
       throw error;
     }
@@ -291,8 +291,8 @@ export class AchievementService {
       };
     } catch (error) {
       logger.error(
+        { err: error },
         `[AchievementService] Failed to award achievement: ${achievementCode}`,
-        error,
       );
       return {
         success: false,
@@ -453,8 +453,8 @@ export class AchievementService {
       };
     } catch (error) {
       logger.error(
+        { err: error },
         `[AchievementService] Failed to update progress: ${achievementCode}`,
-        error,
       );
       return {
         success: false,
@@ -611,18 +611,21 @@ export class AchievementService {
           }
         } catch (innerError) {
           logger.warn(
-            `[AchievementService] Failed to create/update achievement ${achievement.code}:`,
-            innerError,
+            { err: innerError },
+            `[AchievementService] Failed to create/update achievement ${achievement.code}`,
           );
           // Continue with other achievements
         }
       }
 
-      logger.info({ }, '[AchievementService] Achievement initialization complete');
+      logger.info(
+        {},
+        "[AchievementService] Achievement initialization complete",
+      );
     } catch (error) {
       logger.error(
-        "[AchievementService] Failed to initialize default achievements:",
-        error,
+        { err: error },
+        "[AchievementService] Failed to initialize default achievements",
       );
       // Don't throw - allow server to start even if achievements fail to initialize
       return;

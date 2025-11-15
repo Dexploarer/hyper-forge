@@ -304,8 +304,9 @@ export function LandingPage() {
       {/* Admin Login Modal */}
       {showAdminLogin && (
         <div
-          className="fixed inset-0 bg-black/50  z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50  z-modal flex items-center justify-center p-4"
           onClick={() => setShowAdminLogin(false)}
+          data-overlay="true"
         >
           <div
             className="bg-bg-secondary rounded-2xl p-6 shadow-2xl border border-border-primary max-w-md w-full"

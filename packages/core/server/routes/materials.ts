@@ -79,7 +79,6 @@ export const createMaterialRoutes = (rootDir: string) => {
             includeInactive: t.Optional(t.String()),
             userId: t.Optional(t.String()),
           }),
-          response: Models.MaterialPresetList,
           detail: {
             tags: ["Material Presets"],
             summary: "Get all material presets",

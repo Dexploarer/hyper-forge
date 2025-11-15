@@ -217,7 +217,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   const containerClasses =
     variant === "tray"
       ? "w-full"
-      : "fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-scale-in";
+      : "fixed bottom-8 left-1/2 -translate-x-1/2 z-notification animate-scale-in";
 
   return (
     <div className={containerClasses}>
@@ -290,7 +290,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
                 <>
                   {/* Backdrop to close menu */}
                   <div
-                    className="fixed inset-0 z-[45]"
+                    className="fixed inset-0 z-overlay"
                     onClick={() => setShowStatusMenu(false)}
                     aria-hidden="true"
                   />
@@ -298,7 +298,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
                   {/* Status menu */}
                   <div
                     ref={statusMenuRef}
-                    className="absolute bottom-full left-0 mb-2 solid-panel border border-border-primary rounded-lg shadow-xl overflow-hidden z-[60] min-w-[140px] [&_*]:drop-shadow-sm"
+                    className="absolute bottom-full left-0 mb-2 solid-panel border border-border-primary rounded-lg shadow-xl overflow-hidden z-dropdown min-w-[140px] [&_*]:drop-shadow-sm"
                     role="menu"
                     aria-label="Status options"
                   >

@@ -24,3 +24,6 @@ export * from "./navigation";
 
 // View titles
 export * from "./viewTitles";
+
+// Z-index layering
+export * from "./zIndex";

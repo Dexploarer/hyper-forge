@@ -29,6 +29,7 @@ export const NAVIGATION_VIEWS = {
   PLAYTESTER: "playtester",
   EQUIPMENT: "equipment",
   HAND_RIGGING: "handRigging",
+  RETARGET_ANIMATE: "retargetAnimate",
   WORLD_CONFIG: "worldConfig",
 
   // System

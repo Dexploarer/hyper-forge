@@ -83,7 +83,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
 
         {/* Dropdown Menu */}
         {isOpen && !disabled && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-bg-secondary border border-border-primary rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-1 bg-bg-secondary border border-border-primary rounded-lg shadow-xl z-dropdown max-h-64 overflow-y-auto">
             {/* No Project Option */}
             {!required && (
               <button

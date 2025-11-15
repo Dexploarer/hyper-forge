@@ -51,7 +51,7 @@ export function usePipelineStatus({
     const DEBUG = (import.meta as any).env?.VITE_DEBUG_PIPELINE === "true";
     if (DEBUG)
       console.log(
-        "[SSE] Pipeline status effect triggered. currentPipelineId:",
+        "[usePipelineStatus][SSE] Pipeline status effect triggered. currentPipelineId:",
         currentPipelineId,
       );
 
@@ -84,13 +84,13 @@ export function usePipelineStatus({
       }
 
       const sseUrl = `/api/generation/${currentPipelineId}/status/stream`;
-      if (DEBUG) console.log("[SSE] Connecting to:", sseUrl);
+      if (DEBUG) console.log("[usePipelineStatus][SSE] Connecting to:", sseUrl);
 
       const eventSource = new EventSource(sseUrl);
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
-        if (DEBUG) console.log("[SSE] Connection opened");
+        if (DEBUG) console.log("[usePipelineStatus][SSE] Connection opened");
         setConnected(true);
         setPollingError(null);
         reconnectAttemptsRef.current = 0; // Reset reconnect attempts on success
@@ -99,14 +99,19 @@ export function usePipelineStatus({
       eventSource.addEventListener("pipeline-update", (event) => {
         try {
           const status = JSON.parse(event.data);
-          if (DEBUG) console.log("[SSE] Received update:", status);
+          if (DEBUG)
+            console.log("[usePipelineStatus][SSE] Received update:", status);
 
           if (status) {
             // Update pipeline stages
             Object.entries(status.stages || {}).forEach(
               ([stageName, stageData]: [string, any]) => {
                 if (DEBUG)
-                  console.log("[SSE] Processing stage:", stageName, stageData);
+                  console.log(
+                    "[usePipelineStatus][SSE] Processing stage:",
+                    stageName,
+                    stageData,
+                  );
                 const uiStageId = stageMapping[stageName];
                 if (uiStageId) {
                   let uiStatus =
@@ -138,8 +143,14 @@ export function usePipelineStatus({
 
               // Debug logging
               if (DEBUG) {
-                console.log("[SSE] Pipeline completed with results:", results);
-                console.log("[SSE] Rigging results:", results.rigging);
+                console.log(
+                  "[usePipelineStatus][SSE] Pipeline completed with results:",
+                  results,
+                );
+                console.log(
+                  "[usePipelineStatus][SSE] Rigging results:",
+                  results.rigging,
+                );
               }
 
               const finalAsset: GeneratedAsset = {
@@ -224,27 +235,27 @@ export function usePipelineStatus({
               eventSource.close();
               setConnected(false);
               if (DEBUG)
-                console.log("[SSE] Connection closed after completion");
+                console.log("[usePipelineStatus][SSE] Connection closed after completion");
             } else if (status.status === "failed") {
               setIsGenerating(false);
               setPollingError(status.error || "Pipeline failed");
               eventSource.close();
               setConnected(false);
-              if (DEBUG) console.log("[SSE] Connection closed after failure");
+              if (DEBUG) console.log("[usePipelineStatus][SSE] Connection closed after failure");
             }
           }
         } catch (error) {
-          console.error("[SSE] Failed to parse event data:", error);
+          console.error("[usePipelineStatus][SSE] Failed to parse event data:", error);
           setPollingError("Failed to parse server update");
         }
       });
 
       eventSource.addEventListener("error", (event) => {
-        console.error("[SSE] Error event:", event);
+        console.error("[usePipelineStatus][SSE] Error event:", event);
       });
 
       eventSource.onerror = (error) => {
-        console.error("[SSE] Connection error:", error);
+        console.error("[usePipelineStatus][SSE] Connection error:", error);
         setConnected(false);
         eventSource.close();
 
@@ -258,7 +269,7 @@ export function usePipelineStatus({
 
           if (DEBUG) {
             console.log(
-              `[SSE] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`,
+              `[usePipelineStatus][SSE] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`,
             );
           }
 
@@ -275,7 +286,7 @@ export function usePipelineStatus({
           setPollingError(
             "Connection failed after multiple attempts. Please refresh.",
           );
-          if (DEBUG) console.log("[SSE] Max reconnection attempts reached");
+          if (DEBUG) console.log("[usePipelineStatus][SSE] Max reconnection attempts reached");
         }
       };
     };
@@ -285,7 +296,7 @@ export function usePipelineStatus({
 
     // Cleanup function
     return () => {
-      if (DEBUG) console.log("[SSE] Cleaning up connection");
+      if (DEBUG) console.log("[usePipelineStatus][SSE] Cleaning up connection");
 
       if (eventSourceRef.current) {
         eventSourceRef.current.close();

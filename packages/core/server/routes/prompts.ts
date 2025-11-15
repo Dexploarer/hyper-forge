@@ -39,7 +39,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
 
         if (systemPrompt) {
           return {
-            ...systemPrompt.content,
+            ...(systemPrompt.content as object),
             _metadata: {
               id: systemPrompt.id,
               version: systemPrompt.version,

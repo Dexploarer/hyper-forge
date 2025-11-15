@@ -172,10 +172,7 @@ export class QdrantService {
       // Create indexes for common payload fields
       await this.createPayloadIndexes(name);
     } catch (error) {
-      logger.error(
-        `[QdrantService] Error ensuring collection '${name}':`,
-        error,
-      );
+      logger.error({ err: error }, `[QdrantService] Error ensuring collection '${name}'`);
       throw error;
     }
   }
@@ -270,10 +267,7 @@ export class QdrantService {
         `Upserted point ${id} to '${collection}'`,
       );
     } catch (error) {
-      logger.error(
-        `[QdrantService] Error upserting to '${collection}':`,
-        error,
-      );
+      logger.error({ err: error }, `[QdrantService] Error upserting to '${collection}'`);
       throw error;
     }
   }
@@ -303,10 +297,7 @@ export class QdrantService {
         `[QdrantService] Batch upserted ${points.length} points to '${collection}'`,
       );
     } catch (error) {
-      logger.error(
-        `[QdrantService] Error batch upserting to '${collection}':`,
-        error,
-      );
+      logger.error({ err: error }, `[QdrantService] Error batch upserting to '${collection}'`);
       throw error;
     }
   }
@@ -389,10 +380,7 @@ export class QdrantService {
           payload: result.payload as Record<string, unknown>,
         }));
     } catch (error) {
-      logger.error(
-        `[QdrantService] Error finding similar in '${collection}':`,
-        error,
-      );
+      logger.error({ err: error }, `[QdrantService] Error finding similar in '${collection}'`);
       throw error;
     }
   }
@@ -412,10 +400,7 @@ export class QdrantService {
         `Deleted point ${id} from '${collection}'`,
       );
     } catch (error) {
-      logger.error(
-        `[QdrantService] Error deleting from '${collection}':`,
-        error,
-      );
+      logger.error({ err: error }, `[QdrantService] Error deleting from '${collection}'`);
       throw error;
     }
   }
@@ -434,10 +419,7 @@ export class QdrantService {
         `[QdrantService] Deleted ${ids.length} points from '${collection}'`,
       );
     } catch (error) {
-      logger.error(
-        `[QdrantService] Error batch deleting from '${collection}':`,
-        error,
-      );
+      logger.error({ err: error }, `[QdrantService] Error batch deleting from '${collection}'`);
       throw error;
     }
   }
@@ -450,10 +432,7 @@ export class QdrantService {
       const info = await this.client.getCollection(collection);
       return info;
     } catch (error) {
-      logger.error(
-        `[QdrantService] Error getting collection info for '${collection}':`,
-        error,
-      );
+      logger.error({ err: error }, `[QdrantService] Error getting collection info for '${collection}'`);
       throw error;
     }
   }
@@ -466,10 +445,7 @@ export class QdrantService {
       const info = await this.client.getCollection(collection);
       return info.points_count || 0;
     } catch (error) {
-      logger.error(
-        `[QdrantService] Error counting points in '${collection}':`,
-        error,
-      );
+      logger.error({ err: error }, `[QdrantService] Error counting points in '${collection}'`);
       return 0;
     }
   }

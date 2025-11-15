@@ -1,25 +1,25 @@
-import { UserCircle, Mail, X, LogOut, Save } from 'lucide-react'
-import React, { useState } from 'react'
+import { UserCircle, Mail, X, LogOut, Save } from "lucide-react";
+import React, { useState } from "react";
 
-import { Button, Input } from '../common'
+import { Button, Input } from "../common";
 
 interface User {
-  id: string
-  displayName: string | null
-  email: string | null
-  discordUsername: string | null
-  profileCompleted: string | null
+  id: string;
+  displayName: string | null;
+  email: string | null;
+  discordUsername: string | null;
+  profileCompleted: string | null;
 }
 
 interface ProfileSettingsModalProps {
-  user: User
-  onClose: () => void
+  user: User;
+  onClose: () => void;
   onSave: (profile: {
-    displayName: string
-    email: string
-    discordUsername?: string
-  }) => Promise<void>
-  onLogout: () => void
+    displayName: string;
+    email: string;
+    discordUsername?: string;
+  }) => Promise<void>;
+  onLogout: () => void;
 }
 
 export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
@@ -28,47 +28,50 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
   onSave,
   onLogout,
 }) => {
-  const [displayName, setDisplayName] = useState(user.displayName || '')
-  const [email, setEmail] = useState(user.email || '')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [displayName, setDisplayName] = useState(user.displayName || "");
+  const [email, setEmail] = useState(user.email || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
 
     // Validation
     if (!displayName.trim()) {
-      setError('Please enter your name')
-      return
+      setError("Please enter your name");
+      return;
     }
-    if (!email.trim() || !email.includes('@')) {
-      setError('Please enter a valid email')
-      return
+    if (!email.trim() || !email.includes("@")) {
+      setError("Please enter a valid email");
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       await onSave({
         displayName: displayName.trim(),
         email: email.trim(),
-      })
-      onClose()
+      });
+      onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save profile')
-      setIsSubmitting(false)
+      setError(err instanceof Error ? err.message : "Failed to save profile");
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to sign out?')) {
-      onLogout()
-      onClose()
+    if (confirm("Are you sure you want to sign out?")) {
+      onLogout();
+      onClose();
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-x-0 top-14 bottom-16 lg:top-16 lg:bottom-0 z-50 flex items-center justify-center bg-black/60 overflow-hidden">
+    <div
+      className="fixed inset-x-0 top-14 bottom-16 lg:top-16 lg:bottom-0 z-modal flex items-center justify-center bg-black/60 overflow-hidden"
+      data-overlay="true"
+    >
       <div className="w-full max-w-md mx-4 bg-gradient-to-br from-bg-primary to-bg-secondary border border-border-primary rounded-2xl shadow-2xl">
         {/* Header */}
         <div className="p-6 border-b border-border-primary flex items-center justify-between">
@@ -77,8 +80,12 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
               <UserCircle className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-text-primary">Profile Settings</h2>
-              <p className="text-sm text-text-secondary">Manage your Asset Forge profile</p>
+              <h2 className="text-2xl font-bold text-text-primary">
+                Profile Settings
+              </h2>
+              <p className="text-sm text-text-secondary">
+                Manage your Asset Forge profile
+              </p>
             </div>
           </div>
           <button
@@ -175,5 +182,5 @@ export const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

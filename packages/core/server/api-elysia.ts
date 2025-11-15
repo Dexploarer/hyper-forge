@@ -163,7 +163,7 @@ const generationService = new GenerationService({
 // architectural changes due to stateful pipeline storage
 
 // Create Elysia app with full type inference for Eden Treaty
-// @ts-ignore TS2742 - croner module reference from cron plugin is non-portable (doesn't affect runtime)
+// @ts-ignore TS2742 - Transitive dependency issue with @elysiajs/cron -> croner (safe for apps)
 const app = new Elysia()
   // ==================== LIFECYCLE HOOKS ====================
   // Optional: Start workers in same process if ENABLE_EMBEDDED_WORKERS=true
@@ -1335,7 +1335,6 @@ try {
   process.exit(1);
 }
 
-// Export app for Eden Treaty - suppress declaration emit warning about croner
-// @ts-ignore TS2742 - croner module reference is non-portable but type inference works at runtime
+// Export app for Eden Treaty
 export type App = typeof app;
 export { app };

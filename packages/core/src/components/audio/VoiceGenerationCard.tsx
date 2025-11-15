@@ -315,6 +315,7 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
         type: "voice",
         name: data.name,
         content: {
+          prompt: ttsText || voiceDescription || "",
           mode,
           text: ttsText || undefined,
           voiceId: selectedVoice || undefined,
@@ -331,6 +332,7 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
         type: "voice",
         name: data.name,
         content: {
+          prompt: ttsText || voiceDescription || "",
           mode,
           text: ttsText || undefined,
           voiceId: selectedVoice || undefined,
@@ -787,6 +789,7 @@ export const VoiceGenerationCard: React.FC<VoiceGenerationCardProps> = ({
         onSave={handleSavePrompt}
         promptType="voice"
         currentContent={{
+          prompt: ttsText || voiceDescription || "",
           mode,
           text: ttsText || undefined,
           voiceId: selectedVoice || undefined,

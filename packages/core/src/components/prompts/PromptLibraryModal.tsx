@@ -209,12 +209,12 @@ export const PromptLibraryModal: React.FC<PromptLibraryModalProps> = ({
                           {prompt.isPublic ? (
                             <Globe
                               className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0"
-                              title="Public"
+                              aria-label="Public"
                             />
                           ) : (
                             <Lock
                               className="w-3.5 h-3.5 text-text-tertiary flex-shrink-0"
-                              title="Private"
+                              aria-label="Private"
                             />
                           )}
                         </div>

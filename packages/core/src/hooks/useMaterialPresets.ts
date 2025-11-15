@@ -20,42 +20,61 @@ export function useMaterialPresets() {
 
   const handleSaveCustomMaterials = useCallback(async () => {
     try {
-      // Convert custom materials to the MaterialPreset format
-      const newMaterials = customMaterials
-        .filter((m) => m.name && m.prompt)
-        .map((mat) =>
-          MaterialPreset.create({
-            id: mat.name.toLowerCase().replace(/\s+/g, "-"),
-            name: mat.name.toLowerCase().replace(/\s+/g, "-"),
-            displayName: mat.displayName || mat.name,
-            category: "custom",
-            tier: materialPresets.length + 1,
-            color: mat.color || "#888888",
-            stylePrompt: mat.prompt,
-            description: "Custom material",
-          }),
-        );
+      // Filter valid custom materials
+      const validMaterials = customMaterials.filter((m) => m.name && m.prompt);
 
-      // Merge with existing presets
-      const updatedPresets = [...materialPresets, ...newMaterials];
+      // Create each material individually using the POST /material-presets/custom endpoint
+      const createdPresets = [];
+      for (const mat of validMaterials) {
+        const { data, error } = await api.api["material-presets"].custom.post({
+          displayName: mat.displayName || mat.name,
+          name: mat.name.toLowerCase().replace(/\s+/g, "-"),
+          stylePrompt: mat.prompt,
+          category: "custom",
+          description: "Custom material",
+          tier: materialPresets.length + createdPresets.length + 1,
+          color: mat.color || "#888888",
+          isPublic: false,
+        });
 
-      // Save to JSON file
-      const { data, error } = await api.api["material-presets"].post(
-        updatedPresets as any,
-      );
+        if (error || !data) {
+          console.error(`Failed to create material ${mat.name}:`, error);
+          throw new Error(`Failed to create material: ${mat.name}`);
+        }
 
-      if (!error && data) {
-        setMaterialPresets(updatedPresets);
-        setCustomMaterials([]);
-        notify.success("Custom materials saved successfully!");
-      } else {
-        throw new Error("Failed to save materials");
+        // Convert database result to MaterialPreset instance
+        const dbPreset = data as {
+          id: string;
+          name: string;
+          displayName: string;
+          category: string;
+          tier: number;
+          color: string | null;
+          stylePrompt: string;
+          description: string | null;
+        };
+
+        const preset = MaterialPreset.fromJSON({
+          id: dbPreset.id,
+          name: dbPreset.name,
+          displayName: dbPreset.displayName,
+          category: dbPreset.category,
+          tier: dbPreset.tier,
+          color: dbPreset.color || "#888888",
+          stylePrompt: dbPreset.stylePrompt,
+          description: dbPreset.description || undefined,
+        });
+        createdPresets.push(preset);
       }
+
+      // Update local state with new presets
+      const updatedPresets = [...materialPresets, ...createdPresets];
+      setMaterialPresets(updatedPresets);
+      setCustomMaterials([]);
+      notify.success("Custom materials saved successfully!");
     } catch (error) {
       console.error("Failed to save custom materials:", error);
-      notify.error(
-        "Failed to save custom materials. Note: This requires a backend endpoint to be implemented.",
-      );
+      notify.error("Failed to save custom materials.");
     }
   }, [
     customMaterials,
@@ -67,21 +86,54 @@ export function useMaterialPresets() {
   const handleUpdatePreset = useCallback(
     async (updatedPreset: MaterialPreset) => {
       try {
-        const updatedPresets = materialPresets.map((preset) =>
-          preset.id === updatedPreset.id ? updatedPreset : preset,
-        );
+        // Use PUT /material-presets/:id endpoint
+        const { data, error } = await (api.api["material-presets"] as any)[
+          updatedPreset.id
+        ].put({
+          displayName: updatedPreset.displayName,
+          stylePrompt: updatedPreset.stylePrompt,
+          category: updatedPreset.category,
+          tier: updatedPreset.tier,
+          description: updatedPreset.description || undefined,
+          color: updatedPreset.color || undefined,
+          isActive: true,
+          isPublic: false,
+        });
 
-        const { data, error } = await api.api["material-presets"].post(
-          updatedPresets as any,
-        );
-
-        if (!error && data) {
-          setMaterialPresets(updatedPresets);
-          setEditingPreset(null);
-          notify.success("Material preset updated successfully!");
-        } else {
+        if (error || !data) {
           throw new Error("Failed to update preset");
         }
+
+        // Convert database result to MaterialPreset instance
+        const dbPreset = data as {
+          id: string;
+          name: string;
+          displayName: string;
+          category: string;
+          tier: number;
+          color: string | null;
+          stylePrompt: string;
+          description: string | null;
+        };
+
+        const preset = MaterialPreset.fromJSON({
+          id: dbPreset.id,
+          name: dbPreset.name,
+          displayName: dbPreset.displayName,
+          category: dbPreset.category,
+          tier: dbPreset.tier,
+          color: dbPreset.color || "#888888",
+          stylePrompt: dbPreset.stylePrompt,
+          description: dbPreset.description || undefined,
+        });
+
+        // Update local state
+        const updatedPresets = materialPresets.map((p) =>
+          p.id === updatedPreset.id ? preset : p,
+        );
+        setMaterialPresets(updatedPresets);
+        setEditingPreset(null);
+        notify.success("Material preset updated successfully!");
       } catch (error) {
         console.error("Failed to update preset:", error);
         notify.error("Failed to update material preset.");
@@ -93,24 +145,23 @@ export function useMaterialPresets() {
   const handleDeletePreset = useCallback(
     async (presetId: string) => {
       try {
+        // Use DELETE /material-presets/:id endpoint
+        const { error } = await (api.api["material-presets"] as any)[
+          presetId
+        ].delete();
+
+        if (error) {
+          throw new Error("Failed to delete preset");
+        }
+
+        // Update local state
         const updatedPresets = materialPresets.filter(
           (preset) => preset.id !== presetId,
         );
-
-        const { data, error } = await api.api["material-presets"].post(
-          updatedPresets as any,
-        );
-
-        if (!error && data) {
-          setMaterialPresets(updatedPresets);
-          setSelectedMaterials(
-            selectedMaterials.filter((id) => id !== presetId),
-          );
-          setShowDeleteConfirm(null);
-          notify.success("Material preset deleted successfully!");
-        } else {
-          throw new Error("Failed to delete preset");
-        }
+        setMaterialPresets(updatedPresets);
+        setSelectedMaterials(selectedMaterials.filter((id) => id !== presetId));
+        setShowDeleteConfirm(null);
+        notify.success("Material preset deleted successfully!");
       } catch (error) {
         console.error("Failed to delete preset:", error);
         notify.error("Failed to delete material preset.");

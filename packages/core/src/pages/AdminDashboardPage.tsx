@@ -91,7 +91,10 @@ const RoleChangeModal: React.FC<RoleChangeModalProps> = ({
   loading,
 }) => {
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-modal"
+      data-overlay="true"
+    >
       <div className="card max-w-md w-full mx-4 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
@@ -142,7 +145,10 @@ const DeleteUserModal: React.FC<DeleteUserModalProps> = ({
   const [confirmChecked, setConfirmChecked] = useState(false);
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-modal"
+      data-overlay="true"
+    >
       <div className="card max-w-md w-full mx-4 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">

@@ -85,7 +85,7 @@ export const HelpTooltip: React.FC<HelpTooltipProps> = ({
         <div
           ref={tooltipRef}
           className={cn(
-            "absolute z-50 w-64 p-3 bg-bg-secondary border border-border-primary rounded-lg shadow-lg animate-fade-in",
+            "absolute z-tooltip w-64 p-3 bg-bg-secondary border border-border-primary rounded-lg shadow-lg animate-fade-in",
             positionClasses[position],
           )}
           role="tooltip"

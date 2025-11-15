@@ -381,9 +381,7 @@ export class ProjectService {
       );
       return updatedProject;
     } catch (error) {
-      logger.error(
-        "[ProjectService] Failed to update project visibility:",
-        error,
+      logger.error({ err: error }, "[ProjectService] Failed to update project visibility"
       );
       throw error;
     }

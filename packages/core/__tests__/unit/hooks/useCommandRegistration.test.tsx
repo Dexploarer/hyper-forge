@@ -57,9 +57,6 @@ describe("useCommandRegistration", () => {
         const contextValue = {
           addCommands,
           removeCommands,
-          addCommand: () => {},
-          removeCommand: () => {},
-          clearCommands: () => {},
           openPalette: () => {},
           closePalette: () => {},
           isOpen: false,
@@ -312,9 +309,6 @@ describe("useCommandRegistration", () => {
         const contextValue = {
           addCommands,
           removeCommands,
-          addCommand: () => {},
-          removeCommand: () => {},
-          clearCommands: () => {},
           openPalette: () => {},
           closePalette: () => {},
           isOpen: false,

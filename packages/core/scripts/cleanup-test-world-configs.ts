@@ -5,6 +5,7 @@
  */
 
 import { WorldConfigService } from "../server/services/WorldConfigService";
+import type { WorldConfiguration } from "../server/db/schema";
 
 async function cleanupTestConfigs() {
   const worldConfigService = new WorldConfigService();
@@ -12,8 +13,7 @@ async function cleanupTestConfigs() {
   console.log("🔍 Searching for E2E test world configurations...");
 
   try {
-    const result = await worldConfigService.listConfigurations({});
-    const configs = result.configs || [];
+    const configs = await worldConfigService.listConfigurations({});
     console.log(`Found ${configs.length} total configurations`);
 
     const testConfigs = configs.filter(
@@ -30,7 +30,7 @@ async function cleanupTestConfigs() {
     }
 
     console.log(`\n🗑️  Found ${testConfigs.length} test configuration(s):`);
-    testConfigs.forEach((config) => {
+    testConfigs.forEach((config: WorldConfiguration) => {
       console.log(`   - ${config.name} (${config.id})`);
       console.log(`     Genre: ${config.genre}, Active: ${config.isActive}`);
     });

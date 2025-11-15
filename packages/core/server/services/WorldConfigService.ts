@@ -71,9 +71,7 @@ export class WorldConfigService {
 
       return results;
     } catch (error) {
-      logger.error(
-        "[WorldConfigService] Error listing configurations:",
-        error,
+      logger.error({ err: error }, "[WorldConfigService] Error listing configurations"
       );
       // Return empty array instead of throwing - world config is optional
       return [];
@@ -93,10 +91,7 @@ export class WorldConfigService {
 
       return results[0] || null;
     } catch (error) {
-      logger.error(
-        `[WorldConfigService] Error getting configuration ${id}:`,
-        error,
-      );
+      logger.error({ err: error }, `[WorldConfigService] Error getting configuration ${id}`);
       throw new Error("Failed to get configuration");
     }
   }
@@ -114,9 +109,7 @@ export class WorldConfigService {
 
       return results[0] || null;
     } catch (error) {
-      logger.error(
-        "[WorldConfigService] Error getting active configuration:",
-        error,
+      logger.error({ err: error }, "[WorldConfigService] Error getting active configuration"
       );
       // Return null instead of throwing - world config is optional
       return null;
@@ -186,9 +179,7 @@ export class WorldConfigService {
       );
       return created;
     } catch (error) {
-      logger.error(
-        "[WorldConfigService] Error creating configuration:",
-        error,
+      logger.error({ err: error }, "[WorldConfigService] Error creating configuration"
       );
       throw new Error("Failed to create configuration");
     }
@@ -241,10 +232,7 @@ export class WorldConfigService {
       );
       return updated;
     } catch (error) {
-      logger.error(
-        `[WorldConfigService] Error updating configuration ${id}:`,
-        error,
-      );
+      logger.error({ err: error }, `[WorldConfigService] Error updating configuration ${id}`);
       throw new Error("Failed to update configuration");
     }
   }
@@ -299,10 +287,7 @@ export class WorldConfigService {
       );
       return updated;
     } catch (error) {
-      logger.error(
-        `[WorldConfigService] Error updating section ${section} for ${id}:`,
-        error,
-      );
+      logger.error({ err: error }, `[WorldConfigService] Error updating section ${section} for ${id}`);
       throw new Error("Failed to update section");
     }
   }
@@ -330,10 +315,7 @@ export class WorldConfigService {
         `Deleted configuration: ${id}`,
       );
     } catch (error) {
-      logger.error(
-        `[WorldConfigService] Error deleting configuration ${id}:`,
-        error,
-      );
+      logger.error({ err: error }, `[WorldConfigService] Error deleting configuration ${id}`);
       throw error;
     }
   }
@@ -378,10 +360,7 @@ export class WorldConfigService {
       );
       return activated;
     } catch (error) {
-      logger.error(
-        `[WorldConfigService] Error activating configuration ${id}:`,
-        error,
-      );
+      logger.error({ err: error }, `[WorldConfigService] Error activating configuration ${id}`);
       throw new Error("Failed to activate configuration");
     }
   }
@@ -514,9 +493,7 @@ export class WorldConfigService {
         createdBy,
       );
     } catch (error) {
-      logger.error(
-        "[WorldConfigService] Error creating from template:",
-        error,
+      logger.error({ err: error }, "[WorldConfigService] Error creating from template"
       );
       throw error;
     }
@@ -547,10 +524,7 @@ export class WorldConfigService {
 
       return exportData;
     } catch (error) {
-      logger.error(
-        `[WorldConfigService] Error exporting configuration ${id}:`,
-        error,
-      );
+      logger.error({ err: error }, `[WorldConfigService] Error exporting configuration ${id}`);
       throw new Error("Failed to export configuration");
     }
   }
@@ -624,9 +598,7 @@ export class WorldConfigService {
       );
       return imported;
     } catch (error) {
-      logger.error(
-        "[WorldConfigService] Error importing configuration:",
-        error,
+      logger.error({ err: error }, "[WorldConfigService] Error importing configuration"
       );
       throw new Error("Failed to import configuration");
     }
@@ -728,10 +700,7 @@ export class WorldConfigService {
 
       return { valid, errors };
     } catch (error) {
-      logger.error(
-        `[WorldConfigService] Error validating configuration ${id}:`,
-        error,
-      );
+      logger.error({ err: error }, `[WorldConfigService] Error validating configuration ${id}`);
       throw new Error("Failed to validate configuration");
     }
   }
@@ -932,10 +901,7 @@ Use this world configuration as the foundation for all generated content. Ensure
 
       return { context, sections };
     } catch (error) {
-      logger.error(
-        `[WorldConfigService] Error building AI context for ${id}:`,
-        error,
-      );
+      logger.error({ err: error }, `[WorldConfigService] Error building AI context for ${id}`);
       throw new Error("Failed to build AI context");
     }
   }
@@ -961,10 +927,7 @@ Use this world configuration as the foundation for all generated content. Ensure
 
       return results;
     } catch (error) {
-      logger.error(
-        `[WorldConfigService] Error getting history for ${configId}:`,
-        error,
-      );
+      logger.error({ err: error }, `[WorldConfigService] Error getting history for ${configId}`);
       throw new Error("Failed to get configuration history");
     }
   }

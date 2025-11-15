@@ -3,7 +3,7 @@
  * Wrapper around React Flow with Asset Forge design system theming
  */
 
-import React from 'react'
+import React from "react";
 import {
   ReactFlow,
   Background,
@@ -14,24 +14,24 @@ import {
   type EdgeTypes,
   type NodeChange,
   type EdgeChange,
-} from '@xyflow/react'
-// @ts-ignore - CSS imports don't have type declarations
-import '@xyflow/react/dist/style.css'
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 
-import { cn } from '@/styles'
+import { cn } from "@/styles";
 
-export interface ThemedCanvasProps extends Omit<ReactFlowProps, 'nodes' | 'edges'> {
-  nodes: Node[]
-  edges: Edge[]
-  nodeTypes: NodeTypes
-  edgeTypes?: EdgeTypes
-  onNodeClick?: (event: React.MouseEvent, node: Node) => void
-  onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void
-  onNodesChange?: (changes: NodeChange[]) => void
-  onEdgesChange?: (changes: EdgeChange[]) => void
-  fitView?: boolean
-  className?: string
-  children?: React.ReactNode
+export interface ThemedCanvasProps
+  extends Omit<ReactFlowProps, "nodes" | "edges"> {
+  nodes: Node[];
+  edges: Edge[];
+  nodeTypes: NodeTypes;
+  edgeTypes?: EdgeTypes;
+  onNodeClick?: (event: React.MouseEvent, node: Node) => void;
+  onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void;
+  onNodesChange?: (changes: NodeChange[]) => void;
+  onEdgesChange?: (changes: EdgeChange[]) => void;
+  fitView?: boolean;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 export const ThemedCanvas: React.FC<ThemedCanvasProps> = ({
@@ -49,7 +49,7 @@ export const ThemedCanvas: React.FC<ThemedCanvasProps> = ({
   ...props
 }) => {
   return (
-    <div className={cn('workflow-canvas h-full w-full', className)}>
+    <div className={cn("workflow-canvas h-full w-full", className)}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -62,13 +62,9 @@ export const ThemedCanvas: React.FC<ThemedCanvasProps> = ({
         fitView={fitView}
         {...props}
       >
-        <Background
-          color="rgba(99, 102, 241, 0.05)"
-          gap={20}
-          size={1}
-        />
+        <Background color="rgba(99, 102, 241, 0.05)" gap={20} size={1} />
         {children}
       </ReactFlow>
     </div>
-  )
-}
+  );
+};

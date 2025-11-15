@@ -95,7 +95,7 @@ export const QuickActionMenu: React.FC<QuickActionMenuProps> = ({
         <div
           ref={menuRef}
           className={cn(
-            "absolute z-50 min-w-[180px] solid-overlay shadow-xl overflow-hidden",
+            "absolute z-dropdown min-w-[180px] solid-overlay shadow-xl overflow-hidden",
             "animate-fade-in",
             positionClasses[position],
           )}

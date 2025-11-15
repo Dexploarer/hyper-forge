@@ -128,17 +128,18 @@ export function MobileMenuDrawer({
       {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 bg-black/75 transition-opacity duration-300 z-[60]",
+          "fixed inset-0 bg-black/75 transition-opacity duration-300 z-overlay",
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         onClick={onClose}
         aria-hidden="true"
+        data-overlay="true"
       />
 
       {/* Drawer */}
       <aside
         className={cn(
-          "fixed top-0 left-0 bottom-0 w-[280px] max-w-[85vw] solid-nav transform transition-transform duration-300 ease-out z-[70] flex flex-col",
+          "fixed top-0 left-0 bottom-0 w-[280px] max-w-[85vw] solid-nav transform transition-transform duration-300 ease-out z-modal flex flex-col",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
         aria-label="Main navigation"

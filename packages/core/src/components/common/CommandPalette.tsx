@@ -122,7 +122,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-start justify-center pt-[20vh]"
+      className="fixed inset-0 z-commandPalette flex items-start justify-center pt-[20vh]"
+      data-overlay="true"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -135,7 +136,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       {/* Palette */}
       <div
         ref={listRef}
-        className="relative z-[201] w-full max-w-2xl mx-4 solid-overlay rounded-xl shadow-2xl overflow-hidden"
+        className="relative z-commandPalette w-full max-w-2xl mx-4 solid-overlay rounded-xl shadow-2xl overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-label="Command palette"

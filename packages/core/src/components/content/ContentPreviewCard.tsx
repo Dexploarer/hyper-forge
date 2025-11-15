@@ -596,7 +596,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
 
               {/* Dropdown Menu */}
               {showGenerateDropdown && (
-                <div className="absolute top-full mt-2 right-0 bg-bg-secondary border border-border-primary rounded-lg shadow-xl overflow-hidden z-50 min-w-[180px] animate-fade-in">
+                <div className="absolute top-full mt-2 right-0 bg-bg-secondary border border-border-primary rounded-lg shadow-xl overflow-hidden z-dropdown min-w-[180px] animate-fade-in">
                   <button
                     onClick={() => handleGenerateOption("portrait")}
                     disabled={isGeneratingPortrait}

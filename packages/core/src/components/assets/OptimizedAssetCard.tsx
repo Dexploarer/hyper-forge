@@ -206,7 +206,7 @@ export const OptimizedAssetCard: React.FC<OptimizedAssetCardProps> = ({
               <>
                 {/* Backdrop */}
                 <div
-                  className="fixed inset-0 z-40"
+                  className="fixed inset-0 z-overlay"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowActionsMenu(false);
@@ -214,7 +214,7 @@ export const OptimizedAssetCard: React.FC<OptimizedAssetCardProps> = ({
                 />
 
                 {/* Menu */}
-                <div className="absolute right-0 top-full mt-1 w-44 solid-panel border border-border-primary rounded-lg shadow-xl overflow-hidden z-50 animate-scale-in">
+                <div className="absolute right-0 top-full mt-1 w-44 solid-panel border border-border-primary rounded-lg shadow-xl overflow-hidden z-dropdown animate-scale-in">
                   <button
                     onClick={(e) =>
                       handleAction(e, () => onViewDetails?.(asset))
@@ -330,13 +330,13 @@ export const OptimizedAssetCard: React.FC<OptimizedAssetCardProps> = ({
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-overlay"
             onClick={() => setShowContextMenu(false)}
           />
 
           {/* Menu */}
           <div
-            className="fixed z-50 w-48 solid-panel border border-border-primary rounded-lg shadow-xl overflow-hidden animate-scale-in"
+            className="fixed z-dropdown w-48 solid-panel border border-border-primary rounded-lg shadow-xl overflow-hidden animate-scale-in"
             style={{
               top: `${contextMenuPosition.y}px`,
               left: `${contextMenuPosition.x}px`,

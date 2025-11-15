@@ -36,9 +36,7 @@ export class OptimizedContentDatabaseService {
 
       return result;
     } catch (error) {
-      logger.error(
-        "[ContentDatabaseService] Failed to batch get NPCs:",
-        error,
+      logger.error({ err: error }, "[ContentDatabaseService] Failed to batch get NPCs"
       );
       return [];
     }
@@ -58,9 +56,7 @@ export class OptimizedContentDatabaseService {
 
       return result;
     } catch (error) {
-      logger.error(
-        "[ContentDatabaseService] Failed to batch get Quests:",
-        error,
+      logger.error({ err: error }, "[ContentDatabaseService] Failed to batch get Quests"
       );
       return [];
     }
@@ -175,9 +171,7 @@ export class OptimizedContentDatabaseService {
         totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
-      logger.error(
-        "[ContentDatabaseService] Failed to list NPCs paginated:",
-        error,
+      logger.error({ err: error }, "[ContentDatabaseService] Failed to list NPCs paginated"
       );
       return { data: [], total: 0, page, totalPages: 0 };
     }
@@ -235,9 +229,7 @@ export class OptimizedContentDatabaseService {
         totalPages: Math.ceil(total / limit),
       };
     } catch (error) {
-      logger.error(
-        "[ContentDatabaseService] Failed to list Quests paginated:",
-        error,
+      logger.error({ err: error }, "[ContentDatabaseService] Failed to list Quests paginated"
       );
       return { data: [], total: 0, page, totalPages: 0 };
     }
@@ -319,9 +311,7 @@ export class OptimizedContentDatabaseService {
         questsByType,
       };
     } catch (error) {
-      logger.error(
-        "[ContentDatabaseService] Failed to get user stats:",
-        error,
+      logger.error({ err: error }, "[ContentDatabaseService] Failed to get user stats"
       );
       return {
         npcCount: 0,
@@ -367,10 +357,7 @@ export class OptimizedContentDatabaseService {
         `[ContentDatabaseService] Incremented view counts for ${ids.length} ${type}s`,
       );
     } catch (error) {
-      logger.error(
-        `[ContentDatabaseService] Failed to increment view counts:`,
-        error,
-      );
+      logger.error({ err: error }, `[ContentDatabaseService] Failed to increment view counts`);
     }
   }
 }

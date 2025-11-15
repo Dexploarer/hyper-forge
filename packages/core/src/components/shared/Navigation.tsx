@@ -15,7 +15,7 @@ const Navigation: React.FC<NavigationProps> = ({
 }) => {
   return (
     <>
-      <nav className="bg-bg-secondary border-b border-border-primary px-6 shadow-theme-sm relative z-[100]">
+      <nav className="bg-bg-secondary border-b border-border-primary px-6 shadow-theme-sm relative z-header">
         <div className="flex items-center justify-between h-[60px]">
           <div className="flex items-center">
             <h1 className="text-xl font-semibold text-gradient">

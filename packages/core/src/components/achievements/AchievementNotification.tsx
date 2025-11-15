@@ -39,7 +39,7 @@ export const AchievementNotification: React.FC<
   return (
     <div
       className={cn(
-        "fixed top-4 right-4 z-50 max-w-sm transition-all duration-300",
+        "fixed top-4 right-4 z-notification max-w-sm transition-all duration-300",
         isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0",
       )}
     >
@@ -86,4 +86,3 @@ export const AchievementNotification: React.FC<
     </div>
   );
 };
-

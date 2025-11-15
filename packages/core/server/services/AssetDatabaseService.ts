@@ -66,8 +66,8 @@ export class AssetDatabaseService {
       return asset;
     } catch (error) {
       logger.error(
-        `[AssetDatabaseService] Failed to create asset record:`,
-        error,
+        { err: error },
+        "[AssetDatabaseService] Failed to create asset record",
       );
       throw error;
     }
@@ -119,8 +119,8 @@ export class AssetDatabaseService {
       return updated;
     } catch (error) {
       logger.error(
-        `[AssetDatabaseService] Failed to update asset record:`,
-        error,
+        { err: error },
+        "[AssetDatabaseService] Failed to update asset record",
       );
       throw error;
     }
@@ -158,8 +158,8 @@ export class AssetDatabaseService {
       }
     } catch (error) {
       logger.error(
-        `[AssetDatabaseService] Failed to delete asset record:`,
-        error,
+        { err: error },
+        "[AssetDatabaseService] Failed to delete asset record",
       );
       throw error;
     }

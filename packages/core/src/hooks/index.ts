@@ -15,3 +15,4 @@ export { useArmorExport } from "./useArmorExport";
 export { useCommandRegistration } from "./useCommandRegistration";
 export { useProjects, useProject } from "./useProjects";
 export { useProjectActions } from "./useProjectActions";
+export { useSessionId } from "./useSessionId";

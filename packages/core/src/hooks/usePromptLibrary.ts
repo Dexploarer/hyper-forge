@@ -125,7 +125,7 @@ export function usePromptLibrary() {
           throw new Error("Failed to save prompt");
         }
 
-        const savedPrompt = response.data as SavedPrompt;
+        const savedPrompt = response.data as unknown as SavedPrompt;
         setPrompts((prev) => [savedPrompt, ...prev]);
         notify.success(`Prompt "${data.name}" saved successfully!`);
         return savedPrompt;

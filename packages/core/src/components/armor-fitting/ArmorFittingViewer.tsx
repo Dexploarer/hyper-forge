@@ -12,7 +12,6 @@ import * as THREE from "three";
 // import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter'
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-// @ts-ignore - Three.js examples modules don't have proper type declarations
 import {
   ArmorFittingService,
   BodyRegion,

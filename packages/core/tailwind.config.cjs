@@ -85,6 +85,22 @@ module.exports = {
     zIndex: theme.layout.zIndex,
     
     extend: {
+      zIndex: {
+        // Semantic z-index values from constants/zIndex.ts
+        base: '0',
+        raised: '10',
+        header: '20',
+        sidebar: '20',
+        bottomNav: '20',
+        dropdown: '30',
+        tooltip: '40',
+        overlay: '50',
+        modal: '60',
+        commandPalette: '70',
+        notification: '80',
+        toast: '90',
+      },
+
       animation: {
         ...theme.animation.keyframes,
         'modal-appear': 'modal-appear 0.3s ease-out',

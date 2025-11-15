@@ -9,6 +9,7 @@
  * 2. setIsHidden IS called when overlay state changes
  * 3. MutationObserver behavior works correctly
  * 4. Debouncing prevents excessive re-renders
+ * 5. Overlay detection using data-overlay="true" attribute
  */
 
 import { describe, it, expect, beforeEach, afterEach, mock } from "bun:test";
@@ -131,7 +132,7 @@ describe("FloatingTopBar", () => {
       expect(header?.classList.contains("opacity-0")).toBe(false);
     });
 
-    it("should detect high z-index overlays and hide", async () => {
+    it("should detect overlay elements and hide", async () => {
       const Wrapper = createWrapper();
       const { container } = render(
         <Wrapper>
@@ -139,10 +140,9 @@ describe("FloatingTopBar", () => {
         </Wrapper>,
       );
 
-      // Add a high z-index element to the DOM
+      // Add an overlay element with data-overlay attribute
       const overlay = document.createElement("div");
-      overlay.className = "z-[9999]";
-      overlay.style.zIndex = "9999";
+      overlay.setAttribute("data-overlay", "true");
       document.body.appendChild(overlay);
 
       // Trigger the mutation observer by simulating a DOM change
@@ -343,7 +343,7 @@ describe("FloatingTopBar", () => {
   });
 
   describe("Overlay Detection Logic", () => {
-    it("should detect elements with z-index >= 9000", () => {
+    it("should detect elements with data-overlay attribute", () => {
       const Wrapper = createWrapper();
       const { container } = render(
         <Wrapper>
@@ -351,10 +351,9 @@ describe("FloatingTopBar", () => {
         </Wrapper>,
       );
 
-      // Add element with z-9000
+      // Add element with data-overlay="true"
       const overlay = document.createElement("div");
-      overlay.className = "z-[9000]";
-      overlay.style.zIndex = "9000";
+      overlay.setAttribute("data-overlay", "true");
       document.body.appendChild(overlay);
 
       // Trigger check
@@ -366,7 +365,7 @@ describe("FloatingTopBar", () => {
       document.body.removeChild(overlay);
     });
 
-    it("should not hide for elements with z-index < 9000", () => {
+    it("should not hide for elements without data-overlay attribute", () => {
       const Wrapper = createWrapper();
       const { container } = render(
         <Wrapper>
@@ -374,10 +373,9 @@ describe("FloatingTopBar", () => {
         </Wrapper>,
       );
 
-      // Add element with lower z-index
+      // Add element without data-overlay attribute
       const element = document.createElement("div");
-      element.className = "z-[50]";
-      element.style.zIndex = "50";
+      element.className = "some-other-element";
       document.body.appendChild(element);
 
       // Trigger check
@@ -400,15 +398,13 @@ describe("FloatingTopBar", () => {
         </Wrapper>,
       );
 
-      // Add multiple high z-index elements
+      // Add multiple overlay elements
       const overlay1 = document.createElement("div");
-      overlay1.className = "z-[9999]";
-      overlay1.style.zIndex = "9999";
+      overlay1.setAttribute("data-overlay", "true");
       document.body.appendChild(overlay1);
 
       const overlay2 = document.createElement("div");
-      overlay2.className = "z-[9998]";
-      overlay2.style.zIndex = "9998";
+      overlay2.setAttribute("data-overlay", "true");
       document.body.appendChild(overlay2);
 
       // Trigger check
@@ -435,10 +431,9 @@ describe("FloatingTopBar", () => {
       const header = container.querySelector("header");
       expect(header).toBeDefined();
 
-      // Add overlay
+      // Add overlay with data-overlay attribute
       const overlay = document.createElement("div");
-      overlay.className = "z-[9999]";
-      overlay.style.zIndex = "9999";
+      overlay.setAttribute("data-overlay", "true");
       document.body.appendChild(overlay);
 
       // Trigger check

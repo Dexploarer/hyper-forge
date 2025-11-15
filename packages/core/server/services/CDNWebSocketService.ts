@@ -78,10 +78,7 @@ export class CDNWebSocketService {
           const message = JSON.parse(event.data as string);
           await this.handleMessage(message);
         } catch (error) {
-          logger.error(
-            "[CDN WebSocket] Error parsing message:",
-            error instanceof Error ? error.message : String(error),
-          );
+          logger.error({ err: error }, "[CDN WebSocket] Error parsing message");
         }
       };
 
@@ -101,10 +98,7 @@ export class CDNWebSocketService {
         this.isConnecting = false;
       };
     } catch (error) {
-      logger.error(
-        "[CDN WebSocket] Failed to connect:",
-        error instanceof Error ? error.message : String(error),
-      );
+      logger.error({ err: error }, "[CDN WebSocket] Failed to connect");
       this.isConnecting = false;
       this.attemptReconnect();
     }
@@ -200,8 +194,8 @@ export class CDNWebSocketService {
       );
     } catch (error) {
       logger.error(
-        `[CDN WebSocket] Error handling upload event for asset ${event.assetId}:`,
-        error instanceof Error ? error.message : String(error),
+        { err: error },
+        `[CDN WebSocket] Error handling upload event for asset ${event.assetId}`,
       );
     }
   }
