@@ -36,11 +36,12 @@ export interface ProjectUpdateData {
 }
 
 export interface ProjectsResponse {
+  success: boolean;
   projects: Project[];
-  total: number;
 }
 
 export interface ProjectResponse {
+  success: boolean;
   project: Project;
 }
 
