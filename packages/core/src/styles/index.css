@@ -906,7 +906,7 @@
   
   /* Modal Overlay - theme aware (solid design) */
   .modal-overlay {
-    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    @apply fixed inset-0 z-overlay flex items-center justify-center p-4;
     background-color: rgba(0, 0, 0, 0.75);
     animation: modalBackdropFadeIn 0.3s ease-out;
     will-change: opacity;
@@ -1022,7 +1022,7 @@
     @apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1
            bg-[var(--bg-primary)] text-[var(--text-primary)] text-xs rounded-md
            opacity-0 pointer-events-none transition-opacity duration-200
-           whitespace-nowrap z-50 shadow-lg border border-[var(--border-primary)];
+           whitespace-nowrap z-tooltip shadow-lg border border-[var(--border-primary)];
     content: attr(data-tooltip);
   }
   
