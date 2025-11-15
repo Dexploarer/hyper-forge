@@ -53,11 +53,14 @@ export class ContentAPIClient {
     imageUrl: string;
     prompt: string;
   }> {
-    const response = await apiFetch(`${API_BASE}/content/generate-npc-portrait`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
+    const response = await apiFetch(
+      `${API_BASE}/content/generate-npc-portrait`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -70,22 +73,26 @@ export class ContentAPIClient {
 
   /**
    * Generate a banner image for a quest
+   * Only questTitle and description are required - image generation focuses on visual requirements
    */
   async generateQuestBanner(params: {
     questTitle: string;
     description: string;
-    questType: string;
-    difficulty: string;
+    questType?: string; // Optional - not used for image generation
+    difficulty?: string; // Optional - not used for image generation
   }): Promise<{
     success: boolean;
     imageUrl: string;
     prompt: string;
   }> {
-    const response = await apiFetch(`${API_BASE}/content/generate-quest-banner`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
+    const response = await apiFetch(
+      `${API_BASE}/content/generate-quest-banner`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -548,11 +555,14 @@ export class ContentAPIClient {
     questId: string;
     relationship: any;
   }> {
-    const response = await apiFetch(`${API_BASE}/content/generate-quest-for-npc`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
+    const response = await apiFetch(
+      `${API_BASE}/content/generate-quest-for-npc`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -581,11 +591,14 @@ export class ContentAPIClient {
     loreId: string;
     relationship: any;
   }> {
-    const response = await apiFetch(`${API_BASE}/content/generate-lore-for-npc`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
+    const response = await apiFetch(
+      `${API_BASE}/content/generate-lore-for-npc`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(

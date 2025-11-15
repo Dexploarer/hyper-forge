@@ -170,6 +170,13 @@ class ImageGenerationService {
       );
     }
 
+    // Map asset type to appropriate image dimensions
+    const dimensionMap: Record<string, string> = {
+      portrait: "1024x1024", // Square for circular avatars
+      banner: "1792x1024", // Wide landscape for banners (16:9 ratio)
+    };
+    const imageDimensions = dimensionMap[assetType] || "1024x1024";
+
     // Load generation prompts
     const generationPrompts: GenerationPrompts | null =
       await getGenerationPrompts();
@@ -199,7 +206,7 @@ class ImageGenerationService {
       : this.model;
 
     logger.info(
-      `🎨 Using ${useAIGateway ? "Vercel AI Gateway" : "direct OpenAI API"} for image generation (model: ${modelName})`,
+      `🎨 Using ${useAIGateway ? "Vercel AI Gateway" : "direct OpenAI API"} for image generation (model: ${modelName}, size: ${imageDimensions})`,
     );
 
     // Build request body based on endpoint type
@@ -216,7 +223,7 @@ class ImageGenerationService {
       : {
           model: modelName,
           prompt: prompt,
-          size: "1024x1024",
+          size: imageDimensions,
           quality: "high",
         };
 
@@ -285,7 +292,7 @@ class ImageGenerationService {
       prompt: prompt,
       metadata: {
         model: modelName,
-        resolution: "1024x1024",
+        resolution: imageDimensions,
         quality: "high",
         timestamp: new Date().toISOString(),
       },

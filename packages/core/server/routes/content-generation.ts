@@ -435,11 +435,11 @@ export const contentGenerationRoutes = new Elysia({
             });
 
             // Build image prompt from quest data
+            // Focus on visual requirements only - no game metadata like difficulty or questType
             const promptParts = [
               `Quest banner artwork for "${body.questTitle}"`,
               body.description,
-              `Quest type: ${body.questType}, Difficulty: ${body.difficulty}`,
-              "Epic fantasy game quest banner, wide horizontal format, dramatic composition, game UI art style, aspect ratio 6:1, optimized for 384x64 pixels banner display, cinematic lighting, important elements centered vertically",
+              "Epic fantasy game quest banner, wide horizontal format, dramatic composition, game UI art style, cinematic lighting, important elements centered vertically",
             ];
 
             const imagePrompt = promptParts.join(". ");
@@ -469,13 +469,16 @@ export const contentGenerationRoutes = new Elysia({
             body: t.Object({
               questTitle: t.String({ minLength: 1, maxLength: 200 }),
               description: t.String({ minLength: 10, maxLength: 1000 }),
-              questType: t.String({ minLength: 1, maxLength: 50 }),
-              difficulty: t.Union([
-                t.Literal("easy"),
-                t.Literal("medium"),
-                t.Literal("hard"),
-                t.Literal("expert"),
-              ]),
+              // questType and difficulty are optional - not used for image generation
+              questType: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
+              difficulty: t.Optional(
+                t.Union([
+                  t.Literal("easy"),
+                  t.Literal("medium"),
+                  t.Literal("hard"),
+                  t.Literal("expert"),
+                ]),
+              ),
             }),
             response: t.Object({
               success: t.Boolean(),
@@ -486,7 +489,7 @@ export const contentGenerationRoutes = new Elysia({
               tags: ["Content Generation"],
               summary: "Generate quest banner",
               description:
-                "Generate an AI banner image for a quest based on its details",
+                "Generate an AI banner image for a quest based on visual requirements only",
             },
           },
         )

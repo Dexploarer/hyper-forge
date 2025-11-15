@@ -256,31 +256,13 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     if (item.type !== "quest") return;
 
     const quest = item.data as QuestData;
-    const rawDifficulty = (item.data as any).difficulty || "medium";
-    const questType = (item.data as any).questType || "general";
-
-    // Normalize difficulty to backend expected values: "easy" | "medium" | "hard" | "expert"
-    const normalizedDifficulty = (() => {
-      const lower = rawDifficulty.toLowerCase();
-      // Map "Epic" to "expert" for backward compatibility
-      if (lower === "epic") return "expert";
-      // Validate against allowed values
-      if (["easy", "medium", "hard", "expert"].includes(lower)) return lower;
-      // Default to medium if invalid
-      return "medium";
-    })();
 
     try {
       setIsGeneratingBanner(true);
+      // Generate banner with only visual requirements - no game metadata
       const result = await apiClient.generateQuestBanner({
         questTitle: quest.title,
         description: quest.description || "",
-        questType: questType,
-        difficulty: normalizedDifficulty as
-          | "easy"
-          | "medium"
-          | "hard"
-          | "expert",
       });
 
       // Set the generated banner URL
