@@ -12,9 +12,7 @@ import React, { useState, useMemo } from "react";
 
 import { cn } from "../../styles";
 import { Asset } from "../../types";
-import { Badge, Input,
-  LoadingSpinner,
-} from "../common";
+import { Badge, Input, LoadingSpinner } from "../common";
 import { useInfiniteScroll } from "../../hooks/useInfiniteScroll";
 
 interface ArmorAssetListProps {
@@ -29,6 +27,7 @@ interface ArmorAssetListProps {
   onAssetSelect: (asset: Asset) => void;
   onAssetTypeChange: (type: "avatar" | "armor" | "helmet" | "weapon") => void; // UPDATED - added weapon
   hideTypeToggle?: boolean; // NEW - for armor fitting page
+  hideQuickFilters?: boolean; // NEW - hide the asset type toggle buttons
   equipmentSlot?: "Head" | "Spine2" | "Pelvis" | "Hand_R" | "Hand_L"; // UPDATED - added weapon slots
 }
 
@@ -44,6 +43,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
   onAssetSelect,
   onAssetTypeChange,
   hideTypeToggle = false, // NEW
+  hideQuickFilters = false, // NEW
   equipmentSlot = "Spine2", // NEW - default to chest
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -134,7 +134,7 @@ export const ArmorAssetList: React.FC<ArmorAssetListProps> = ({
         </h2>
 
         {/* Asset Type Toggle - Show avatars and appropriate equipment type */}
-        {hideTypeToggle && (
+        {hideTypeToggle && !hideQuickFilters && (
           <div className="flex gap-2 p-1 bg-bg-tertiary/30 rounded-xl">
             <button
               onClick={() => onAssetTypeChange("avatar")}

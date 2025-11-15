@@ -369,6 +369,7 @@ export const UnifiedEquipmentPage: React.FC = () => {
           onAssetSelect={handleAssetSelect}
           onAssetTypeChange={setAssetTypeFilter}
           hideTypeToggle={true}
+          hideQuickFilters={true}
           equipmentSlot={
             equipmentSlot as "Head" | "Spine2" | "Pelvis" | "Hand_R" | "Hand_L"
           }

@@ -179,11 +179,15 @@ export function AssetEditModal({
             onChange={(e) => handleChange("type", e.target.value)}
             className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           >
-            <option value="armor">Armor</option>
+            <option value="character">Character</option>
             <option value="weapon">Weapon</option>
-            <option value="resource">Resource</option>
-            <option value="ammunition">Ammunition</option>
+            <option value="armor">Armor</option>
+            <option value="consumable">Consumable</option>
             <option value="tool">Tool</option>
+            <option value="decoration">Decoration</option>
+            <option value="building">Building</option>
+            <option value="resource">Resource</option>
+            <option value="misc">Misc</option>
           </select>
         </div>
 
