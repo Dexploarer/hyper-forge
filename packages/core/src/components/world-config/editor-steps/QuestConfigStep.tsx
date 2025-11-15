@@ -3,6 +3,7 @@ import React, { useState } from "react";
 
 import { Button, Input } from "@/components/common";
 import { ArrayItemEditor } from "../shared/ArrayItemEditor";
+import { notify } from "@/utils/notify";
 
 interface QuestType {
   id: string;
@@ -330,12 +331,22 @@ export const QuestConfigStep: React.FC<QuestConfigStepProps> = ({
         onClose={() => setIsDifficultyEditorOpen(false)}
         onSave={(diff: any) => {
           // Parse levelRange if it's a string
+          let parsedLevelRange = diff.levelRange;
+
+          if (typeof diff.levelRange === "string") {
+            try {
+              parsedLevelRange = JSON.parse(diff.levelRange);
+            } catch (error) {
+              notify.error(
+                'Invalid level range format. Please use valid JSON like: {"min": 1, "max": 10}',
+              );
+              return; // Don't save if JSON is invalid
+            }
+          }
+
           const difficulty = {
             ...diff,
-            levelRange:
-              typeof diff.levelRange === "string"
-                ? JSON.parse(diff.levelRange)
-                : diff.levelRange,
+            levelRange: parsedLevelRange,
           };
 
           if (editingDifficulty) {
