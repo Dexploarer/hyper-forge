@@ -355,6 +355,19 @@ const app = new Elysia()
             description: "AI-powered NPC, quest, dialogue, and lore generation",
           },
           {
+            name: "Content Retrieval",
+            description:
+              "Retrieve NPCs, quests, dialogues, and lore from database",
+          },
+          {
+            name: "Content Management",
+            description: "Update and delete game content (requires auth)",
+          },
+          {
+            name: "Media Assets",
+            description: "Portrait, voice, and audio asset management",
+          },
+          {
             name: "Vector Search",
             description: "Semantic search using Qdrant vector database",
           },
