@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { X, Check } from "lucide-react";
+import { Check } from "lucide-react";
 
-import { Button, Tray } from "@/components/common";
+import {
+  Button,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@/components/common";
 import {
   worldConfigClient,
   type WorldConfigurationData,
@@ -16,7 +22,6 @@ import { NPCCategoriesStep } from "./editor-steps/NPCCategoriesStep";
 import { QuestConfigStep } from "./editor-steps/QuestConfigStep";
 import { AdvancedConfigStep } from "./editor-steps/AdvancedConfigStep";
 import { ReviewStep } from "./editor-steps/ReviewStep";
-import { StepNavigation } from "./shared";
 
 interface WorldConfigEditorProps {
   open: boolean;
@@ -195,14 +200,19 @@ export const WorldConfigEditor: React.FC<WorldConfigEditorProps> = ({
   const CurrentStepComponent = STEPS[currentStep - 1].component;
 
   return (
-    <Tray
-      open={open}
-      onClose={onClose}
-      title={editConfig ? "Edit Configuration" : "Create Configuration"}
-      defaultHeight="lg"
-      resizable={true}
-    >
-      <div className="flex flex-col h-full px-6 py-4">
+    <Modal open={open} onClose={onClose} size="xl">
+      <ModalHeader onClose={onClose}>
+        <div>
+          <h2 className="text-xl font-semibold text-text-primary">
+            {editConfig ? "Edit Configuration" : "Create Configuration"}
+          </h2>
+          <p className="text-sm text-text-tertiary mt-1">
+            Step {currentStep} of {STEPS.length}: {STEPS[currentStep - 1].name}
+          </p>
+        </div>
+      </ModalHeader>
+
+      <ModalBody>
         {/* Steps Header - Clickable Navigation */}
         <div className="mb-6 pb-4 border-b border-border-primary">
           <div className="flex items-center gap-2 overflow-x-auto pb-2">
@@ -246,25 +256,56 @@ export const WorldConfigEditor: React.FC<WorldConfigEditorProps> = ({
         </div>
 
         {/* Step Content */}
-        <div className="flex-1 overflow-y-auto pr-2">
+        <div className="max-h-[50vh] overflow-y-auto pr-2">
           <CurrentStepComponent data={formData} onChange={setFormData} />
         </div>
+      </ModalBody>
 
-        {/* Navigation */}
-        <div className="mt-6">
-          <StepNavigation
-            currentStep={currentStep}
-            totalSteps={STEPS.length}
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            onSave={handleSave}
-            canGoNext={true}
-            canGoPrevious={currentStep > 1}
-            isSaving={isSaving}
-            isLastStep={currentStep === STEPS.length}
-          />
+      <ModalFooter className="flex items-center justify-between">
+        {/* Step Progress */}
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-text-secondary">
+            Step {currentStep} of {STEPS.length}
+          </div>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: STEPS.length }).map((_, index) => (
+              <div
+                key={index}
+                className={`h-2 rounded-full transition-all ${
+                  index + 1 === currentStep
+                    ? "w-8 bg-primary"
+                    : index + 1 < currentStep
+                      ? "w-2 bg-primary/60"
+                      : "w-2 bg-bg-tertiary"
+                }`}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-    </Tray>
+
+        {/* Navigation Buttons */}
+        <div className="flex items-center gap-2">
+          {currentStep > 1 && (
+            <Button
+              variant="secondary"
+              onClick={handlePrevious}
+              disabled={isSaving}
+            >
+              Previous
+            </Button>
+          )}
+
+          {currentStep < STEPS.length ? (
+            <Button onClick={handleNext} disabled={isSaving}>
+              Next
+            </Button>
+          ) : (
+            <Button onClick={handleSave} disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Configuration"}
+            </Button>
+          )}
+        </div>
+      </ModalFooter>
+    </Modal>
   );
 };

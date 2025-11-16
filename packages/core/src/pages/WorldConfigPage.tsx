@@ -7,7 +7,6 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
-  Tray,
 } from "@/components/common";
 import {
   WorldConfigList,
