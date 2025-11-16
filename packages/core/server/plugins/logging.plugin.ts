@@ -24,7 +24,7 @@ import { logger, createRequestLogger } from "../utils/logger";
  */
 export const loggingPlugin = new Elysia({ name: "logging" })
   // Add timing and create request-specific logger
-  .derive((context) => {
+  .derive({ as: "global" }, (context) => {
     // requestID comes from request-id plugin
     const requestID = (context as any).requestID || "unknown";
     const startTime = Date.now();
