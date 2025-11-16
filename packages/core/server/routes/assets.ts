@@ -27,11 +27,12 @@ export const createAssetRoutes = (rootDir: string) => {
         .get(
           "",
           async (context) => {
-            const { query, user } = context as any;
+            const { query, user, set } = context as any;
 
             // Require authentication to view assets
             if (!user) {
-              return [];
+              set.status = 401;
+              return { error: "Authentication required" };
             }
 
             // Get all assets from database (includes CDN URLs)
@@ -55,12 +56,15 @@ export const createAssetRoutes = (rootDir: string) => {
             query: t.Object({
               projectId: t.Optional(t.String()),
             }),
-            response: Models.AssetListResponse,
+            response: {
+              200: Models.AssetListResponse,
+              401: Models.ErrorResponse,
+            },
             detail: {
               tags: ["Assets"],
               summary: "List user's assets",
               description:
-                "Returns a list of assets owned by the authenticated user with optional filtering by project. Returns empty array if not authenticated.",
+                "Returns a list of assets owned by the authenticated user with optional filtering by project. Requires authentication.",
             },
           },
         )
