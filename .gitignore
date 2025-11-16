@@ -4,6 +4,7 @@ node_modules/
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
+.bun-cache/*
 
 # Build outputs
 dist/
@@ -123,3 +124,8 @@ backup/
 
 .cursor/rules/kluster-code-verify.mdc
 .kluster
+.bun-cache/**
+.bun-cache/*
+.bun-cache
+.bun-cache/
+.bun-cache/
