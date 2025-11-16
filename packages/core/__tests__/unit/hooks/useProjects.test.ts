@@ -2,7 +2,6 @@
  * useProjects Hook Tests
  *
  * Tests for the useProjects hook which fetches and manages user projects.
- * Tests both modern React Query API and backward-compatible API.
  */
 
 import { describe, it, expect, beforeEach, mock } from "bun:test";
@@ -101,7 +100,7 @@ describe("useProjects Hook", () => {
       expect(result.current.projects.some((p) => p.isArchived)).toBe(true);
     });
 
-    it("should provide modern React Query API", async () => {
+    it("should provide React Query API with convenience aliases", async () => {
       mock.module("@/services/api/ProjectService", () => ({
         ProjectService: {
           getProjects: mock(() =>
@@ -114,27 +113,13 @@ describe("useProjects Hook", () => {
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-      // Modern API
+      // React Query API
       expect(result.current.data).toBeDefined();
       expect(result.current.isLoading).toBe(false);
       expect(result.current.isSuccess).toBe(true);
       expect(result.current.error).toBeNull();
-    });
 
-    it("should provide backward-compatible API", async () => {
-      mock.module("@/services/api/ProjectService", () => ({
-        ProjectService: {
-          getProjects: mock(() =>
-            Promise.resolve(mockProjects.filter((p) => !p.isArchived))
-          ),
-        },
-      }));
-
-      const { result } = renderHook(() => useProjects(), { wrapper });
-
-      await waitFor(() => expect(result.current.loading).toBe(false));
-
-      // Backward-compatible API
+      // Convenience aliases
       expect(result.current.projects).toBeDefined();
       expect(result.current.loading).toBe(false);
       expect(result.current.reloadProjects).toBeInstanceOf(Function);
@@ -312,7 +297,7 @@ describe("useProject Hook (Single Project)", () => {
     expect(result.current.project).toBeNull();
   });
 
-  it("should provide modern React Query API", async () => {
+  it("should provide React Query API with convenience aliases", async () => {
     mock.module("@/services/api/ProjectService", () => ({
       ProjectService: {
         getProjectById: mock((id: string) =>
@@ -325,23 +310,11 @@ describe("useProject Hook (Single Project)", () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
+    // React Query API
     expect(result.current.data).toBeDefined();
     expect(result.current.isSuccess).toBe(true);
-  });
 
-  it("should provide backward-compatible API", async () => {
-    mock.module("@/services/api/ProjectService", () => ({
-      ProjectService: {
-        getProjectById: mock((id: string) =>
-          Promise.resolve(mockProjects.find((p) => p.id === id) || null)
-        ),
-      },
-    }));
-
-    const { result } = renderHook(() => useProject("project-1"), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
+    // Convenience aliases
     expect(result.current.project).toBeDefined();
     expect(result.current.loading).toBe(false);
     expect(result.current.refetch).toBeInstanceOf(Function);

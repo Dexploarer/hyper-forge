@@ -3,11 +3,6 @@
  *
  * Modernized project data fetching with automatic caching
  * and background refetching.
- *
- * Migration Notes:
- * - Removed manual useState/useEffect patterns
- * - Automatic request deduplication via React Query
- * - Maintained backward-compatible API for existing components
  */
 
 import { useState, useEffect } from "react";
@@ -19,14 +14,9 @@ import { getAuthToken, onTokenUpdate } from "@/utils/auth-token-store";
  * Fetch all projects for the current user
  * REQUIRES AUTHENTICATION - query is disabled when user is not authenticated
  *
- * Modern API:
+ * Usage:
  * ```typescript
  * const { data: projects, isLoading, error } = useProjects()
- * ```
- *
- * Backward-compatible API:
- * ```typescript
- * const { projects, loading, reloadProjects } = useProjects()
  * ```
  *
  * @param includeArchived - Whether to include archived projects (default: false)
@@ -43,35 +33,19 @@ export const useProjects = (includeArchived: boolean = false) => {
     return unsubscribe;
   }, []);
 
-  const query = useQuery({
+  return useQuery({
     ...projectsQueries.list(includeArchived),
     enabled: hasToken, // Only fetch when user is authenticated
   });
-
-  return {
-    // Modern React Query API
-    ...query,
-
-    // Backward-compatible properties
-    projects: query.data ?? [],
-    loading: query.isLoading,
-    reloadProjects: query.refetch,
-    forceReload: query.refetch,
-  };
 };
 
 /**
  * Fetch a single project by ID
  * REQUIRES AUTHENTICATION - query is disabled when user is not authenticated
  *
- * Modern API:
+ * Usage:
  * ```typescript
  * const { data: project, isLoading } = useProject('project-uuid')
- * ```
- *
- * Backward-compatible API:
- * ```typescript
- * const { project, loading, refetch } = useProject('project-uuid')
  * ```
  *
  * @param projectId - UUID of the project to fetch (nullable for conditional fetching)
@@ -88,18 +62,8 @@ export const useProject = (projectId: string | null) => {
     return unsubscribe;
   }, []);
 
-  const query = useQuery({
+  return useQuery({
     ...projectsQueries.detail(projectId!),
     enabled: !!projectId && hasToken, // Only fetch if projectId provided AND user is authenticated
   });
-
-  return {
-    // Modern React Query API
-    ...query,
-
-    // Backward-compatible properties
-    project: query.data ?? null,
-    loading: query.isLoading,
-    refetch: query.refetch,
-  };
 };

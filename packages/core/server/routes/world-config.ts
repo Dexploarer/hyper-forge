@@ -7,7 +7,7 @@ import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
 import { WorldConfigService } from "../services/WorldConfigService";
 import * as Models from "../models";
-import { requireAuth } from "../middleware/auth";
+import { requireAuthGuard } from "../plugins/auth.plugin";
 
 const worldConfigService = new WorldConfigService();
 
@@ -238,47 +238,42 @@ export const worldConfigRoutes = new Elysia({
         },
       )
 
-      // DELETE /api/world-config/:id - Delete configuration
-      .delete(
-        "/:id",
-        async ({ params, request, headers, set }) => {
-          // Require authentication (any authenticated user can delete)
-          const authResult = await requireAuth({ request, headers });
-          if (authResult instanceof Response) {
-            set.status = 401;
-            return { error: "Unauthorized - authentication required" };
-          }
+      // Authenticated route group for DELETE operations
+      .group("", (authApp) =>
+        authApp.use(requireAuthGuard).delete(
+          "/:id",
+          async ({ params }) => {
+            try {
+              await worldConfigService.deleteConfiguration(params.id);
 
-          try {
-            await worldConfigService.deleteConfiguration(params.id);
-
-            return {
-              success: true,
-              message: "Configuration deleted successfully",
-            };
-          } catch (error) {
-            const message =
-              error instanceof Error ? error.message : "Delete failed";
-            return new Response(
-              JSON.stringify({
-                success: false,
-                error: message,
-              }),
-              { status: 400 },
-            );
-          }
-        },
-        {
-          params: t.Object({
-            id: t.String(),
-          }),
-          detail: {
-            tags: ["World Configuration"],
-            summary: "Delete configuration",
-            description:
-              "Delete a configuration (fails if it is currently active)",
+              return {
+                success: true,
+                message: "Configuration deleted successfully",
+              };
+            } catch (error) {
+              const message =
+                error instanceof Error ? error.message : "Delete failed";
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: message,
+                }),
+                { status: 400 },
+              );
+            }
           },
-        },
+          {
+            params: t.Object({
+              id: t.String(),
+            }),
+            detail: {
+              tags: ["World Configuration"],
+              summary: "Delete configuration",
+              description:
+                "Delete a configuration (fails if it is currently active)",
+            },
+          },
+        ),
       )
 
       // ========================
@@ -448,7 +443,7 @@ export const worldConfigRoutes = new Elysia({
         },
         {
           body: t.Object({
-            jsonData: t.Any(),
+            jsonData: t.Record(t.String(), t.Unknown()), // Complete world config JSON export
             name: t.String({ minLength: 1 }),
           }),
           detail: {
@@ -647,55 +642,50 @@ export const worldConfigRoutes = new Elysia({
         },
       )
 
-      // DELETE /api/world-config/:id/races/:raceId - Delete race
-      .delete(
-        "/:id/races/:raceId",
-        async ({ params, request, headers, set }) => {
-          // Require authentication (any authenticated user can delete)
-          const authResult = await requireAuth({ request, headers });
-          if (authResult instanceof Response) {
-            set.status = 401;
-            return { error: "Unauthorized - authentication required" };
-          }
+      // Authenticated route group for DELETE race
+      .group("", (authApp) =>
+        authApp.use(requireAuthGuard).delete(
+          "/:id/races/:raceId",
+          async ({ params }) => {
+            const config = await worldConfigService.getConfiguration(params.id);
+            if (!config) {
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: "Configuration not found",
+                }),
+                { status: 404 },
+              );
+            }
 
-          const config = await worldConfigService.getConfiguration(params.id);
-          if (!config) {
-            return new Response(
-              JSON.stringify({
-                success: false,
-                error: "Configuration not found",
-              }),
-              { status: 404 },
+            const updatedRaces = config.races.filter(
+              (r) => r.id !== params.raceId,
             );
-          }
 
-          const updatedRaces = config.races.filter(
-            (r) => r.id !== params.raceId,
-          );
+            const updatedConfig = await worldConfigService.updateSection(
+              params.id,
+              "races",
+              updatedRaces,
+            );
 
-          const updatedConfig = await worldConfigService.updateSection(
-            params.id,
-            "races",
-            updatedRaces,
-          );
-
-          return {
-            success: true,
-            config: updatedConfig,
-            message: "Race deleted successfully",
-          };
-        },
-        {
-          params: t.Object({
-            id: t.String(),
-            raceId: t.String(),
-          }),
-          detail: {
-            tags: ["World Configuration"],
-            summary: "Delete race",
-            description: "Remove a race from the configuration",
+            return {
+              success: true,
+              config: updatedConfig,
+              message: "Race deleted successfully",
+            };
           },
-        },
+          {
+            params: t.Object({
+              id: t.String(),
+              raceId: t.String(),
+            }),
+            detail: {
+              tags: ["World Configuration"],
+              summary: "Delete race",
+              description: "Remove a race from the configuration",
+            },
+          },
+        ),
       )
 
       // PATCH /api/world-config/:id/races/:raceId/toggle - Toggle race enabled
@@ -882,55 +872,50 @@ export const worldConfigRoutes = new Elysia({
         },
       )
 
-      // DELETE /api/world-config/:id/factions/:factionId - Delete faction
-      .delete(
-        "/:id/factions/:factionId",
-        async ({ params, request, headers, set }) => {
-          // Require authentication (any authenticated user can delete)
-          const authResult = await requireAuth({ request, headers });
-          if (authResult instanceof Response) {
-            set.status = 401;
-            return { error: "Unauthorized - authentication required" };
-          }
+      // Authenticated route group for DELETE faction
+      .group("", (authApp) =>
+        authApp.use(requireAuthGuard).delete(
+          "/:id/factions/:factionId",
+          async ({ params }) => {
+            const config = await worldConfigService.getConfiguration(params.id);
+            if (!config) {
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: "Configuration not found",
+                }),
+                { status: 404 },
+              );
+            }
 
-          const config = await worldConfigService.getConfiguration(params.id);
-          if (!config) {
-            return new Response(
-              JSON.stringify({
-                success: false,
-                error: "Configuration not found",
-              }),
-              { status: 404 },
+            const updatedFactions = config.factions.filter(
+              (f) => f.id !== params.factionId,
             );
-          }
 
-          const updatedFactions = config.factions.filter(
-            (f) => f.id !== params.factionId,
-          );
+            const updatedConfig = await worldConfigService.updateSection(
+              params.id,
+              "factions",
+              updatedFactions,
+            );
 
-          const updatedConfig = await worldConfigService.updateSection(
-            params.id,
-            "factions",
-            updatedFactions,
-          );
-
-          return {
-            success: true,
-            config: updatedConfig,
-            message: "Faction deleted successfully",
-          };
-        },
-        {
-          params: t.Object({
-            id: t.String(),
-            factionId: t.String(),
-          }),
-          detail: {
-            tags: ["World Configuration"],
-            summary: "Delete faction",
-            description: "Remove a faction from the configuration",
+            return {
+              success: true,
+              config: updatedConfig,
+              message: "Faction deleted successfully",
+            };
           },
-        },
+          {
+            params: t.Object({
+              id: t.String(),
+              factionId: t.String(),
+            }),
+            detail: {
+              tags: ["World Configuration"],
+              summary: "Delete faction",
+              description: "Remove a faction from the configuration",
+            },
+          },
+        ),
       )
 
       // PATCH /api/world-config/:id/factions/:factionId/toggle - Toggle faction enabled
@@ -1118,55 +1103,50 @@ export const worldConfigRoutes = new Elysia({
         },
       )
 
-      // DELETE /api/world-config/:id/skills/:skillId - Delete skill
-      .delete(
-        "/:id/skills/:skillId",
-        async ({ params, request, headers, set }) => {
-          // Require authentication (any authenticated user can delete)
-          const authResult = await requireAuth({ request, headers });
-          if (authResult instanceof Response) {
-            set.status = 401;
-            return { error: "Unauthorized - authentication required" };
-          }
+      // Authenticated route group for DELETE skill
+      .group("", (authApp) =>
+        authApp.use(requireAuthGuard).delete(
+          "/:id/skills/:skillId",
+          async ({ params }) => {
+            const config = await worldConfigService.getConfiguration(params.id);
+            if (!config) {
+              return new Response(
+                JSON.stringify({
+                  success: false,
+                  error: "Configuration not found",
+                }),
+                { status: 404 },
+              );
+            }
 
-          const config = await worldConfigService.getConfiguration(params.id);
-          if (!config) {
-            return new Response(
-              JSON.stringify({
-                success: false,
-                error: "Configuration not found",
-              }),
-              { status: 404 },
+            const updatedSkills = config.skills.filter(
+              (s) => s.id !== params.skillId,
             );
-          }
 
-          const updatedSkills = config.skills.filter(
-            (s) => s.id !== params.skillId,
-          );
+            const updatedConfig = await worldConfigService.updateSection(
+              params.id,
+              "skills",
+              updatedSkills,
+            );
 
-          const updatedConfig = await worldConfigService.updateSection(
-            params.id,
-            "skills",
-            updatedSkills,
-          );
-
-          return {
-            success: true,
-            config: updatedConfig,
-            message: "Skill deleted successfully",
-          };
-        },
-        {
-          params: t.Object({
-            id: t.String(),
-            skillId: t.String(),
-          }),
-          detail: {
-            tags: ["World Configuration"],
-            summary: "Delete skill",
-            description: "Remove a skill from the configuration",
+            return {
+              success: true,
+              config: updatedConfig,
+              message: "Skill deleted successfully",
+            };
           },
-        },
+          {
+            params: t.Object({
+              id: t.String(),
+              skillId: t.String(),
+            }),
+            detail: {
+              tags: ["World Configuration"],
+              summary: "Delete skill",
+              description: "Remove a skill from the configuration",
+            },
+          },
+        ),
       )
 
       // PATCH /api/world-config/:id/skills/:skillId/toggle - Toggle skill enabled

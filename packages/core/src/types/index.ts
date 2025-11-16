@@ -129,7 +129,7 @@ export interface SimpleGenerationResult {
   success: boolean;
   assetId: string;
   fileSize?: string;
-  modelUrl?: string;
+  cdnUrl?: string;
   error?: string;
 }
 
@@ -193,5 +193,5 @@ export * from "./NormalizationConventions";
 // Explicitly re-export GLTFAnimation, GLTFNode, and GLTFSkin as types for isolatedModules compatibility
 export type { GLTFAnimation, GLTFNode, GLTFSkin } from "./gltf";
 
-// Re-export Asset from AssetService to maintain backward compatibility
+// Re-export Asset from AssetService
 export type { Asset } from "@/services/api/AssetService";

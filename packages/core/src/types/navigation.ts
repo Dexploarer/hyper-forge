@@ -28,12 +28,7 @@ export type NavigationView =
   | "adminDashboard"
   | "settings"
   // Public profiles
-  | "publicProfile"
-  // Legacy/deprecated
-  | "generation"
-  | "audio"
-  | "content"
-  | "armorFitting";
+  | "publicProfile";
 
 export interface NavigationState {
   currentView: NavigationView;

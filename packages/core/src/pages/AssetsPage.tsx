@@ -195,7 +195,7 @@ export const AssetsPage: React.FC = () => {
                 >
                   <ThreeViewer
                     ref={viewerRef}
-                    modelUrl={
+                    cdnUrl={
                       selectedAsset.hasModel
                         ? AssetService.getModelUrl(selectedAsset)
                         : undefined
@@ -219,7 +219,7 @@ export const AssetsPage: React.FC = () => {
                   className={`absolute inset-0 transition-opacity duration-200 ${showAnimationView && selectedAsset.type === "character" ? "opacity-100" : "opacity-0 pointer-events-none"}`}
                 >
                   <AnimationPlayer
-                    modelUrl={
+                    cdnUrl={
                       selectedAsset.hasModel
                         ? AssetService.getModelUrl(selectedAsset)
                         : ""

@@ -350,40 +350,4 @@ Tone: Dark, somber, challenging`;
     });
   });
 
-  describe("Backward Compatibility", () => {
-    it("should work without worldConfigId parameter (backward compatible)", async () => {
-      const basePrompt = "Generate an NPC";
-
-      // Old code that doesn't pass worldConfigId should still work
-      const result = await contentService.injectWorldContext(basePrompt);
-
-      expect(result).toBeDefined();
-      expect(typeof result).toBe("string");
-    });
-
-    it("should not break existing generation method calls", () => {
-      // Old-style calls without worldConfigId should still be valid
-      const oldStyleNPC = {
-        archetype: "Warrior",
-        prompt: "A fighter",
-        quality: "quality" as const,
-      };
-
-      const oldStyleQuest = {
-        questType: "side",
-        difficulty: "easy",
-        quality: "speed" as const,
-      };
-
-      const oldStyleLore = {
-        category: "History",
-        topic: "Ancient Ruins",
-        quality: "balanced" as const,
-      };
-
-      expect(oldStyleNPC.archetype).toBeTruthy();
-      expect(oldStyleQuest.questType).toBeTruthy();
-      expect(oldStyleLore.category).toBeTruthy();
-    });
-  });
 });

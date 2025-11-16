@@ -218,8 +218,6 @@ export class GenerationService extends EventEmitter {
   public aiService: AICreationService;
   private imageHostingService: ImageHostingService;
   private fetchFn: FetchFunction;
-  // REMOVED: private pipelines: Map<string, Pipeline> = new Map();
-  // Now using database via repository
   private pipelineRepo: import("../repositories/GenerationPipelineRepository").GenerationPipelineRepository;
   private aiGatewayApiKey: string;
   private openaiApiKey: string;
@@ -297,14 +295,10 @@ export class GenerationService extends EventEmitter {
     // Initialize image hosting service
     this.imageHostingService = new ImageHostingService();
 
-    // Initialize repository (use injected or create new placeholder)
-    // TODO: Replace with real database repository when database-specialist completes it
+    // Initialize repository (use injected or create new instance)
     if (config?.pipelineRepo) {
       this.pipelineRepo = config.pipelineRepo;
     } else {
-      logger.warn(
-        "[GenerationService] No repository provided - using placeholder in-memory storage",
-      );
       // Dynamic import to avoid circular dependency
       const {
         GenerationPipelineRepository,
@@ -347,7 +341,6 @@ export class GenerationService extends EventEmitter {
     };
 
     // Store pipeline in database (via repository)
-    // NOTE: Repository uses placeholder in-memory Map until database-specialist implements real storage
     await this.pipelineRepo.create({
       id: pipelineId,
       userId: config.user?.userId || "anonymous",
@@ -388,7 +381,7 @@ export class GenerationService extends EventEmitter {
    * This is called directly from the route handler for synchronous processing
    */
   async processPipelineFromJob(
-    job: import("../services/GenerationJobService").GenerationJob,
+    job: import("../db/schema").GenerationJob,
   ): Promise<void> {
     const { generationJobService } = await import(
       "../services/GenerationJobService"

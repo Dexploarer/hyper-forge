@@ -15,16 +15,22 @@ import { db } from "../db/db";
 import { assets } from "../db/schema";
 import { eq } from "drizzle-orm";
 import { env } from "../config/env";
+import {
+  ServiceUnavailableError,
+  UnauthorizedError,
+  InternalServerError,
+} from "../errors";
 
 export const createCDNRoutes = (cdnUrl: string) => {
   return (
     new Elysia({ prefix: "/api/cdn", name: "cdn" })
+      .derive(() => ({ cdnUrl }))
       // Check CDN health
       .get(
         "/health",
-        async () => {
+        async ({ cdnUrl }) => {
           try {
-            const response = await fetch(`${cdnUrl}/api/health`);
+            const response = await fetch(`${cdnUrl}/health/ready`);
             const isHealthy = response.ok;
 
             return {
@@ -56,7 +62,7 @@ export const createCDNRoutes = (cdnUrl: string) => {
       // Creates/updates database records automatically
       .post(
         "/webhook/upload",
-        async ({ body, headers, set }) => {
+        async ({ body, headers }) => {
           const webhookEnabled = env.CDN_WEBHOOK_ENABLED;
           const webhookSecret = env.WEBHOOK_SECRET;
           const systemUserId =
@@ -65,47 +71,38 @@ export const createCDNRoutes = (cdnUrl: string) => {
 
           // Check if webhook feature is enabled
           if (!webhookEnabled) {
-            set.status = 503;
-            return {
-              success: false,
-              error: "CDN webhook receiver is disabled",
-            };
+            throw new ServiceUnavailableError(
+              "CDN webhook receiver",
+              "CDN webhook receiver is disabled",
+            );
+          }
+
+          // Verify webhook signature if secret is configured
+          if (webhookSecret) {
+            const signature = headers["x-webhook-signature"];
+            if (!signature) {
+              throw new UnauthorizedError("Missing webhook signature");
+            }
+
+            // Verify signature
+            const payload = body as WebhookPayload;
+            const expectedSignature = createHmac("sha256", webhookSecret)
+              .update(JSON.stringify(payload))
+              .digest("hex");
+
+            // Constant-time comparison to prevent timing attacks
+            const signatureBuffer = Buffer.from(signature as string, "hex");
+            const expectedBuffer = Buffer.from(expectedSignature, "hex");
+
+            if (
+              signatureBuffer.length !== expectedBuffer.length ||
+              !timingSafeEqual(signatureBuffer, expectedBuffer)
+            ) {
+              throw new UnauthorizedError("Invalid webhook signature");
+            }
           }
 
           try {
-            // Verify webhook signature if secret is configured
-            if (webhookSecret) {
-              const signature = headers["x-webhook-signature"];
-              if (!signature) {
-                set.status = 401;
-                return {
-                  success: false,
-                  error: "Missing webhook signature",
-                };
-              }
-
-              // Verify signature
-              const payload = body as WebhookPayload;
-              const expectedSignature = createHmac("sha256", webhookSecret)
-                .update(JSON.stringify(payload))
-                .digest("hex");
-
-              // Constant-time comparison to prevent timing attacks
-              const signatureBuffer = Buffer.from(signature as string, "hex");
-              const expectedBuffer = Buffer.from(expectedSignature, "hex");
-
-              if (
-                signatureBuffer.length !== expectedBuffer.length ||
-                !timingSafeEqual(signatureBuffer, expectedBuffer)
-              ) {
-                set.status = 401;
-                return {
-                  success: false,
-                  error: "Invalid webhook signature",
-                };
-              }
-            }
-
             const payload = body as WebhookPayload;
             logger.info(
               { context: "CDN Webhook", assetId: payload.assetId },
@@ -115,11 +112,11 @@ export const createCDNRoutes = (cdnUrl: string) => {
             // Extract metadata from payload
             const metadata = extractAssetMetadata(payload);
 
-            // Check if asset already exists in database
+            // Check if asset already exists in database by assetId
             const existingAssets = await db
               .select()
               .from(assets)
-              .where(eq(assets.filePath, metadata.filePath))
+              .where(eq(assets.id, metadata.assetId))
               .limit(1);
 
             let action: "created" | "updated" | "skipped";
@@ -179,15 +176,15 @@ export const createCDNRoutes = (cdnUrl: string) => {
               { err: error },
               "[CDN Webhook] Error processing webhook:",
             );
-            set.status = 500;
-            return {
-              success: false,
-              assetId: (body as WebhookPayload).assetId,
-              error:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown webhook processing error",
-            };
+            throw new InternalServerError(
+              error instanceof Error
+                ? error.message
+                : "Unknown webhook processing error",
+              {
+                assetId: (body as WebhookPayload).assetId,
+                originalError: error,
+              },
+            );
           }
         },
         {

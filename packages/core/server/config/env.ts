@@ -193,12 +193,8 @@ const envSchema = z.object({
   WEBHOOK_SYSTEM_USER_ID: z.string().uuid().optional(),
 
   // =========================================
-  // File System (DEPRECATED - Use CDN instead)
+  // File System (Legacy Compatibility)
   // =========================================
-  // DEPRECATED: ASSETS_DIR is no longer used in CDN-first architecture
-  // Assets are stored on CDN, not local filesystem
-  // This is kept for backward compatibility only
-  ASSETS_DIR: z.string().optional(),
   ASSETS_REPO_PATH: z.string().optional(),
 
   // =========================================

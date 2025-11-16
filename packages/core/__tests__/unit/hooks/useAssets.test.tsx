@@ -128,38 +128,28 @@ describe("useAssets", () => {
     expect(result.current.assets[1].name).toBe("Shield");
   });
 
-  it("should support backward-compatible API", async () => {
-    const { result } = renderHook(() => useAssets(), {
-      wrapper: createWrapper(queryClient),
-    });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    // Backward-compatible properties
-    expect(result.current).toHaveProperty("assets");
-    expect(result.current).toHaveProperty("loading");
-    expect(result.current).toHaveProperty("reloadAssets");
-    expect(result.current).toHaveProperty("forceReload");
-
-    // Verify they're functions
-    expect(typeof result.current.reloadAssets).toBe("function");
-    expect(typeof result.current.forceReload).toBe("function");
-  });
-
-  it("should support modern React Query API", async () => {
+  it("should provide React Query API with convenience aliases", async () => {
     const { result } = renderHook(() => useAssets(), {
       wrapper: createWrapper(queryClient),
     });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    // Modern properties
+    // React Query API
     expect(result.current).toHaveProperty("data");
     expect(result.current).toHaveProperty("isLoading");
     expect(result.current).toHaveProperty("error");
     expect(result.current).toHaveProperty("refetch");
     expect(result.current).toHaveProperty("isSuccess");
     expect(result.current).toHaveProperty("isFetching");
+
+    // Convenience aliases
+    expect(result.current).toHaveProperty("assets");
+    expect(result.current).toHaveProperty("loading");
+    expect(result.current).toHaveProperty("reloadAssets");
+    expect(result.current).toHaveProperty("forceReload");
+    expect(typeof result.current.reloadAssets).toBe("function");
+    expect(typeof result.current.forceReload).toBe("function");
   });
 
   it("should reload assets when reloadAssets is called", async () => {
@@ -214,22 +204,22 @@ describe("useMaterialPresets", () => {
     expect(result.current.presets[1].name).toBe("gold");
   });
 
-  it("should support both modern and backward-compatible API", async () => {
+  it("should provide React Query API with convenience aliases", async () => {
     const { result } = renderHook(() => useMaterialPresets(), {
       wrapper: createWrapper(queryClient),
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    // Backward-compatible
-    expect(result.current).toHaveProperty("presets");
-    expect(result.current).toHaveProperty("loading");
-    expect(result.current).toHaveProperty("refetch");
-
-    // Modern React Query
+    // React Query API
     expect(result.current).toHaveProperty("data");
     expect(result.current).toHaveProperty("isLoading");
     expect(result.current).toHaveProperty("error");
+
+    // Convenience aliases
+    expect(result.current).toHaveProperty("presets");
+    expect(result.current).toHaveProperty("loading");
+    expect(result.current).toHaveProperty("refetch");
   });
 });
 
@@ -258,19 +248,19 @@ describe("useRetexturing", () => {
     expect(response?.assetId).toBe("new-asset-id");
   });
 
-  it("should support both modern and backward-compatible API", async () => {
+  it("should provide React Query API with convenience aliases", async () => {
     const { result } = renderHook(() => useRetexturing(), {
       wrapper: createWrapper(queryClient),
     });
 
-    // Backward-compatible
-    expect(result.current).toHaveProperty("retextureAsset");
-    expect(result.current).toHaveProperty("isRetexturing");
-
-    // Modern React Query
+    // React Query API
     expect(result.current).toHaveProperty("mutate");
     expect(result.current).toHaveProperty("mutateAsync");
     expect(result.current).toHaveProperty("isPending");
+
+    // Convenience aliases
+    expect(result.current).toHaveProperty("retextureAsset");
+    expect(result.current).toHaveProperty("isRetexturing");
   });
 
   it("should handle retexture errors gracefully", async () => {

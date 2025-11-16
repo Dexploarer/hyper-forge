@@ -6,255 +6,248 @@
 
 import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
-import { requireAuth } from "../middleware/auth";
+import { requireAuthGuard } from "../plugins/auth.plugin";
 import { getEncryptionService } from "../services/ApiKeyEncryptionService";
 import { db } from "../db";
 import { users } from "../db/schema/users.schema";
 import { eq } from "drizzle-orm";
 import { ActivityLogService } from "../services/ActivityLogService";
+import type { AuthUser } from "../types/auth";
 
-export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" })
-  // Save user API keys (encrypted)
-  .post(
-    "/api-keys",
-    async ({ request, headers, body }) => {
-      const authResult = await requireAuth({ request, headers });
+export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" }).group(
+  "",
+  (app) =>
+    app
+      .use(requireAuthGuard)
+      // Save user API keys (encrypted)
+      .post(
+        "/api-keys",
+        async (context) => {
+          const { user, body, request } = context as typeof context & {
+            user: AuthUser;
+          };
+          const { meshyApiKey, aiGatewayApiKey, elevenLabsApiKey } = body;
 
-      // If auth failed, return the error response
-      if (authResult instanceof Response) {
-        return authResult;
-      }
+          // Validate at least one key is provided
+          if (!meshyApiKey && !aiGatewayApiKey && !elevenLabsApiKey) {
+            return new Response(
+              JSON.stringify({
+                error: "At least one API key must be provided",
+              }),
+              { status: 400, headers: { "Content-Type": "application/json" } },
+            );
+          }
 
-      const { user: authUser } = authResult;
-      const { meshyApiKey, aiGatewayApiKey, elevenLabsApiKey } = body;
+          try {
+            // Encrypt the API keys
+            const encryptionService = getEncryptionService();
+            const encryptedData = encryptionService.encryptKeys({
+              meshyApiKey,
+              aiGatewayApiKey,
+              elevenLabsApiKey,
+            });
 
-      // Validate at least one key is provided
-      if (!meshyApiKey && !aiGatewayApiKey && !elevenLabsApiKey) {
-        return new Response(
-          JSON.stringify({
-            error: "At least one API key must be provided",
+            // Update user record with encrypted keys
+            await db
+              .update(users)
+              .set({
+                meshyApiKey: encryptedData.meshyApiKey,
+                aiGatewayApiKey: encryptedData.aiGatewayApiKey,
+                elevenLabsApiKey: encryptedData.elevenLabsApiKey,
+                apiKeyIv: encryptedData.apiKeyIv,
+                updatedAt: new Date(),
+              })
+              .where(eq(users.id, user.id));
+
+            logger.info(
+              {
+                context: "UserApiKeys",
+                userId: user.id,
+                meshy: !!meshyApiKey,
+                aiGateway: !!aiGatewayApiKey,
+                elevenLabs: !!elevenLabsApiKey,
+              },
+              "User updated API keys",
+            );
+
+            // Log API key updates
+            const updatedKeys = [];
+            if (meshyApiKey) updatedKeys.push("Meshy");
+            if (aiGatewayApiKey) updatedKeys.push("AI Gateway");
+            if (elevenLabsApiKey) updatedKeys.push("ElevenLabs");
+
+            for (const keyType of updatedKeys) {
+              await ActivityLogService.logApiKeyUpdated({
+                userId: user.id,
+                keyType,
+                action: "updated",
+                request,
+              });
+            }
+
+            return {
+              success: true,
+              message: "API keys saved successfully",
+              keysConfigured: {
+                meshyApiKey: !!meshyApiKey,
+                aiGatewayApiKey: !!aiGatewayApiKey,
+                elevenLabsApiKey: !!elevenLabsApiKey,
+              },
+            };
+          } catch (error) {
+            logger.error(
+              { err: error },
+              "[UserApiKeys] Failed to save API keys:",
+            );
+            return new Response(
+              JSON.stringify({
+                error: "Failed to save API keys",
+                message:
+                  error instanceof Error ? error.message : "Unknown error",
+              }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        },
+        {
+          body: t.Object({
+            meshyApiKey: t.Optional(t.String()),
+            aiGatewayApiKey: t.Optional(t.String()),
+            elevenLabsApiKey: t.Optional(t.String()),
           }),
-          { status: 400, headers: { "Content-Type": "application/json" } },
-        );
-      }
-
-      try {
-        // Encrypt the API keys
-        const encryptionService = getEncryptionService();
-        const encryptedData = encryptionService.encryptKeys({
-          meshyApiKey,
-          aiGatewayApiKey,
-          elevenLabsApiKey,
-        });
-
-        // Update user record with encrypted keys
-        await db
-          .update(users)
-          .set({
-            meshyApiKey: encryptedData.meshyApiKey,
-            aiGatewayApiKey: encryptedData.aiGatewayApiKey,
-            elevenLabsApiKey: encryptedData.elevenLabsApiKey,
-            apiKeyIv: encryptedData.apiKeyIv,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, authUser.id));
-
-        logger.info(
-          {
-            context: "UserApiKeys",
-            userId: authUser.id,
-            meshy: !!meshyApiKey,
-            aiGateway: !!aiGatewayApiKey,
-            elevenLabs: !!elevenLabsApiKey,
+          detail: {
+            tags: ["Users"],
+            summary: "Save user API keys",
+            description:
+              "Save encrypted API keys for the authenticated user. Keys are encrypted before storage. Requires Privy JWT.",
+            security: [{ BearerAuth: [] }],
           },
-          "User updated API keys",
-        );
+        },
+      )
 
-        // Log API key updates
-        const updatedKeys = [];
-        if (meshyApiKey) updatedKeys.push("Meshy");
-        if (aiGatewayApiKey) updatedKeys.push("AI Gateway");
-        if (elevenLabsApiKey) updatedKeys.push("ElevenLabs");
+      // Get API key configuration status (doesn't return actual keys)
+      .get(
+        "/api-keys/status",
+        async (context) => {
+          const { user } = context as typeof context & { user: AuthUser };
+          try {
+            // Fetch user's encrypted API keys
+            const [userRecord] = await db
+              .select({
+                meshyApiKey: users.meshyApiKey,
+                aiGatewayApiKey: users.aiGatewayApiKey,
+                elevenLabsApiKey: users.elevenLabsApiKey,
+                apiKeyIv: users.apiKeyIv,
+              })
+              .from(users)
+              .where(eq(users.id, user.id));
 
-        for (const keyType of updatedKeys) {
-          await ActivityLogService.logApiKeyUpdated({
-            userId: authUser.id,
-            keyType,
-            action: "updated",
-            request,
-          });
-        }
+            if (!userRecord) {
+              return new Response(JSON.stringify({ error: "User not found" }), {
+                status: 404,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
 
-        return {
-          success: true,
-          message: "API keys saved successfully",
-          keysConfigured: {
-            meshyApiKey: !!meshyApiKey,
-            aiGatewayApiKey: !!aiGatewayApiKey,
-            elevenLabsApiKey: !!elevenLabsApiKey,
+            // Return status of which keys are configured (not the actual keys)
+            return {
+              keysConfigured: {
+                meshyApiKey: !!userRecord.meshyApiKey,
+                aiGatewayApiKey: !!userRecord.aiGatewayApiKey,
+                elevenLabsApiKey: !!userRecord.elevenLabsApiKey,
+              },
+              hasAnyKeys: !!(
+                userRecord.meshyApiKey ||
+                userRecord.aiGatewayApiKey ||
+                userRecord.elevenLabsApiKey
+              ),
+            };
+          } catch (error) {
+            logger.error(
+              { err: error },
+              "[UserApiKeys] Failed to fetch API key status:",
+            );
+            return new Response(
+              JSON.stringify({
+                error: "Failed to fetch API key status",
+                message:
+                  error instanceof Error ? error.message : "Unknown error",
+              }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        },
+        {
+          detail: {
+            tags: ["Users"],
+            summary: "Get API key status",
+            description:
+              "Check which API keys are configured for the authenticated user. Does not return actual keys. Requires Privy JWT.",
+            security: [{ BearerAuth: [] }],
           },
-        };
-      } catch (error) {
-        logger.error({ err: error }, "[UserApiKeys] Failed to save API keys:");
-        return new Response(
-          JSON.stringify({
-            error: "Failed to save API keys",
-            message: error instanceof Error ? error.message : "Unknown error",
-          }),
-          { status: 500, headers: { "Content-Type": "application/json" } },
-        );
-      }
-    },
-    {
-      body: t.Object({
-        meshyApiKey: t.Optional(t.String()),
-        aiGatewayApiKey: t.Optional(t.String()),
-        elevenLabsApiKey: t.Optional(t.String()),
-      }),
-      detail: {
-        tags: ["Users"],
-        summary: "Save user API keys",
-        description:
-          "Save encrypted API keys for the authenticated user. Keys are encrypted before storage. Requires Privy JWT.",
-        security: [{ BearerAuth: [] }],
-      },
-    },
-  )
+        },
+      )
 
-  // Get API key configuration status (doesn't return actual keys)
-  .get(
-    "/api-keys/status",
-    async ({ request, headers }) => {
-      const authResult = await requireAuth({ request, headers });
+      // Delete user API keys
+      .delete(
+        "/api-keys",
+        async (context) => {
+          const { user, request } = context as typeof context & {
+            user: AuthUser;
+          };
+          try {
+            // Clear all API keys
+            await db
+              .update(users)
+              .set({
+                meshyApiKey: null,
+                aiGatewayApiKey: null,
+                elevenLabsApiKey: null,
+                apiKeyIv: null,
+                updatedAt: new Date(),
+              })
+              .where(eq(users.id, user.id));
 
-      // If auth failed, return the error response
-      if (authResult instanceof Response) {
-        return authResult;
-      }
+            logger.info(
+              { context: "UserApiKeys" },
+              "User ${user.id} deleted all API keys",
+            );
 
-      const { user: authUser } = authResult;
+            // Log API key deletion
+            await ActivityLogService.logApiKeyUpdated({
+              userId: user.id,
+              keyType: "All API Keys",
+              action: "removed",
+              request,
+            });
 
-      try {
-        // Fetch user's encrypted API keys
-        const [userRecord] = await db
-          .select({
-            meshyApiKey: users.meshyApiKey,
-            aiGatewayApiKey: users.aiGatewayApiKey,
-            elevenLabsApiKey: users.elevenLabsApiKey,
-            apiKeyIv: users.apiKeyIv,
-          })
-          .from(users)
-          .where(eq(users.id, authUser.id));
-
-        if (!userRecord) {
-          return new Response(JSON.stringify({ error: "User not found" }), {
-            status: 404,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        // Return status of which keys are configured (not the actual keys)
-        return {
-          keysConfigured: {
-            meshyApiKey: !!userRecord.meshyApiKey,
-            aiGatewayApiKey: !!userRecord.aiGatewayApiKey,
-            elevenLabsApiKey: !!userRecord.elevenLabsApiKey,
+            return {
+              success: true,
+              message: "API keys deleted successfully",
+            };
+          } catch (error) {
+            logger.error(
+              { err: error },
+              "[UserApiKeys] Failed to delete API keys:",
+            );
+            return new Response(
+              JSON.stringify({
+                error: "Failed to delete API keys",
+                message:
+                  error instanceof Error ? error.message : "Unknown error",
+              }),
+              { status: 500, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        },
+        {
+          detail: {
+            tags: ["Users"],
+            summary: "Delete user API keys",
+            description:
+              "Delete all API keys for the authenticated user. Requires Privy JWT.",
+            security: [{ BearerAuth: [] }],
           },
-          hasAnyKeys: !!(
-            userRecord.meshyApiKey ||
-            userRecord.aiGatewayApiKey ||
-            userRecord.elevenLabsApiKey
-          ),
-        };
-      } catch (error) {
-        logger.error(
-          { err: error },
-          "[UserApiKeys] Failed to fetch API key status:",
-        );
-        return new Response(
-          JSON.stringify({
-            error: "Failed to fetch API key status",
-            message: error instanceof Error ? error.message : "Unknown error",
-          }),
-          { status: 500, headers: { "Content-Type": "application/json" } },
-        );
-      }
-    },
-    {
-      detail: {
-        tags: ["Users"],
-        summary: "Get API key status",
-        description:
-          "Check which API keys are configured for the authenticated user. Does not return actual keys. Requires Privy JWT.",
-        security: [{ BearerAuth: [] }],
-      },
-    },
-  )
-
-  // Delete user API keys
-  .delete(
-    "/api-keys",
-    async ({ request, headers }) => {
-      const authResult = await requireAuth({ request, headers });
-
-      // If auth failed, return the error response
-      if (authResult instanceof Response) {
-        return authResult;
-      }
-
-      const { user: authUser } = authResult;
-
-      try {
-        // Clear all API keys
-        await db
-          .update(users)
-          .set({
-            meshyApiKey: null,
-            aiGatewayApiKey: null,
-            elevenLabsApiKey: null,
-            apiKeyIv: null,
-            updatedAt: new Date(),
-          })
-          .where(eq(users.id, authUser.id));
-
-        logger.info(
-          { context: "UserApiKeys" },
-          "User ${authUser.id} deleted all API keys",
-        );
-
-        // Log API key deletion
-        await ActivityLogService.logApiKeyUpdated({
-          userId: authUser.id,
-          keyType: "All API Keys",
-          action: "removed",
-          request,
-        });
-
-        return {
-          success: true,
-          message: "API keys deleted successfully",
-        };
-      } catch (error) {
-        logger.error(
-          { err: error },
-          "[UserApiKeys] Failed to delete API keys:",
-        );
-        return new Response(
-          JSON.stringify({
-            error: "Failed to delete API keys",
-            message: error instanceof Error ? error.message : "Unknown error",
-          }),
-          { status: 500, headers: { "Content-Type": "application/json" } },
-        );
-      }
-    },
-    {
-      detail: {
-        tags: ["Users"],
-        summary: "Delete user API keys",
-        description:
-          "Delete all API keys for the authenticated user. Requires Privy JWT.",
-        security: [{ BearerAuth: [] }],
-      },
-    },
-  );
+        },
+      ),
+);

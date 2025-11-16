@@ -337,7 +337,7 @@ test.describe("Security and Access Control", () => {
   test("should have proper CORS configuration", async ({ page }) => {
     // Try to make a request from the frontend to backend
     const response = await page.request
-      .get("${process.env.BACKEND_URL || "http://test-backend:3004"}/api/health")
+      .get("${process.env.BACKEND_URL || "http://test-backend:3004"}/api/health/ready")
       .catch(() => null);
 
     if (response) {

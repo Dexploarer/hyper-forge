@@ -32,13 +32,10 @@ export const mediaAssets = pgTable(
     entityId: uuid("entity_id"),
 
     // File storage
-    // DEPRECATED: fileUrl stores local /gdd-assets paths and is deprecated
-    // Use cdnUrl instead for production assets
-    fileUrl: text("file_url").notNull(), // DEPRECATED: Use cdnUrl instead
     fileName: varchar("file_name", { length: 255 }),
 
     // CDN storage (CDN-first architecture)
-    cdnUrl: varchar("cdn_url", { length: 1024 }), // Full CDN URL for the media file
+    cdnUrl: varchar("cdn_url", { length: 1024 }).notNull(), // Full CDN URL for the media file (required)
 
     // Generation metadata
     metadata: jsonb("metadata")

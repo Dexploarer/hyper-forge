@@ -97,12 +97,9 @@ export const AssetMetadata = t.Object({
     ]),
   ),
   quality: t.Optional(t.String()),
-  // File paths
-  modelPath: t.Optional(t.String()),
-  conceptArtPath: t.Optional(t.String()),
+  // File status
   hasConceptArt: t.Optional(t.Boolean()),
   hasModel: t.Optional(t.Boolean()),
-  riggedModelPath: t.Optional(t.String()),
   // Variant system
   isBaseModel: t.Optional(t.Boolean()),
   isVariant: t.Optional(t.Boolean()),
@@ -224,11 +221,26 @@ export const AssetUpdate = t.Object({
       t.Literal("archived"),
     ]),
   ),
+  metadata: t.Optional(t.Record(t.String(), t.Unknown())), // Allow arbitrary metadata updates
 });
 
 export const BulkUpdateRequest = t.Object({
   assetIds: t.Array(t.String({ minLength: 1 }), { minItems: 1 }),
   updates: t.Object({
+    name: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+    type: t.Optional(
+      t.Union([
+        t.Literal("character"),
+        t.Literal("weapon"),
+        t.Literal("armor"),
+        t.Literal("item"),
+        t.Literal("environment"),
+        t.Literal("building"),
+        t.Literal("vehicle"),
+        t.Literal("creature"),
+        t.Literal("prop"),
+      ]),
+    ),
     status: t.Optional(
       t.Union([
         t.Literal("draft"),
@@ -241,6 +253,8 @@ export const BulkUpdateRequest = t.Object({
       ]),
     ),
     isFavorite: t.Optional(t.Boolean()),
+    notes: t.Optional(t.String({ maxLength: 5000 })),
+    metadata: t.Optional(t.Record(t.String(), t.Unknown())), // Allow arbitrary metadata updates
   }),
 });
 

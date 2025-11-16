@@ -23,7 +23,7 @@ import {
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
-import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { api } from "@/lib/api-client";
 import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
 import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
@@ -41,7 +41,6 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
   initialPrompt,
 }) => {
   const { navigateToPlaytester } = useNavigation();
-  const [apiClient] = useState(() => new ContentAPIClient());
   const [prompt, setPrompt] = useState("");
   const [npcName, setNpcName] = useState("");
   const [personality, setPersonality] = useState("");
@@ -81,7 +80,7 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
 
     try {
       setIsGenerating(true);
-      const result = await apiClient.generateDialogue({
+      const result = await api.api.content["generate-dialogue"].post({
         prompt,
         npcName: npcName || undefined,
         npcPersonality: personality || undefined,
@@ -90,9 +89,13 @@ export const DialogueGenerationCard: React.FC<DialogueGenerationCardProps> = ({
         worldConfigId: worldConfigId || undefined,
       });
 
-      setLastGeneratedDialogue(result.nodes);
-      onGenerated?.(result.nodes, result.rawResponse);
-      notify.success(`Generated ${result.nodes.length} dialogue nodes!`);
+      if (result.error) {
+        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate dialogue");
+      }
+
+      setLastGeneratedDialogue(result.data!.nodes);
+      onGenerated?.(result.data!.nodes, result.data!.rawResponse);
+      notify.success(`Generated ${result.data!.nodes.length} dialogue nodes!`);
     } catch (error) {
       console.error("Failed to generate dialogue:", error);
       notify.error("Failed to generate dialogue");

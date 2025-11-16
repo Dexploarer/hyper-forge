@@ -30,7 +30,7 @@ describe("Load Testing", () => {
   describe("Basic Load (100 req/sec for 30 seconds)", () => {
     it("should handle 100 requests per second on health endpoint", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 10,
         duration: 10, // Reduced from 30s for faster tests
         amount: 1000, // Total requests
@@ -81,7 +81,7 @@ Errors: ${result.errors}
   describe("Peak Load (500 req/sec for 10 seconds)", () => {
     it("should handle peak load on health endpoint", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 50,
         duration: 10,
         amount: 5000,
@@ -104,7 +104,7 @@ Errors: ${result.errors}
 
     it("should maintain low error rate under peak load", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 50,
         duration: 10,
         amount: 5000,
@@ -126,7 +126,7 @@ Error Rate: ${(errorRate * 100).toFixed(2)}%
   describe("Sustained Load (200 req/sec for 30 seconds)", () => {
     it("should handle sustained load without degradation", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 20,
         duration: 15, // Reduced from 30s for faster tests
         amount: 3000,
@@ -149,7 +149,7 @@ Throughput: ${(result.throughput.average / 1024 / 1024).toFixed(2)} MB/s
 
     it("should maintain consistent latency over time", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 20,
         duration: 15,
         amount: 3000,
@@ -174,7 +174,7 @@ Spread (p99-p50): ${latencySpread}ms
   describe("Mixed Workload (GET/POST mix)", () => {
     it("should handle mixed GET requests to different endpoints", async () => {
       const endpoints = [
-        `${baseUrl}/api/health`,
+        `${baseUrl}/api/health/ready`,
         `${baseUrl}/api/prompts`,
         `${baseUrl}/api/materials`,
       ];
@@ -207,7 +207,7 @@ Latency p97.5: ${result.latency.p97_5}ms
   describe("Performance Metrics", () => {
     it("should achieve p50 latency < 50ms for GET requests", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 10,
         duration: 10,
         amount: 1000,
@@ -224,7 +224,7 @@ p75: ${result.latency.p75}ms (target: <75ms)
 
     it("should achieve p95 latency < 100ms for health endpoint", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 10,
         duration: 10,
         amount: 1000,
@@ -241,7 +241,7 @@ p99: ${result.latency.p99}ms
 
     it("should maintain error rate < 0.1%", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 20,
         duration: 10,
         amount: 2000,
@@ -261,7 +261,7 @@ Rate: ${(errorRate * 100).toFixed(3)}% (target: <0.1%)
 
     it("should handle at least 100 requests per second", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 20,
         duration: 10,
         amount: 2000,
@@ -280,7 +280,7 @@ Max req/sec: ${result.requests.max}
   describe("Stress Testing", () => {
     it("should handle high concurrency (100 connections)", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 100,
         duration: 5,
         amount: 1000,
@@ -301,7 +301,7 @@ Errors: ${result.errors}
     it("should recover from high load", async () => {
       // Run high load
       await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 100,
         duration: 5,
         amount: 1000,
@@ -312,7 +312,7 @@ Errors: ${result.errors}
 
       // Run normal load and verify performance recovered
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 10,
         duration: 5,
         amount: 500,
@@ -332,7 +332,7 @@ Errors: ${result.errors}
   describe("Throughput", () => {
     it("should achieve high throughput on health endpoint", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 20,
         duration: 10,
         amount: 2000,
@@ -354,7 +354,7 @@ Bytes/req: ${(result.throughput.average / result.requests.average).toFixed(0)} b
   describe("Connection Handling", () => {
     it("should handle connection pooling efficiently", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 50,
         pipelining: 10, // Pipeline requests on connections
         duration: 5,
@@ -374,7 +374,7 @@ Requests/sec: ${result.requests.average}
     it("should not leak connections under load", async () => {
       // Run load test
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 50,
         duration: 10,
         amount: 2000,
@@ -397,7 +397,7 @@ Timeouts: ${result.timeouts}
   describe("Memory and Resource Usage", () => {
     it("should complete load test without server crash", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 50,
         duration: 15,
         amount: 5000,
@@ -418,7 +418,7 @@ Server Status: Running ✓
   describe("Real-World Scenarios", () => {
     it("should handle typical user load (50 concurrent users)", async () => {
       const result = await runLoad({
-        url: `${baseUrl}/api/health`,
+        url: `${baseUrl}/api/health/ready`,
         connections: 50,
         duration: 10,
         amount: 2000,

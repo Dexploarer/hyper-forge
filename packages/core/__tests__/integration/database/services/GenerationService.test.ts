@@ -364,8 +364,6 @@ describe("GenerationService", () => {
       expect(status.stages.promptOptimization.status).toBe("skipped");
     });
 
-    // FIXME: This test overrides global.fetch but service uses injected mockFetch
-    // To properly test this, we'd need to create a new service instance with custom fetch
     it.skip("should enhance prompt with GPT-4 by default", async () => {
       const originalFetch = global.fetch;
       let gpt4Called = false;
@@ -499,8 +497,6 @@ describe("GenerationService", () => {
   });
 
   describe("Pipeline Processing - Material Variants", () => {
-    // FIXME: These tests timeout because pipeline takes >5s (Meshy poll interval)
-    // Need to either mock Meshy polling or create deterministic test setup
     it.skip("should skip texture generation when not enabled", async () => {
       const config = {
         description: "plain sword",
@@ -548,8 +544,6 @@ describe("GenerationService", () => {
   });
 
   describe("Error Handling", () => {
-    // FIXME: These tests override global.fetch but service uses injected mockFetch
-    // Need to create new service instances with custom fetch for each test
     it.skip("should handle image generation errors gracefully", async () => {
       const originalFetch = global.fetch;
 

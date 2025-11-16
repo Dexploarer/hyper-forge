@@ -1,6 +1,6 @@
 /**
  * Health Routes Tests
- * Tests for health check endpoint
+ * Tests for health check endpoints
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
@@ -14,16 +14,16 @@ describe("Health Routes", () => {
     app = new Elysia().use(healthRoutes);
   });
 
-  describe("GET /api/health", () => {
-    it("should return healthy status with timestamp", async () => {
+  describe("GET /api/health/ready", () => {
+    it("should return ready status with timestamp", async () => {
       const response = await app.handle(
-        new Request("http://localhost/api/health"),
+        new Request("http://localhost/api/health/ready"),
       );
 
       expect(response.status).toBe(200);
       const data = await response.json();
 
-      expect(data.status).toBe("healthy");
+      expect(data.status).toBe("ready");
       expect(data.timestamp).toBeDefined();
       expect(typeof data.timestamp).toBe("string");
 
@@ -32,26 +32,22 @@ describe("Health Routes", () => {
       expect(timestamp.toString()).not.toBe("Invalid Date");
     });
 
-    it("should report service availability based on environment variables", async () => {
+    it("should report database and qdrant status", async () => {
       const response = await app.handle(
-        new Request("http://localhost/api/health"),
+        new Request("http://localhost/api/health/ready"),
       );
 
       expect(response.status).toBe(200);
       const data = await response.json();
 
-      expect(data.services).toBeDefined();
-      expect(typeof data.services.meshy).toBe("boolean");
-      expect(typeof data.services.openai).toBe("boolean");
-
-      // Verify against actual environment
-      expect(data.services.meshy).toBe(!!process.env.MESHY_API_KEY);
-      expect(data.services.openai).toBe(!!process.env.OPENAI_API_KEY);
+      expect(data.checks).toBeDefined();
+      expect(typeof data.checks.database).toBe("boolean");
+      expect(typeof data.checks.qdrant).toBe("boolean");
     });
 
     it("should work without authentication", async () => {
       const response = await app.handle(
-        new Request("http://localhost/api/health"),
+        new Request("http://localhost/api/health/ready"),
       );
 
       expect(response.status).toBe(200);
@@ -60,7 +56,7 @@ describe("Health Routes", () => {
 
     it("should return correct content type", async () => {
       const response = await app.handle(
-        new Request("http://localhost/api/health"),
+        new Request("http://localhost/api/health/ready"),
       );
 
       expect(response.status).toBe(200);
@@ -69,17 +65,44 @@ describe("Health Routes", () => {
       );
     });
 
-    it("should return status within 100ms", async () => {
+    it("should return status quickly (for Kubernetes probes)", async () => {
       const start = Date.now();
 
       const response = await app.handle(
-        new Request("http://localhost/api/health"),
+        new Request("http://localhost/api/health/ready"),
       );
 
       const duration = Date.now() - start;
 
       expect(response.status).toBe(200);
-      expect(duration).toBeLessThan(100);
+      expect(duration).toBeLessThan(1000); // Readiness checks DB, so allow 1s
+    });
+  });
+
+  describe("GET /api/health/live", () => {
+    it("should return OK status", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/health/live"),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      expect(data.status).toBe("ok");
+      expect(data.timestamp).toBeDefined();
+    });
+
+    it("should return within 50ms (liveness is fast)", async () => {
+      const start = Date.now();
+
+      const response = await app.handle(
+        new Request("http://localhost/api/health/live"),
+      );
+
+      const duration = Date.now() - start;
+
+      expect(response.status).toBe(200);
+      expect(duration).toBeLessThan(50);
     });
   });
 });

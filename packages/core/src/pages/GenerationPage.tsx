@@ -429,7 +429,7 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
 
   // Handle model loading state when selected asset changes
   useEffect(() => {
-    if (selectedAsset?.modelUrl || selectedAsset?.hasModel) {
+    if (selectedAsset?.cdnUrl || selectedAsset?.hasModel) {
       setIsModelLoading(false); // Don't show loading state, let ThreeViewer handle it
       setModelLoadError(null);
     }
@@ -488,12 +488,12 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
             type: asset.type,
             status: "completed",
             hasModel: asset.hasModel,
-            modelUrl: asset.cdnUrl,
+            cdnUrl: asset.cdnUrl,
             conceptArtUrl: asset.cdnConceptArtUrl,
             variants: Array.isArray((asset as any).metadata?.variants)
               ? ((asset.metadata as any).variants as {
                   name: string;
-                  modelUrl: string;
+                  cdnUrl: string;
                 }[])
               : undefined,
             metadata: asset.metadata || {},
@@ -538,12 +538,12 @@ export const GenerationPage: React.FC<GenerationPageProps> = ({
         type: asset.type,
         status: "completed",
         hasModel: asset.hasModel,
-        modelUrl: asset.cdnUrl,
+        cdnUrl: asset.cdnUrl,
         conceptArtUrl: asset.cdnConceptArtUrl,
         variants: Array.isArray((asset as any).metadata?.variants)
           ? ((asset.metadata as any).variants as {
               name: string;
-              modelUrl: string;
+              cdnUrl: string;
             }[])
           : undefined,
         metadata: asset.metadata || {},

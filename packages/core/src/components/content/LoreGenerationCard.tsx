@@ -23,7 +23,7 @@ import {
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
-import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { api } from "@/lib/api-client";
 import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
 import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
@@ -56,7 +56,6 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
   onGenerated,
   initialPrompt,
 }) => {
-  const [apiClient] = useState(() => new ContentAPIClient());
   const [prompt, setPrompt] = useState("");
   const [category, setCategory] = useState("");
   const [topic, setTopic] = useState("");
@@ -93,7 +92,7 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
 
     try {
       setIsGenerating(true);
-      const result = await apiClient.generateLore({
+      const result = await api.api.content["generate-lore"].post({
         prompt: prompt || undefined,
         category: category || undefined,
         topic: topic || undefined,
@@ -102,7 +101,11 @@ export const LoreGenerationCard: React.FC<LoreGenerationCardProps> = ({
         worldConfigId: worldConfigId || undefined,
       });
 
-      onGenerated?.(result.lore, result.rawResponse);
+      if (result.error) {
+        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate lore");
+      }
+
+      onGenerated?.(result.data!.lore, result.data!.rawResponse);
       notify.success("Lore generated successfully!");
     } catch (error) {
       console.error("Failed to generate lore:", error);

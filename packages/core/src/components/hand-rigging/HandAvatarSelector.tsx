@@ -29,7 +29,7 @@ export function HandAvatarSelector() {
   const { assets, loading } = useAssets();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { selectedAvatar, setSelectedAvatar, setModelUrl, setError } =
+  const { selectedAvatar, setSelectedAvatar, setCdnUrl, setError } =
     useHandRiggingStore();
 
   // Filter only character/avatar assets
@@ -51,7 +51,7 @@ export function HandAvatarSelector() {
     const animations = hasAnimations(avatar)
       ? avatar.metadata.animations?.basic
       : undefined;
-    let modelUrl = avatar.cdnUrl; // Default to base model from CDN
+    let cdnUrl = avatar.cdnUrl; // Default to base model from CDN
 
     if (animations?.tpose && avatar.cdnFiles && avatar.cdnFiles.length > 0) {
       // Use t-pose model if available (preferred for hand rigging)
@@ -59,7 +59,7 @@ export function HandAvatarSelector() {
         file.includes(animations.tpose!),
       );
       if (tposeFile) {
-        modelUrl = tposeFile;
+        cdnUrl = tposeFile;
         console.log(
           `Using t-pose model for ${avatar.name}: ${animations.tpose}`,
         );
@@ -70,7 +70,7 @@ export function HandAvatarSelector() {
       console.log(`No t-pose model found for ${avatar.name}, using base model`);
     }
 
-    setModelUrl(modelUrl);
+    setCdnUrl(cdnUrl);
     setError(null);
   };
 

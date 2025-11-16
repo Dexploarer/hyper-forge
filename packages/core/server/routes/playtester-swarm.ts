@@ -252,7 +252,7 @@ function buildTestReport(results: any, contentType: string, duration: number) {
 
 // TypeBox validation schemas
 const PlaytestRequestSchema = t.Object({
-  contentToTest: t.Record(t.String(), t.Any()),
+  contentToTest: t.Record(t.String(), t.Unknown()),
   contentType: t.Union([
     t.Literal("quest"),
     t.Literal("dialogue"),

@@ -7,7 +7,7 @@ import { Badge } from "../common";
 import ThreeViewer, { ThreeViewerRef } from "../shared/ThreeViewer";
 
 interface ModelViewerProps {
-  modelUrl: string | null;
+  cdnUrl: string | null;
   selectedAvatar: Asset | null;
   leftHandData: { bonesAdded: number } | null;
   rightHandData: { bonesAdded: number } | null;
@@ -21,7 +21,7 @@ interface ModelViewerProps {
 }
 
 export const ModelViewer: React.FC<ModelViewerProps> = ({
-  modelUrl,
+  cdnUrl,
   selectedAvatar,
   leftHandData,
   rightHandData,
@@ -31,11 +31,11 @@ export const ModelViewer: React.FC<ModelViewerProps> = ({
 }) => {
   return (
     <div className="w-full h-full relative">
-      {modelUrl ? (
+      {cdnUrl ? (
         <div className="w-full h-full bg-gradient-to-br from-bg-primary to-bg-secondary">
           <ThreeViewer
             ref={viewerRef}
-            modelUrl={modelUrl}
+            cdnUrl={cdnUrl}
             showGroundPlane={true}
             onModelLoad={onModelLoad}
             assetInfo={{

@@ -8,7 +8,7 @@ import { logger } from "../utils/logger";
 import { ElevenLabsVoiceService } from "../services/ElevenLabsVoiceService";
 import { MediaStorageService } from "../services/MediaStorageService";
 import * as Models from "../models";
-import { optionalAuth } from "../middleware/auth";
+import { optionalAuth } from "../plugins/auth.plugin";
 import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
 import { InternalServerError } from "../errors";
 
@@ -183,7 +183,7 @@ export const voiceGenerationRoutes = new Elysia({
           },
           {
             response: t.Object({
-              models: t.Array(t.Any()),
+              models: t.Array(t.Unknown()), // ElevenLabs model list - external API response
               count: t.Number(),
             }),
             detail: {
@@ -341,7 +341,7 @@ export const voiceGenerationRoutes = new Elysia({
                   description: t.Optional(t.String()),
                   duration: t.Optional(t.Number()),
                   mimeType: t.Optional(t.String()),
-                  settings: t.Optional(t.Any()),
+                  settings: t.Optional(t.Record(t.String(), t.Unknown())),
                 }),
               ),
             }),
@@ -421,7 +421,7 @@ export const voiceGenerationRoutes = new Elysia({
             }),
             response: t.Object({
               success: t.Boolean(),
-              audio: t.Array(t.Any()),
+              audio: t.Array(t.Unknown()), // Generated audio segments - external API response
               count: t.Number(),
             }),
             detail: {

@@ -49,10 +49,10 @@ export class WeaponHandleDetector {
   }
 
   async detectHandleArea(
-    modelUrl: string,
+    cdnUrl: string,
     useConsensus: boolean = false,
   ): Promise<HandleDetectionResult> {
-    console.log("🎯 Starting weapon handle detection for:", modelUrl);
+    console.log("🎯 Starting weapon handle detection for:", cdnUrl);
     console.log("Using consensus mode:", useConsensus);
 
     // Ensure everything is initialized
@@ -61,7 +61,7 @@ export class WeaponHandleDetector {
     }
 
     // 1. Load the GLB model
-    const model = await this.loadModel(modelUrl);
+    const model = await this.loadModel(cdnUrl);
 
     // 2. Setup orthographic camera to frame weapon
     const orientationFlipped = await this.setupOrthographicCamera(model);
@@ -277,12 +277,12 @@ export class WeaponHandleDetector {
     };
   }
 
-  private async loadModel(modelUrl: string): Promise<THREE.Object3D> {
-    console.log("📦 Loading model from:", modelUrl);
+  private async loadModel(cdnUrl: string): Promise<THREE.Object3D> {
+    console.log("📦 Loading model from:", cdnUrl);
 
     try {
       // First, validate that the endpoint returns binary data
-      const validationResponse = await fetch(modelUrl, { method: "HEAD" });
+      const validationResponse = await fetch(cdnUrl, { method: "HEAD" });
 
       if (!validationResponse.ok) {
         throw new Error(
@@ -312,7 +312,7 @@ export class WeaponHandleDetector {
       }
 
       // Now load the model
-      const gltf = await this.loader.loadAsync(modelUrl);
+      const gltf = await this.loader.loadAsync(cdnUrl);
       const model = gltf.scene;
 
       console.log("✅ Model loaded successfully");

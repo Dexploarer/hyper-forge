@@ -32,9 +32,9 @@ export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
 
   const hasModel =
     selectedAsset.hasModel ||
-    selectedAsset.modelUrl ||
+    selectedAsset.cdnUrl ||
     selectedAsset.metadata?.hasModel;
-  const modelUrl = selectedAsset.modelUrl; // CDN URL should be set from pipeline or asset data
+  const cdnUrl = selectedAsset.cdnUrl; // CDN URL should be set from pipeline or asset data
 
   const isRiggedAvatar =
     generationType === "avatar" &&
@@ -56,7 +56,7 @@ export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
             <>
               {isRiggedAvatar ? (
                 <AnimationPlayer
-                  modelUrl={modelUrl || ""}
+                  cdnUrl={cdnUrl || ""}
                   animations={
                     hasAnimations(selectedAsset)
                       ? selectedAsset.metadata.animations
@@ -67,7 +67,7 @@ export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
                 />
               ) : (
                 <ThreeViewer
-                  modelUrl={modelUrl || ""}
+                  cdnUrl={cdnUrl || ""}
                   assetInfo={{
                     name: selectedAsset.name,
                     type: selectedAsset.type || "character",
@@ -88,7 +88,7 @@ export const AssetPreviewCard: React.FC<AssetPreviewCardProps> = ({
       {hasModel && (
         <CardFooter className="bg-bg-secondary">
           <a
-            href={modelUrl}
+            href={cdnUrl}
             download={`${selectedAsset.id}.glb`}
             className="inline-flex items-center gap-2 text-primary hover:text-primary-hover transition-colors"
           >

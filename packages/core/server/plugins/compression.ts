@@ -16,9 +16,9 @@
  */
 
 import { Elysia } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import * as zlib from "node:zlib";
-import { generateETag } from "../middleware/caching";
+import { generateETag } from "./caching.plugin";
 
 /**
  * Minimum response size to compress (bytes)
@@ -200,7 +200,10 @@ export const compression = new Elysia({ name: "compression" })
             } as HeadersInit,
           });
         } catch (error) {
-          logger.error({ err: error }, '[Compression] Error compressing response:');
+          logger.error(
+            { err: error },
+            "[Compression] Error compressing response:",
+          );
           return data;
         }
       },

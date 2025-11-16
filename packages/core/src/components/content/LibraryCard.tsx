@@ -34,7 +34,7 @@ import {
 import { cn } from "@/styles";
 import { ContentItem, ContentType } from "@/hooks/useContent";
 import { LoadingSpinner } from "@/components/common";
-import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { api } from "@/lib/api-client";
 import { notify, formatDate } from "@/utils";
 import type {
   NPCData,
@@ -158,7 +158,6 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   const [isSavingBanner, setIsSavingBanner] = useState(false);
   const [showPortraitControls, setShowPortraitControls] = useState(false);
   const [showBannerControls, setShowBannerControls] = useState(false);
-  const [apiClient] = useState(() => new ContentAPIClient());
   const portraitInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -206,7 +205,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
 
     try {
       setIsGeneratingPortrait(true);
-      const result = await apiClient.generateNPCPortrait({
+      const result = await api.api.content["generate-npc-portrait"].post({
         npcName: npc.name,
         archetype: npc.archetype || "default",
         appearance:
@@ -216,12 +215,16 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
           "Neutral and balanced personality",
       });
 
+      if (result.error) {
+        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate portrait");
+      }
+
       // Set the generated portrait URL
-      setPortraitUrl(result.imageUrl);
+      setPortraitUrl(result.data!.imageUrl);
       notify.success("Portrait generated successfully!");
 
       // Automatically save the portrait
-      await handleSavePortrait(result.imageUrl);
+      await handleSavePortrait(result.data!.imageUrl);
     } catch (error) {
       console.error("Failed to generate portrait:", error);
       notify.error("Failed to generate portrait");
@@ -261,17 +264,21 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     try {
       setIsGeneratingBanner(true);
       // Generate banner with only visual requirements - no game metadata
-      const result = await apiClient.generateQuestBanner({
+      const result = await api.api.content["generate-quest-banner"].post({
         questTitle: quest.title,
         description: quest.description || "",
       });
 
+      if (result.error) {
+        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate banner");
+      }
+
       // Set the generated banner URL
-      setBannerUrl(result.imageUrl);
+      setBannerUrl(result.data!.imageUrl);
       notify.success("Banner generated successfully!");
 
       // Automatically save the banner
-      await handleSaveBanner(result.imageUrl);
+      await handleSaveBanner(result.data!.imageUrl);
     } catch (error) {
       console.error("Failed to generate banner:", error);
       notify.error("Failed to generate banner");
@@ -297,12 +304,16 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         const base64Image = base64data.split(",")[1]; // Remove data:image/png;base64, prefix
 
         // Save to backend
-        await apiClient.savePortrait({
+        const result = await api.api.content.media["save-portrait"].post({
           entityType: "quest",
           entityId: item.id,
           imageData: base64Image,
           type: "banner",
         });
+
+        if (result.error) {
+          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to save banner");
+        }
 
         notify.success("Banner saved successfully!");
 
@@ -336,11 +347,15 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         const base64Image = base64data.split(",")[1]; // Remove data:image/png;base64, prefix
 
         // Save to backend
-        await apiClient.savePortrait({
+        const result = await api.api.content.media["save-portrait"].post({
           entityType: "npc",
           entityId: item.id,
           imageData: base64Image,
         });
+
+        if (result.error) {
+          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to save portrait");
+        }
 
         notify.success("Portrait saved successfully!");
 
@@ -379,11 +394,15 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         const base64Image = base64data.split(",")[1];
 
         // Save to backend
-        await apiClient.savePortrait({
+        const result = await api.api.content.media["save-portrait"].post({
           entityType: "npc",
           entityId: item.id,
           imageData: base64Image,
         });
+
+        if (result.error) {
+          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to upload portrait");
+        }
 
         notify.success("Portrait uploaded successfully!");
 
@@ -426,12 +445,16 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         const base64Image = base64data.split(",")[1];
 
         // Save to backend
-        await apiClient.savePortrait({
+        const result = await api.api.content.media["save-portrait"].post({
           entityType: "quest",
           entityId: item.id,
           imageData: base64Image,
           type: "banner",
         });
+
+        if (result.error) {
+          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to upload banner");
+        }
 
         notify.success("Banner uploaded successfully!");
 

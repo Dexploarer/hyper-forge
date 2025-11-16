@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { optionalAuth } from "../middleware/auth";
+import { optionalAuth } from "../plugins/auth.plugin";
 import { userService } from "../services/UserService";
 import { projectService } from "../services/ProjectService";
 import { db } from "../db/db";

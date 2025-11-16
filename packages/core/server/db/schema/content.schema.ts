@@ -595,11 +595,6 @@ export const musicTracks = pgTable(
     qualityScore: integer("quality_score"),
     isVerified: boolean("is_verified").notNull().default(false),
 
-    // File storage (URL or path)
-    // DEPRECATED: fileUrl stores local paths and is deprecated
-    // Use cdnUrl instead for production assets
-    fileUrl: text("file_url"), // DEPRECATED: Use cdnUrl instead
-
     // CDN storage (CDN-first architecture)
     cdnUrl: varchar("cdn_url", { length: 1024 }), // Full CDN URL for the music file
 

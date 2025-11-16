@@ -395,7 +395,7 @@ export class ImageGenerationResult {
 
 export class ModelGenerationResult {
   constructor(
-    public modelUrl: string,
+    public cdnUrl: string,
     public format: "glb" | "fbx" | "obj",
     public polycount: number,
     public textureUrls?: {
@@ -411,7 +411,7 @@ export class ModelGenerationResult {
   ) {}
 
   static create(data: {
-    modelUrl: string;
+    cdnUrl: string;
     format: "glb" | "fbx" | "obj";
     polycount: number;
     textureUrls?: {
@@ -426,7 +426,7 @@ export class ModelGenerationResult {
     };
   }): ModelGenerationResult {
     return new ModelGenerationResult(
-      data.modelUrl,
+      data.cdnUrl,
       data.format,
       data.polycount,
       data.textureUrls,
@@ -448,7 +448,7 @@ export class ModelGenerationResult {
 
   toJSON() {
     return {
-      modelUrl: this.modelUrl,
+      cdnUrl: this.cdnUrl,
       format: this.format,
       polycount: this.polycount,
       textureUrls: this.textureUrls,
@@ -457,7 +457,7 @@ export class ModelGenerationResult {
   }
 
   static fromJSON(json: {
-    modelUrl: string;
+    cdnUrl: string;
     format: "glb" | "fbx" | "obj";
     polycount: number;
     textureUrls?: {
@@ -472,7 +472,7 @@ export class ModelGenerationResult {
     };
   }): ModelGenerationResult {
     return new ModelGenerationResult(
-      json.modelUrl,
+      json.cdnUrl,
       json.format,
       json.polycount,
       json.textureUrls,
@@ -483,20 +483,20 @@ export class ModelGenerationResult {
 
 export class RemeshResult {
   constructor(
-    public modelUrl: string,
+    public cdnUrl: string,
     public originalPolycount: number,
     public remeshedPolycount: number,
     public targetPolycount: number,
   ) {}
 
   static create(data: {
-    modelUrl: string;
+    cdnUrl: string;
     originalPolycount: number;
     remeshedPolycount: number;
     targetPolycount: number;
   }): RemeshResult {
     return new RemeshResult(
-      data.modelUrl,
+      data.cdnUrl,
       data.originalPolycount,
       data.remeshedPolycount,
       data.targetPolycount,
@@ -523,7 +523,7 @@ export class RemeshResult {
 
   toJSON() {
     return {
-      modelUrl: this.modelUrl,
+      cdnUrl: this.cdnUrl,
       originalPolycount: this.originalPolycount,
       remeshedPolycount: this.remeshedPolycount,
       targetPolycount: this.targetPolycount,
@@ -531,13 +531,13 @@ export class RemeshResult {
   }
 
   static fromJSON(json: {
-    modelUrl: string;
+    cdnUrl: string;
     originalPolycount: number;
     remeshedPolycount: number;
     targetPolycount: number;
   }): RemeshResult {
     return new RemeshResult(
-      json.modelUrl,
+      json.cdnUrl,
       json.originalPolycount,
       json.remeshedPolycount,
       json.targetPolycount,
@@ -1017,7 +1017,7 @@ export class GenerationStage {
       | ArmorPlacementResult
       | RiggingResult
       | BuildingAnalysisResult
-      | { modelUrl: string; metadata: AssetMetadata }
+      | { cdnUrl: string; metadata: AssetMetadata }
       | string,
     public error?: string,
   ) {}
@@ -1034,7 +1034,7 @@ export class GenerationStage {
       | ArmorPlacementResult
       | RiggingResult
       | BuildingAnalysisResult
-      | { modelUrl: string; metadata: AssetMetadata }
+      | { cdnUrl: string; metadata: AssetMetadata }
       | string;
     error?: string;
   }): GenerationStage {
@@ -1089,7 +1089,7 @@ export class GenerationStage {
       | ArmorPlacementResult
       | RiggingResult
       | BuildingAnalysisResult
-      | { modelUrl: string; metadata: AssetMetadata }
+      | { cdnUrl: string; metadata: AssetMetadata }
       | string;
     error?: string;
   }): GenerationStage {
@@ -1121,7 +1121,7 @@ export class GenerationResult {
       | RiggingResult
       | BuildingAnalysisResult,
     public finalAsset?: {
-      modelUrl: string;
+      cdnUrl: string;
       metadata: ReturnType<GenerationRequest["toJSON"]> & {
         analysisResult?:
           | HardpointResult
@@ -1149,7 +1149,7 @@ export class GenerationResult {
       | RiggingResult
       | BuildingAnalysisResult;
     finalAsset?: {
-      modelUrl: string;
+      cdnUrl: string;
       metadata: ReturnType<GenerationRequest["toJSON"]> & {
         analysisResult?:
           | HardpointResult
@@ -1233,7 +1233,7 @@ export class GenerationResult {
       | RiggingResult
       | BuildingAnalysisResult;
     finalAsset?: {
-      modelUrl: string;
+      cdnUrl: string;
       metadata: ReturnType<GenerationRequest["toJSON"]> & {
         analysisResult?:
           | HardpointResult

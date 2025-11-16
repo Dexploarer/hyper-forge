@@ -9,10 +9,10 @@ import { db } from "../db";
 import { prompts } from "../db/schema/prompts.schema";
 import { eq, and, or, desc } from "drizzle-orm";
 import { logger } from "../utils/logger";
-import { requireAuth } from "../middleware/auth";
+import { requireAuthGuard } from "../plugins/auth.plugin";
 
 export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
-  // Get all prompts of a specific type
+  // Public routes - Get prompts by type
   .get(
     "/:type",
     async ({ params, query, set }) => {
@@ -75,7 +75,6 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
     },
   )
 
-  // Backward compatibility routes for existing frontend code
   .get(
     "/game-styles",
     async ({ set }) => {
@@ -337,11 +336,11 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
       body: t.Object({
         type: t.String(),
         name: t.String(),
-        content: t.Any(), // JSONB content
+        content: t.Record(t.String(), t.Unknown()), // Prompt content JSONB - flexible structure
         description: t.Optional(t.String()),
         isPublic: t.Optional(t.Boolean()),
         createdBy: t.Optional(t.String()),
-        metadata: t.Optional(t.Any()),
+        metadata: t.Optional(t.Record(t.String(), t.Unknown())), // Additional metadata for prompt categorization
       }),
       detail: {
         tags: ["Prompts"],
@@ -391,11 +390,11 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
       }),
       body: t.Object({
         name: t.String(),
-        content: t.Any(),
+        content: t.Record(t.String(), t.Unknown()), // Prompt content JSONB - flexible structure
         description: t.Optional(t.String()),
         isActive: t.Optional(t.Boolean()),
         isPublic: t.Optional(t.Boolean()),
-        metadata: t.Optional(t.Any()),
+        metadata: t.Optional(t.Record(t.String(), t.Unknown())), // Additional metadata for prompt categorization
       }),
       detail: {
         tags: ["Prompts"],
@@ -405,92 +404,87 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
     },
   )
 
-  // Delete custom prompt
-  .delete(
-    "/custom/:id",
-    async ({ params, set, request, headers }) => {
-      // Require authentication (any authenticated user can delete)
-      const authResult = await requireAuth({ request, headers });
-      if (authResult instanceof Response) {
-        set.status = 401;
-        return { error: "Unauthorized - authentication required" };
-      }
+  // Authenticated routes for custom prompt management
+  .group("", (app) =>
+    app
+      .use(requireAuthGuard)
+      // Delete custom prompt
+      .delete(
+        "/custom/:id",
+        async ({ params, set }) => {
+          try {
+            const [deletedPrompt] = await db
+              .delete(prompts)
+              .where(
+                and(eq(prompts.id, params.id), eq(prompts.isSystem, false)),
+              )
+              .returning();
 
-      try {
-        const [deletedPrompt] = await db
-          .delete(prompts)
-          .where(and(eq(prompts.id, params.id), eq(prompts.isSystem, false)))
-          .returning();
+            if (!deletedPrompt) {
+              set.status = 404;
+              return {
+                error: "Custom prompt not found or is a system prompt",
+              };
+            }
 
-        if (!deletedPrompt) {
-          set.status = 404;
-          return { error: "Custom prompt not found or is a system prompt" };
-        }
+            return { success: true, id: params.id };
+          } catch (error) {
+            logger.error(
+              { context: "Prompts", err: error },
+              `Error deleting custom prompt: ${params.id}`,
+            );
+            set.status = 500;
+            return { error: "Failed to delete custom prompt" };
+          }
+        },
+        {
+          params: t.Object({
+            id: t.String(),
+          }),
+          detail: {
+            tags: ["Prompts"],
+            summary: "Delete custom prompt",
+            description:
+              "Delete a user-defined custom prompt (system prompts cannot be deleted)",
+          },
+        },
+      )
 
-        return { success: true, id: params.id };
-      } catch (error) {
-        logger.error(
-          { context: "Prompts", err: error },
-          `Error deleting custom prompt: ${params.id}`,
-        );
-        set.status = 500;
-        return { error: "Failed to delete custom prompt" };
-      }
-    },
-    {
-      params: t.Object({
-        id: t.String(),
-      }),
-      detail: {
-        tags: ["Prompts"],
-        summary: "Delete custom prompt",
-        description:
-          "Delete a user-defined custom prompt (system prompts cannot be deleted)",
-      },
-    },
-  )
+      // List all custom prompts for a user
+      .get(
+        "/custom/user/:userId",
+        async ({ params, set }) => {
+          try {
+            const userPrompts = await db
+              .select()
+              .from(prompts)
+              .where(
+                and(
+                  eq(prompts.createdBy, params.userId),
+                  eq(prompts.isSystem, false),
+                ),
+              )
+              .orderBy(desc(prompts.createdAt));
 
-  // List all custom prompts for a user
-  .get(
-    "/custom/user/:userId",
-    async ({ params, set, request, headers }) => {
-      // Require authentication (any authenticated user can delete)
-      const authResult = await requireAuth({ request, headers });
-      if (authResult instanceof Response) {
-        set.status = 401;
-        return { error: "Unauthorized - authentication required" };
-      }
-
-      try {
-        const userPrompts = await db
-          .select()
-          .from(prompts)
-          .where(
-            and(
-              eq(prompts.createdBy, params.userId),
-              eq(prompts.isSystem, false),
-            ),
-          )
-          .orderBy(desc(prompts.createdAt));
-
-        return userPrompts;
-      } catch (error) {
-        logger.error(
-          { context: "Prompts", err: error },
-          `Error loading user prompts for: ${params.userId}`,
-        );
-        set.status = 500;
-        return { error: "Failed to load user prompts" };
-      }
-    },
-    {
-      params: t.Object({
-        userId: t.String(),
-      }),
-      detail: {
-        tags: ["Prompts"],
-        summary: "List user's custom prompts",
-        description: "Get all custom prompts created by a specific user",
-      },
-    },
+            return userPrompts;
+          } catch (error) {
+            logger.error(
+              { context: "Prompts", err: error },
+              `Error loading user prompts for: ${params.userId}`,
+            );
+            set.status = 500;
+            return { error: "Failed to load user prompts" };
+          }
+        },
+        {
+          params: t.Object({
+            userId: t.String(),
+          }),
+          detail: {
+            tags: ["Prompts"],
+            summary: "List user's custom prompts",
+            description: "Get all custom prompts created by a specific user",
+          },
+        },
+      ),
   );

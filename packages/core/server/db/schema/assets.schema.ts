@@ -44,16 +44,10 @@ export const assets = pgTable(
     }),
     gameId: uuid("game_id"), // Optional game/project association
 
-    // File storage (paths relative to gdd-assets directory)
-    // DEPRECATED: These file path fields are deprecated in favor of CDN URLs
-    // They are kept for backward compatibility during the migration period
-    filePath: varchar("file_path", { length: 512 }), // DEPRECATED: Use cdnUrl instead
+    // File storage
     fileSize: bigint("file_size", { mode: "number" }),
     fileType: varchar("file_type", { length: 100 }),
-    thumbnailPath: varchar("thumbnail_path", { length: 512 }), // DEPRECATED: Use cdnThumbnailUrl instead
-    conceptArtPath: varchar("concept_art_path", { length: 512 }), // DEPRECATED: Use cdnConceptArtUrl instead
     hasConceptArt: boolean("has_concept_art").default(false),
-    riggedModelPath: varchar("rigged_model_path", { length: 512 }), // DEPRECATED: Use cdnRiggedModelUrl instead
 
     // Generation metadata
     prompt: text("prompt"),
@@ -131,7 +125,6 @@ export const assets = pgTable(
       table.projectId,
       table.type,
     ),
-    filePathIdx: index("idx_assets_file_path").on(table.filePath),
     // Additional composite indexes for query optimization
     ownerCreatedIdx: index("idx_assets_owner_created").on(
       table.ownerId,

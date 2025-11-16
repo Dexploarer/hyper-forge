@@ -4,13 +4,15 @@
  *
  * NOTE: These tests use mocked GenerationService as the actual service
  * requires external API calls (Meshy, OpenAI) which should not be called in tests.
+ *
+ * CRITICAL: Tests cdnUrl migration - ALL API responses must use cdnUrl, NOT modelUrl
  */
 
 import { describe, it, expect, beforeAll } from "bun:test";
 import { Elysia } from "elysia";
 import { createGenerationRoutes } from "../../../../server/routes/generation";
 
-// Mock GenerationService
+// Mock GenerationService with CDN URLs
 const mockGenerationService = {
   startPipeline: async (config: any) => {
     return {
@@ -23,6 +25,30 @@ const mockGenerationService = {
     if (pipelineId === "non-existent") {
       throw new Error("Pipeline not found");
     }
+
+    // Simulate completed pipeline with CDN URLs
+    if (pipelineId === "test-pipeline-completed") {
+      return {
+        id: pipelineId,
+        status: "completed",
+        progress: 100,
+        stages: {
+          conceptArt: "completed",
+          model3D: "completed",
+          processing: "completed",
+        },
+        results: {
+          assetId: "test-asset-123",
+          cdnUrl: "https://cdn.asset-forge.com/models/test-asset-123/model.glb",
+          cdnThumbnailUrl:
+            "https://cdn.asset-forge.com/models/test-asset-123/thumbnail.png",
+          cdnConceptArtUrl:
+            "https://cdn.asset-forge.com/models/test-asset-123/concept-art.png",
+        },
+        createdAt: new Date().toISOString(),
+      };
+    }
+
     return {
       id: pipelineId,
       status: "processing",
@@ -165,6 +191,76 @@ describe("Generation Routes", () => {
 
       // No 401 error expected
       expect(response.status).not.toBe(401);
+    });
+  });
+
+  describe("CDN URL Migration Tests", () => {
+    it("should return cdnUrl in completed pipeline results", async () => {
+      const response = await app.handle(
+        new Request(
+          "http://localhost/api/generation/pipeline/test-pipeline-completed",
+        ),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      // Verify CDN URLs are present
+      expect(data.results).toHaveProperty("cdnUrl");
+      expect(data.results.cdnUrl).toContain("cdn.asset-forge.com");
+      expect(data.results.cdnUrl).toContain("/models/");
+      expect(data.results.cdnUrl).toMatch(/\.glb$/);
+
+      // Verify NO legacy modelUrl
+      expect(data.results).not.toHaveProperty("modelUrl");
+      expect(data.results).not.toHaveProperty("filePath");
+      expect(data.results).not.toHaveProperty("modelPath");
+    });
+
+    it("should return cdnThumbnailUrl in completed pipeline", async () => {
+      const response = await app.handle(
+        new Request(
+          "http://localhost/api/generation/pipeline/test-pipeline-completed",
+        ),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      expect(data.results).toHaveProperty("cdnThumbnailUrl");
+      expect(data.results.cdnThumbnailUrl).toContain("cdn.asset-forge.com");
+      expect(data.results.cdnThumbnailUrl).toContain("thumbnail.png");
+    });
+
+    it("should return cdnConceptArtUrl in completed pipeline", async () => {
+      const response = await app.handle(
+        new Request(
+          "http://localhost/api/generation/pipeline/test-pipeline-completed",
+        ),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      expect(data.results).toHaveProperty("cdnConceptArtUrl");
+      expect(data.results.cdnConceptArtUrl).toContain("cdn.asset-forge.com");
+      expect(data.results.cdnConceptArtUrl).toContain("concept-art.png");
+    });
+
+    it("should NOT include modelUrl in any pipeline response", async () => {
+      const response = await app.handle(
+        new Request(
+          "http://localhost/api/generation/pipeline/test-pipeline-completed",
+        ),
+      );
+
+      const data = await response.json();
+      const jsonString = JSON.stringify(data);
+
+      // Ensure no legacy field names appear anywhere
+      expect(jsonString).not.toContain("modelUrl");
+      expect(jsonString).not.toContain("filePath");
+      expect(jsonString).not.toContain("modelPath");
     });
   });
 });

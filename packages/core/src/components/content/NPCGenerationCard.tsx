@@ -63,7 +63,6 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
   initialPrompt,
 }) => {
   const { navigateToPlaytester } = useNavigation();
-  const [apiClient] = useState(() => new ContentAPIClient());
   const [archetype, setArchetype] = useState("");
   const [prompt, setPrompt] = useState("");
   const [context, setContext] = useState("");
@@ -102,7 +101,7 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
 
     try {
       setIsGenerating(true);
-      const result = await apiClient.generateNPC({
+      const result = await api.api.content["generate-npc"].post({
         prompt,
         archetype: archetype || undefined,
         context: context || undefined,
@@ -110,8 +109,12 @@ export const NPCGenerationCard: React.FC<NPCGenerationCardProps> = ({
         worldConfigId: worldConfigId || undefined,
       });
 
-      setLastGeneratedNPC(result.npc);
-      onGenerated?.(result.npc, result.rawResponse);
+      if (result.error) {
+        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate NPC");
+      }
+
+      setLastGeneratedNPC(result.data!.npc);
+      onGenerated?.(result.data!.npc, result.data!.rawResponse);
       notify.success("NPC generated successfully!");
     } catch (error) {
       console.error("Failed to generate NPC:", error);

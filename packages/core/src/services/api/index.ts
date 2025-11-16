@@ -25,9 +25,6 @@ export {
 } from "./GenerationAPIClient";
 // Note: PipelineStage and PipelineResult (UI types) are exported from @/types/generation
 
-// Content API Client
-export { ContentAPIClient } from "./ContentAPIClient";
-
 // Audio API Client
 export { AudioAPIClient } from "./AudioAPIClient";
 

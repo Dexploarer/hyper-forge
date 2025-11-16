@@ -7,7 +7,7 @@ import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
 import { ElevenLabsMusicService } from "../services/ElevenLabsMusicService";
 import * as Models from "../models";
-import { optionalAuth } from "../middleware/auth";
+import { optionalAuth } from "../plugins/auth.plugin";
 import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
 import { InternalServerError } from "../errors";
 
@@ -126,7 +126,7 @@ export const musicRoutes = new Elysia({
             body: Models.GenerateMusicRequest,
             response: t.Object({
               audio: t.String(),
-              metadata: t.Any(),
+              metadata: t.Record(t.String(), t.Unknown()), // Music generation metadata
               format: t.String(),
             }),
             detail: {
@@ -158,7 +158,7 @@ export const musicRoutes = new Elysia({
           },
           {
             body: Models.CreateCompositionPlanRequest,
-            response: t.Any(),
+            response: t.Unknown(), // ElevenLabs API response - external service
             detail: {
               tags: ["Music Generation"],
               summary: "Create composition plan",

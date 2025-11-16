@@ -38,9 +38,9 @@ export interface CustomAssetType {
 export interface GeneratedAsset extends Asset {
   status: string;
   pipelineId?: string;
-  modelUrl?: string;
+  cdnUrl?: string;
   conceptArtUrl?: string;
-  variants?: Asset[] | Array<{ name: string; modelUrl: string; id?: string }>;
+  variants?: Asset[] | Array<{ name: string; cdnUrl: string; id?: string }>;
   hasSpriteMetadata?: boolean;
   hasSprites?: boolean;
   sprites?: Array<{ angle: number; imageUrl: string }> | null;
@@ -126,7 +126,7 @@ interface GenerationState {
       | ArmorPlacementResult
       | RiggingResult
       | BuildingAnalysisResult
-      | { modelUrl: string; metadata: AssetMetadata }
+      | { cdnUrl: string; metadata: AssetMetadata }
       | string;
   } | null;
 
@@ -219,7 +219,7 @@ interface GenerationState {
         | ArmorPlacementResult
         | RiggingResult
         | BuildingAnalysisResult
-        | { modelUrl: string; metadata: AssetMetadata }
+        | { cdnUrl: string; metadata: AssetMetadata }
         | string;
     } | null,
   ) => void;

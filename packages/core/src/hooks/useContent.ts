@@ -3,12 +3,6 @@
  *
  * Modernized content data fetching with automatic caching,
  * background refetching, and optimistic updates.
- *
- * Migration Notes:
- * - Removed manual useState/useEffect patterns
- * - Removed ContentAPIClient instantiation (now in queries)
- * - Maintained backward-compatible API for existing components
- * - Added optimistic updates for all mutations
  */
 
 import { useQuery } from "@tanstack/react-query";
@@ -38,14 +32,9 @@ export interface ContentItem {
 /**
  * Fetch and manage all content (NPCs, quests, dialogues, lore)
  *
- * Modern API:
+ * Usage:
  * ```typescript
- * const { data: npcs, isLoading, error, refetch } = useContent()
- * ```
- *
- * Backward-compatible API:
- * ```typescript
- * const { npcs, quests, dialogues, lores, loading, reloadContent } = useContent()
+ * const { npcs, quests, dialogues, lores, loading, deleteNPC, updateNPC } = useContent()
  * ```
  */
 export const useContent = () => {

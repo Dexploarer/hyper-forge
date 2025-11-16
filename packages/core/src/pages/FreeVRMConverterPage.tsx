@@ -20,7 +20,7 @@ export const FreeVRMConverterPage: React.FC = () => {
 
   // Local state for conversion workflow
   const [modelFile, setModelFile] = useState<File | null>(null);
-  const [modelUrl, setModelUrl] = useState<string>("");
+  const [cdnUrl, setCdnUrl] = useState<string>("");
   const [vrmConverted, setVrmConverted] = useState(false);
   const [vrmUrl, setVrmUrl] = useState<string>("");
   const [conversionWarnings, setConversionWarnings] = useState<string[]>([]);
@@ -33,7 +33,7 @@ export const FreeVRMConverterPage: React.FC = () => {
     if (file) {
       const url = URL.createObjectURL(file);
       setModelFile(file);
-      setModelUrl(url);
+      setCdnUrl(url);
       setVrmConverted(false);
       setVrmUrl("");
       setConversionWarnings([]);
@@ -43,7 +43,7 @@ export const FreeVRMConverterPage: React.FC = () => {
 
   // Convert GLB to VRM format
   const handleConvertToVRM = async () => {
-    if (!modelUrl || !modelFile) {
+    if (!cdnUrl || !modelFile) {
       alert("Please upload a GLB/GLTF file first");
       return;
     }
@@ -54,7 +54,7 @@ export const FreeVRMConverterPage: React.FC = () => {
 
       // Load the GLB file
       const loader = new GLTFLoader();
-      const gltf = await loader.loadAsync(modelUrl);
+      const gltf = await loader.loadAsync(cdnUrl);
 
       // Validate GLB loaded correctly
       if (!gltf || !gltf.scene) {
@@ -102,10 +102,10 @@ export const FreeVRMConverterPage: React.FC = () => {
 
   // Reset everything
   const handleReset = () => {
-    if (modelUrl) URL.revokeObjectURL(modelUrl);
+    if (cdnUrl) URL.revokeObjectURL(cdnUrl);
     if (vrmUrl) URL.revokeObjectURL(vrmUrl);
     setModelFile(null);
-    setModelUrl("");
+    setCdnUrl("");
     setVrmConverted(false);
     setVrmUrl("");
     setConversionWarnings([]);
@@ -228,7 +228,7 @@ export const FreeVRMConverterPage: React.FC = () => {
 
                   <button
                     className="w-full px-4 py-3 rounded-md bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                    disabled={!modelUrl}
+                    disabled={!cdnUrl}
                     onClick={handleConvertToVRM}
                   >
                     🎭 Convert to VRM Format
@@ -365,12 +365,12 @@ export const FreeVRMConverterPage: React.FC = () => {
                 <>
                   <ThreeViewer
                     ref={viewerRef}
-                    modelUrl={modelUrl || undefined}
+                    cdnUrl={cdnUrl || undefined}
                     isAnimationPlayer={false}
                   />
 
                   {/* Empty State */}
-                  {!modelUrl && (
+                  {!cdnUrl && (
                     <div className="absolute inset-0 flex items-center justify-center bg-bg-secondary/50 backdrop-blur-sm">
                       <div className="text-center">
                         <Upload className="w-16 h-16 text-text-tertiary mx-auto mb-4" />

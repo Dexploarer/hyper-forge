@@ -39,7 +39,7 @@ import { ThreeDPanel } from "../3DPanel";
 THREE.Cache.enabled = true;
 
 interface ThreeViewerProps {
-  modelUrl?: string;
+  cdnUrl?: string;
   isWireframe?: boolean;
   showGroundPlane?: boolean;
   isLightBackground?: boolean;
@@ -117,7 +117,7 @@ export interface ThreeViewerRef {
 const ThreeViewerComponent = forwardRef(
   (
     {
-      modelUrl,
+      cdnUrl,
       isWireframe = false,
       showGroundPlane = false,
       isLightBackground = false,
@@ -389,7 +389,7 @@ const ThreeViewerComponent = forwardRef(
 
       // Check if we have a server-side asset with t-pose.glb file available
       // Only try to download from server if we have an asset ID (not a local file)
-      if (assetInfo?.name && modelUrl && !modelUrl.startsWith("blob:")) {
+      if (assetInfo?.name && cdnUrl && !cdnUrl.startsWith("blob:")) {
         // Construct the URL to the t-pose.glb file
         // The URL should be something like /api/assets/{assetId}/t-pose.glb
         const tposeUrl = `/api/assets/${assetInfo.name}/t-pose.glb`;
@@ -760,7 +760,7 @@ const ThreeViewerComponent = forwardRef(
         },
         options,
       );
-    }, [assetInfo, modelUrl]);
+    }, [assetInfo, cdnUrl]);
 
     // Expose methods for external control
     useImperativeHandle(
@@ -4459,13 +4459,13 @@ const ThreeViewerComponent = forwardRef(
 
     // Load model
     useEffect(() => {
-      if (!modelUrl || !sceneRef.current) return;
+      if (!cdnUrl || !sceneRef.current) return;
 
       // Prevent loading the same model twice
-      if (currentModelUrlRef.current === modelUrl) {
+      if (currentModelUrlRef.current === cdnUrl) {
         console.log(
           "[ThreeViewer] ",
-          `🚫 Model already loaded/loading: ${modelUrl}`,
+          `🚫 Model already loaded/loading: ${cdnUrl}`,
         );
         return;
       }
@@ -4476,7 +4476,7 @@ const ThreeViewerComponent = forwardRef(
         console.log("[ThreeViewer] ", "🔄 Reset reference scale for new asset");
       }
 
-      currentModelUrlRef.current = modelUrl;
+      currentModelUrlRef.current = cdnUrl;
       setLoading(true);
       setLoadingProgress(0);
       setLoadError(null); // Clear any previous errors
@@ -4591,7 +4591,7 @@ const ThreeViewerComponent = forwardRef(
         }
 
         loader.load(
-          modelUrl,
+          cdnUrl,
           (gltf) => {
             const model = gltf.scene;
 
@@ -4613,7 +4613,7 @@ const ThreeViewerComponent = forwardRef(
             // Update matrices before we start
             model.updateMatrixWorld(true);
 
-            console.log("[ThreeViewer] ", `Loading model from: ${modelUrl}`);
+            console.log("[ThreeViewer] ", `Loading model from: ${cdnUrl}`);
             console.log(
               "[ThreeViewer] ",
               `Model children count: ${model.children.length}`,
@@ -4972,9 +4972,9 @@ const ThreeViewerComponent = forwardRef(
                     const animationClip = gltf.animations[0];
 
                     // Name the animation based on the file name
-                    if (modelUrl.includes("walking.glb")) {
+                    if (cdnUrl.includes("walking.glb")) {
                       animationClip.name = "walking";
-                    } else if (modelUrl.includes("running.glb")) {
+                    } else if (cdnUrl.includes("running.glb")) {
                       animationClip.name = "running";
                     } else {
                       animationClip.name = "animation";
@@ -5030,12 +5030,12 @@ const ThreeViewerComponent = forwardRef(
 
                     // For walking/running GLBs, auto-play their embedded animation
                     if (
-                      modelUrl.includes("walking.glb") ||
-                      modelUrl.includes("running.glb")
+                      cdnUrl.includes("walking.glb") ||
+                      cdnUrl.includes("running.glb")
                     ) {
                       console.log(
                         "[ThreeViewer] ",
-                        `Auto-playing animation for ${modelUrl}`,
+                        `Auto-playing animation for ${cdnUrl}`,
                       );
                       const action = mixer.clipAction(animationClip);
                       action.reset();
@@ -5350,11 +5350,11 @@ const ThreeViewerComponent = forwardRef(
       };
 
       // Try to fetch file size first (skip for blob URLs as they don't support HEAD)
-      if (modelUrl.startsWith("blob:")) {
+      if (cdnUrl.startsWith("blob:")) {
         // Blob URLs don't support HEAD requests, load directly
         loadModel();
       } else {
-        fetch(modelUrl, { method: "HEAD" })
+        fetch(cdnUrl, { method: "HEAD" })
           .then((response) => {
             const contentLength = response.headers.get("content-length");
             const fileSize = contentLength
@@ -5373,17 +5373,17 @@ const ThreeViewerComponent = forwardRef(
       return () => {
         console.log(
           "[ThreeViewer] ",
-          `🧹 Cleaning up model load for: ${modelUrl}`,
+          `🧹 Cleaning up model load for: ${cdnUrl}`,
         );
         // Reset the URL ref so next load works
-        if (currentModelUrlRef.current === modelUrl) {
+        if (currentModelUrlRef.current === cdnUrl) {
           currentModelUrlRef.current = null;
         }
       };
       // Intentionally keep dependencies minimal to avoid reloading during internal state updates
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
-      modelUrl,
+      cdnUrl,
       onModelLoad,
       assetInfo?.isAnimationFile,
       assetInfo?.requiresAnimationStrip,
@@ -5407,7 +5407,7 @@ const ThreeViewerComponent = forwardRef(
       });
     }, [
       isWireframe,
-      modelUrl,
+      cdnUrl,
       assetInfo?.requiresAnimationStrip,
       assetInfo?.characterHeight,
       showSkeleton,
@@ -5447,7 +5447,7 @@ const ThreeViewerComponent = forwardRef(
       }
     }, [
       showBounds,
-      modelUrl,
+      cdnUrl,
       assetInfo?.requiresAnimationStrip,
       assetInfo?.characterHeight,
       showSkeleton,
@@ -6293,7 +6293,7 @@ const ThreeViewerComponent = forwardRef(
           </>
         )}
 
-        {!modelUrl && (
+        {!cdnUrl && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <svg
@@ -6325,7 +6325,7 @@ ThreeViewerComponent.displayName = "ThreeViewer";
 const ThreeViewer = React.memo(ThreeViewerComponent, (prevProps, nextProps) => {
   // Only re-render if these critical props change
   return (
-    prevProps.modelUrl === nextProps.modelUrl &&
+    prevProps.cdnUrl === nextProps.cdnUrl &&
     prevProps.isWireframe === nextProps.isWireframe &&
     prevProps.showGroundPlane === nextProps.showGroundPlane &&
     prevProps.isLightBackground === nextProps.isLightBackground &&

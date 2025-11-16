@@ -190,6 +190,13 @@
       "when": 1763117965299,
       "tag": "0026_magical_red_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1763285513148,
+      "tag": "0027_furry_blink",
+      "breakpoints": true
     }
   ]
 }

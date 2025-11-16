@@ -77,8 +77,8 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
 
   const handleDownload = async () => {
     try {
-      const modelUrl = AssetService.getModelUrl(asset.id);
-      const response = await fetch(modelUrl);
+      const cdnUrl = AssetService.getModelUrl(asset.id);
+      const response = await fetch(cdnUrl);
       if (!response.ok) throw new Error("Download failed");
 
       const blob = await response.blob();

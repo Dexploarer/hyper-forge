@@ -31,7 +31,7 @@ import {
   Button,
   LoadingSpinner,
 } from "../common";
-import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { api } from "@/lib/api-client";
 import { AudioAPIClient } from "@/services/api/AudioAPIClient";
 import { notify } from "@/utils/notify";
 import { useNavigation } from "@/hooks/useNavigation";
@@ -59,7 +59,6 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
   content,
 }) => {
   const { navigateToPlaytester } = useNavigation();
-  const [apiClient] = useState(() => new ContentAPIClient());
   const [audioClient] = useState(() => new AudioAPIClient());
   const [copied, setCopied] = useState(false);
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
@@ -88,14 +87,22 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
 
     try {
       setIsGeneratingPortrait(true);
-      const result = await apiClient.generateNPCPortrait({
+      const result = await api.api.content["generate-npc-portrait"].post({
         npcName: npc.name,
         archetype: npc.archetype,
         appearance: npc.appearance.description,
         personality: npc.personality.traits.join(", "),
       });
 
-      setPortraitUrl(result.imageUrl);
+      if (result.error) {
+        throw new Error(
+          result.error.value?.message ||
+            result.error.value?.summary ||
+            "Failed to generate portrait",
+        );
+      }
+
+      setPortraitUrl(result.data!.imageUrl);
       notify.success("Portrait generated successfully!");
     } catch (error) {
       console.error("Failed to generate portrait:", error);
@@ -216,13 +223,21 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
         const base64Image = base64data.split(",")[1]; // Remove data:image/png;base64, prefix
 
         // Save to backend
-        const result = await apiClient.savePortrait({
+        const result = await api.api.content.media["save-portrait"].post({
           entityType: "npc",
           entityId: content.id!,
           imageData: base64Image,
         });
 
-        setSavedPortraitId(result.mediaId);
+        if (result.error) {
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to save portrait",
+          );
+        }
+
+        setSavedPortraitId(result.data!.mediaId);
         notify.success("Portrait saved successfully!");
       };
 
@@ -251,13 +266,21 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
         const base64Audio = base64data.split(",")[1]; // Remove data:audio/mpeg;base64, prefix
 
         // Save to backend
-        const result = await apiClient.saveVoice({
+        const result = await api.api.content.media["save-voice"].post({
           entityType: "npc",
           entityId: content.id!,
           audioData: base64Audio,
         });
 
-        setSavedVoiceId(result.mediaId);
+        if (result.error) {
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to save voice",
+          );
+        }
+
+        setSavedVoiceId(result.data!.mediaId);
         notify.success("Voice saved successfully!");
       };
 

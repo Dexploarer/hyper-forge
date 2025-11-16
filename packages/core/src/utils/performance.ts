@@ -14,7 +14,8 @@ class PerformanceMonitor {
   private enabled: boolean;
 
   constructor() {
-    this.enabled = import.meta.env.DEV === true;
+    this.enabled =
+      import.meta.env.DEV === true || import.meta.env.DEV === "true";
   }
 
   /**
@@ -123,7 +124,7 @@ export const performanceMonitor = new PerformanceMonitor();
  * React hook for measuring component render time
  */
 export function usePerformanceMeasure(componentName: string) {
-  if (!import.meta.env.DEV) {
+  if (!(import.meta.env.DEV === true || import.meta.env.DEV === "true")) {
     return { markRender: () => {}, measureRender: () => {} };
   }
 

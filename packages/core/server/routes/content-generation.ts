@@ -10,11 +10,11 @@ import { contentDatabaseService } from "../services/ContentDatabaseService";
 import { MediaStorageService } from "../services/MediaStorageService";
 import { RelationshipService } from "../services/RelationshipService";
 import * as Models from "../models";
-import { optionalAuth } from "../middleware/auth";
+import { optionalAuth } from "../plugins/auth.plugin";
+import { requireAuthGuard } from "../plugins/auth.plugin";
 import { NotFoundError, InternalServerError, ForbiddenError } from "../errors";
 import { createChildLogger } from "../utils/logger";
 import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
-import { requireAuth } from "../middleware/auth";
 import { ActivityLogService } from "../services/ActivityLogService";
 
 const logger = createChildLogger("ContentGenerationRoutes");
@@ -599,8 +599,8 @@ export const contentGenerationRoutes = new Elysia({
             body: t.Object({
               name: t.String({ minLength: 1, maxLength: 100 }),
               archetype: t.String({ minLength: 1, maxLength: 50 }),
-              data: t.Any(),
-              generationParams: t.Optional(t.Any()),
+              data: t.Record(t.String(), t.Unknown()), // NPC data structure - validated at runtime
+              generationParams: t.Optional(t.Record(t.String(), t.Unknown())), // NPC data structure - validated at runtime
               tags: t.Optional(
                 t.Array(t.String({ minLength: 1, maxLength: 50 }), {
                   maxItems: 20,
@@ -617,30 +617,26 @@ export const contentGenerationRoutes = new Elysia({
           },
         )
 
-        // DELETE /api/content/npcs/:id
-        .delete(
-          "/npcs/:id",
-          async ({ params, request, headers, set }) => {
-            // Require authentication (any authenticated user can delete)
-            const authResult = await requireAuth({ request, headers });
-            if (authResult instanceof Response) {
-              set.status = 401;
-              return { error: "Unauthorized - authentication required" };
-            }
-
-            await contentDatabaseService.deleteNPC(params.id);
-            return { success: true, message: "NPC deleted" };
-          },
-          {
-            params: t.Object({
-              id: t.String(),
-            }),
-            detail: {
-              tags: ["Content Management"],
-              summary: "Delete NPC",
-              description: "Delete an NPC from the database",
+        // DELETE /api/content/npcs/:id (requires auth)
+        .group("", (deleteApp) =>
+          deleteApp.use(requireAuthGuard).delete(
+            "/npcs/:id",
+            async ({ params }) => {
+              await contentDatabaseService.deleteNPC(params.id);
+              return { success: true, message: "NPC deleted" };
             },
-          },
+            {
+              params: t.Object({
+                id: t.String(),
+              }),
+              detail: {
+                tags: ["Content Management"],
+                summary: "Delete NPC",
+                description: "Delete an NPC from the database (requires auth)",
+                security: [{ BearerAuth: [] }],
+              },
+            },
+          ),
         )
 
         // ========================
@@ -752,8 +748,8 @@ export const contentGenerationRoutes = new Elysia({
                 t.Literal("hard"),
                 t.Literal("expert"),
               ]),
-              data: t.Any(),
-              generationParams: t.Optional(t.Any()),
+              data: t.Record(t.String(), t.Unknown()), // Quest data structure - validated at runtime
+              generationParams: t.Optional(t.Record(t.String(), t.Unknown())), // Quest data structure - validated at runtime
               tags: t.Optional(
                 t.Array(t.String({ minLength: 1, maxLength: 50 }), {
                   maxItems: 20,
@@ -770,45 +766,41 @@ export const contentGenerationRoutes = new Elysia({
           },
         )
 
-        // DELETE /api/content/quests/:id
-        .delete(
-          "/quests/:id",
-          async ({ params, request, headers, set }) => {
-            // Require authentication (any authenticated user can delete)
-            const authResult = await requireAuth({ request, headers });
-            if (authResult instanceof Response) {
-              set.status = 401;
-              return { error: "Unauthorized - authentication required" };
-            }
+        // DELETE /api/content/quests/:id (requires auth)
+        .group("", (deleteApp) =>
+          deleteApp.use(requireAuthGuard).delete(
+            "/quests/:id",
+            async ({ user, params, request }) => {
+              // Get quest details before deleting for logging
+              const quest = await contentDatabaseService.getQuest(params.id);
 
-            // Get quest details before deleting for logging
-            const quest = await contentDatabaseService.getQuest(params.id);
+              await contentDatabaseService.deleteQuest(params.id);
 
-            await contentDatabaseService.deleteQuest(params.id);
+              // Log content deletion
+              if (quest) {
+                await ActivityLogService.logContentDeleted({
+                  userId: user!.id,
+                  contentType: "quest",
+                  contentId: params.id,
+                  title: quest.title,
+                  request,
+                });
+              }
 
-            // Log content deletion
-            if (quest) {
-              await ActivityLogService.logContentDeleted({
-                userId: authResult.user.id,
-                contentType: "quest",
-                contentId: params.id,
-                title: quest.title,
-                request,
-              });
-            }
-
-            return { success: true, message: "Quest deleted" };
-          },
-          {
-            params: t.Object({
-              id: t.String(),
-            }),
-            detail: {
-              tags: ["Content Management"],
-              summary: "Delete Quest",
-              description: "Delete a quest from the database",
+              return { success: true, message: "Quest deleted" };
             },
-          },
+            {
+              params: t.Object({
+                id: t.String(),
+              }),
+              detail: {
+                tags: ["Content Management"],
+                summary: "Delete Quest",
+                description: "Delete a quest from the database (requires auth)",
+                security: [{ BearerAuth: [] }],
+              },
+            },
+          ),
         )
 
         // ========================
@@ -905,8 +897,8 @@ export const contentGenerationRoutes = new Elysia({
             body: t.Object({
               npcName: t.String({ minLength: 1, maxLength: 100 }),
               context: t.Optional(t.String({ maxLength: 5000 })),
-              nodes: t.Any(),
-              generationParams: t.Optional(t.Any()),
+              nodes: t.Array(t.Unknown()), // Dialogue nodes array - structure validated at runtime
+              generationParams: t.Optional(t.Record(t.String(), t.Unknown())), // Dialogue nodes array - structure validated at runtime
               createVersion: t.Optional(t.Boolean()),
             }),
             detail: {
@@ -918,30 +910,27 @@ export const contentGenerationRoutes = new Elysia({
           },
         )
 
-        // DELETE /api/content/dialogues/:id
-        .delete(
-          "/dialogues/:id",
-          async ({ params, request, headers, set }) => {
-            // Require authentication (any authenticated user can delete)
-            const authResult = await requireAuth({ request, headers });
-            if (authResult instanceof Response) {
-              set.status = 401;
-              return { error: "Unauthorized - authentication required" };
-            }
-
-            await contentDatabaseService.deleteDialogue(params.id);
-            return { success: true, message: "Dialogue deleted" };
-          },
-          {
-            params: t.Object({
-              id: t.String(),
-            }),
-            detail: {
-              tags: ["Content Management"],
-              summary: "Delete Dialogue",
-              description: "Delete a dialogue from the database",
+        // DELETE /api/content/dialogues/:id (requires auth)
+        .group("", (deleteApp) =>
+          deleteApp.use(requireAuthGuard).delete(
+            "/dialogues/:id",
+            async ({ params }) => {
+              await contentDatabaseService.deleteDialogue(params.id);
+              return { success: true, message: "Dialogue deleted" };
             },
-          },
+            {
+              params: t.Object({
+                id: t.String(),
+              }),
+              detail: {
+                tags: ["Content Management"],
+                summary: "Delete Dialogue",
+                description:
+                  "Delete a dialogue from the database (requires auth)",
+                security: [{ BearerAuth: [] }],
+              },
+            },
+          ),
         )
 
         // ========================
@@ -1043,8 +1032,8 @@ export const contentGenerationRoutes = new Elysia({
                 t.Literal("custom"),
               ]),
               summary: t.Optional(t.String({ maxLength: 500 })),
-              data: t.Any(),
-              generationParams: t.Optional(t.Any()),
+              data: t.Record(t.String(), t.Unknown()), // Lore data structure - validated at runtime
+              generationParams: t.Optional(t.Record(t.String(), t.Unknown())), // Lore data structure - validated at runtime
               tags: t.Optional(
                 t.Array(t.String({ minLength: 1, maxLength: 50 }), {
                   maxItems: 20,
@@ -1061,45 +1050,42 @@ export const contentGenerationRoutes = new Elysia({
           },
         )
 
-        // DELETE /api/content/lores/:id
-        .delete(
-          "/lores/:id",
-          async ({ params, request, headers, set }) => {
-            // Require authentication (any authenticated user can delete)
-            const authResult = await requireAuth({ request, headers });
-            if (authResult instanceof Response) {
-              set.status = 401;
-              return { error: "Unauthorized - authentication required" };
-            }
+        // DELETE /api/content/lores/:id (requires auth)
+        .group("", (deleteApp) =>
+          deleteApp.use(requireAuthGuard).delete(
+            "/lores/:id",
+            async ({ user, params, request }) => {
+              // Get lore details before deleting for logging
+              const lore = await contentDatabaseService.getLore(params.id);
 
-            // Get lore details before deleting for logging
-            const lore = await contentDatabaseService.getLore(params.id);
+              await contentDatabaseService.deleteLore(params.id);
 
-            await contentDatabaseService.deleteLore(params.id);
+              // Log content deletion
+              if (lore) {
+                await ActivityLogService.logContentDeleted({
+                  userId: user!.id,
+                  contentType: "lore",
+                  contentId: params.id,
+                  title: lore.title,
+                  request,
+                });
+              }
 
-            // Log content deletion
-            if (lore) {
-              await ActivityLogService.logContentDeleted({
-                userId: authResult.user.id,
-                contentType: "lore",
-                contentId: params.id,
-                title: lore.title,
-                request,
-              });
-            }
-
-            return { success: true, message: "Lore deleted" };
-          },
-          {
-            params: t.Object({
-              id: t.String(),
-            }),
-            detail: {
-              tags: ["Content Management"],
-              summary: "Delete Lore",
-              description: "Delete a lore entry from the database",
+              return { success: true, message: "Lore deleted" };
             },
-          },
+            {
+              params: t.Object({
+                id: t.String(),
+              }),
+              detail: {
+                tags: ["Content Management"],
+                summary: "Delete Lore",
+                description:
+                  "Delete a lore entry from the database (requires auth)",
+                security: [{ BearerAuth: [] }],
+              },
+            },
+          ),
         )
 
         // ========================
@@ -1282,7 +1268,7 @@ export const contentGenerationRoutes = new Elysia({
               entityId: t.String({ minLength: 1, maxLength: 255 }),
               audioData: t.String({ minLength: 100 }), // base64 encoded - minimum realistic size
               voiceId: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
-              voiceSettings: t.Optional(t.Any()),
+              voiceSettings: t.Optional(t.Record(t.String(), t.Unknown())), // ElevenLabs voice settings - dynamic configuration
               text: t.Optional(t.String({ maxLength: 5000 })),
               duration: t.Optional(t.Number({ minimum: 0, maximum: 600 })), // Max 10 minutes
               createdBy: t.Optional(t.String({ minLength: 1, maxLength: 255 })),

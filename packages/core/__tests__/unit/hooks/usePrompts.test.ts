@@ -131,24 +131,19 @@ describe("useGameStylePrompts Hook", () => {
       expect(result.current.prompts.custom).toBeDefined();
     });
 
-    it("should provide modern React Query API", async () => {
+    it("should provide React Query API with convenience aliases", async () => {
       const { result } = renderHook(() => useGameStylePrompts(), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
+      // React Query API
       expect(result.current.data).toBeDefined();
       expect(result.current.isSuccess).toBe(true);
       expect(result.current.error).toBeNull();
-    });
 
-    it("should provide backward-compatible API", async () => {
-      const { result } = renderHook(() => useGameStylePrompts(), { wrapper });
-
-      await waitFor(() => expect(result.current.loading).toBe(false));
-
+      // Convenience aliases
       expect(result.current.prompts).toBeDefined();
       expect(result.current.loading).toBe(false);
-      expect(result.current.error).toBeNull();
     });
 
     it("should merge default and custom prompts", async () => {
@@ -294,20 +289,16 @@ describe("useAssetTypePrompts Hook", () => {
       expect(result.current.prompts.item).toBeDefined();
     });
 
-    it("should provide modern React Query API", async () => {
+    it("should provide React Query API with convenience aliases", async () => {
       const { result } = renderHook(() => useAssetTypePrompts(), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
+      // React Query API
       expect(result.current.data).toBeDefined();
       expect(result.current.isSuccess).toBe(true);
-    });
 
-    it("should provide backward-compatible API", async () => {
-      const { result } = renderHook(() => useAssetTypePrompts(), { wrapper });
-
-      await waitFor(() => expect(result.current.loading).toBe(false));
-
+      // Convenience aliases
       expect(result.current.prompts).toBeDefined();
       expect(result.current.loading).toBe(false);
     });
@@ -451,24 +442,18 @@ describe("useMaterialPromptTemplates Hook", () => {
       expect(result.current.templates.customOverrides).toBeDefined();
     });
 
-    it("should provide modern React Query API", async () => {
+    it("should provide React Query API with convenience aliases", async () => {
       const { result } = renderHook(() => useMaterialPromptTemplates(), {
         wrapper,
       });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
+      // React Query API
       expect(result.current.data).toBeDefined();
       expect(result.current.isSuccess).toBe(true);
-    });
 
-    it("should provide backward-compatible API", async () => {
-      const { result } = renderHook(() => useMaterialPromptTemplates(), {
-        wrapper,
-      });
-
-      await waitFor(() => expect(result.current.loading).toBe(false));
-
+      // Convenience aliases
       expect(result.current.templates).toBeDefined();
       expect(result.current.loading).toBe(false);
     });

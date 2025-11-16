@@ -5,13 +5,12 @@
 
 import { Elysia, t } from "elysia";
 import { apiErrorRepository } from "../repositories/ApiErrorRepository";
-import { requireAuth } from "../middleware/auth";
+import { requireAuth, optionalAuth } from "../plugins/auth.plugin";
 import { ForbiddenError } from "../errors";
 
 export const errorMonitoringRoutes = new Elysia({ prefix: "/api/errors" })
   // Apply optional auth to all routes
   .derive(async (context) => {
-    const { optionalAuth } = await import("../middleware/auth");
     return optionalAuth({ request: context.request, headers: context.headers });
   })
 

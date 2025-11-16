@@ -12,7 +12,7 @@ import {
   afterEach,
 } from "bun:test";
 import { Elysia } from "elysia";
-import { createMaterialRoutes } from "../../../../server/routes/materials";
+import { materialRoutes } from "../../../../server/routes/materials";
 import path from "path";
 import fs from "fs";
 
@@ -26,7 +26,7 @@ describe("Material Routes", () => {
   let originalPresets: string | null = null;
 
   beforeAll(() => {
-    app = new Elysia().use(createMaterialRoutes(rootDir));
+    app = new Elysia().use(materialRoutes);
   });
 
   beforeEach(async () => {

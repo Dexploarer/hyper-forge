@@ -15,7 +15,9 @@ import {
   HandViewportControls,
   HandPanelToggles,
 } from "@/components/hand-rigging";
-import { CollapsibleSection, ErrorNotification,
+import {
+  CollapsibleSection,
+  ErrorNotification,
   LoadingSpinner,
 } from "@/components/common";
 import { ThreeViewerRef } from "@/components/shared/ThreeViewer";
@@ -44,7 +46,7 @@ export function HandRiggingPage() {
   // Get state and actions from store
   const {
     selectedAvatar,
-    modelUrl,
+    cdnUrl,
     processingStage,
     leftHandData,
     rightHandData,
@@ -54,7 +56,7 @@ export function HandRiggingPage() {
     debugImages,
     useSimpleMode,
     showExportModal,
-    setModelUrl,
+    setCdnUrl,
     setProcessingStage,
     setLeftHandData,
     setRightHandData,
@@ -106,16 +108,16 @@ export function HandRiggingPage() {
   // Cleanup blob URLs
   useEffect(() => {
     return () => {
-      if (modelUrl && modelUrl.startsWith("blob:")) {
-        URL.revokeObjectURL(modelUrl);
+      if (cdnUrl && cdnUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(cdnUrl);
       }
     };
-  }, [modelUrl]);
+  }, [cdnUrl]);
 
   const handleStartProcessing = async () => {
     if (
       !selectedAvatar ||
-      !modelUrl ||
+      !cdnUrl ||
       (!handRiggingService.current && !simpleHandRiggingService.current)
     ) {
       setError("Please select an avatar first");
@@ -132,8 +134,8 @@ export function HandRiggingPage() {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     try {
-      // Fetch the model data from the already set modelUrl (which points to t-pose if available)
-      const response = await apiFetch(modelUrl);
+      // Fetch the model data from the already set cdnUrl (which points to t-pose if available)
+      const response = await apiFetch(cdnUrl);
       if (!response.ok) {
         throw new Error("Failed to fetch avatar model");
       }
@@ -216,7 +218,7 @@ export function HandRiggingPage() {
           type: "model/gltf-binary",
         });
         const newUrl = URL.createObjectURL(blob);
-        setModelUrl(newUrl);
+        setCdnUrl(newUrl);
 
         // If skeleton was visible, turn it off and on to refresh with new bones
         if (showSkeleton && viewerRef.current) {
@@ -297,7 +299,7 @@ export function HandRiggingPage() {
           <div className="overflow-hidden flex-1 relative bg-gradient-to-br from-bg-primary to-bg-secondary rounded-xl flex items-center justify-center">
             {/* 3D Model Viewer - Full Screen */}
             <ModelViewer
-              modelUrl={modelUrl}
+              cdnUrl={cdnUrl}
               selectedAvatar={selectedAvatar}
               leftHandData={leftHandData}
               rightHandData={rightHandData}
@@ -307,7 +309,7 @@ export function HandRiggingPage() {
             />
 
             {/* Viewport Controls (top-right) */}
-            {modelUrl && (
+            {cdnUrl && (
               <HandViewportControls
                 showSkeleton={showSkeleton}
                 canExport={canExport()}

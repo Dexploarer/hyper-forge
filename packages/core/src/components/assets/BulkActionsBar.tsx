@@ -150,8 +150,8 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
       for (const asset of selectedAssets) {
         try {
           // Fetch GLB file
-          const modelUrl = AssetService.getModelUrl(asset.id);
-          const response = await fetch(modelUrl);
+          const cdnUrl = AssetService.getModelUrl(asset.id);
+          const response = await fetch(cdnUrl);
 
           if (!response.ok) {
             console.warn(`Failed to fetch model for ${asset.name}`);

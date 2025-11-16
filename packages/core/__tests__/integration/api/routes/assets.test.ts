@@ -18,7 +18,7 @@ import { users } from "../../../../server/db/schema";
 import { eq } from "drizzle-orm";
 import path from "path";
 
-// Mock AssetService
+// Mock AssetService with CDN URLs
 const mockAssets = [
   {
     id: "test-asset-1",
@@ -26,8 +26,9 @@ const mockAssets = [
     type: "weapon",
     tier: 1,
     category: "melee",
-    modelUrl: "/gdd-assets/test-asset-1/model.glb",
-    thumbnailUrl: "/gdd-assets/test-asset-1/thumbnail.png",
+    cdnUrl: "https://cdn.asset-forge.com/models/test-asset-1/model.glb",
+    cdnThumbnailUrl:
+      "https://cdn.asset-forge.com/models/test-asset-1/thumbnail.png",
     hasSpriteSheet: false,
     createdBy: "user-123",
     walletAddress: "0xABC",
@@ -41,7 +42,7 @@ const mockAssets = [
     type: "armor",
     tier: 2,
     category: "heavy",
-    modelUrl: "/gdd-assets/test-asset-2/model.glb",
+    cdnUrl: "https://cdn.asset-forge.com/models/test-asset-2/model.glb",
     createdBy: "admin-456",
     isPublic: true,
     createdAt: new Date().toISOString(),
@@ -124,7 +125,7 @@ describe("Asset Routes", () => {
   });
 
   afterEach(async () => {
-    // Reset mock assets
+    // Reset mock assets with CDN URLs
     mockAssets.length = 0;
     mockAssets.push(
       {
@@ -133,8 +134,9 @@ describe("Asset Routes", () => {
         type: "weapon",
         tier: 1,
         category: "melee",
-        modelUrl: "/gdd-assets/test-asset-1/model.glb",
-        thumbnailUrl: "/gdd-assets/test-asset-1/thumbnail.png",
+        cdnUrl: "https://cdn.asset-forge.com/models/test-asset-1/model.glb",
+        cdnThumbnailUrl:
+          "https://cdn.asset-forge.com/models/test-asset-1/thumbnail.png",
         hasSpriteSheet: false,
         createdBy: "user-123",
         walletAddress: "0xABC",
@@ -148,7 +150,7 @@ describe("Asset Routes", () => {
         type: "armor",
         tier: 2,
         category: "heavy",
-        modelUrl: "/gdd-assets/test-asset-2/model.glb",
+        cdnUrl: "https://cdn.asset-forge.com/models/test-asset-2/model.glb",
         createdBy: "admin-456",
         isPublic: true,
         createdAt: new Date().toISOString(),
@@ -179,7 +181,7 @@ describe("Asset Routes", () => {
       expect(response.status).toBe(200);
     });
 
-    it("should include all asset metadata fields", async () => {
+    it("should include all asset metadata fields with cdnUrl", async () => {
       const response = await app.handle(
         new Request("http://localhost/api/assets"),
       );
@@ -193,7 +195,14 @@ describe("Asset Routes", () => {
       expect(asset).toHaveProperty("type");
       expect(asset).toHaveProperty("tier");
       expect(asset).toHaveProperty("category");
-      expect(asset).toHaveProperty("modelUrl");
+
+      // CRITICAL: Must have cdnUrl, NOT modelUrl
+      expect(asset).toHaveProperty("cdnUrl");
+      expect(asset.cdnUrl).toContain("cdn.asset-forge.com");
+
+      // Legacy fields should NOT exist
+      expect(asset).not.toHaveProperty("modelUrl");
+      expect(asset).not.toHaveProperty("filePath");
     });
 
     it("should return empty array when no assets exist", async () => {
@@ -878,6 +887,77 @@ describe("Asset Routes", () => {
       expect(returnedAsset.cdnUrl).toBe(
         "https://cdn.example.com/models/full-asset/model.glb",
       );
+    });
+  });
+
+  describe("CDN URL Migration Validation", () => {
+    it("should return cdnUrl in all asset listings", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/assets"),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      // Every asset must have cdnUrl
+      data.forEach((asset: any) => {
+        if (asset.id === "test-asset-1" || asset.id === "test-asset-2") {
+          expect(asset).toHaveProperty("cdnUrl");
+          expect(asset.cdnUrl).toContain("cdn.asset-forge.com");
+          expect(asset.cdnUrl).toContain("/models/");
+        }
+      });
+    });
+
+    it("should NOT return legacy modelUrl anywhere in asset listing", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/assets"),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      const jsonString = JSON.stringify(data);
+
+      // Check for legacy field names in the entire response
+      // These should NOT exist in the new CDN-only architecture
+      expect(jsonString).not.toContain('"modelUrl"');
+      expect(jsonString).not.toContain('"filePath"');
+      expect(jsonString).not.toContain("/gdd-assets/");
+    });
+
+    it("should include cdnThumbnailUrl when available", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/assets"),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      const assetWithThumbnail = data.find((a: any) => a.id === "test-asset-1");
+
+      expect(assetWithThumbnail).toHaveProperty("cdnThumbnailUrl");
+      expect(assetWithThumbnail.cdnThumbnailUrl).toContain("thumbnail.png");
+    });
+
+    it("should preserve cdnUrl through PATCH updates", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/assets/test-asset-1", {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: createAuthHeader("user-123", "user-123@example.com"),
+          },
+          body: JSON.stringify({
+            name: "Updated CDN Asset",
+          }),
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      const data = await response.json();
+
+      // Should still have cdnUrl after update
+      expect(data).toHaveProperty("cdnUrl");
+      expect(data.cdnUrl).toContain("cdn.asset-forge.com");
     });
   });
 });

@@ -161,7 +161,7 @@ export function usePipelineStatus({
                 type: config.type || assetType,
                 pipelineId: currentPipelineId,
                 status: "completed",
-                modelUrl: results.image3D?.cdnUrl || results.rigging?.cdnUrl,
+                cdnUrl: results.image3D?.cdnUrl || results.rigging?.cdnUrl,
                 conceptArtUrl: results.conceptArt?.cdnUrl,
                 variants: results.textureGeneration?.variants || [],
                 hasSpriteMetadata:
@@ -235,17 +235,25 @@ export function usePipelineStatus({
               eventSource.close();
               setConnected(false);
               if (DEBUG)
-                console.log("[usePipelineStatus][SSE] Connection closed after completion");
+                console.log(
+                  "[usePipelineStatus][SSE] Connection closed after completion",
+                );
             } else if (status.status === "failed") {
               setIsGenerating(false);
               setPollingError(status.error || "Pipeline failed");
               eventSource.close();
               setConnected(false);
-              if (DEBUG) console.log("[usePipelineStatus][SSE] Connection closed after failure");
+              if (DEBUG)
+                console.log(
+                  "[usePipelineStatus][SSE] Connection closed after failure",
+                );
             }
           }
         } catch (error) {
-          console.error("[usePipelineStatus][SSE] Failed to parse event data:", error);
+          console.error(
+            "[usePipelineStatus][SSE] Failed to parse event data:",
+            error,
+          );
           setPollingError("Failed to parse server update");
         }
       });
@@ -286,7 +294,10 @@ export function usePipelineStatus({
           setPollingError(
             "Connection failed after multiple attempts. Please refresh.",
           );
-          if (DEBUG) console.log("[usePipelineStatus][SSE] Max reconnection attempts reached");
+          if (DEBUG)
+            console.log(
+              "[usePipelineStatus][SSE] Max reconnection attempts reached",
+            );
         }
       };
     };

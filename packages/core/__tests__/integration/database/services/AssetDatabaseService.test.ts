@@ -33,11 +33,6 @@ describe("AssetDatabaseService", () => {
 
   afterEach(async () => {
     // Cleanup: Delete test assets and user
-    for (const assetId of testAssetIds) {
-      await db
-        .delete(assets)
-        .where(eq(assets.filePath, `${assetId}/${assetId}.glb`));
-    }
     await db.delete(assets).where(eq(assets.ownerId, testUserId));
     await db.delete(users).where(eq(users.id, testUserId));
     testAssetIds = [];
@@ -59,7 +54,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset).not.toBe(null);
@@ -68,7 +62,6 @@ describe("AssetDatabaseService", () => {
       expect(asset.type).toBe("character");
       expect(asset.category).toBe("humanoid");
       expect(asset.ownerId).toBe(testUserId);
-      expect(asset.filePath).toBe(`${assetId}/${assetId}.glb`);
       expect(asset.status).toBe("completed");
       expect(asset.visibility).toBe("private");
 
@@ -88,7 +81,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset.visibility).toBe("public");
@@ -111,7 +103,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset.prompt).toBe("A detailed description");
@@ -137,7 +128,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset.name).toBe(assetId);
@@ -158,7 +148,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset.description).toBe("");
@@ -178,7 +167,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset.type).toBe("unknown");
@@ -199,7 +187,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset.tags).toEqual([]);
@@ -224,7 +211,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset.metadata).toHaveProperty("name");
@@ -248,12 +234,7 @@ describe("AssetDatabaseService", () => {
         isPublic: false,
       };
 
-      await service.createAssetRecord(
-        testAssetId,
-        metadata,
-        testUserId,
-        `${testAssetId}/${testAssetId}.glb`,
-      );
+      await service.createAssetRecord(testAssetId, metadata, testUserId);
 
       testAssetIds.push(testAssetId);
     });
@@ -367,12 +348,7 @@ describe("AssetDatabaseService", () => {
         isPublic: false,
       };
 
-      await service.createAssetRecord(
-        testAssetId,
-        metadata,
-        testUserId,
-        `${testAssetId}/${testAssetId}.glb`,
-      );
+      await service.createAssetRecord(testAssetId, metadata, testUserId);
 
       testAssetIds.push(testAssetId);
     });
@@ -409,12 +385,7 @@ describe("AssetDatabaseService", () => {
         isPublic: false,
       };
 
-      await service.createAssetRecord(
-        testAssetId,
-        metadata,
-        testUserId,
-        `${testAssetId}/${testAssetId}.glb`,
-      );
+      await service.createAssetRecord(testAssetId, metadata, testUserId);
 
       testAssetIds.push(testAssetId);
     });
@@ -445,7 +416,6 @@ describe("AssetDatabaseService", () => {
       expect(asset.name).toBeDefined();
       expect(asset.type).toBeDefined();
       expect(asset.ownerId).toBeDefined();
-      expect(asset.filePath).toBeDefined();
       expect(asset.status).toBeDefined();
       expect(asset.visibility).toBeDefined();
       expect(asset.createdAt).toBeDefined();
@@ -465,7 +435,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset).not.toBe(null);
@@ -491,7 +460,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect(asset.description).toBe(longDescription);
@@ -515,7 +483,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       expect((asset.generationParams as any).quality).toBe("high");
@@ -539,7 +506,7 @@ describe("AssetDatabaseService", () => {
       };
 
       const promises = assetIds.map((id) =>
-        service.createAssetRecord(id, metadata, testUserId, `${id}/${id}.glb`),
+        service.createAssetRecord(id, metadata, testUserId),
       );
 
       const results = await Promise.all(promises);
@@ -564,7 +531,6 @@ describe("AssetDatabaseService", () => {
         assetId,
         metadata,
         testUserId,
-        `${assetId}/${assetId}.glb`,
       );
 
       const updated = await service.updateAssetRecord(assetId, {
@@ -573,6 +539,138 @@ describe("AssetDatabaseService", () => {
 
       expect(updated!.name).toBe("Immediate Updated");
       expect(updated!.id).toBe(created.id);
+
+      testAssetIds.push(assetId);
+    });
+  });
+
+  describe("CDN URL Migration Tests", () => {
+    it("should store cdnUrl when provided in updates", async () => {
+      const assetId = `asset-cdn-${Date.now()}`;
+      const metadata: AssetMetadataType = {
+        name: "CDN Asset",
+        type: "weapon",
+        workflow: "text-to-3d",
+        isPublic: true,
+      };
+
+      const asset = await service.createAssetRecord(
+        assetId,
+        metadata,
+        testUserId,
+      );
+
+      // Update with CDN URL
+      const cdnUrl = "https://cdn.asset-forge.com/models/test-asset/model.glb";
+      const updated = await service.updateAssetRecord(assetId, {
+        cdnUrl,
+      });
+
+      expect(updated).not.toBe(null);
+      expect(updated!.cdnUrl).toBe(cdnUrl);
+
+      testAssetIds.push(assetId);
+    });
+
+    it("should store cdnThumbnailUrl when provided", async () => {
+      const assetId = `asset-thumb-${Date.now()}`;
+      const metadata: AssetMetadataType = {
+        name: "Thumb Asset",
+        type: "item",
+        workflow: "text-to-3d",
+        isPublic: false,
+      };
+
+      const asset = await service.createAssetRecord(
+        assetId,
+        metadata,
+        testUserId,
+      );
+
+      const cdnThumbnailUrl =
+        "https://cdn.asset-forge.com/models/test-asset/thumbnail.png";
+      const updated = await service.updateAssetRecord(assetId, {
+        cdnThumbnailUrl,
+      });
+
+      expect(updated!.cdnThumbnailUrl).toBe(cdnThumbnailUrl);
+
+      testAssetIds.push(assetId);
+    });
+
+    it("should store cdnConceptArtUrl when provided", async () => {
+      const assetId = `asset-concept-${Date.now()}`;
+      const metadata: AssetMetadataType = {
+        name: "Concept Asset",
+        type: "environment",
+        workflow: "text-to-3d",
+        isPublic: false,
+      };
+
+      const asset = await service.createAssetRecord(
+        assetId,
+        metadata,
+        testUserId,
+      );
+
+      const cdnConceptArtUrl =
+        "https://cdn.asset-forge.com/models/test-asset/concept-art.png";
+      const updated = await service.updateAssetRecord(assetId, {
+        cdnConceptArtUrl,
+      });
+
+      expect(updated!.cdnConceptArtUrl).toBe(cdnConceptArtUrl);
+
+      testAssetIds.push(assetId);
+    });
+
+    it("should NOT have filePath field in schema", async () => {
+      const assetId = `asset-nopath-${Date.now()}`;
+      const metadata: AssetMetadataType = {
+        name: "No Path Asset",
+        type: "character",
+        workflow: "text-to-3d",
+        isPublic: false,
+      };
+
+      const asset = await service.createAssetRecord(
+        assetId,
+        metadata,
+        testUserId,
+      );
+
+      // filePath should not exist in the asset object
+      expect(asset).not.toHaveProperty("filePath");
+      expect(asset).not.toHaveProperty("modelPath");
+
+      testAssetIds.push(assetId);
+    });
+
+    it("should include cdnUrl in listAssets response", async () => {
+      const assetId = `asset-list-cdn-${Date.now()}`;
+      const metadata: AssetMetadataType = {
+        name: "List CDN Asset",
+        type: "weapon",
+        workflow: "text-to-3d",
+        isPublic: true,
+      };
+
+      const asset = await service.createAssetRecord(
+        assetId,
+        metadata,
+        testUserId,
+      );
+
+      const cdnUrl = "https://cdn.asset-forge.com/models/list-test/model.glb";
+      await service.updateAssetRecord(assetId, { cdnUrl });
+
+      const assets = await service.listAssets();
+      const foundAsset = assets.find((a) => a.id === asset.id);
+
+      expect(foundAsset).toBeDefined();
+      expect(foundAsset!.cdnUrl).toBe(cdnUrl);
+      expect(foundAsset!).not.toHaveProperty("filePath");
+      expect(foundAsset!).not.toHaveProperty("modelUrl");
 
       testAssetIds.push(assetId);
     });

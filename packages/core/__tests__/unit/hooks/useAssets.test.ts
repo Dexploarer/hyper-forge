@@ -2,7 +2,6 @@
  * useAssets Hook Tests
  *
  * Tests for the useAssets hook which fetches and manages 3D assets.
- * Tests both modern React Query API and backward-compatible API.
  */
 
 import { describe, it, expect, beforeEach, mock } from "bun:test";
@@ -97,24 +96,18 @@ describe("useAssets Hook", () => {
       expect(result.current.assets[1].name).toBe("Shield");
     });
 
-    it("should provide modern React Query API", async () => {
+    it("should provide React Query API with convenience aliases", async () => {
       const { result } = renderHook(() => useAssets(), { wrapper });
 
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-      // Modern API
+      // React Query API
       expect(result.current.data).toBeDefined();
       expect(result.current.isLoading).toBe(false);
       expect(result.current.isSuccess).toBe(true);
       expect(result.current.error).toBeNull();
-    });
 
-    it("should provide backward-compatible API", async () => {
-      const { result } = renderHook(() => useAssets(), { wrapper });
-
-      await waitFor(() => expect(result.current.loading).toBe(false));
-
-      // Backward-compatible API
+      // Convenience aliases
       expect(result.current.assets).toBeDefined();
       expect(result.current.loading).toBe(false);
       expect(result.current.reloadAssets).toBeInstanceOf(Function);
@@ -296,20 +289,16 @@ describe("useMaterialPresets Hook", () => {
     expect(result.current.presets[1].name).toBe("Gold");
   });
 
-  it("should provide modern React Query API", async () => {
+  it("should provide React Query API with convenience aliases", async () => {
     const { result } = renderHook(() => useMaterialPresets(), { wrapper });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
+    // React Query API
     expect(result.current.data).toBeDefined();
     expect(result.current.isSuccess).toBe(true);
-  });
 
-  it("should provide backward-compatible API", async () => {
-    const { result } = renderHook(() => useMaterialPresets(), { wrapper });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
+    // Convenience aliases
     expect(result.current.presets).toBeDefined();
     expect(result.current.loading).toBe(false);
     expect(result.current.refetch).toBeInstanceOf(Function);

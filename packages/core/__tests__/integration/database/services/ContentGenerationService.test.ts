@@ -37,8 +37,6 @@ describe("ContentGenerationService", () => {
   });
 
   describe("Model Selection", () => {
-    // FIXME: getModel() method was refactored/removed from ContentGenerationService
-    // These tests need to be updated to test the current API
     it.skip("should have getModel method for quality levels", () => {
       // Access private method via any cast for testing
       const serviceAny = service as any;
@@ -330,8 +328,6 @@ describe("ContentGenerationService", () => {
   });
 
   describe("Configuration", () => {
-    // FIXME: getModel() method was refactored/removed from ContentGenerationService
-    // These tests need to be updated to test the current API
     it.skip("should use correct model names for AI Gateway", () => {
       const serviceAny = service as any;
 

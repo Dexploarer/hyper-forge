@@ -6,7 +6,6 @@
  * - /health/live: Liveness check (is server process running?)
  * - /health/ready: Readiness check (can server handle traffic?)
  * - /health/deep: Deep health check with all dependencies
- * - /health: Legacy endpoint for backward compatibility
  */
 
 import { Elysia } from "elysia";
@@ -603,61 +602,6 @@ export const healthRoutes = new Elysia({ prefix: "/api", name: "health" })
                         platform: "linux",
                         arch: "x64",
                         environment: "production",
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-  )
-
-  // Legacy endpoint (keep for backward compatibility)
-  .get(
-    "/health",
-    () => ({
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      services: {
-        meshy: !!process.env.MESHY_API_KEY,
-        openai: !!process.env.OPENAI_API_KEY,
-      },
-    }),
-    {
-      response: Models.HealthResponse,
-      detail: {
-        tags: ["Health"],
-        summary: "Legacy health check",
-        description:
-          "Basic health status with service availability. Use /health/ready for Kubernetes readiness checks and /health/live for liveness checks. This endpoint is maintained for backward compatibility. (Auth optional)",
-        responses: {
-          200: {
-            description: "Health status with configured services",
-            content: {
-              "application/json": {
-                examples: {
-                  allServices: {
-                    summary: "All services configured",
-                    value: {
-                      status: "healthy",
-                      timestamp: "2025-11-12T10:30:00.000Z",
-                      services: {
-                        meshy: true,
-                        openai: true,
-                      },
-                    },
-                  },
-                  minimalServices: {
-                    summary: "Minimal service configuration",
-                    value: {
-                      status: "healthy",
-                      timestamp: "2025-11-12T10:30:00.000Z",
-                      services: {
-                        meshy: false,
-                        openai: true,
                       },
                     },
                   },

@@ -60,12 +60,6 @@ describe("AssetService", () => {
 
       expect(url).toBe("/gdd-assets/test-asset/test-asset.glb");
     });
-
-    it("should support backward compatibility with string assetId", () => {
-      const url = AssetService.getModelUrl("test-asset");
-
-      expect(url).toBe("/gdd-assets/test-asset/test-asset.glb");
-    });
   });
 
   describe("getConceptArtUrl", () => {
@@ -101,12 +95,6 @@ describe("AssetService", () => {
       };
 
       const url = AssetService.getConceptArtUrl(asset);
-
-      expect(url).toBe("/gdd-assets/test-asset/concept-art.png");
-    });
-
-    it("should support backward compatibility with string assetId", () => {
-      const url = AssetService.getConceptArtUrl("test-asset");
 
       expect(url).toBe("/gdd-assets/test-asset/concept-art.png");
     });

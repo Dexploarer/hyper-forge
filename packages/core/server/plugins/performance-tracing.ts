@@ -10,7 +10,7 @@
  */
 
 import { Elysia } from "elysia";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 export const performanceTracing = new Elysia({
   name: "performance-tracing",
@@ -23,7 +23,7 @@ export const performanceTracing = new Elysia({
 
       // Log slow requests for investigation
       if (elapsed > 1000) {
-        logger.warn({ }, '[Performance] Slow request: ${elapsed}ms');
+        logger.warn({}, `[Performance] Slow request: ${elapsed}ms`);
       }
 
       // Very slow requests (>5s) are critical
@@ -39,11 +39,16 @@ export const performanceTracing = new Elysia({
   onError(({ onStop, error }) => {
     onStop(async ({ elapsed }) => {
       const resolvedError = await error;
-      logger.error({ err: {
-        error: resolvedError?.message || "Unknown error",
-        name: resolvedError?.name || "Error",
-        elapsed: `${elapsed}ms`,
-      } }, '[Trace] Request failed:');
+      logger.error(
+        {
+          err: {
+            error: resolvedError?.message || "Unknown error",
+            name: resolvedError?.name || "Error",
+            elapsed: `${elapsed}ms`,
+          },
+        },
+        "[Trace] Request failed:",
+      );
     });
   });
 });

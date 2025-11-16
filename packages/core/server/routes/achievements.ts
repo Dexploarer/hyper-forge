@@ -4,11 +4,12 @@
  */
 
 import { Elysia, t } from "elysia";
-import { requireAuth } from "../middleware/auth";
+import { requireAuthGuard } from "../plugins/auth.plugin";
 import { achievementService } from "../services/AchievementService";
+import type { AuthUser } from "../types/auth";
 
 export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
-  // Get all available achievements
+  // Get all available achievements (public route)
   .get(
     "/",
     async () => {
@@ -24,158 +25,139 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
     },
   )
 
-  // Get current user's achievements
-  .get(
-    "/me",
-    async ({ request, headers }) => {
-      const authResult = await requireAuth({ request, headers });
+  // Authenticated routes
+  .group("", (app) =>
+    app
+      .use(requireAuthGuard)
+      // Get current user's achievements
+      .get(
+        "/me",
+        async (context) => {
+          const { user } = context as typeof context & { user: AuthUser };
+          const summary = await achievementService.getUserAchievementSummary(
+            user.id,
+          );
 
-      // If auth failed, return the error response
-      if (authResult instanceof Response) {
-        return authResult;
-      }
+          return summary;
+        },
+        {
+          detail: {
+            tags: ["Achievements"],
+            summary: "Get user achievements",
+            description:
+              "Get the current user's achievements, medals, and progress. Requires Privy JWT.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
 
-      const { user } = authResult;
-      const summary = await achievementService.getUserAchievementSummary(
-        user.id,
-      );
+      // Get specific user's achievements (admin only, or self)
+      .get(
+        "/user/:userId",
+        async (context) => {
+          const { user, params } = context as typeof context & {
+            user: AuthUser;
+          };
+          const { userId } = params;
 
-      return summary;
-    },
-    {
-      detail: {
-        tags: ["Achievements"],
-        summary: "Get user achievements",
-        description:
-          "Get the current user's achievements, medals, and progress. Requires Privy JWT.",
-        security: [{ BearerAuth: [] }],
-      },
-    },
-  )
+          // Users can only view their own achievements unless they're admin
+          if (user.id !== userId && user.role !== "admin") {
+            return new Response(JSON.stringify({ error: "Forbidden" }), {
+              status: 403,
+            });
+          }
 
-  // Get specific user's achievements (admin only, or self)
-  .get(
-    "/user/:userId",
-    async ({ request, headers, params }) => {
-      const authResult = await requireAuth({ request, headers });
+          const summary =
+            await achievementService.getUserAchievementSummary(userId);
 
-      // If auth failed, return the error response
-      if (authResult instanceof Response) {
-        return authResult;
-      }
+          return summary;
+        },
+        {
+          params: t.Object({
+            userId: t.String(),
+          }),
+          detail: {
+            tags: ["Achievements"],
+            summary: "Get user achievements by ID",
+            description:
+              "Get achievements for a specific user. Users can only view their own achievements unless admin. Requires Privy JWT.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
 
-      const { user: authUser } = authResult;
-      const { userId } = params;
+      // Award an achievement to a user (admin only, or system)
+      .post(
+        "/award",
+        async (context) => {
+          const { user, body } = context as typeof context & { user: AuthUser };
+          const { achievementCode, userId, progress, metadata } = body;
 
-      // Users can only view their own achievements unless they're admin
-      if (authUser.id !== userId && authUser.role !== "admin") {
-        return new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403,
-        });
-      }
+          // Users can only award achievements to themselves unless they're admin
+          const targetUserId = userId || user.id;
+          if (targetUserId !== user.id && user.role !== "admin") {
+            return new Response(JSON.stringify({ error: "Forbidden" }), {
+              status: 403,
+            });
+          }
 
-      const summary =
-        await achievementService.getUserAchievementSummary(userId);
+          const result = await achievementService.awardAchievement(
+            targetUserId,
+            achievementCode,
+            progress,
+            metadata,
+          );
 
-      return summary;
-    },
-    {
-      params: t.Object({
-        userId: t.String(),
-      }),
-      detail: {
-        tags: ["Achievements"],
-        summary: "Get user achievements by ID",
-        description:
-          "Get achievements for a specific user. Users can only view their own achievements unless admin. Requires Privy JWT.",
-        security: [{ BearerAuth: [] }],
-      },
-    },
-  )
+          return result;
+        },
+        {
+          body: t.Object({
+            achievementCode: t.String(),
+            userId: t.Optional(t.String()),
+            progress: t.Optional(t.Number()),
+            // Optional metadata for achievement context (custom data per achievement type)
+            metadata: t.Optional(t.Record(t.String(), t.Unknown())),
+          }),
+          detail: {
+            tags: ["Achievements"],
+            summary: "Award achievement",
+            description:
+              "Award an achievement to a user. Users can award to themselves, admins can award to anyone. Requires Privy JWT.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
 
-  // Award an achievement to a user (admin only, or system)
-  .post(
-    "/award",
-    async ({ request, headers, body }) => {
-      const authResult = await requireAuth({ request, headers });
+      // Update progress for a progressive achievement
+      .post(
+        "/progress",
+        async (context) => {
+          const { user, body } = context as typeof context & { user: AuthUser };
+          const { achievementCode, progress, metadata } = body;
 
-      // If auth failed, return the error response
-      if (authResult instanceof Response) {
-        return authResult;
-      }
+          const result = await achievementService.updateProgress(
+            user.id,
+            achievementCode,
+            progress,
+            metadata,
+          );
 
-      const { user: authUser } = authResult;
-      const { achievementCode, userId, progress, metadata } = body;
-
-      // Users can only award achievements to themselves unless they're admin
-      const targetUserId = userId || authUser.id;
-      if (targetUserId !== authUser.id && authUser.role !== "admin") {
-        return new Response(JSON.stringify({ error: "Forbidden" }), {
-          status: 403,
-        });
-      }
-
-      const result = await achievementService.awardAchievement(
-        targetUserId,
-        achievementCode,
-        progress,
-        metadata,
-      );
-
-      return result;
-    },
-    {
-      body: t.Object({
-        achievementCode: t.String(),
-        userId: t.Optional(t.String()),
-        progress: t.Optional(t.Number()),
-        metadata: t.Optional(t.Record(t.String(), t.Any())),
-      }),
-      detail: {
-        tags: ["Achievements"],
-        summary: "Award achievement",
-        description:
-          "Award an achievement to a user. Users can award to themselves, admins can award to anyone. Requires Privy JWT.",
-        security: [{ BearerAuth: [] }],
-      },
-    },
-  )
-
-  // Update progress for a progressive achievement
-  .post(
-    "/progress",
-    async ({ request, headers, body }) => {
-      const authResult = await requireAuth({ request, headers });
-
-      // If auth failed, return the error response
-      if (authResult instanceof Response) {
-        return authResult;
-      }
-
-      const { user: authUser } = authResult;
-      const { achievementCode, progress, metadata } = body;
-
-      const result = await achievementService.updateProgress(
-        authUser.id,
-        achievementCode,
-        progress,
-        metadata,
-      );
-
-      return result;
-    },
-    {
-      body: t.Object({
-        achievementCode: t.String(),
-        progress: t.Number(),
-        metadata: t.Optional(t.Record(t.String(), t.Any())),
-      }),
-      detail: {
-        tags: ["Achievements"],
-        summary: "Update achievement progress",
-        description:
-          "Update progress for a progressive achievement. Only updates for the current user. Requires Privy JWT.",
-        security: [{ BearerAuth: [] }],
-      },
-    },
+          return result;
+        },
+        {
+          body: t.Object({
+            achievementCode: t.String(),
+            progress: t.Number(),
+            // Optional metadata for progress tracking (custom data per achievement type)
+            metadata: t.Optional(t.Record(t.String(), t.Unknown())),
+          }),
+          detail: {
+            tags: ["Achievements"],
+            summary: "Update achievement progress",
+            description:
+              "Update progress for a progressive achievement. Only updates for the current user. Requires Privy JWT.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      ),
   );

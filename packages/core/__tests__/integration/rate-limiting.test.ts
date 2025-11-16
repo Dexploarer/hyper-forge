@@ -32,7 +32,7 @@ describe("Rate Limiting", () => {
       // Health endpoint is explicitly excluded from rate limiting
       // Make 30 rapid requests to verify no rate limiting
       const promises = Array.from({ length: 30 }, () =>
-        fetch(`${baseUrl}/api/health`),
+        fetch(`${baseUrl}/api/health/ready`),
       );
 
       const responses = await Promise.all(promises);
@@ -122,11 +122,11 @@ describe("Rate Limiting", () => {
 
   describe("Rate Limit Bypass", () => {
     it("should bypass rate limit for health endpoint", async () => {
-      // /api/health is explicitly skipped in rate limit configuration
-      // via skip: (req) => new URL(req.url).pathname === "/api/health"
+      // /api/health/ready is explicitly skipped in rate limit configuration
+      // via skip: (req) => new URL(req.url).pathname === "/api/health/ready"
 
       const responses = await Promise.all([
-        ...Array.from({ length: 20 }, () => fetch(`${baseUrl}/api/health`)),
+        ...Array.from({ length: 20 }, () => fetch(`${baseUrl}/api/health/ready`)),
       ]);
 
       responses.forEach((response) => {
@@ -135,7 +135,7 @@ describe("Rate Limiting", () => {
     });
 
     it("should not bypass rate limit for other endpoints", async () => {
-      // All endpoints except /api/health should be rate limited
+      // All endpoints except /api/health/ready should be rate limited
       expect(true).toBe(true);
     });
   });
@@ -196,7 +196,7 @@ describe("Rate Limiting", () => {
   describe("Performance", () => {
     it("should add minimal latency (<10ms)", async () => {
       const start = Date.now();
-      await fetch(`${baseUrl}/api/health`);
+      await fetch(`${baseUrl}/api/health/ready`);
       const duration = Date.now() - start;
 
       // Rate limit check should be very fast
@@ -208,7 +208,7 @@ describe("Rate Limiting", () => {
       const start = Date.now();
 
       const promises = Array.from({ length: 50 }, () =>
-        fetch(`${baseUrl}/api/health`),
+        fetch(`${baseUrl}/api/health/ready`),
       );
 
       await Promise.all(promises);
@@ -261,7 +261,7 @@ describe("Rate Limiting", () => {
       // Stress test: many requests in quick succession
       const promises = [];
       for (let i = 0; i < 20; i++) {
-        promises.push(fetch(`${baseUrl}/api/health`));
+        promises.push(fetch(`${baseUrl}/api/health/ready`));
       }
 
       const responses = await Promise.all(promises);

@@ -27,12 +27,9 @@ export interface ExtractedMetadata {
   description: string;
   type: string;
   subtype: string;
-  filePath: string;
   fileSize: number;
   fileType: string;
-  thumbnailPath: string | null;
-  conceptArtPath: string | null;
-  cdnUrl: string | null;
+  cdnUrl: string;
   cdnThumbnailUrl: string | null;
   cdnConceptArtUrl: string | null;
   cdnFiles: string[];
@@ -106,11 +103,8 @@ export function extractAssetMetadata(
     description: `Uploaded via CDN on ${new Date(payload.uploadedAt).toLocaleDateString()}`,
     type,
     subtype,
-    filePath: primaryFile.relativePath,
     fileSize: primaryFile.size,
     fileType: primaryFile.name.split(".").pop() || "unknown",
-    thumbnailPath: thumbnailFile?.relativePath || null,
-    conceptArtPath: conceptArtFile?.relativePath || null,
     cdnUrl: primaryFile.cdnUrl,
     cdnThumbnailUrl: thumbnailFile?.cdnUrl || null,
     cdnConceptArtUrl: conceptArtFile?.cdnUrl || null,
@@ -140,13 +134,9 @@ export function toNewAsset(
     ownerId,
     projectId: null,
     gameId: null,
-    filePath: metadata.filePath,
     fileSize: metadata.fileSize,
     fileType: metadata.fileType,
-    thumbnailPath: metadata.thumbnailPath,
-    conceptArtPath: metadata.conceptArtPath,
-    hasConceptArt: !!metadata.conceptArtPath,
-    riggedModelPath: null,
+    hasConceptArt: !!metadata.cdnConceptArtUrl,
     prompt: null,
     detailedPrompt: null,
     negativePrompt: null,

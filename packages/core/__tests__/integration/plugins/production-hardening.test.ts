@@ -20,8 +20,8 @@ describe("Production Hardening Plugins", () => {
 
   describe("Request ID Plugin", () => {
     it("should generate unique X-Request-ID for each request", async () => {
-      const response1 = await fetch(`${baseUrl}/api/health`);
-      const response2 = await fetch(`${baseUrl}/api/health`);
+      const response1 = await fetch(`${baseUrl}/api/health/ready`);
+      const response2 = await fetch(`${baseUrl}/api/health/ready`);
 
       const requestId1 = response1.headers.get("X-Request-ID");
       const requestId2 = response2.headers.get("X-Request-ID");
@@ -32,7 +32,7 @@ describe("Production Hardening Plugins", () => {
     });
 
     it("should generate valid UUID format for request IDs", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const requestId = response.headers.get("X-Request-ID");
 
       expect(requestId).toBeDefined();
@@ -122,9 +122,9 @@ describe("Production Hardening Plugins", () => {
       const text1 = await response1.text();
 
       // Make some requests to generate activity (use health endpoint - not rate limited)
-      await fetch(`${baseUrl}/api/health`);
-      await fetch(`${baseUrl}/api/health`);
-      await fetch(`${baseUrl}/api/health`);
+      await fetch(`${baseUrl}/api/health/ready`);
+      await fetch(`${baseUrl}/api/health/ready`);
+      await fetch(`${baseUrl}/api/health/ready`);
 
       // Get updated metrics
       const response2 = await fetch(`${baseUrl}/metrics`);
@@ -148,7 +148,7 @@ describe("Production Hardening Plugins", () => {
 
   describe("Server-Timing Headers", () => {
     it("should include Server-Timing header in responses", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const serverTiming = response.headers.get("Server-Timing");
 
       expect(serverTiming).toBeDefined();
@@ -156,7 +156,7 @@ describe("Production Hardening Plugins", () => {
     });
 
     it("should measure beforeHandle duration", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const serverTiming = response.headers.get("Server-Timing");
 
       expect(serverTiming).toContain("beforeHandle");
@@ -164,21 +164,21 @@ describe("Production Hardening Plugins", () => {
     });
 
     it("should measure handle duration", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const serverTiming = response.headers.get("Server-Timing");
 
       expect(serverTiming).toContain("handle");
     });
 
     it("should measure total request time", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const serverTiming = response.headers.get("Server-Timing");
 
       expect(serverTiming).toContain("total");
     });
 
     it("should include timing for rate limit check", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const serverTiming = response.headers.get("Server-Timing");
 
       // Should include rate limit handler timing
@@ -188,9 +188,9 @@ describe("Production Hardening Plugins", () => {
 
   describe("Rate Limiting", () => {
     it("should allow requests under rate limit to health endpoint", async () => {
-      // Use /api/health which is exempt from rate limiting
+      // Use /api/health/ready which is exempt from rate limiting
       for (let i = 0; i < 20; i++) {
-        const response = await fetch(`${baseUrl}/api/health`);
+        const response = await fetch(`${baseUrl}/api/health/ready`);
         expect(response.status).toBe(200);
         expect(response.status).not.toBe(429);
       }
@@ -205,11 +205,11 @@ describe("Production Hardening Plugins", () => {
       expect(true).toBe(true);
     });
 
-    it("should skip rate limiting for /api/health", async () => {
+    it("should skip rate limiting for /api/health/ready", async () => {
       // Health check should never be rate limited
       // Make many requests to health endpoint
       for (let i = 0; i < 30; i++) {
-        const response = await fetch(`${baseUrl}/api/health`);
+        const response = await fetch(`${baseUrl}/api/health/ready`);
         expect(response.status).toBe(200);
         expect(response.status).not.toBe(429);
       }
@@ -227,21 +227,21 @@ describe("Production Hardening Plugins", () => {
 
   describe("Security Headers", () => {
     it("should set Cross-Origin-Opener-Policy header", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const coop = response.headers.get("Cross-Origin-Opener-Policy");
 
       expect(coop).toBe("same-origin-allow-popups");
     });
 
     it("should set X-Content-Type-Options: nosniff", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const contentTypeOptions = response.headers.get("X-Content-Type-Options");
 
       expect(contentTypeOptions).toBe("nosniff");
     });
 
     it("should set X-Frame-Options: DENY", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const frameOptions = response.headers.get("X-Frame-Options");
 
       expect(frameOptions).toBe("DENY");
@@ -272,7 +272,7 @@ describe("Production Hardening Plugins", () => {
 
   describe("Performance Tracing", () => {
     it("should add X-Response-Time header", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
 
       // Performance tracing uses Server-Timing, not a separate header
       // But we verify the tracing is working via Server-Timing
@@ -281,7 +281,7 @@ describe("Production Hardening Plugins", () => {
     });
 
     it("should measure response time in milliseconds", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const serverTiming = response.headers.get("Server-Timing");
 
       expect(serverTiming).toBeDefined();
@@ -290,7 +290,7 @@ describe("Production Hardening Plugins", () => {
     });
 
     it("should include lifecycle event timing", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const serverTiming = response.headers.get("Server-Timing");
 
       expect(serverTiming).toBeDefined();
@@ -302,7 +302,7 @@ describe("Production Hardening Plugins", () => {
 
     it("should track fast requests (<100ms)", async () => {
       const start = Date.now();
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const duration = Date.now() - start;
 
       expect(response.status).toBe(200);
@@ -312,7 +312,7 @@ describe("Production Hardening Plugins", () => {
 
   describe("CORS Configuration", () => {
     it("should set Access-Control-Allow-Origin header", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const allowOrigin = response.headers.get("Access-Control-Allow-Origin");
 
       expect(allowOrigin).toBeDefined();
@@ -321,7 +321,7 @@ describe("Production Hardening Plugins", () => {
     });
 
     it("should set Access-Control-Allow-Credentials", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const allowCredentials = response.headers.get(
         "Access-Control-Allow-Credentials",
       );
@@ -330,7 +330,7 @@ describe("Production Hardening Plugins", () => {
     });
 
     it("should set Access-Control-Allow-Methods", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       const allowMethods = response.headers.get("Access-Control-Allow-Methods");
 
       expect(allowMethods).toContain("GET");
@@ -341,7 +341,7 @@ describe("Production Hardening Plugins", () => {
 
   describe("Production Configuration", () => {
     it("should use correct server port", async () => {
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       expect(response.status).toBe(200);
       // If we can reach it, port is configured correctly
     });
@@ -349,7 +349,7 @@ describe("Production Hardening Plugins", () => {
     it("should have maxRequestBodySize configured", async () => {
       // This is configured in .listen() but hard to test directly
       // We verify the server is running with the setting by checking it starts
-      const response = await fetch(`${baseUrl}/api/health`);
+      const response = await fetch(`${baseUrl}/api/health/ready`);
       expect(response.status).toBe(200);
     });
 

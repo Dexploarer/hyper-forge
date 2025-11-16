@@ -35,11 +35,6 @@ export const VIEW_TITLES: Record<NavigationView, string> = {
   [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin Dashboard",
   // Public profiles
   [NAVIGATION_VIEWS.PUBLIC_PROFILE]: "Public Profile",
-  // Legacy
-  [NAVIGATION_VIEWS.GENERATION]: "Generation",
-  [NAVIGATION_VIEWS.AUDIO]: "Audio Generation",
-  [NAVIGATION_VIEWS.CONTENT]: "Content Generation",
-  [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",
 };
 
 /**
@@ -76,9 +71,4 @@ export const MOBILE_VIEW_TITLES: Record<NavigationView, string> = {
   [NAVIGATION_VIEWS.ADMIN_DASHBOARD]: "Admin",
   // Public profiles
   [NAVIGATION_VIEWS.PUBLIC_PROFILE]: "Profile",
-  // Legacy
-  [NAVIGATION_VIEWS.GENERATION]: "Generation",
-  [NAVIGATION_VIEWS.AUDIO]: "Audio",
-  [NAVIGATION_VIEWS.CONTENT]: "Content",
-  [NAVIGATION_VIEWS.ARMOR_FITTING]: "Armor Fitting",
 };

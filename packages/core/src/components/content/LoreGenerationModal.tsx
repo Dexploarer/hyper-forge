@@ -1,17 +1,28 @@
-import { Book, Loader2, CheckCircle, Sparkles } from 'lucide-react'
-import React, { useState } from 'react'
+import { Book, Loader2, CheckCircle, Sparkles } from "lucide-react";
+import React, { useState } from "react";
 
-import { Modal, ModalHeader, ModalBody, ModalFooter, ModalSection, Button, Select, Input, Textarea, LoadingSpinner} from '../common'
-import { ContentAPIClient } from '@/services/api/ContentAPIClient'
-import { notify } from '@/utils/notify'
-import type { NPCData, LoreData } from '@/types/content'
+import {
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalSection,
+  Button,
+  Select,
+  Input,
+  Textarea,
+  LoadingSpinner,
+} from "../common";
+import { api } from "@/lib/api-client";
+import { notify } from "@/utils/notify";
+import type { NPCData, LoreData } from "@/types/content";
 
 interface LoreGenerationModalProps {
-  open: boolean
-  onClose: () => void
-  npc: NPCData
-  npcId: string
-  onSuccess: (lore: LoreData & { id: string }) => void
+  open: boolean;
+  onClose: () => void;
+  npc: NPCData;
+  npcId: string;
+  onSuccess: (lore: LoreData & { id: string }) => void;
 }
 
 export const LoreGenerationModal: React.FC<LoreGenerationModalProps> = ({
@@ -21,83 +32,90 @@ export const LoreGenerationModal: React.FC<LoreGenerationModalProps> = ({
   npcId,
   onSuccess,
 }) => {
-  const [apiClient] = useState(() => new ContentAPIClient())
-  const [category, setCategory] = useState('Character')
-  const [topic, setTopic] = useState('')
-  const [additionalContext, setAdditionalContext] = useState('')
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedLore, setGeneratedLore] = useState<(LoreData & { id: string }) | null>(null)
-  const [status, setStatus] = useState<'config' | 'generating' | 'success'>('config')
+  const [category, setCategory] = useState("Character");
+  const [topic, setTopic] = useState("");
+  const [additionalContext, setAdditionalContext] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedLore, setGeneratedLore] = useState<
+    (LoreData & { id: string }) | null
+  >(null);
+  const [status, setStatus] = useState<"config" | "generating" | "success">(
+    "config",
+  );
 
   const categories = [
-    'History',
-    'Legend',
-    'Mythology',
-    'Character',
-    'Location',
-    'Artifact',
-    'Event',
-    'Organization',
-    'Culture',
-  ]
+    "History",
+    "Legend",
+    "Mythology",
+    "Character",
+    "Location",
+    "Artifact",
+    "Event",
+    "Organization",
+    "Culture",
+  ];
 
   const handleGenerate = async () => {
     if (!npcId) {
-      notify.error('NPC must be saved before generating lore')
-      return
+      notify.error("NPC must be saved before generating lore");
+      return;
     }
 
     if (!topic.trim()) {
-      notify.error('Please enter a topic for the lore')
-      return
+      notify.error("Please enter a topic for the lore");
+      return;
     }
 
     try {
-      setIsGenerating(true)
-      setStatus('generating')
+      setIsGenerating(true);
+      setStatus("generating");
 
-      const result = await apiClient.generateLoreForNPC({
+      const result = await api.api.content["generate-lore-for-npc"].post({
         npcId,
         npcName: npc.name,
         archetype: npc.archetype,
         category: category.toLowerCase(),
         topic,
         additionalContext: additionalContext || undefined,
-        quality: 'balanced',
-      })
+        quality: "balanced",
+      });
 
-      setGeneratedLore(result.lore)
-      setStatus('success')
-      notify.success('Lore generated and linked to NPC!')
+      if (result.error) {
+        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate lore");
+      }
+
+      setGeneratedLore(result.data!.lore);
+      setStatus("success");
+      notify.success("Lore generated and linked to NPC!");
     } catch (error) {
-      console.error('Failed to generate lore:', error)
-      notify.error('Failed to generate lore')
-      setStatus('config')
+      console.error("Failed to generate lore:", error);
+      notify.error("Failed to generate lore");
+      setStatus("config");
     } finally {
-      setIsGenerating(false)
+      setIsGenerating(false);
     }
-  }
+  };
 
   const handleComplete = () => {
     if (generatedLore) {
-      onSuccess(generatedLore)
+      onSuccess(generatedLore);
     }
-    onClose()
-  }
+    onClose();
+  };
 
   const handleReset = () => {
-    setGeneratedLore(null)
-    setStatus('config')
-    setTopic('')
-    setAdditionalContext('')
-  }
+    setGeneratedLore(null);
+    setStatus("config");
+    setTopic("");
+    setAdditionalContext("");
+  };
 
   return (
     <Modal open={open} onClose={onClose} size="lg">
       <ModalHeader title="Generate Lore" onClose={onClose} />
 
       <ModalBody>
-        {status === 'config' && (
+        {status === "config" && (
           <ModalSection
             title="Lore Configuration"
             description={`Create lore that features ${npc.name}`}
@@ -164,7 +182,7 @@ export const LoreGenerationModal: React.FC<LoreGenerationModalProps> = ({
           </ModalSection>
         )}
 
-        {status === 'generating' && (
+        {status === "generating" && (
           <div className="flex flex-col items-center justify-center py-12">
             <LoadingSpinner size="md" className="w-16 h-16 text-primary mb-4" />
             <h3 className="text-lg font-semibold text-text-primary mb-2">
@@ -176,12 +194,14 @@ export const LoreGenerationModal: React.FC<LoreGenerationModalProps> = ({
           </div>
         )}
 
-        {status === 'success' && generatedLore && (
+        {status === "success" && generatedLore && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/30 rounded-lg">
               <CheckCircle className="w-6 h-6 text-green-500" />
               <div>
-                <h3 className="text-sm font-semibold text-green-500">Lore Generated!</h3>
+                <h3 className="text-sm font-semibold text-green-500">
+                  Lore Generated!
+                </h3>
                 <p className="text-xs text-text-secondary">
                   Lore has been linked to {npc.name}
                 </p>
@@ -193,55 +213,69 @@ export const LoreGenerationModal: React.FC<LoreGenerationModalProps> = ({
                 <h3 className="text-xl font-bold text-text-primary mb-1">
                   {generatedLore.title}
                 </h3>
-                <p className="text-sm text-text-tertiary capitalize">{generatedLore.category}</p>
+                <p className="text-sm text-text-tertiary capitalize">
+                  {generatedLore.category}
+                </p>
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold text-text-primary mb-2">Summary</h4>
-                <p className="text-sm text-text-secondary italic">{generatedLore.summary}</p>
+                <h4 className="text-sm font-semibold text-text-primary mb-2">
+                  Summary
+                </h4>
+                <p className="text-sm text-text-secondary italic">
+                  {generatedLore.summary}
+                </p>
               </div>
 
               <div>
-                <h4 className="text-sm font-semibold text-text-primary mb-2">Content</h4>
+                <h4 className="text-sm font-semibold text-text-primary mb-2">
+                  Content
+                </h4>
                 <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-wrap">
                   {generatedLore.content}
                 </p>
               </div>
 
-              {generatedLore.relatedTopics && generatedLore.relatedTopics.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-text-primary mb-2">Related Topics</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {generatedLore.relatedTopics.map((relTopic, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 bg-bg-tertiary/50 border border-border-primary rounded text-xs text-text-secondary"
-                      >
-                        {relTopic}
-                      </span>
-                    ))}
+              {generatedLore.relatedTopics &&
+                generatedLore.relatedTopics.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-text-primary mb-2">
+                      Related Topics
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {generatedLore.relatedTopics.map((relTopic, i) => (
+                        <span
+                          key={i}
+                          className="px-2 py-1 bg-bg-tertiary/50 border border-border-primary rounded text-xs text-text-secondary"
+                        >
+                          {relTopic}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
           </div>
         )}
       </ModalBody>
 
       <ModalFooter>
-        {status === 'config' && (
+        {status === "config" && (
           <>
             <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button onClick={handleGenerate} disabled={isGenerating || !topic.trim()}>
+            <Button
+              onClick={handleGenerate}
+              disabled={isGenerating || !topic.trim()}
+            >
               <Sparkles className="w-4 h-4 mr-2" />
               Generate Lore
             </Button>
           </>
         )}
 
-        {status === 'success' && (
+        {status === "success" && (
           <>
             <Button variant="secondary" onClick={handleReset}>
               Generate Another
@@ -254,5 +288,5 @@ export const LoreGenerationModal: React.FC<LoreGenerationModalProps> = ({
         )}
       </ModalFooter>
     </Modal>
-  )
-}
+  );
+};

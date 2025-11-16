@@ -7,9 +7,8 @@ import { Asset } from "@/services/api/AssetService";
 export interface GeneratedAsset extends Asset {
   status: string;
   pipelineId?: string;
-  modelUrl?: string;
   conceptArtUrl?: string;
-  variants?: Asset[] | Array<{ name: string; modelUrl: string; id?: string }>;
+  variants?: Asset[] | Array<{ name: string; cdnUrl: string; id?: string }>;
   hasSpriteMetadata?: boolean;
   hasSprites?: boolean;
   sprites?: Array<{ angle: number; imageUrl: string }> | null;
@@ -133,12 +132,11 @@ export interface GenerationConfig {
     heightMeters?: number;
   };
 
-  // Legacy fields for backward compatibility
   generateVariants?: boolean;
   variantMaterials?: string[];
   generateSprites?: boolean;
 
-  // New configuration options
+  // Configuration options
   materialPresets?: Array<{
     id: string;
     name: string;

@@ -24,7 +24,7 @@ import {
 } from "../common";
 import { WorldConfigSelector } from "../world-config";
 import { SavePromptModal, PromptLibraryModal } from "../prompts";
-import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { api } from "@/lib/api-client";
 import { useWorldConfigOptions } from "@/hooks/useWorldConfigOptions";
 import { usePromptLibrary } from "@/hooks/usePromptLibrary";
 import { usePromptKeyboardShortcuts } from "@/hooks/usePromptKeyboardShortcuts";
@@ -65,7 +65,6 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
   initialPrompt,
 }) => {
   const { navigateToPlaytester } = useNavigation();
-  const [apiClient] = useState(() => new ContentAPIClient());
   const [questType, setQuestType] = useState("");
   const [difficulty, setDifficulty] = useState("");
   const [prompt, setPrompt] = useState("");
@@ -112,7 +111,7 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
 
     try {
       setIsGenerating(true);
-      const result = await apiClient.generateQuest({
+      const result = await api.api.content["generate-quest"].post({
         prompt: prompt || undefined,
         questType: questType || undefined,
         difficulty: difficulty || undefined,
@@ -122,8 +121,12 @@ export const QuestGenerationCard: React.FC<QuestGenerationCardProps> = ({
         worldConfigId: worldConfigId || undefined,
       });
 
-      setLastGeneratedQuest(result.quest);
-      onGenerated?.(result.quest, result.rawResponse);
+      if (result.error) {
+        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate quest");
+      }
+
+      setLastGeneratedQuest(result.data!.quest);
+      onGenerated?.(result.data!.quest, result.data!.rawResponse);
       notify.success("Quest generated successfully!");
     } catch (error) {
       console.error("Failed to generate quest:", error);

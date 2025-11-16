@@ -45,7 +45,11 @@ export const contentQueries = {
       queryFn: async () => {
         const result = await api.api.content.npcs.get();
         if (result.error)
-          throw new Error(result.error.message || "Failed to fetch NPCs");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to fetch NPCs",
+          );
         return result.data?.npcs || [];
       },
       staleTime: 60 * 1000,
@@ -62,7 +66,11 @@ export const contentQueries = {
       queryFn: async () => {
         const result = await api.api.content.quests.get();
         if (result.error)
-          throw new Error(result.error.message || "Failed to fetch quests");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to fetch quests",
+          );
         return result.data?.quests || [];
       },
       staleTime: 60 * 1000,
@@ -79,7 +87,11 @@ export const contentQueries = {
       queryFn: async () => {
         const result = await api.api.content.dialogues.get();
         if (result.error)
-          throw new Error(result.error.message || "Failed to fetch dialogues");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to fetch dialogues",
+          );
         return result.data?.dialogues || [];
       },
       staleTime: 60 * 1000,
@@ -96,7 +108,11 @@ export const contentQueries = {
       queryFn: async () => {
         const result = await api.api.content.lores.get();
         if (result.error)
-          throw new Error(result.error.message || "Failed to fetch lores");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to fetch lores",
+          );
         return result.data?.lores || [];
       },
       staleTime: 60 * 1000,
@@ -113,7 +129,11 @@ export const contentQueries = {
       queryFn: async () => {
         const result = await api.api.content.npcs({ id }).get();
         if (result.error)
-          throw new Error(result.error.message || "Failed to fetch NPC");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to fetch NPC",
+          );
         return result.data?.npc || null;
       },
       enabled: !!id,
@@ -131,7 +151,11 @@ export const contentQueries = {
       queryFn: async () => {
         const result = await api.api.content.quests({ id }).get();
         if (result.error)
-          throw new Error(result.error.message || "Failed to fetch quest");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to fetch quest",
+          );
         return result.data?.quest || null;
       },
       enabled: !!id,
@@ -149,7 +173,11 @@ export const contentQueries = {
       queryFn: async () => {
         const result = await api.api.content.dialogues({ id }).get();
         if (result.error)
-          throw new Error(result.error.message || "Failed to fetch dialogue");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to fetch dialogue",
+          );
         return result.data?.dialogue || null;
       },
       enabled: !!id,
@@ -167,7 +195,11 @@ export const contentQueries = {
       queryFn: async () => {
         const result = await api.api.content.lores({ id }).get();
         if (result.error)
-          throw new Error(result.error.message || "Failed to fetch lore");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to fetch lore",
+          );
         return result.data?.lore || null;
       },
       enabled: !!id,
@@ -195,10 +227,15 @@ export function useDeleteNPCMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const result = await api.api.content.npcs({ id }).delete();
-      if (result.error)
-        throw new Error(result.error.message || "Failed to delete NPC");
-      return result.data!;
+      const response = await fetch(`/api/content/npcs/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete NPC");
+      }
+      return await response.json();
     },
     onMutate: async (id) => {
       // Cancel outgoing refetches
@@ -256,10 +293,15 @@ export function useDeleteQuestMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const result = await api.api.content.quests({ id }).delete();
-      if (result.error)
-        throw new Error(result.error.message || "Failed to delete quest");
-      return result.data!;
+      const response = await fetch(`/api/content/quests/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete quest");
+      }
+      return await response.json();
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });
@@ -311,10 +353,15 @@ export function useDeleteDialogueMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const result = await api.api.content.dialogues({ id }).delete();
-      if (result.error)
-        throw new Error(result.error.message || "Failed to delete dialogue");
-      return result.data!;
+      const response = await fetch(`/api/content/dialogues/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete dialogue");
+      }
+      return await response.json();
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });
@@ -366,10 +413,15 @@ export function useDeleteLoreMutation(): UseMutationResult<
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const result = await api.api.content.lores({ id }).delete();
-      if (result.error)
-        throw new Error(result.error.message || "Failed to delete lore");
-      return result.data!;
+      const response = await fetch(`/api/content/lores/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete lore");
+      }
+      return await response.json();
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.content.all });
@@ -423,7 +475,11 @@ export function useUpdateNPCMutation(): UseMutationResult<
     mutationFn: async ({ id, updates }) => {
       const result = await api.api.content.npcs({ id }).put(updates as any);
       if (result.error)
-        throw new Error(result.error.message || "Failed to update NPC");
+        throw new Error(
+          result.error.value?.message ||
+            result.error.value?.summary ||
+            "Failed to update NPC",
+        );
       return result.data!;
     },
     onMutate: async ({ id, updates }) => {
@@ -480,7 +536,11 @@ export function useUpdateQuestMutation(): UseMutationResult<
     mutationFn: async ({ id, updates }) => {
       const result = await api.api.content.quests({ id }).put(updates as any);
       if (result.error)
-        throw new Error(result.error.message || "Failed to update quest");
+        throw new Error(
+          result.error.value?.message ||
+            result.error.value?.summary ||
+            "Failed to update quest",
+        );
       return result.data!;
     },
     onMutate: async ({ id, updates }) => {
@@ -539,7 +599,11 @@ export function useUpdateDialogueMutation(): UseMutationResult<
         .dialogues({ id })
         .put(updates as any);
       if (result.error)
-        throw new Error(result.error.message || "Failed to update dialogue");
+        throw new Error(
+          result.error.value?.message ||
+            result.error.value?.summary ||
+            "Failed to update dialogue",
+        );
       return result.data!;
     },
     onMutate: async ({ id, updates }) => {
@@ -596,7 +660,11 @@ export function useUpdateLoreMutation(): UseMutationResult<
     mutationFn: async ({ id, updates }) => {
       const result = await api.api.content.lores({ id }).put(updates as any);
       if (result.error)
-        throw new Error(result.error.message || "Failed to update lore");
+        throw new Error(
+          result.error.value?.message ||
+            result.error.value?.summary ||
+            "Failed to update lore",
+        );
       return result.data!;
     },
     onMutate: async ({ id, updates }) => {

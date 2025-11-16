@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { Elysia } from "elysia";
-import { createSeedDataRoutes } from "../../../../server/routes/seed-data";
+import { seedDataRoutes } from "../../../../server/routes/seed-data";
 import { createTestUser, cleanDatabase } from "../../../helpers/db";
 
 describe("Seed Data Routes", () => {
@@ -21,7 +21,7 @@ describe("Seed Data Routes", () => {
     });
     testUser = { ...user, authUser };
 
-    app = new Elysia().use(createSeedDataRoutes());
+    app = new Elysia().use(seedDataRoutes);
   });
 
   afterAll(async () => {

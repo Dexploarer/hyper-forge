@@ -5,15 +5,12 @@
 
 import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
-import type { AssetService } from "../services/AssetService";
 import * as Models from "../models";
-import { requireAuth } from "../middleware/auth";
+import { requireAuth } from "../plugins/auth.plugin";
 import { ActivityLogService } from "../services/ActivityLogService";
+import { assetDatabaseService } from "../services/AssetDatabaseService";
 
-export const createAssetRoutes = (
-  rootDir: string,
-  assetService: AssetService,
-) => {
+export const createAssetRoutes = (rootDir: string) => {
   return new Elysia({ prefix: "/api/assets", name: "assets" }).guard(
     {
       beforeHandle: ({ request }) => {
@@ -33,7 +30,7 @@ export const createAssetRoutes = (
             const { query } = context;
 
             // Get all assets from database (includes CDN URLs)
-            const allAssets = await assetService.listAssets();
+            const allAssets = await assetDatabaseService.listAssets();
 
             // Apply projectId filter if provided
             if (query.projectId) {
@@ -76,11 +73,11 @@ export const createAssetRoutes = (
             }
 
             // Get asset details before deleting for logging
-            const assets = await assetService.listAssets();
+            const assets = await assetDatabaseService.listAssets();
             const asset = assets.find((a) => a.id === id);
 
             const includeVariants = query.includeVariants === "true";
-            await assetService.deleteAsset(id, includeVariants);
+            await assetDatabaseService.deleteAssetRecord(id, includeVariants);
 
             // Log asset deletion
             if (asset) {
@@ -135,28 +132,147 @@ export const createAssetRoutes = (
               return { error: "Unauthorized" };
             }
 
-            const updatedAsset = await assetService.updateAsset(id, body);
-
-            if (!updatedAsset) {
+            // Get current asset from database
+            const currentAsset =
+              await assetDatabaseService.getAssetWithOwner(id);
+            if (!currentAsset) {
               set.status = 404;
               return { error: "Asset not found" };
             }
 
-            // Log asset update
-            await ActivityLogService.log({
-              userId: authResult.user.id,
-              action: "asset_updated",
-              entityType: "asset",
-              entityId: id,
-              details: {
-                assetName: updatedAsset.name,
-                assetType: updatedAsset.type,
-                updatedFields: Object.keys(body),
-              },
-              request: context.request,
-            });
+            const currentMetadata = currentAsset.metadata as any;
 
-            return updatedAsset;
+            // Build updated metadata with new values
+            const updatedMetadata = {
+              ...currentMetadata,
+              ...body.metadata,
+              updatedAt: new Date().toISOString(),
+            };
+
+            // Handle direct field updates
+            if (body.isFavorite !== undefined) {
+              updatedMetadata.isFavorite = body.isFavorite;
+            }
+            if (body.notes !== undefined) {
+              updatedMetadata.notes = body.notes;
+            }
+            if (body.status !== undefined) {
+              updatedMetadata.status = body.status;
+            }
+
+            // Default isPublic to true if not set
+            if (updatedMetadata.isPublic === undefined) {
+              updatedMetadata.isPublic = true;
+            }
+
+            // Handle type change if provided
+            if (body.type && body.type !== currentMetadata.type) {
+              updatedMetadata.type = body.type;
+            }
+
+            // Handle name change if provided (including ID update)
+            if (body.name && body.name !== id) {
+              updatedMetadata.name = body.name;
+              updatedMetadata.gameId = body.name;
+
+              // Update database record with new name and ID
+              await assetDatabaseService.updateAssetRecord(id, {
+                id: body.name,
+                name: body.name,
+                type: body.type || currentAsset.type,
+                metadata: updatedMetadata,
+              });
+
+              // Get updated asset with new ID
+              const updatedAsset = await assetDatabaseService.getAssetWithOwner(
+                body.name,
+              );
+
+              if (!updatedAsset) {
+                set.status = 500;
+                return { error: "Failed to retrieve updated asset" };
+              }
+
+              // Log asset update
+              await ActivityLogService.log({
+                userId: authResult.user.id,
+                action: "asset_updated",
+                entityType: "asset",
+                entityId: body.name,
+                details: {
+                  assetName: updatedAsset.name,
+                  assetType: updatedAsset.type,
+                  updatedFields: Object.keys(body),
+                  idChanged: true,
+                },
+                request: context.request,
+              });
+
+              // Return formatted response
+              return {
+                id: updatedAsset.id,
+                name: updatedAsset.name,
+                description: updatedAsset.description || "",
+                type: updatedAsset.type,
+                metadata: updatedAsset.metadata,
+                hasModel: !!updatedAsset.cdnUrl,
+                modelFile: updatedAsset.cdnUrl
+                  ? updatedAsset.cdnUrl.split("/").pop()
+                  : undefined,
+                generatedAt: updatedAsset.createdAt.toISOString(),
+                cdnUrl: updatedAsset.cdnUrl || null,
+                cdnThumbnailUrl: updatedAsset.cdnThumbnailUrl,
+                cdnConceptArtUrl: updatedAsset.cdnConceptArtUrl,
+              };
+            } else {
+              // Just update metadata in database
+              await assetDatabaseService.updateAssetRecord(id, {
+                name: body.name || currentAsset.name,
+                description: currentAsset.description,
+                type: body.type || currentAsset.type,
+                metadata: updatedMetadata,
+              });
+
+              // Get updated asset
+              const updatedAsset =
+                await assetDatabaseService.getAssetWithOwner(id);
+
+              if (!updatedAsset) {
+                set.status = 500;
+                return { error: "Failed to retrieve updated asset" };
+              }
+
+              // Log asset update
+              await ActivityLogService.log({
+                userId: authResult.user.id,
+                action: "asset_updated",
+                entityType: "asset",
+                entityId: id,
+                details: {
+                  assetName: updatedAsset.name,
+                  assetType: updatedAsset.type,
+                  updatedFields: Object.keys(body),
+                },
+                request: context.request,
+              });
+
+              // Return formatted response
+              return {
+                id: updatedAsset.id,
+                name: updatedAsset.name,
+                description: updatedAsset.description || "",
+                type: updatedAsset.type,
+                metadata: updatedAsset.metadata,
+                hasModel: !!updatedAsset.cdnUrl,
+                modelFile: updatedAsset.cdnUrl
+                  ? updatedAsset.cdnUrl.split("/").pop()
+                  : undefined,
+                generatedAt: updatedAsset.createdAt.toISOString(),
+                cdnUrl: updatedAsset.cdnUrl || null,
+                cdnThumbnailUrl: updatedAsset.cdnThumbnailUrl,
+                cdnConceptArtUrl: updatedAsset.cdnConceptArtUrl,
+              };
+            }
           },
           {
             params: t.Object({
@@ -184,7 +300,11 @@ export const createAssetRoutes = (
             const { sprites, config } = body;
 
             logger.info(
-              { context: "Sprites", spriteCount: sprites.length, assetId: id },
+              {
+                context: "Sprites",
+                spriteCount: sprites.length,
+                assetId: id,
+              },
               "Uploading sprites to CDN",
             );
 
@@ -323,7 +443,7 @@ export const createAssetRoutes = (
             const { id } = params;
 
             // Get asset from database to check for CDN URL
-            const assets = await assetService.listAssets();
+            const assets = await assetDatabaseService.listAssets();
             const asset = assets.find((a) => a.id === id);
 
             if (!asset) {
@@ -372,7 +492,7 @@ export const createAssetRoutes = (
             const { id } = params;
 
             // Get asset from database to check for CDN URL
-            const assets = await assetService.listAssets();
+            const assets = await assetDatabaseService.listAssets();
             const asset = assets.find((a) => a.id === id);
 
             if (!asset) {
@@ -444,7 +564,10 @@ export const createAssetRoutes = (
             cdnFormData.append("directory", "models");
 
             logger.info(
-              { context: "VRM Upload", path: `models/${assetId}/${filename}` },
+              {
+                context: "VRM Upload",
+                path: `models/${assetId}/${filename}`,
+              },
               "Uploading to CDN",
             );
 
@@ -495,7 +618,11 @@ export const createAssetRoutes = (
             const { assetIds, updates } = body;
 
             logger.info(
-              { context: "Bulk Update", assetCount: assetIds.length, updates },
+              {
+                context: "Bulk Update",
+                assetCount: assetIds.length,
+                updates,
+              },
               "Updating assets",
             );
 
@@ -505,13 +632,43 @@ export const createAssetRoutes = (
 
             for (const assetId of assetIds) {
               try {
-                const result = await assetService.updateAsset(assetId, updates);
-                if (result) {
-                  updated++;
-                } else {
+                // Get current asset
+                const currentAsset =
+                  await assetDatabaseService.getAssetWithOwner(assetId);
+                if (!currentAsset) {
                   failed++;
                   errors.push({ assetId, error: "Asset not found" });
+                  continue;
                 }
+
+                const currentMetadata = currentAsset.metadata as any;
+
+                // Build updated metadata
+                const updatedMetadata = {
+                  ...currentMetadata,
+                  ...updates.metadata,
+                  updatedAt: new Date().toISOString(),
+                };
+
+                // Handle direct field updates
+                if (updates.isFavorite !== undefined) {
+                  updatedMetadata.isFavorite = updates.isFavorite;
+                }
+                if (updates.notes !== undefined) {
+                  updatedMetadata.notes = updates.notes;
+                }
+                if (updates.status !== undefined) {
+                  updatedMetadata.status = updates.status;
+                }
+
+                // Update in database
+                await assetDatabaseService.updateAssetRecord(assetId, {
+                  name: updates.name || currentAsset.name,
+                  type: updates.type || currentAsset.type,
+                  metadata: updatedMetadata,
+                });
+
+                updated++;
               } catch (error) {
                 failed++;
                 const err = error as Error;

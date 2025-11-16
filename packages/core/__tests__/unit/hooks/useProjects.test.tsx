@@ -121,38 +121,28 @@ describe("useProjects", () => {
     expect(result.current.projects.some((p) => p.archivedAt)).toBe(true);
   });
 
-  it("should support backward-compatible API", async () => {
-    const { result } = renderHook(() => useProjects(), {
-      wrapper: createWrapper(queryClient),
-    });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    // Backward-compatible properties
-    expect(result.current).toHaveProperty("projects");
-    expect(result.current).toHaveProperty("loading");
-    expect(result.current).toHaveProperty("reloadProjects");
-    expect(result.current).toHaveProperty("forceReload");
-
-    // Verify they're functions
-    expect(typeof result.current.reloadProjects).toBe("function");
-    expect(typeof result.current.forceReload).toBe("function");
-  });
-
-  it("should support modern React Query API", async () => {
+  it("should provide React Query API with convenience aliases", async () => {
     const { result } = renderHook(() => useProjects(), {
       wrapper: createWrapper(queryClient),
     });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    // Modern properties
+    // React Query API
     expect(result.current).toHaveProperty("data");
     expect(result.current).toHaveProperty("isLoading");
     expect(result.current).toHaveProperty("error");
     expect(result.current).toHaveProperty("refetch");
     expect(result.current).toHaveProperty("isSuccess");
     expect(result.current).toHaveProperty("isFetching");
+
+    // Convenience aliases
+    expect(result.current).toHaveProperty("projects");
+    expect(result.current).toHaveProperty("loading");
+    expect(result.current).toHaveProperty("reloadProjects");
+    expect(result.current).toHaveProperty("forceReload");
+    expect(typeof result.current.reloadProjects).toBe("function");
+    expect(typeof result.current.forceReload).toBe("function");
   });
 
   it("should reload projects when reloadProjects is called", async () => {
@@ -217,35 +207,24 @@ describe("useProject", () => {
     expect(result.current.project).toBeNull();
   });
 
-  it("should support backward-compatible API", async () => {
-    const { result } = renderHook(() => useProject("project-1"), {
-      wrapper: createWrapper(queryClient),
-    });
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    // Backward-compatible properties
-    expect(result.current).toHaveProperty("project");
-    expect(result.current).toHaveProperty("loading");
-    expect(result.current).toHaveProperty("refetch");
-
-    // Verify refetch is a function
-    expect(typeof result.current.refetch).toBe("function");
-  });
-
-  it("should support modern React Query API", async () => {
+  it("should provide React Query API with convenience aliases", async () => {
     const { result } = renderHook(() => useProject("project-1"), {
       wrapper: createWrapper(queryClient),
     });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    // Modern properties
+    // React Query API
     expect(result.current).toHaveProperty("data");
     expect(result.current).toHaveProperty("isLoading");
     expect(result.current).toHaveProperty("error");
     expect(result.current).toHaveProperty("refetch");
     expect(result.current).toHaveProperty("isSuccess");
+
+    // Convenience aliases
+    expect(result.current).toHaveProperty("project");
+    expect(result.current).toHaveProperty("loading");
+    expect(typeof result.current.refetch).toBe("function");
   });
 
   it("should handle project not found error", async () => {

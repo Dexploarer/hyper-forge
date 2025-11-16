@@ -187,4 +187,3 @@ For more details, see:
 
 - `packages/core/dev-book/` - Full documentation
 - `packages/core/CLAUDE.md` - Package-specific instructions
-- `SEPARATION_PLAN.md` - Migration documentation

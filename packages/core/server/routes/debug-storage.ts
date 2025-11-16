@@ -22,7 +22,7 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
       let cdnError = null;
 
       try {
-        const response = await fetch(`${CDN_URL}/api/health`);
+        const response = await fetch(`${CDN_URL}/health/ready`);
         cdnHealthy = response.ok;
         if (!response.ok) {
           cdnError = `CDN returned status ${response.status}`;
@@ -96,9 +96,6 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
         },
         storage: {
           mode: "CDN-First",
-          assetsDir: process.env.ASSETS_DIR
-            ? "DEPRECATED - Not used in CDN-first mode"
-            : "Not configured (correct for CDN-first)",
         },
         statistics: {
           assets: assetStats,
@@ -127,20 +124,18 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
   .get(
     "/storage-info",
     async () => {
-      // Legacy endpoint - redirects to CDN health
       return {
-        message:
-          "This endpoint is deprecated. Asset-Forge now uses CDN-first architecture.",
+        message: "Asset-Forge uses CDN-first architecture.",
         redirect: "/api/debug/cdn-health",
-        info: "Local gdd-assets storage is no longer used. All assets are stored on CDN.",
+        info: "All assets are stored on CDN.",
       };
     },
     {
       detail: {
         tags: ["Debug"],
-        summary: "Legacy storage info endpoint (deprecated)",
+        summary: "Storage info endpoint",
         description:
-          "Deprecated endpoint. Redirects to /api/debug/cdn-health. Asset-Forge now uses CDN-first architecture.",
+          "Redirects to /api/debug/cdn-health. Asset-Forge uses CDN-first architecture.",
       },
     },
   );

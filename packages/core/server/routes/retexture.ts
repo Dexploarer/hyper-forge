@@ -7,7 +7,7 @@ import { Elysia, t } from "elysia";
 import path from "path";
 import { RetextureService } from "../services/RetextureService";
 import * as Models from "../models";
-import { optionalAuth } from "../middleware/auth";
+import { optionalAuth } from "../plugins/auth.plugin";
 import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
 import { InternalServerError } from "../errors";
 
@@ -18,6 +18,7 @@ export const createRetextureRoutes = (
 ) => {
   return (
     new Elysia({ prefix: "/api", name: "retexture" })
+      .derive(() => ({ assetsDir }))
       .derive(async (context) => {
         // Extract user from auth token if present (optional)
         const authResult = await optionalAuth({
@@ -29,7 +30,7 @@ export const createRetextureRoutes = (
       // Retexture endpoint
       .post(
         "/retexture",
-        async ({ body, user }) => {
+        async ({ body, user, assetsDir }) => {
           // Fetch user's API keys with env fallback
           const userApiKeys = user?.id
             ? await getUserApiKeysWithFallback(user.id)
@@ -66,7 +67,7 @@ export const createRetextureRoutes = (
             imageUrl: body.imageUrl,
             artStyle: body.artStyle,
             outputName: body.outputName,
-            assetsDir: assetsDir,
+            assetsDir,
             user: body.user, // User context is already part of the body schema
           });
 
@@ -87,7 +88,7 @@ export const createRetextureRoutes = (
       // Regenerate base model endpoint
       .post(
         "/regenerate-base/:baseAssetId",
-        async ({ params: { baseAssetId }, user }) => {
+        async ({ params: { baseAssetId }, user, assetsDir }) => {
           // Fetch user's API keys with env fallback
           const userApiKeys = user?.id
             ? await getUserApiKeysWithFallback(user.id)
@@ -119,7 +120,7 @@ export const createRetextureRoutes = (
 
           const result = await retextureService.regenerateBase({
             baseAssetId,
-            assetsDir: assetsDir,
+            assetsDir,
           });
 
           return result;

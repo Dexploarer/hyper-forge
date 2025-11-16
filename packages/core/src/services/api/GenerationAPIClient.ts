@@ -24,14 +24,14 @@ export interface PipelineStages {
 export interface PipelineResults {
   image3D?: {
     localPath?: string;
-    modelUrl?: string;
+    cdnUrl?: string;
   };
   rigging?: {
     localPath?: string;
-    modelUrl?: string;
+    cdnUrl?: string;
   };
   textureGeneration?: {
-    variants?: Array<{ name: string; modelUrl: string }>;
+    variants?: Array<{ name: string; cdnUrl: string }>;
   };
   spriteGeneration?: {
     status?: string;
@@ -50,10 +50,10 @@ export interface APIPipelineResult {
   baseAsset?: {
     id: string;
     name: string;
-    modelUrl?: string;
+    cdnUrl?: string;
     conceptArtUrl?: string;
   };
-  variants?: Array<{ name: string; modelUrl: string }>;
+  variants?: Array<{ name: string; cdnUrl: string }>;
   sprites?: Array<{ angle: number; imageUrl: string }>;
 }
 

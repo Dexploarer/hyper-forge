@@ -36,7 +36,7 @@ import {
 import { LoadingSpinner } from "@/components/common";
 import { cn } from "@/styles";
 import { ContentItem, type ContentType } from "@/hooks/useContent";
-import { ContentAPIClient } from "@/services/api/ContentAPIClient";
+import { api } from "@/lib/api-client";
 import { notify } from "@/utils/notify";
 import type {
   NPCData,
@@ -68,7 +68,6 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const [isSavingBanner, setIsSavingBanner] = useState(false);
   const [showPortraitControls, setShowPortraitControls] = useState(false);
   const [showBannerControls, setShowBannerControls] = useState(false);
-  const [apiClient] = useState(() => new ContentAPIClient());
   const portraitInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -135,16 +134,20 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
     try {
       setIsGeneratingPortrait(true);
-      const result = await apiClient.generateNPCPortrait({
+      const result = await api.api.content["generate-npc-portrait"].post({
         npcName: npc.name,
         archetype: npc.archetype || "default",
         appearance: npc.appearance?.description || "",
         personality: npc.personality?.traits?.join(", ") || "",
       });
 
-      setPortraitUrl(result.imageUrl);
+      if (result.error) {
+        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate portrait");
+      }
+
+      setPortraitUrl(result.data!.imageUrl);
       notify.success("Portrait generated successfully!");
-      await handleSavePortrait(result.imageUrl);
+      await handleSavePortrait(result.data!.imageUrl);
     } catch (error) {
       console.error("Failed to generate portrait:", error);
       notify.error("Failed to generate portrait");
@@ -160,14 +163,18 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     try {
       setIsGeneratingBanner(true);
       // Generate banner with only visual requirements - no game metadata
-      const result = await apiClient.generateQuestBanner({
+      const result = await api.api.content["generate-quest-banner"].post({
         questTitle: quest.title,
         description: quest.description || "",
       });
 
-      setBannerUrl(result.imageUrl);
+      if (result.error) {
+        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate banner");
+      }
+
+      setBannerUrl(result.data!.imageUrl);
       notify.success("Banner generated successfully!");
-      await handleSaveBanner(result.imageUrl);
+      await handleSaveBanner(result.data!.imageUrl);
     } catch (error) {
       console.error("Failed to generate banner:", error);
       notify.error("Failed to generate banner");
@@ -190,11 +197,15 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1];
 
-        await apiClient.savePortrait({
+        const result = await api.api.content.media["save-portrait"].post({
           entityType: "npc",
           entityId: item.id,
           imageData: base64Image,
         });
+
+        if (result.error) {
+          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to save portrait");
+        }
 
         notify.success("Portrait saved successfully!");
         await fetchPortrait();
@@ -223,12 +234,16 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1];
 
-        await apiClient.savePortrait({
+        const result = await api.api.content.media["save-portrait"].post({
           entityType: "quest",
           entityId: item.id,
           imageData: base64Image,
           type: "banner",
         });
+
+        if (result.error) {
+          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to save banner");
+        }
 
         notify.success("Banner saved successfully!");
         await fetchBanner();
@@ -261,11 +276,15 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1];
 
-        await apiClient.savePortrait({
+        const result = await api.api.content.media["save-portrait"].post({
           entityType: "npc",
           entityId: item.id,
           imageData: base64Image,
         });
+
+        if (result.error) {
+          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to upload portrait");
+        }
 
         notify.success("Portrait uploaded successfully!");
         await fetchPortrait();
@@ -299,12 +318,16 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1];
 
-        await apiClient.savePortrait({
+        const result = await api.api.content.media["save-portrait"].post({
           entityType: "quest",
           entityId: item.id,
           imageData: base64Image,
           type: "banner",
         });
+
+        if (result.error) {
+          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to upload banner");
+        }
 
         notify.success("Banner uploaded successfully!");
         await fetchBanner();

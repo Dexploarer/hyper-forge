@@ -1,17 +1,37 @@
 /**
  * Permission Service
- * Centralized authorization checks for Asset-Forge
+ *
+ * Centralized authorization checks for Asset-Forge. This service standardizes
+ * permission logic across all routes and services, providing a single source
+ * of truth for access control decisions.
  *
  * Phase 3.1 - Production Hardening
  *
- * This service standardizes permission logic across all routes and services.
  * Instead of scattered checks like `user.role === 'admin'` or `asset.ownerId === user.id`,
  * all authorization decisions go through this service.
+ *
+ * @example
+ * ```typescript
+ * // Check if user can view an asset
+ * if (!permissionService.canViewAsset(user, asset)) {
+ *   throw new ForbiddenError('Access denied');
+ * }
+ *
+ * // Check if user can edit a project
+ * if (permissionService.canEditProject(user, project)) {
+ *   await projectService.update(project.id, updates);
+ * }
+ *
+ * // Check admin access
+ * if (permissionService.hasAdminAccess(user)) {
+ *   // Admin-only operation
+ * }
+ * ```
  */
 
 import type { Asset } from "../db/schema/assets.schema";
 import type { Project } from "../db/schema/users.schema";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 /**
  * Simplified user interface for permission checks
@@ -34,10 +54,23 @@ export interface ContentEntity {
 export class PermissionService {
   /**
    * Check if user can view an asset
-   * - Owner can always view
-   * - Admin can always view
-   * - Public assets can be viewed by anyone
+   *
+   * Permission rules:
+   * - Public assets can be viewed by anyone (including unauthenticated users)
    * - Private assets only by owner or admin
+   * - Owner can always view their own assets
+   * - Admin can view all assets
+   *
+   * @param user - Current user (null if unauthenticated)
+   * @param asset - Asset to check
+   * @returns True if user has view permission
+   *
+   * @example
+   * ```typescript
+   * if (!permissionService.canViewAsset(user, asset)) {
+   *   throw new ForbiddenError('You cannot view this asset');
+   * }
+   * ```
    */
   canViewAsset(user: PermissionUser | null, asset: Asset): boolean {
     // Public assets are viewable by everyone
@@ -225,7 +258,18 @@ export class PermissionService {
 
   /**
    * Check if user has admin access
-   * - Only users with role 'admin'
+   *
+   * Admin users have elevated permissions across the entire system.
+   *
+   * @param user - Current user (null if unauthenticated)
+   * @returns True if user is an admin
+   *
+   * @example
+   * ```typescript
+   * if (!permissionService.hasAdminAccess(user)) {
+   *   throw new ForbiddenError('Admin access required');
+   * }
+   * ```
    */
   hasAdminAccess(user: PermissionUser | null): boolean {
     return user?.role === "admin";
@@ -277,7 +321,20 @@ export class PermissionService {
 
   /**
    * Check if user is the owner of a resource
-   * Generic ownership check for any resource with ownerId or createdBy
+   *
+   * Generic ownership check that works with both `ownerId` (assets, projects)
+   * and `createdBy` (content entities) fields.
+   *
+   * @param user - Current user (null if unauthenticated)
+   * @param resource - Resource with ownerId or createdBy field
+   * @returns True if user owns the resource
+   *
+   * @example
+   * ```typescript
+   * if (permissionService.isOwner(user, asset)) {
+   *   // User owns this asset
+   * }
+   * ```
    */
   isOwner(
     user: PermissionUser | null,

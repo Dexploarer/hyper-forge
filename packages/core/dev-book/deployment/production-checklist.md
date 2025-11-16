@@ -44,19 +44,14 @@ Complete checklist for deploying Asset-Forge Elysia API server to production.
 | `CDN_URL`            | CDN base URL for assets   | `https://cdn.example.com`    | For stable asset delivery      |
 | `IMGUR_CLIENT_ID`    | Imgur client ID           | `abc123...`                  | Optional - for image hosting   |
 
-### Asset Storage Variables
+### CDN Configuration Variables
 
-| Variable                    | Description                | Example                   | Notes                        |
-| --------------------------- | -------------------------- | ------------------------- | ---------------------------- |
-| `ASSETS_DIR`                | Asset storage directory    | `/app/gdd-assets`         | Railway: use volume mount    |
-| `RAILWAY_VOLUME_MOUNT_PATH` | Railway volume path        | `/app/data`               | Automatically set by Railway |
-| `IMAGE_SERVER_URL`          | Base URL for image serving | `https://api.example.com` | Defaults to current server   |
-
-### Admin Variables
-
-| Variable             | Description                  | Example                 | Notes                 |
-| -------------------- | ---------------------------- | ----------------------- | --------------------- |
-| `ADMIN_UPLOAD_TOKEN` | Temporary admin upload token | `temp-secret-change-me` | Change in production! |
+| Variable           | Description                | Example                            | Notes                      |
+| ------------------ | -------------------------- | ---------------------------------- | -------------------------- |
+| `CDN_URL`          | CDN base URL               | `https://cdn.example.com`          | Required for production    |
+| `CDN_API_KEY`      | CDN API authentication key | Generate with openssl rand -hex 32 | Required for production    |
+| `CDN_WS_URL`       | CDN WebSocket URL          | `wss://cdn.example.com/ws/events`  | Optional for real-time     |
+| `IMAGE_SERVER_URL` | Base URL for image serving | `https://api.example.com`          | Defaults to current server |
 
 ### Verification Command
 
@@ -213,9 +208,6 @@ rateLimit({
 # Update environment variables:
 PRIVY_APP_ID=your_production_app_id
 PRIVY_APP_SECRET=your_production_app_secret
-
-# Change admin token
-ADMIN_UPLOAD_TOKEN=$(openssl rand -hex 32)
 ```
 
 ### 5. File Upload Limits
@@ -792,10 +784,8 @@ echo $RAILWAY_VOLUME_MOUNT_PATH
 # Check directory exists and has files
 ls -la $ASSETS_DIR
 
-# Re-upload assets if needed
-curl -X POST https://api.example.com/api/admin/download-assets \
-  -H "Authorization: Bearer $ADMIN_UPLOAD_TOKEN" \
-  -d '{"url":"https://example.com/assets.tar.gz"}'
+# Note: Legacy /api/admin/download-assets endpoint has been removed.
+# Use CDN or manual upload for asset deployment.
 ```
 
 ### Issue 3: Rate Limit Too Restrictive
@@ -891,7 +881,6 @@ curl https://api.example.com/metrics | grep nodejs_heap
 - [ ] Rate limits configured appropriately
 - [ ] Security headers enabled
 - [ ] Privy production credentials set
-- [ ] Admin token changed from default
 - [ ] All tests passing (100%)
 - [ ] Type check clean
 - [ ] Frontend built successfully

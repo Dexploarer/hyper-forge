@@ -5,7 +5,7 @@
 
 import { Elysia, t } from "elysia";
 import type { GenerationService } from "../services/GenerationService";
-import { optionalAuth } from "../middleware/auth";
+import { optionalAuth } from "../plugins/auth.plugin";
 import * as Models from "../models";
 import {
   UnauthorizedError,
@@ -18,7 +18,9 @@ import { ActivityLogService } from "../services/ActivityLogService";
 
 const logger = createChildLogger("GenerationRoutes");
 
-export const createGenerationRoutes = (generationService: GenerationService) =>
+export const createGenerationRoutes = (
+  getGenerationService: () => GenerationService,
+) =>
   new Elysia({ prefix: "/api/generation", name: "generation" })
     .derive(async (context) => {
       // Extract user from auth token if present (optional)
@@ -100,6 +102,9 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
                 assetName: body.name,
                 request,
               });
+
+              // Get GenerationService instance (lazy-loaded on first use)
+              const generationService = getGenerationService();
 
               // Start processing asynchronously (no worker queue needed)
               generationService
@@ -257,7 +262,9 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
           // Get pipeline status
           .get(
             "/pipeline/:pipelineId",
-            async ({ params: { pipelineId } }) => {
+            async (context) => {
+              const { pipelineId } = context.params;
+
               // Get job from generation_jobs table (where POST creates it)
               const job =
                 await generationJobService.getJobByPipelineId(pipelineId);
@@ -386,7 +393,10 @@ export const createGenerationRoutes = (generationService: GenerationService) =>
           // SSE endpoint for real-time pipeline status
           .get(
             "/:pipelineId/status/stream",
-            async ({ params: { pipelineId }, set }) => {
+            async (context) => {
+              const { pipelineId } = context.params;
+              const { set } = context;
+
               // Set SSE headers
               set.headers["content-type"] = "text/event-stream";
               set.headers["cache-control"] = "no-cache";
