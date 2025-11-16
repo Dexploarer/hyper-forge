@@ -14,6 +14,7 @@ import {
   boolean,
   index,
 } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 /**
  * Users table
@@ -158,6 +159,26 @@ export const activityLog = pgTable(
     ),
   }),
 );
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  projects: many(projects),
+  activityLogs: many(activityLog),
+}));
+
+export const projectsRelations = relations(projects, ({ one }) => ({
+  owner: one(users, {
+    fields: [projects.ownerId],
+    references: [users.id],
+  }),
+}));
+
+export const activityLogRelations = relations(activityLog, ({ one }) => ({
+  user: one(users, {
+    fields: [activityLog.userId],
+    references: [users.id],
+  }),
+}));
 
 // Type exports
 export type User = typeof users.$inferSelect;
