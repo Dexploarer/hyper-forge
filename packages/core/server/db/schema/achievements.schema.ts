@@ -14,6 +14,7 @@ import {
   index,
   boolean,
 } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { users } from "./users.schema";
 
 /**
@@ -112,9 +113,27 @@ export const userAchievements = pgTable(
   }),
 );
 
+// Relations
+export const achievementsRelations = relations(achievements, ({ many }) => ({
+  userAchievements: many(userAchievements),
+}));
+
+export const userAchievementsRelations = relations(
+  userAchievements,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [userAchievements.userId],
+      references: [users.id],
+    }),
+    achievement: one(achievements, {
+      fields: [userAchievements.achievementId],
+      references: [achievements.id],
+    }),
+  }),
+);
+
 // Type exports
 export type Achievement = typeof achievements.$inferSelect;
 export type NewAchievement = typeof achievements.$inferInsert;
 export type UserAchievement = typeof userAchievements.$inferSelect;
 export type NewUserAchievement = typeof userAchievements.$inferInsert;
-

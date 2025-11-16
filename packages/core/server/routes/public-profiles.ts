@@ -162,25 +162,12 @@ export const publicProfilesRoutes = new Elysia({ prefix: "/api/public" })
       }
 
       // Get user achievements with full achievement details
-      const userAchievementsData = await db.query.userAchievements.findMany({
+      const achievementsWithDetails = await db.query.userAchievements.findMany({
         where: eq(userAchievements.userId, params.userId),
         with: {
-          achievementId: true,
+          achievement: true,
         },
       });
-
-      // Get full achievement details for each
-      const achievementsWithDetails = await Promise.all(
-        userAchievementsData.map(async (ua) => {
-          const achievement = await db.query.achievements.findFirst({
-            where: eq(achievements.id, ua.achievementId),
-          });
-          return {
-            ...ua,
-            achievement,
-          };
-        }),
-      );
 
       return {
         achievements: achievementsWithDetails,
