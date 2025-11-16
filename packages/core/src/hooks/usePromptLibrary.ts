@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { usePrivy } from "@privy-io/react-auth";
 import { api } from "@/lib/api-client";
 import { notify } from "@/utils/notify";
+import { getAuthToken } from "@/utils/auth-token-store";
 
 export type PromptType =
   | "npc"
@@ -67,12 +68,12 @@ export function usePromptLibrary() {
         setIsLoading(true);
 
         // Use raw fetch instead of Eden Treaty to avoid issues with Privy DID format
-        const token = localStorage.getItem("privy:token");
+        const token = getAuthToken();
         const response = await fetch(
           `/api/prompts/custom/user/${encodeURIComponent(user.id)}`,
           {
             headers: {
-              Authorization: token ? `Bearer ${token}` : "",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
               "Content-Type": "application/json",
             },
             credentials: "include",
