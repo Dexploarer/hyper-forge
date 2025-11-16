@@ -3,7 +3,7 @@
  * Aggregates all /api/* routes into a single plugin
  *
  * This plugin consolidates route registration for:
- * - User management (users, user-api-keys, public-profiles, achievements)
+ * - User management (users, user-api-keys, achievements)
  * - Asset management (assets, materials, projects)
  * - AI generation (generation, retexture, ai-vision, prompts)
  * - Audio (voice-generation, music, sound-effects)
@@ -19,7 +19,6 @@ import path from "path";
 // Import all route modules
 import { usersRoutes } from "../routes/users";
 import { userApiKeysRoutes } from "../routes/user-api-keys";
-import { publicProfilesRoutes } from "../routes/public-profiles";
 import { achievementsRoutes } from "../routes/achievements";
 import { projectsRoutes } from "../routes/projects";
 import { createAssetRoutes } from "../routes/assets";
@@ -78,7 +77,6 @@ export function createApiPlugin(config: ApiPluginConfig) {
       // User management routes
       .use(usersRoutes)
       .use(userApiKeysRoutes)
-      .use(publicProfilesRoutes)
       .use(achievementsRoutes)
 
       // Project and asset management

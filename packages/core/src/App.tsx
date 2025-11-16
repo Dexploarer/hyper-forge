@@ -95,9 +95,6 @@ const MusicGenerationPage = lazy(
   () => import("./pages/generation/MusicGenerationPage"),
 );
 
-// Public Profile page
-const PublicProfilePage = lazy(() => import("./pages/PublicProfilePage"));
-
 // Public VRM Converter page (no auth required)
 const FreeVRMConverterPage = lazy(() => import("./pages/FreeVRMConverterPage"));
 
@@ -204,11 +201,6 @@ function AppContent() {
           {currentView === NAVIGATION_VIEWS.SETTINGS && <SettingsPage />}
           {currentView === NAVIGATION_VIEWS.ADMIN_DASHBOARD && (
             <AdminDashboardPage />
-          )}
-
-          {/* Public Profile */}
-          {currentView === NAVIGATION_VIEWS.PUBLIC_PROFILE && (
-            <PublicProfilePage />
           )}
 
           {/* Legacy/backward compatibility routes */}

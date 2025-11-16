@@ -35,9 +35,6 @@ export const NAVIGATION_VIEWS = {
   // System
   SETTINGS: "settings",
   ADMIN_DASHBOARD: "adminDashboard",
-
-  // Public profiles
-  PUBLIC_PROFILE: "publicProfile",
 } as const satisfies Record<string, NavigationView>;
 
 // Grid background styles for the app
