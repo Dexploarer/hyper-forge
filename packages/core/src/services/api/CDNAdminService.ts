@@ -98,7 +98,7 @@ class CDNAdminService {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ oldPath, newName }),
+      body: JSON.stringify({ oldPath, newPath: newName }),
     });
 
     if (!response.ok) {
@@ -125,7 +125,7 @@ class CDNAdminService {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ filePaths }),
+      body: JSON.stringify({ paths: filePaths }),
     });
 
     if (!response.ok) {
@@ -147,7 +147,7 @@ class CDNAdminService {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ filePaths }),
+      body: JSON.stringify({ paths: filePaths }),
     });
 
     if (!response.ok) {
