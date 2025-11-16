@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 
-import { Button, Drawer } from "@/components/common";
+import { Button, Tray } from "@/components/common";
 import {
   worldConfigClient,
   type WorldConfigurationData,
@@ -195,25 +195,27 @@ export const WorldConfigEditor: React.FC<WorldConfigEditorProps> = ({
   const CurrentStepComponent = STEPS[currentStep - 1].component;
 
   return (
-    <Drawer
+    <Tray
       open={open}
       onClose={onClose}
       title={editConfig ? "Edit Configuration" : "Create Configuration"}
-      size="lg"
+      defaultHeight="lg"
+      resizable={true}
     >
-      <div className="flex flex-col h-full">
-        {/* Steps Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-border-primary">
-          <div className="flex items-center gap-2">
+      <div className="flex flex-col h-full px-6 py-4">
+        {/* Steps Header - Clickable Navigation */}
+        <div className="mb-6 pb-4 border-b border-border-primary">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
             {STEPS.map((step, index) => (
               <React.Fragment key={step.id}>
-                <div
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
+                <button
+                  onClick={() => setCurrentStep(step.id)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all cursor-pointer hover:scale-105 flex-shrink-0 ${
                     currentStep === step.id
-                      ? "bg-primary/20 text-primary"
+                      ? "bg-primary/20 text-primary ring-2 ring-primary/50"
                       : currentStep > step.id
-                        ? "bg-bg-tertiary text-text-primary"
-                        : "bg-bg-tertiary/50 text-text-tertiary"
+                        ? "bg-bg-tertiary text-text-primary hover:bg-bg-tertiary/80"
+                        : "bg-bg-tertiary/50 text-text-tertiary hover:bg-bg-tertiary/70"
                   }`}
                 >
                   <div
@@ -225,19 +227,22 @@ export const WorldConfigEditor: React.FC<WorldConfigEditorProps> = ({
                           : "bg-bg-tertiary text-text-tertiary"
                     }`}
                   >
-                    {step.id}
+                    {currentStep > step.id ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      step.id
+                    )}
                   </div>
-                  <span className="text-sm font-medium">{step.name}</span>
-                </div>
+                  <span className="text-sm font-medium whitespace-nowrap">
+                    {step.name}
+                  </span>
+                </button>
                 {index < STEPS.length - 1 && (
-                  <div className="w-8 h-0.5 bg-border-primary" />
+                  <div className="w-4 h-0.5 bg-border-primary flex-shrink-0" />
                 )}
               </React.Fragment>
             ))}
           </div>
-          <Button variant="secondary" size="sm" onClick={onClose}>
-            <X className="w-4 h-4" />
-          </Button>
         </div>
 
         {/* Step Content */}
@@ -260,6 +265,6 @@ export const WorldConfigEditor: React.FC<WorldConfigEditorProps> = ({
           />
         </div>
       </div>
-    </Drawer>
+    </Tray>
   );
 };

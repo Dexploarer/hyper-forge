@@ -9,6 +9,7 @@ import * as Models from "../models";
 import { requireAuth } from "../plugins/auth.plugin";
 import { ActivityLogService } from "../services/ActivityLogService";
 import { assetDatabaseService } from "../services/AssetDatabaseService";
+import type { AuthUser } from "../types/auth";
 
 export const createAssetRoutes = (rootDir: string) => {
   return new Elysia({ prefix: "/api/assets", name: "assets" }).guard(
@@ -27,13 +28,19 @@ export const createAssetRoutes = (rootDir: string) => {
         .get(
           "",
           async (context) => {
-            const { query, user, set } = context as any;
+            const { query, set } = context;
 
             // Require authentication to view assets
-            if (!user) {
+            const authResult = await requireAuth({
+              request: context.request,
+              headers: context.headers,
+            });
+            if (authResult instanceof Response) {
               set.status = 401;
               return { error: "Authentication required" };
             }
+
+            const user = authResult.user;
 
             // Get all assets from database (includes CDN URLs)
             const allAssets = await assetDatabaseService.listAssets();
