@@ -1597,5 +1597,5 @@ export const contentGenerationRoutes = new Elysia({
                 "Generate a complete, cohesive game world with interconnected NPCs, assets, locations, and lore using AI.",
             },
           },
-        ),
+        )
   );
