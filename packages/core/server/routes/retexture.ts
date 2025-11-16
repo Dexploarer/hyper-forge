@@ -7,6 +7,7 @@ import { Elysia, t } from "elysia";
 import path from "path";
 import { RetextureService } from "../services/RetextureService";
 import * as Models from "../models";
+import { optionalAuth } from "../plugins/auth.plugin";
 import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
 import { InternalServerError } from "../errors";
 
@@ -18,6 +19,14 @@ export const createRetextureRoutes = (
   return (
     new Elysia({ prefix: "/api", name: "retexture" })
       .derive(() => ({ assetsDir }))
+      .derive(async (context) => {
+        // Extract user from auth token if present (optional)
+        const authResult = await optionalAuth({
+          request: context.request,
+          headers: context.headers,
+        });
+        return { user: authResult.user };
+      })
       // Retexture endpoint
       .post(
         "/retexture",

@@ -10,7 +10,7 @@ import { randomUUID } from "crypto";
 
 export const requestID = () => {
   return new Elysia({ name: "request-id" })
-    .derive({ as: "global" }, ({ request }) => {
+    .derive(({ request }) => {
       // Check if request already has an ID from client (e.g., X-Request-ID header)
       const existingId = request.headers.get("x-request-id");
       const requestID = existingId || randomUUID();

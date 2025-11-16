@@ -27,19 +27,29 @@ export const createAssetRoutes = (rootDir: string) => {
         .get(
           "",
           async (context) => {
-            const { query } = context;
+            const { query, user } = context as any;
+
+            // Require authentication to view assets
+            if (!user) {
+              return [];
+            }
 
             // Get all assets from database (includes CDN URLs)
             const allAssets = await assetDatabaseService.listAssets();
 
+            // Filter by authenticated user's assets only
+            const userAssets = allAssets.filter(
+              (asset) => asset.ownerId === user.id,
+            );
+
             // Apply projectId filter if provided
             if (query.projectId) {
-              return allAssets.filter(
+              return userAssets.filter(
                 (asset) => asset.metadata.projectId === query.projectId,
               );
             }
 
-            return allAssets;
+            return userAssets;
           },
           {
             query: t.Object({
@@ -48,9 +58,9 @@ export const createAssetRoutes = (rootDir: string) => {
             response: Models.AssetListResponse,
             detail: {
               tags: ["Assets"],
-              summary: "List all assets",
+              summary: "List user's assets",
               description:
-                "Returns a list of all generated 3D assets with optional filtering by project. (Auth optional - all users see all assets)",
+                "Returns a list of assets owned by the authenticated user with optional filtering by project. Returns empty array if not authenticated.",
             },
           },
         )
