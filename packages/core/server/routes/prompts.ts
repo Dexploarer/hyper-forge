@@ -453,8 +453,17 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
       // List all custom prompts for a user
       .get(
         "/custom/user/:userId",
-        async ({ params, set }) => {
+        async ({ params, set, user }) => {
           try {
+            logger.info(
+              {
+                context: "Prompts",
+                userId: params.userId,
+                authenticatedUser: user?.id,
+              },
+              "Loading user prompts",
+            );
+
             const userPrompts = await db
               .select()
               .from(prompts)
@@ -466,10 +475,22 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
               )
               .orderBy(desc(prompts.createdAt));
 
+            logger.info(
+              { context: "Prompts", count: userPrompts.length },
+              "User prompts loaded successfully",
+            );
+
             return userPrompts;
           } catch (error) {
             logger.error(
-              { context: "Prompts", err: error },
+              {
+                context: "Prompts",
+                err: error,
+                errorMessage:
+                  error instanceof Error ? error.message : String(error),
+                errorStack: error instanceof Error ? error.stack : undefined,
+                userId: params.userId,
+              },
               `Error loading user prompts for: ${params.userId}`,
             );
             set.status = 500;
@@ -484,6 +505,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
             tags: ["Prompts"],
             summary: "List user's custom prompts",
             description: "Get all custom prompts created by a specific user",
+            security: [{ BearerAuth: [] }],
           },
         },
       ),

@@ -65,19 +65,33 @@ export function usePromptLibrary() {
 
       try {
         setIsLoading(true);
-        const response = await (api.api.prompts.custom.user as any)[
-          user.id
-        ].get();
 
-        if (response.error) {
+        // Use raw fetch instead of Eden Treaty to avoid issues with Privy DID format
+        const token = localStorage.getItem("privy:token");
+        const response = await fetch(
+          `/api/prompts/custom/user/${encodeURIComponent(user.id)}`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : "",
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+          },
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
           console.error(
             "[PromptLibrary] Failed to load prompts:",
-            response.error,
+            response.status,
+            errorText,
           );
-          throw new Error("Failed to load prompts");
+          throw new Error(
+            `Failed to load prompts: ${response.status} ${errorText}`,
+          );
         }
 
-        const loadedPrompts = (response.data || []) as SavedPrompt[];
+        const loadedPrompts = (await response.json()) as SavedPrompt[];
 
         // Filter by type if specified
         const filtered = type

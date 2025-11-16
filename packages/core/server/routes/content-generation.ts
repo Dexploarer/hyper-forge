@@ -113,46 +113,62 @@ export const contentGenerationRoutes = new Elysia({
         .post(
           "/generate-npc",
           async ({ body, user }) => {
-            logger.info(
-              {
-                archetype: body.archetype,
-                userId: user?.id,
-                quality: body.quality,
-              },
-              "Generating NPC",
-            );
+            try {
+              logger.info(
+                {
+                  archetype: body.archetype,
+                  userId: user?.id,
+                  quality: body.quality,
+                  method: "POST",
+                  endpoint: "/api/content/generate-npc",
+                },
+                "Generating NPC",
+              );
 
-            const result = await contentGenService.generateNPC({
-              prompt: body.prompt,
-              archetype: body.archetype,
-              context: body.context,
-              quality: body.quality,
-              worldConfigId: body.worldConfigId,
-              useActiveWorldConfig: body.useActiveWorldConfig,
-            });
-
-            // Save to database
-            const npc = await contentDatabaseService.createNPC({
-              name: result.npc.name,
-              archetype: result.npc.archetype,
-              data: result.npc,
-              generationParams: {
+              const result = await contentGenService.generateNPC({
                 prompt: body.prompt,
                 archetype: body.archetype,
                 context: body.context,
                 quality: body.quality,
                 worldConfigId: body.worldConfigId,
-              },
-              tags: [], // Could extract from archetype or personality
-              createdBy: user?.id,
-              walletAddress: user?.walletAddress || undefined,
-            });
+                useActiveWorldConfig: body.useActiveWorldConfig,
+              });
 
-            logger.info(
-              { npcId: npc.id, npcName: result.npc.name },
-              "NPC generated successfully",
-            );
-            return result;
+              // Save to database
+              const npc = await contentDatabaseService.createNPC({
+                name: result.npc.name,
+                archetype: result.npc.archetype,
+                data: result.npc,
+                generationParams: {
+                  prompt: body.prompt,
+                  archetype: body.archetype,
+                  context: body.context,
+                  quality: body.quality,
+                  worldConfigId: body.worldConfigId,
+                },
+                tags: [], // Could extract from archetype or personality
+                createdBy: user?.id,
+                walletAddress: user?.walletAddress || undefined,
+              });
+
+              logger.info(
+                { npcId: npc.id, npcName: result.npc.name },
+                "NPC generated successfully",
+              );
+              return result;
+            } catch (error) {
+              logger.error(
+                {
+                  context: "NPCGeneration",
+                  error: error instanceof Error ? error.message : String(error),
+                  stack: error instanceof Error ? error.stack : undefined,
+                  archetype: body.archetype,
+                  userId: user?.id,
+                },
+                "Failed to generate NPC",
+              );
+              throw error; // Re-throw to be handled by error handler plugin
+            }
           },
           {
             body: Models.GenerateNPCRequest,
