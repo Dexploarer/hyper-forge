@@ -16,7 +16,7 @@ import type {
 } from "@/types/cdn";
 
 class CDNAdminService {
-  private baseUrl = "/api/cdn";
+  private baseUrl = "/api/admin/cdn";
 
   /**
    * Fetch all CDN files
