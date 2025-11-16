@@ -10,6 +10,7 @@ import { ProfileCompletionModal } from "../components/auth/ProfileCompletionModa
 import { OnboardingTour, hasCompletedOnboarding } from "../components/common";
 import type { User } from "@/services/api/UsersAPIClient";
 import { setAuthToken, clearAuthToken } from "@/utils/auth-token-store";
+import { apiFetch } from "@/utils/api";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -65,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Store token globally for API clients
       setAuthToken(accessToken);
 
-      const response = await fetch("/api/users/me", {
+      const response = await apiFetch("/api/users/me", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -130,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error("Not authenticated");
     }
 
-    const response = await fetch("/api/users/complete-profile", {
+    const response = await apiFetch("/api/users/complete-profile", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
