@@ -3,8 +3,8 @@
  * Table row component for individual CDN files
  */
 
-import React from "react";
-import { Download, Trash2, Eye } from "lucide-react";
+import React, { useState } from "react";
+import { Download, Trash2, Eye, Edit2, X, Check } from "lucide-react";
 import { Badge } from "@/components/common";
 import { cdnAdminService } from "@/services/api/CDNAdminService";
 import type { CDNFile } from "@/types/cdn";
@@ -15,6 +15,7 @@ interface CDNFileRowProps {
   onToggleSelect: (filePath: string) => void;
   onPreview: (file: CDNFile) => void;
   onDelete: () => void;
+  onRename?: () => void;
 }
 
 const formatBytes = (bytes: number): string => {
@@ -100,11 +101,46 @@ export const CDNFileRow: React.FC<CDNFileRowProps> = ({
   onToggleSelect,
   onPreview,
   onDelete,
+  onRename,
 }) => {
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newName, setNewName] = useState(file.name);
+  const [isRenameLoading, setIsRenameLoading] = useState(false);
+
   const handleDelete = () => {
     if (confirm(`Are you sure you want to delete ${file.name}?`)) {
       onDelete();
     }
+  };
+
+  const handleRename = async () => {
+    if (newName === file.name) {
+      setIsRenaming(false);
+      return;
+    }
+
+    if (!newName.trim()) {
+      alert("File name cannot be empty");
+      return;
+    }
+
+    try {
+      setIsRenameLoading(true);
+      await cdnAdminService.renameFile(file.path, newName);
+      setIsRenaming(false);
+      if (onRename) onRename();
+    } catch (error) {
+      alert(
+        `Failed to rename file: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    } finally {
+      setIsRenameLoading(false);
+    }
+  };
+
+  const handleCancelRename = () => {
+    setNewName(file.name);
+    setIsRenaming(false);
   };
 
   return (
@@ -125,7 +161,40 @@ export const CDNFileRow: React.FC<CDNFileRowProps> = ({
           <Badge variant={getFileTypeBadgeVariant(file.type)}>
             {file.type}
           </Badge>
-          <span className="font-medium text-text-primary">{file.name}</span>
+          {isRenaming ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRename();
+                  if (e.key === "Escape") handleCancelRename();
+                }}
+                disabled={isRenameLoading}
+                className="px-2 py-1 text-sm rounded border border-border-primary bg-bg-tertiary text-text-primary focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
+                autoFocus
+              />
+              <button
+                onClick={handleRename}
+                disabled={isRenameLoading}
+                className="p-1 rounded bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30 transition-colors disabled:opacity-50"
+                title="Save"
+              >
+                <Check size={14} />
+              </button>
+              <button
+                onClick={handleCancelRename}
+                disabled={isRenameLoading}
+                className="p-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-colors disabled:opacity-50"
+                title="Cancel"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <span className="font-medium text-text-primary">{file.name}</span>
+          )}
         </div>
       </td>
       <td className="px-4 py-4 text-sm text-text-secondary">{file.path}</td>
@@ -137,32 +206,40 @@ export const CDNFileRow: React.FC<CDNFileRowProps> = ({
       </td>
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="flex gap-2">
-          <button
-            onClick={() => cdnAdminService.downloadFile(file.path)}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary/20 text-primary hover:bg-primary/30 border border-primary/30 transition-colors flex items-center gap-1"
-            title="Download"
-          >
-            <Download size={12} />
-            Download
-          </button>
-          {canPreview(file.type) && (
-            <button
-              onClick={() => onPreview(file)}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/30 transition-colors flex items-center gap-1"
-              title="Preview"
-            >
-              <Eye size={12} />
-              Preview
-            </button>
+          {!isRenaming && (
+            <>
+              <button
+                onClick={() => cdnAdminService.downloadFile(file.path)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary/20 text-primary hover:bg-primary/30 border border-primary/30 transition-colors flex items-center gap-1"
+                title="Download"
+              >
+                <Download size={12} />
+              </button>
+              {canPreview(file.type) && (
+                <button
+                  onClick={() => onPreview(file)}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 border border-purple-500/30 transition-colors flex items-center gap-1"
+                  title="Preview"
+                >
+                  <Eye size={12} />
+                </button>
+              )}
+              <button
+                onClick={() => setIsRenaming(true)}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30 transition-colors flex items-center gap-1"
+                title="Rename"
+              >
+                <Edit2 size={12} />
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-colors flex items-center gap-1"
+                title="Delete"
+              >
+                <Trash2 size={12} />
+              </button>
+            </>
           )}
-          <button
-            onClick={handleDelete}
-            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 transition-colors flex items-center gap-1"
-            title="Delete"
-          >
-            <Trash2 size={12} />
-            Delete
-          </button>
         </div>
       </td>
     </tr>

@@ -1,6 +1,9 @@
 /**
  * CDN Admin Service
- * API client for CDN file management operations using Eden Treaty
+ * API client for CDN file management operations
+ *
+ * Note: Uses apiFetch instead of Eden Treaty due to nested /api/admin/cdn prefix
+ * Eden Treaty has issues with deeply nested route prefixes
  */
 
 import type {
@@ -14,43 +17,64 @@ import type {
   CDNBulkDeleteResponse,
   CDNDirectoryType,
 } from "@/types/cdn";
-import { api } from "@/lib/api-client";
+import { apiFetch } from "@/lib/api-client";
+import { getAuthToken } from "@/utils/auth-token-store";
 
 class CDNAdminService {
+  private baseUrl = "/api/admin/cdn";
+
+  /**
+   * Get auth headers for requests
+   */
+  private getAuthHeaders(): HeadersInit {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error("Authentication required. Please log in.");
+    }
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
   /**
    * Fetch all CDN files
    */
   async getFiles(): Promise<CDNFile[]> {
-    const { data, error } = await api.api.admin.cdn.files.get();
+    const response = await fetch(`${this.baseUrl}/files`, {
+      headers: this.getAuthHeaders(),
+      credentials: "include",
+    });
 
-    if (error) {
-      console.error("Failed to fetch CDN files:", error);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Failed to fetch CDN files:", errorText);
       throw new Error(
-        typeof error === "object" && error !== null && "value" in error
-          ? String((error as any).value)
-          : "Failed to fetch CDN files",
+        `Failed to fetch files: ${errorText || response.statusText}`,
       );
     }
 
-    return (data as CDNFileResponse).files;
+    const data: CDNFileResponse = await response.json();
+    return data.files;
   }
 
   /**
    * Fetch directory statistics
    */
   async getDirectories(): Promise<CDNDirectoriesResponse> {
-    const { data, error } = await api.api.admin.cdn.directories.get();
+    const response = await fetch(`${this.baseUrl}/directories`, {
+      headers: this.getAuthHeaders(),
+      credentials: "include",
+    });
 
-    if (error) {
-      console.error("Failed to fetch CDN directories:", error);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Failed to fetch CDN directories:", errorText);
       throw new Error(
-        typeof error === "object" && error !== null && "value" in error
-          ? String((error as any).value)
-          : "Failed to fetch CDN directories",
+        `Failed to fetch directories: ${errorText || response.statusText}`,
       );
     }
 
-    return data as CDNDirectoriesResponse;
+    return response.json();
   }
 
   /**
@@ -66,42 +90,42 @@ class CDNAdminService {
     });
     formData.append("directory", directory);
 
-    const { data, error } = await api.api.admin.cdn.upload.post(
-      formData as any,
-    );
+    const response = await fetch(`${this.baseUrl}/upload`, {
+      method: "POST",
+      headers: this.getAuthHeaders(),
+      credentials: "include",
+      body: formData,
+    });
 
-    if (error) {
-      console.error("CDN upload failed:", error);
-      throw new Error(
-        typeof error === "object" && error !== null && "value" in error
-          ? String((error as any).value)
-          : "CDN upload failed",
-      );
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("CDN upload failed:", errorText);
+      throw new Error(`Upload failed: ${errorText || response.statusText}`);
     }
 
-    return data as CDNUploadResponse;
+    return response.json();
   }
 
   /**
    * Delete a single file
    */
   async deleteFile(filePath: string): Promise<CDNDeleteResponse> {
-    const { data, error } = await api.api.admin.cdn
-      .delete({
-        path: filePath,
-      })
-      .delete();
+    const response = await fetch(
+      `${this.baseUrl}/delete/${encodeURIComponent(filePath)}`,
+      {
+        method: "DELETE",
+        headers: this.getAuthHeaders(),
+        credentials: "include",
+      },
+    );
 
-    if (error) {
-      console.error("CDN delete failed:", error);
-      throw new Error(
-        typeof error === "object" && error !== null && "value" in error
-          ? String((error as any).value)
-          : "CDN delete failed",
-      );
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("CDN delete failed:", errorText);
+      throw new Error(`Delete failed: ${errorText || response.statusText}`);
     }
 
-    return data as CDNDeleteResponse;
+    return response.json();
   }
 
   /**
@@ -111,21 +135,23 @@ class CDNAdminService {
     oldPath: string,
     newName: string,
   ): Promise<CDNRenameResponse> {
-    const { data, error } = await api.api.admin.cdn.rename.post({
-      oldPath,
-      newPath: newName,
-    } as any);
+    const response = await fetch(`${this.baseUrl}/rename`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...this.getAuthHeaders(),
+      },
+      credentials: "include",
+      body: JSON.stringify({ oldPath, newPath: newName }),
+    });
 
-    if (error) {
-      console.error("CDN rename failed:", error);
-      throw new Error(
-        typeof error === "object" && error !== null && "value" in error
-          ? String((error as any).value)
-          : "CDN rename failed",
-      );
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("CDN rename failed:", errorText);
+      throw new Error(`Rename failed: ${errorText || response.statusText}`);
     }
 
-    return data as CDNRenameResponse;
+    return response.json();
   }
 
   /**
@@ -137,22 +163,24 @@ class CDNAdminService {
 
   /**
    * Bulk download multiple files as ZIP
-   * Note: Returns raw Response for binary blob handling
    */
   async bulkDownload(filePaths: string[]): Promise<Blob> {
-    // For binary responses, we need to use raw fetch since Eden Treaty
-    // doesn't handle blobs well. Auth is handled by credentials: "include"
-    const response = await fetch("/api/admin/cdn/bulk-download", {
+    const response = await fetch(`${this.baseUrl}/bulk-download`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...this.getAuthHeaders(),
       },
       credentials: "include",
       body: JSON.stringify({ paths: filePaths }),
     });
 
     if (!response.ok) {
-      throw new Error(`Bulk download failed: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("CDN bulk download failed:", errorText);
+      throw new Error(
+        `Bulk download failed: ${errorText || response.statusText}`,
+      );
     }
 
     return response.blob();
@@ -162,20 +190,25 @@ class CDNAdminService {
    * Bulk delete multiple files
    */
   async bulkDelete(filePaths: string[]): Promise<CDNBulkDeleteResponse> {
-    const { data, error } = await api.api.admin.cdn["bulk-delete"].post({
-      paths: filePaths,
-    } as any);
+    const response = await fetch(`${this.baseUrl}/bulk-delete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...this.getAuthHeaders(),
+      },
+      credentials: "include",
+      body: JSON.stringify({ paths: filePaths }),
+    });
 
-    if (error) {
-      console.error("CDN bulk delete failed:", error);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("CDN bulk delete failed:", errorText);
       throw new Error(
-        typeof error === "object" && error !== null && "value" in error
-          ? String((error as any).value)
-          : "CDN bulk delete failed",
+        `Bulk delete failed: ${errorText || response.statusText}`,
       );
     }
 
-    return data as CDNBulkDeleteResponse;
+    return response.json();
   }
 
   /**

@@ -349,6 +349,7 @@ export const CDNManagementTab: React.FC = () => {
                     onToggleSelect={handleToggleSelect}
                     onPreview={setPreviewFile}
                     onDelete={() => operations.delete.mutate(file.path)}
+                    onRename={() => refetch()}
                   />
                 ))}
               </tbody>

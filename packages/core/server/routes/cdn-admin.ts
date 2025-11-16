@@ -171,17 +171,41 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
             "Admin listing CDN files",
           );
 
-          // Build query string if params provided
-          const queryParams = new URLSearchParams();
-          if (query.path) queryParams.set("path", query.path);
-          if (query.limit) queryParams.set("limit", query.limit);
+          try {
+            // Build query string if params provided
+            const queryParams = new URLSearchParams();
+            if (query.path) queryParams.set("path", query.path);
+            if (query.limit) queryParams.set("limit", query.limit);
 
-          const endpoint = `/api/files${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
-          const response = await proxyCDNRequest({ method: "GET", endpoint });
+            const endpoint = `/api/files${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
-          // Parse JSON from CDN response
-          const data = await response.json();
-          return data;
+            logger.info(
+              {
+                context: "CDN Admin",
+                cdnUrl: env.CDN_URL,
+                cdnApiKeySet: !!env.CDN_API_KEY,
+                endpoint,
+              },
+              "Proxying to CDN",
+            );
+
+            const response = await proxyCDNRequest({ method: "GET", endpoint });
+
+            // Parse JSON from CDN response
+            const data = await response.json();
+            return data;
+          } catch (error) {
+            logger.error(
+              {
+                context: "CDN Admin",
+                err: error,
+                cdnUrl: env.CDN_URL,
+                cdnApiKeySet: !!env.CDN_API_KEY,
+              },
+              "FAILED to list CDN files",
+            );
+            throw error;
+          }
         },
         {
           query: t.Object({
@@ -212,14 +236,37 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
             "Admin getting CDN directory stats",
           );
 
-          const response = await proxyCDNRequest({
-            method: "GET",
-            endpoint: "/api/directories",
-          });
+          try {
+            logger.info(
+              {
+                context: "CDN Admin",
+                cdnUrl: env.CDN_URL,
+                cdnApiKeySet: !!env.CDN_API_KEY,
+                endpoint: "/api/directories",
+              },
+              "Proxying to CDN for directories",
+            );
 
-          // Parse JSON from CDN response
-          const data = await response.json();
-          return data;
+            const response = await proxyCDNRequest({
+              method: "GET",
+              endpoint: "/api/directories",
+            });
+
+            // Parse JSON from CDN response
+            const data = await response.json();
+            return data;
+          } catch (error) {
+            logger.error(
+              {
+                context: "CDN Admin",
+                err: error,
+                cdnUrl: env.CDN_URL,
+                cdnApiKeySet: !!env.CDN_API_KEY,
+              },
+              "FAILED to get CDN directories",
+            );
+            throw error;
+          }
         },
         {
           detail: {
