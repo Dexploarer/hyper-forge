@@ -216,7 +216,11 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       });
 
       if (result.error) {
-        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate portrait");
+        throw new Error(
+          result.error.value?.message ||
+            result.error.value?.summary ||
+            "Failed to generate portrait",
+        );
       }
 
       // Set the generated portrait URL
@@ -266,11 +270,15 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       // Generate banner with only visual requirements - no game metadata
       const result = await api.api.content["generate-quest-banner"].post({
         questTitle: quest.title,
-        description: quest.description || "",
+        description: quest.description || `Epic quest: ${quest.title}`,
       });
 
       if (result.error) {
-        throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to generate banner");
+        throw new Error(
+          result.error.value?.message ||
+            result.error.value?.summary ||
+            "Failed to generate banner",
+        );
       }
 
       // Set the generated banner URL
@@ -312,7 +320,11 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         });
 
         if (result.error) {
-          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to save banner");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to save banner",
+          );
         }
 
         notify.success("Banner saved successfully!");
@@ -354,7 +366,11 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         });
 
         if (result.error) {
-          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to save portrait");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to save portrait",
+          );
         }
 
         notify.success("Portrait saved successfully!");
@@ -401,7 +417,11 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         });
 
         if (result.error) {
-          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to upload portrait");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to upload portrait",
+          );
         }
 
         notify.success("Portrait uploaded successfully!");
@@ -453,7 +473,11 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         });
 
         if (result.error) {
-          throw new Error(result.error.value?.message || result.error.value?.summary || "Failed to upload banner");
+          throw new Error(
+            result.error.value?.message ||
+              result.error.value?.summary ||
+              "Failed to upload banner",
+          );
         }
 
         notify.success("Banner uploaded successfully!");

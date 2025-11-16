@@ -33,7 +33,11 @@ import { useAssets } from "@/hooks";
 import { useCommandRegistration } from "@/hooks/useCommandRegistration";
 
 export const AssetsPage: React.FC = () => {
-  const { assets, loading, reloadAssets, forceReload } = useAssets();
+  const {
+    data: assets = [],
+    isLoading: loading,
+    refetch: reloadAssets,
+  } = useAssets();
   const { selectedAssetIds, clearSelection } = useAssetsStore();
   const [showBulkActionsTray, setShowBulkActionsTray] = useState(false);
 
@@ -117,7 +121,6 @@ export const AssetsPage: React.FC = () => {
   } = useAssetActions({
     viewerRef: viewerRef as React.RefObject<ThreeViewerRef>,
     reloadAssets,
-    forceReload,
     assets,
   });
 

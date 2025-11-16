@@ -31,7 +31,7 @@ import { EQUIPMENT_SLOTS } from "@/constants/equipment";
 import { useAssets } from "@/hooks";
 
 export const UnifiedEquipmentPage: React.FC = () => {
-  const { assets, loading } = useAssets();
+  const { data: assets = [], isLoading: loading } = useAssets();
   const armorViewerRef = useRef<ArmorFittingViewerRef>(null);
   const weaponViewerRef = useRef<EquipmentViewerRef>(null);
   const [showControlsDrawer, setShowControlsDrawer] = useState(true);
