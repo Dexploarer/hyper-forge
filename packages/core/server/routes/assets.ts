@@ -38,10 +38,10 @@ export const createAssetRoutes = (rootDir: string) => {
             // Get all assets from database (includes CDN URLs)
             const allAssets = await assetDatabaseService.listAssets();
 
-            // Filter by authenticated user's assets only
-            const userAssets = allAssets.filter(
-              (asset) => asset.ownerId === user.id,
-            );
+            // Admins see all assets, regular users see only their own
+            const userAssets = user.isAdmin
+              ? allAssets
+              : allAssets.filter((asset) => asset.ownerId === user.id);
 
             // Apply projectId filter if provided
             if (query.projectId) {
