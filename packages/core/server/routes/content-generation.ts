@@ -35,25 +35,21 @@ export const contentGenerationRoutes = new Elysia({
     });
     return { user: authResult.user };
   })
-  .guard(
-    {
-      beforeHandle: ({ request }) => {
-        const url = new URL(request.url);
-        logger.debug(
-          { method: request.method, path: url.pathname },
-          "Content generation request",
-        );
-      },
-    },
-    (app) =>
-      app
-        // GET /api/content/test - Simple test endpoint
-        .get("/test", () => {
-          return { message: "Content generation routes are working!" };
-        })
+  .onBeforeHandle(({ request }) => {
+    const url = new URL(request.url);
+    logger.debug(
+      { method: request.method, path: url.pathname },
+      "Content generation request",
+    );
+  })
 
-        // POST /api/content/generate-dialogue
-        .post(
+  // GET /api/content/test - Simple test endpoint
+  .get("/test", () => {
+    return { message: "Content generation routes are working!" };
+  })
+
+  // POST /api/content/generate-dialogue
+  .post(
           "/generate-dialogue",
           async ({ body, user }) => {
             logger.info(
