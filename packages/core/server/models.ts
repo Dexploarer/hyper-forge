@@ -79,7 +79,6 @@ export const AssetMetadata = t.Object({
   subtype: t.Optional(t.String()),
   tier: t.Optional(t.Union([t.String(), t.Number()])),
   category: t.Optional(t.String()),
-  modelUrl: t.Optional(t.String()),
   thumbnailUrl: t.Optional(t.String()),
   hasSpriteSheet: t.Optional(t.Boolean()),
   spriteCount: t.Optional(t.Number()),
