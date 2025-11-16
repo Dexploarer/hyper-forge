@@ -21,6 +21,7 @@ import type { AuthUser } from "../types/auth";
 /**
  * Proxy a request to the CDN API
  * Adds CDN_API_KEY header for authentication
+ * Validates response status and throws appropriate errors
  */
 async function proxyCDNRequest({
   method,
@@ -80,9 +81,66 @@ async function proxyCDNRequest({
 
     const response = await fetch(url, options);
 
-    // Return raw response (let client handle parsing)
+    // Validate response status before returning
+    if (!response.ok) {
+      // Try to extract error message from CDN response
+      let errorMessage = `CDN request failed with status ${response.status}`;
+      const contentType = response.headers.get("content-type");
+
+      try {
+        // If response is JSON, try to parse error details
+        if (contentType?.includes("application/json")) {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } else {
+          // For non-JSON responses, get text (might be HTML error page)
+          const errorText = await response.text();
+          // Include first 200 chars of error text for debugging
+          if (errorText) {
+            errorMessage = `${errorMessage}: ${errorText.substring(0, 200)}`;
+          }
+        }
+      } catch (parseError) {
+        // If we can't parse the error, use status code
+        logger.warn(
+          { context: "CDN Admin Proxy", parseError },
+          "Failed to parse CDN error response",
+        );
+      }
+
+      logger.error(
+        {
+          context: "CDN Admin Proxy",
+          method,
+          endpoint,
+          status: response.status,
+          statusText: response.statusText,
+        },
+        errorMessage,
+      );
+
+      // Throw appropriate error based on status code
+      if (response.status >= 500) {
+        throw new ServiceUnavailableError("CDN", errorMessage);
+      } else if (response.status === 404) {
+        throw new BadRequestError(`CDN resource not found: ${endpoint}`);
+      } else if (response.status >= 400) {
+        throw new BadRequestError(errorMessage);
+      }
+    }
+
+    // Return successful response
     return response;
   } catch (error) {
+    // Re-throw our custom errors
+    if (
+      error instanceof ServiceUnavailableError ||
+      error instanceof BadRequestError
+    ) {
+      throw error;
+    }
+
+    // Handle network errors or other fetch failures
     logger.error(
       { context: "CDN Admin Proxy", err: error, endpoint },
       "CDN proxy request failed",
