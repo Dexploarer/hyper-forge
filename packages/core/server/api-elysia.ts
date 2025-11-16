@@ -10,7 +10,6 @@
  * Performance: 22x faster than Express (2.4M req/s vs 113K req/s)
  */
 
-import "dotenv/config";
 import { Elysia } from "elysia";
 
 console.log("[Startup] api-elysia.ts loaded, initializing server...");

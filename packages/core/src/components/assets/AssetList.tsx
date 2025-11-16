@@ -838,17 +838,6 @@ const AssetList: React.FC<AssetListProps> = ({ assets, onAssetDelete }) => {
           </div>
         </div>
 
-        {/* Quick Filters */}
-        <QuickFiltersBar
-          selectedTypes={selectedTypes}
-          selectedTiers={selectedTiers}
-          selectedStatuses={selectedStatuses}
-          onTypesChange={setSelectedTypes}
-          onTiersChange={setSelectedTiers}
-          onStatusesChange={setSelectedStatuses}
-          onClearAll={handleClearFilters}
-        />
-
         {/* Main Content Area */}
         <div
           ref={containerRef}
