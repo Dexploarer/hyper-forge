@@ -32,6 +32,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Badge, LoadingSpinner } from "../components/common";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigation } from "../hooks/useNavigation";
+import { CDNManagementTab } from "../components/admin/CDNManagementTab";
 
 interface User {
   id: string;
@@ -63,7 +64,7 @@ interface ActivityLogEntry {
   } | null;
 }
 
-type AdminTab = "overview" | "profiles" | "activity";
+type AdminTab = "overview" | "profiles" | "activity" | "cdn";
 type SortField = "name" | "role" | "status" | "joined" | "lastLogin";
 type SortDirection = "asc" | "desc";
 
@@ -623,6 +624,16 @@ export const AdminDashboardPage: React.FC = () => {
             >
               Activity Log
             </button>
+            <button
+              onClick={() => setActiveTab("cdn")}
+              className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                activeTab === "cdn"
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              CDN Management
+            </button>
           </div>
         </div>
 
@@ -1051,6 +1062,9 @@ export const AdminDashboardPage: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* CDN Management Tab */}
+        {activeTab === "cdn" && <CDNManagementTab />}
 
         {/* Activity Log Tab */}
         {activeTab === "activity" && (

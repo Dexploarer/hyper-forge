@@ -38,6 +38,7 @@ import { adminRoutes } from "../routes/admin";
 import { playtesterSwarmRoutes } from "../routes/playtester-swarm";
 import { debugStorageRoute } from "../routes/debug-storage";
 import { createCDNRoutes } from "../routes/cdn";
+import { cdnAdminRoutes } from "../routes/cdn-admin";
 import { errorMonitoringRoutes } from "../routes/error-monitoring";
 
 /**
@@ -106,6 +107,7 @@ export function createApiPlugin(config: ApiPluginConfig) {
       .use(playtesterSwarmRoutes)
       .use(debugStorageRoute)
       .use(createCDNRoutes(cdnUrl))
+      .use(cdnAdminRoutes)
       .use(errorMonitoringRoutes)
   );
 }
