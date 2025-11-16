@@ -186,7 +186,7 @@ export async function requireAuth({
  * Injects: { user?: AuthUser }
  */
 export const authPlugin = new Elysia({ name: "auth" }).derive(
-  { as: "global" },
+  { as: "scoped" },
   async (context) => {
     const result = await optionalAuth(context);
     return { user: result.user } as { user?: AuthUser };
@@ -203,7 +203,7 @@ export const authPlugin = new Elysia({ name: "auth" }).derive(
  */
 export const requireAuthGuard = new Elysia({
   name: "require-auth-guard",
-}).derive({ as: "global" }, async (context) => {
+}).derive({ as: "scoped" }, async (context) => {
   const result = await requireAuth(context);
 
   // If requireAuth returned a Response, it means authentication failed
@@ -224,7 +224,7 @@ export const requireAuthGuard = new Elysia({
  */
 export const requireAdminGuard = new Elysia({
   name: "require-admin-guard",
-}).derive({ as: "global" }, async (context) => {
+}).derive({ as: "scoped" }, async (context) => {
   const result = await requireAuth(context);
 
   // Check if authentication failed
