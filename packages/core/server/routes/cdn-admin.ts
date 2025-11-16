@@ -121,7 +121,9 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
           const endpoint = `/api/files${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
           const response = await proxyCDNRequest({ method: "GET", endpoint });
 
-          return response;
+          // Parse JSON from CDN response
+          const data = await response.json();
+          return data;
         },
         {
           query: t.Object({
@@ -157,7 +159,9 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
             endpoint: "/api/directories",
           });
 
-          return response;
+          // Parse JSON from CDN response
+          const data = await response.json();
+          return data;
         },
         {
           detail: {
@@ -196,7 +200,9 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
             // Don't set Content-Type - let fetch set it with boundary
           });
 
-          return response;
+          // Parse JSON from CDN response
+          const data = await response.json();
+          return data;
         },
         {
           detail: {
@@ -230,7 +236,9 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
             endpoint: `/api/delete/${encodeURIComponent(path)}`,
           });
 
-          return response;
+          // Parse JSON from CDN response
+          const data = await response.json();
+          return data;
         },
         {
           params: t.Object({
@@ -267,7 +275,9 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
             contentType: "application/json",
           });
 
-          return response;
+          // Parse JSON from CDN response
+          const data = await response.json();
+          return data;
         },
         {
           body: t.Object({
@@ -311,6 +321,7 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
             contentType: "application/json",
           });
 
+          // Return raw response for binary ZIP file
           return response;
         },
         {
@@ -358,7 +369,9 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
             contentType: "application/json",
           });
 
-          return response;
+          // Parse JSON from CDN response
+          const data = await response.json();
+          return data;
         },
         {
           body: t.Object({
@@ -393,7 +406,9 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
             endpoint: "/api/validate-references",
           });
 
-          return response;
+          // Parse JSON from CDN response
+          const data = await response.json();
+          return data;
         },
         {
           detail: {
