@@ -78,7 +78,8 @@ export const npcs = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     nameIdx: index("idx_npcs_name").on(table.name),
@@ -164,7 +165,8 @@ export const quests = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     titleIdx: index("idx_quests_title").on(table.title),
@@ -247,7 +249,8 @@ export const dialogues = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     npcNameIdx: index("idx_dialogues_npc_name").on(table.npcName),
@@ -327,7 +330,8 @@ export const lores = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     titleIdx: index("idx_lores_title").on(table.title),
@@ -406,7 +410,8 @@ export const worlds = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     nameIdx: index("idx_worlds_name").on(table.name),
@@ -486,7 +491,8 @@ export const locations = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     nameIdx: index("idx_locations_name").on(table.name),

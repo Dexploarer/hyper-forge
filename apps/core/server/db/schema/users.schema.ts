@@ -13,8 +13,15 @@ import {
   jsonb,
   boolean,
   index,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+
+/**
+ * User role enum
+ * Provides type-safe role values with database-level validation
+ */
+export const userRoleEnum = pgEnum("user_role", ["admin", "member"]);
 
 /**
  * Users table
@@ -27,8 +34,8 @@ export const users = pgTable(
 
     // Privy authentication (optional)
     privyUserId: varchar("privy_user_id", { length: 255 }).notNull().unique(),
-    email: varchar("email", { length: 255 }),
-    walletAddress: varchar("wallet_address", { length: 255 }),
+    email: varchar("email", { length: 255 }).unique(),
+    walletAddress: varchar("wallet_address", { length: 255 }).unique(),
 
     // Profile
     displayName: varchar("display_name", { length: 255 }),
@@ -39,7 +46,7 @@ export const users = pgTable(
     profileCompleted: timestamp("profile_completed", { withTimezone: true }),
 
     // Role (always admin if they have dashboard access)
-    role: varchar("role", { length: 50 }).notNull().default("member"),
+    role: userRoleEnum("role").notNull().default("member"),
 
     // User preferences
     settings: jsonb("settings").notNull().default({}),

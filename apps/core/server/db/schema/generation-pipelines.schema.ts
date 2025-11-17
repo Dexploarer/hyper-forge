@@ -89,7 +89,8 @@ export const generationPipelines = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
 
     // Auto-cleanup tracking
     expiresAt: timestamp("expires_at", { withTimezone: true }),
@@ -146,7 +147,8 @@ export const pipelineStages = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     pipelineIdx: index("idx_stages_pipeline").on(table.pipelineId),

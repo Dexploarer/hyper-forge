@@ -7,14 +7,26 @@
 import crypto from "crypto";
 import { db } from "../db/db";
 import { apiKeys, users } from "../db/schema";
-import { eq, and, isNull, or, gt, sql, like, desc, count } from "drizzle-orm";
+import { logger } from "../utils/logger";
+import {
+  eq,
+  and,
+  isNull,
+  or,
+  gt,
+  sql,
+  like,
+  desc,
+  count,
+  inArray,
+} from "drizzle-orm";
 import type { ApiKey } from "../db/schema";
 
 export class ApiKeyService {
   /**
    * Generate a new API key for a user
    * Format: af_live_<32 hex chars> or af_test_<32 hex chars>
-   * 
+   *
    * @param userId - UUID of the user
    * @param options - Configuration options
    * @returns The generated key (shown only once!) and key ID
@@ -34,10 +46,7 @@ export class ApiKeyService {
     const key = `af_${env}_${randomBytes}`;
 
     // Hash key for storage (SHA-256)
-    const keyHash = crypto
-      .createHash("sha256")
-      .update(key)
-      .digest("hex");
+    const keyHash = crypto.createHash("sha256").update(key).digest("hex");
 
     // Store prefix for display (first 16 chars)
     const keyPrefix = key.substring(0, 16);
@@ -66,7 +75,7 @@ export class ApiKeyService {
    * Validate an API key
    * Checks hash, expiration, and revocation status
    * Updates lastUsedAt timestamp
-   * 
+   *
    * @param keyString - The API key to validate
    * @returns User ID if valid, null if invalid
    */
@@ -74,10 +83,7 @@ export class ApiKeyService {
     keyString: string,
   ): Promise<{ userId: string; permissions: string[] } | null> {
     // Hash the provided key
-    const keyHash = crypto
-      .createHash("sha256")
-      .update(keyString)
-      .digest("hex");
+    const keyHash = crypto.createHash("sha256").update(keyString).digest("hex");
 
     // Find matching key
     const [apiKey] = await db
@@ -104,7 +110,10 @@ export class ApiKeyService {
       .set({ lastUsedAt: new Date() })
       .where(eq(apiKeys.id, apiKey.id))
       .catch((err) => {
-        console.error("Failed to update API key lastUsedAt:", err);
+        logger.error(
+          { err, keyId: apiKey.id, userId: apiKey.userId },
+          "Failed to update API key lastUsedAt",
+        );
       });
 
     return {
@@ -116,7 +125,7 @@ export class ApiKeyService {
   /**
    * List all API keys for a user
    * Does NOT return actual keys or hashes
-   * 
+   *
    * @param userId - UUID of the user
    * @returns Array of API key metadata
    */
@@ -164,7 +173,7 @@ export class ApiKeyService {
 
   /**
    * Revoke an API key (soft delete)
-   * 
+   *
    * @param userId - UUID of the user (for authorization)
    * @param keyId - UUID of the key to revoke
    * @throws Error if key not found or not owned by user
@@ -183,7 +192,7 @@ export class ApiKeyService {
 
   /**
    * Delete an API key permanently
-   * 
+   *
    * @param userId - UUID of the user (for authorization)
    * @param keyId - UUID of the key to delete
    * @throws Error if key not found or not owned by user
@@ -201,7 +210,7 @@ export class ApiKeyService {
 
   /**
    * Get detailed information about a specific API key
-   * 
+   *
    * @param userId - UUID of the user (for authorization)
    * @param keyId - UUID of the key
    * @returns Key metadata or null if not found
@@ -251,7 +260,7 @@ export class ApiKeyService {
 
   /**
    * Get all API keys across all users (admin only)
-   * 
+   *
    * @param filters - Optional filters
    * @returns Paginated list of all API keys with user info
    */
@@ -307,6 +316,17 @@ export class ApiKeyService {
     }
 
     // Build query with user join
+    // Combine all WHERE conditions into single array to avoid overwriting
+    const allConditions = [...conditions];
+
+    // Add search filter (searches user name and email)
+    if (filters?.search) {
+      const searchTerm = `%${filters.search}%`;
+      allConditions.push(
+        or(like(users.displayName, searchTerm), like(users.email, searchTerm)),
+      );
+    }
+
     let query = db
       .select({
         id: apiKeys.id,
@@ -326,20 +346,9 @@ export class ApiKeyService {
       .from(apiKeys)
       .leftJoin(users, eq(apiKeys.userId, users.id));
 
-    // Apply conditions
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions)) as any;
-    }
-
-    // Add search filter (searches user name and email)
-    if (filters?.search) {
-      const searchTerm = `%${filters.search}%`;
-      query = query.where(
-        or(
-          like(users.displayName, searchTerm),
-          like(users.email, searchTerm),
-        ),
-      ) as any;
+    // Apply all conditions in single where() call
+    if (allConditions.length > 0) {
+      query = query.where(and(...allConditions)) as any;
     }
 
     // Get total count
@@ -368,7 +377,7 @@ export class ApiKeyService {
 
   /**
    * Get system-wide API key statistics (admin only)
-   * 
+   *
    * @returns System-wide statistics
    */
   async getSystemStats(): Promise<{
@@ -399,13 +408,11 @@ export class ApiKeyService {
 
     const totalKeys = allKeys.length;
     const activeKeys = allKeys.filter(
-      (k) =>
-        !k.revokedAt && (!k.expiresAt || k.expiresAt > now),
+      (k) => !k.revokedAt && (!k.expiresAt || k.expiresAt > now),
     ).length;
     const revokedKeys = allKeys.filter((k) => k.revokedAt).length;
     const expiredKeys = allKeys.filter(
-      (k) =>
-        !k.revokedAt && k.expiresAt && k.expiresAt <= now,
+      (k) => !k.revokedAt && k.expiresAt && k.expiresAt <= now,
     ).length;
     const keysUsedLast24h = allKeys.filter(
       (k) => k.lastUsedAt && k.lastUsedAt >= yesterday,
@@ -426,9 +433,7 @@ export class ApiKeyService {
         displayName: users.displayName,
       })
       .from(users)
-      .where(
-        sql`${users.id} IN (${sql.join(userIds.map((id) => sql`${id}`), sql`, `)})`,
-      );
+      .where(inArray(users.id, userIds));
 
     const keysByUser = userDetails.map((user) => ({
       userId: user.id,
@@ -448,7 +453,7 @@ export class ApiKeyService {
 
   /**
    * Admin revoke any API key (bypasses user ownership check)
-   * 
+   *
    * @param keyId - UUID of the key to revoke
    * @returns Revoked key details
    * @throws Error if key not found
@@ -479,7 +484,7 @@ export class ApiKeyService {
 
   /**
    * Admin delete any API key permanently (bypasses user ownership check)
-   * 
+   *
    * @param keyId - UUID of the key to delete
    * @throws Error if key not found
    */
@@ -496,7 +501,7 @@ export class ApiKeyService {
 
   /**
    * Admin get API key details (bypasses user ownership check)
-   * 
+   *
    * @param keyId - UUID of the key
    * @returns Key details with user info or null if not found
    */
@@ -550,7 +555,7 @@ export class ApiKeyService {
 
   /**
    * Admin generate API key for any user
-   * 
+   *
    * @param targetUserId - UUID of the user to generate key for
    * @param options - Configuration options
    * @returns The generated key (shown only once!) and key ID

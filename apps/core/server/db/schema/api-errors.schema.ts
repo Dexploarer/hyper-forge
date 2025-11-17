@@ -148,7 +148,8 @@ export const errorAggregations = pgTable(
     // Auto-updated
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     hourBucketIdx: index("idx_error_agg_hour_bucket").on(

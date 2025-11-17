@@ -105,7 +105,7 @@ export const ContentLibraryPage: React.FC = () => {
   }
 
   return (
-    <div className="h-full overflow-y-auto p-4">
+    <div className="h-full overflow-y-auto p-4 bg-bg-primary">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header with Search, Filters, and View Toggle */}
         <div className="bg-bg-secondary rounded-xl border border-border-primary p-4">

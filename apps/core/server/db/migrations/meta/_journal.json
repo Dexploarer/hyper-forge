@@ -204,6 +204,13 @@
       "when": 1763369255812,
       "tag": "0028_smart_omega_red",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1763382303811,
+      "tag": "0029_material_daimon_hellstrom",
+      "breakpoints": true
     }
   ]
 }

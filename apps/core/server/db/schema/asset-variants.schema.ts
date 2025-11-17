@@ -75,7 +75,8 @@ export const assetVariants = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (table) => ({
@@ -141,7 +142,8 @@ export const variantStatistics = pgTable(
     // Auto-updated
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     baseAssetIdx: index("idx_variant_stats_base_asset").on(table.baseAssetId),

@@ -107,7 +107,8 @@ export const assets = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
     publishedAt: timestamp("published_at", { withTimezone: true }),
   },
   (table) => ({
@@ -134,6 +135,11 @@ export const assets = pgTable(
     projectStatusIdx: index("idx_assets_project_status").on(
       table.projectId,
       table.status,
+    ),
+    // Parent relationship indexes for variants and base models
+    parentAssetIdx: index("idx_assets_parent").on(table.parentAssetId),
+    parentBaseModelIdx: index("idx_assets_parent_base").on(
+      table.parentBaseModel,
     ),
   }),
 );

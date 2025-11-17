@@ -46,7 +46,7 @@ const privy = new PrivyClient(
 /**
  * Optional auth helper - attaches user if valid token present
  * Does not error if no token - use requireAuth for protected routes
- * 
+ *
  * NON-BREAKING: Supports both Privy JWT and API keys
  * - API keys start with "af_" (af_live_* or af_test_*)
  * - Privy JWT tokens are everything else
@@ -77,7 +77,10 @@ export async function optionalAuth({
 
       if (!result) {
         // Invalid API key - continue without user
-        logger.warn({}, "[Auth Plugin] Invalid API key provided");
+        logger.warn(
+          { keyPrefix: token.substring(0, 16) },
+          "[Auth Plugin] Invalid API key provided",
+        );
         return {};
       }
 
@@ -86,7 +89,7 @@ export async function optionalAuth({
 
       if (!user) {
         logger.error(
-          { userId: result.userId },
+          { userId: result.userId, keyPrefix: token.substring(0, 16) },
           "[Auth Plugin] API key references non-existent user",
         );
         return {};
@@ -127,13 +130,14 @@ export async function optionalAuth({
         }
         const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
         privyUserId = payload.sub;
-        console.log(
-          `[Auth Plugin] TEST MODE - Decoded token for userId: ${privyUserId}`,
+        logger.info(
+          { privyUserId, context: "auth" },
+          "TEST MODE - Decoded token for userId",
         );
       } catch (error) {
-        console.error(
-          "[Auth Plugin] TEST MODE - Failed to decode token:",
-          error,
+        logger.error(
+          { err: error, context: "auth" },
+          "TEST MODE - Failed to decode token",
         );
         return {};
       }
@@ -141,8 +145,9 @@ export async function optionalAuth({
       // Production: Verify Privy JWT with cryptographic signature
       const verifiedClaims = await privy.verifyAuthToken(token);
       privyUserId = verifiedClaims.userId;
-      console.log(
-        `[Auth Plugin] Verifying token for Privy userId: ${privyUserId}`,
+      logger.info(
+        { privyUserId, context: "auth" },
+        "Verifying token for Privy userId",
       );
     }
 
@@ -150,8 +155,9 @@ export async function optionalAuth({
     let user = await userService.findByPrivyUserId(privyUserId);
 
     if (!user) {
-      console.log(
-        `[Auth Plugin] User not found for Privy userId ${privyUserId}, creating new user...`,
+      logger.info(
+        { privyUserId, context: "auth" },
+        "User not found for Privy userId, creating new user",
       );
       // Auto-create user on first request with valid Privy token
       try {
@@ -159,19 +165,21 @@ export async function optionalAuth({
           privyUserId,
           role: "member", // Default role - admins must be promoted manually
         });
-        console.log(
-          `[Auth Plugin] Created new user: ${user.id} for Privy userId: ${privyUserId}`,
+        logger.info(
+          { userId: user.id, privyUserId, context: "auth" },
+          "Created new user for Privy userId",
         );
       } catch (error) {
-        console.error(
-          `[Auth Plugin] Failed to create user for Privy userId ${privyUserId}:`,
-          error,
+        logger.error(
+          { err: error, privyUserId, context: "auth" },
+          "Failed to create user for Privy userId",
         );
         throw error;
       }
     } else {
-      console.log(
-        `[Auth Plugin] Found existing user: ${user.id} for Privy userId: ${privyUserId}`,
+      logger.info(
+        { userId: user.id, privyUserId, context: "auth" },
+        "Found existing user for Privy userId",
       );
     }
 

@@ -59,7 +59,8 @@ export const achievements = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     codeIdx: index("idx_achievements_code").on(table.code),

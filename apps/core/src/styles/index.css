@@ -181,25 +181,7 @@
     color: white;
   }
   
-  /* Scrollbar styling */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: var(--bg-tertiary);
-    border-radius: 4px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: var(--border-hover);
-    border-radius: 4px;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-tertiary);
-  }
+  /* Scrollbar styling - Removed duplicate, using global definition below */
   
   /* Animations */
   @keyframes spin {
@@ -1153,7 +1135,7 @@
   /* Global Scrollbar Styles - Single Definition */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--border-hover) transparent;
+    scrollbar-color: var(--border-hover) var(--bg-tertiary);
   }
 
   *::-webkit-scrollbar {
@@ -1162,7 +1144,8 @@
   }
 
   *::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
   }
 
   *::-webkit-scrollbar-thumb {

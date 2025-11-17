@@ -88,7 +88,8 @@ export const worldConfigurations = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
   },
   (table) => ({
     nameIdx: index("idx_world_configs_name").on(table.name),
