@@ -202,51 +202,87 @@ export const mediaRoutes = new Elysia()
   .post(
     "/media/save-portrait",
     async ({ body, user }) => {
-      const mediaType = body.type || "portrait";
-      const imageData = Buffer.from(body.imageData, "base64");
-      const fileName = `${mediaType}_${Date.now()}.png`;
+      try {
+        // Validate base64 image data
+        if (!body.imageData || body.imageData.length < 100) {
+          throw new InternalServerError("Invalid or missing image data");
+        }
 
-      const result = await mediaStorageService.saveMedia({
-        type: mediaType as
-          | "portrait"
-          | "banner"
-          | "voice"
-          | "music"
-          | "sound_effect",
-        entityType: body.entityType as
-          | "npc"
-          | "quest"
-          | "lore"
-          | "location"
-          | "world"
-          | "dialogue",
-        entityId: body.entityId,
-        fileName,
-        data: imageData,
-        metadata: {
-          prompt: body.prompt,
-          model: body.model || "dall-e-3",
-          mimeType: "image/png",
-        },
-        createdBy: user.id,
-      });
+        const mediaType = body.type || "portrait";
+        const imageData = Buffer.from(body.imageData, "base64");
+        const fileName = `${mediaType}_${Date.now()}.png`;
 
-      await relationshipService.createRelationship({
-        sourceType: body.entityType as any,
-        sourceId: body.entityId,
-        targetType: body.entityType as any,
-        targetId: result.id,
-        relationshipType: "related_to" as any,
-        strength: "strong",
-        metadata: { mediaType: mediaType },
-        createdBy: user.id,
-      });
+        // Save to CDN with error handling
+        const result = await mediaStorageService.saveMedia({
+          type: mediaType as
+            | "portrait"
+            | "banner"
+            | "voice"
+            | "music"
+            | "sound_effect",
+          entityType: body.entityType as
+            | "npc"
+            | "quest"
+            | "lore"
+            | "location"
+            | "world"
+            | "dialogue",
+          entityId: body.entityId,
+          fileName,
+          data: imageData,
+          metadata: {
+            prompt: body.prompt,
+            model: body.model || "dall-e-3",
+            mimeType: "image/png",
+          },
+          createdBy: user.id,
+        });
 
-      return {
-        success: true,
-        mediaId: result.id,
-        fileUrl: result.cdnUrl,
-      };
+        // Create relationship with error handling
+        await relationshipService.createRelationship({
+          sourceType: body.entityType as any,
+          sourceId: body.entityId,
+          targetType: body.entityType as any,
+          targetId: result.id,
+          relationshipType: "related_to" as any,
+          strength: "strong",
+          metadata: { mediaType: mediaType },
+          createdBy: user.id,
+        });
+
+        return {
+          success: true,
+          mediaId: result.id,
+          fileUrl: result.cdnUrl, // Match frontend expectation
+        };
+      } catch (error) {
+        logger.error(
+          {
+            err: error,
+            entityType: body.entityType,
+            entityId: body.entityId,
+          },
+          "Failed to save portrait",
+        );
+
+        // Provide specific error messages
+        if (error instanceof Error) {
+          if (error.message.includes("CDN")) {
+            throw new InternalServerError(
+              "Failed to upload image to CDN. Please try again.",
+            );
+          }
+          if (error.message.includes("database")) {
+            throw new InternalServerError(
+              "Failed to save media record. Please try again.",
+            );
+          }
+        }
+
+        throw new InternalServerError(
+          "Failed to save portrait. Please try again.",
+        );
+      }
     },
     {
       body: t.Object({
@@ -278,47 +314,83 @@ export const mediaRoutes = new Elysia()
   .post(
     "/media/save-voice",
     async ({ body, user }) => {
-      const audioData = Buffer.from(body.audioData, "base64");
-      const fileName = `voice_${Date.now()}.mp3`;
+      try {
+        // Validate base64 audio data
+        if (!body.audioData || body.audioData.length < 100) {
+          throw new InternalServerError("Invalid or missing audio data");
+        }
 
-      const result = await mediaStorageService.saveMedia({
-        type: "voice",
-        entityType: body.entityType as
-          | "npc"
-          | "quest"
-          | "lore"
-          | "location"
-          | "world"
-          | "dialogue",
-        entityId: body.entityId,
-        fileName,
-        data: audioData,
-        metadata: {
-          voiceId: body.voiceId,
-          voiceSettings: body.voiceSettings,
-          text: body.text,
-          duration: body.duration,
-          mimeType: "audio/mpeg",
-        },
-        createdBy: user.id,
-      });
+        const audioData = Buffer.from(body.audioData, "base64");
+        const fileName = `voice_${Date.now()}.mp3`;
 
-      await relationshipService.createRelationship({
-        sourceType: "npc",
-        sourceId: body.entityId,
-        targetType: "npc" as any,
-        targetId: result.id,
-        relationshipType: "related_to" as any,
-        strength: "strong",
-        metadata: { mediaType: "voice" },
-        createdBy: user.id,
-      });
+        // Save to CDN with error handling
+        const result = await mediaStorageService.saveMedia({
+          type: "voice",
+          entityType: body.entityType as
+            | "npc"
+            | "quest"
+            | "lore"
+            | "location"
+            | "world"
+            | "dialogue",
+          entityId: body.entityId,
+          fileName,
+          data: audioData,
+          metadata: {
+            voiceId: body.voiceId,
+            voiceSettings: body.voiceSettings,
+            text: body.text,
+            duration: body.duration,
+            mimeType: "audio/mpeg",
+          },
+          createdBy: user.id,
+        });
 
-      return {
-        success: true,
-        mediaId: result.id,
-        fileUrl: result.cdnUrl,
-      };
+        // Create relationship with error handling
+        await relationshipService.createRelationship({
+          sourceType: "npc",
+          sourceId: body.entityId,
+          targetType: "npc" as any,
+          targetId: result.id,
+          relationshipType: "related_to" as any,
+          strength: "strong",
+          metadata: { mediaType: "voice" },
+          createdBy: user.id,
+        });
+
+        return {
+          success: true,
+          mediaId: result.id,
+          fileUrl: result.cdnUrl, // Match frontend expectation
+        };
+      } catch (error) {
+        logger.error(
+          {
+            err: error,
+            entityType: body.entityType,
+            entityId: body.entityId,
+          },
+          "Failed to save voice",
+        );
+
+        // Provide specific error messages
+        if (error instanceof Error) {
+          if (error.message.includes("CDN")) {
+            throw new InternalServerError(
+              "Failed to upload audio to CDN. Please try again.",
+            );
+          }
+          if (error.message.includes("database")) {
+            throw new InternalServerError(
+              "Failed to save media record. Please try again.",
+            );
+          }
+        }
+
+        throw new InternalServerError(
+          "Failed to save voice audio. Please try again.",
+        );
+      }
     },
     {
       body: t.Object({
@@ -351,11 +423,30 @@ export const mediaRoutes = new Elysia()
   .get(
     "/media/:entityType/:entityId",
     async ({ params }) => {
-      const media = await mediaStorageService.getMediaForEntity(
-        params.entityType,
-        params.entityId,
-      );
-      return { success: true, media };
+      try {
+        const media = await mediaStorageService.getMediaForEntity(
+          params.entityType,
+          params.entityId,
+        );
+
+        // Transform cdnUrl to fileUrl for frontend compatibility
+        const transformedMedia = media.map((asset) => ({
+          ...asset,
+          fileUrl: asset.cdnUrl, // Add fileUrl field
+        }));
+
+        return { success: true, media: transformedMedia };
+      } catch (error) {
+        logger.error(
+          {
+            err: error,
+            entityType: params.entityType,
+            entityId: params.entityId,
+          },
+          "Failed to fetch media for entity",
+        );
+        throw new InternalServerError("Failed to retrieve media assets");
+      }
     },
     {
       params: t.Object({
