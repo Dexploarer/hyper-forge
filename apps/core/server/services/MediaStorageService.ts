@@ -8,6 +8,25 @@ import { db } from "../db";
 import { logger } from "../utils/logger";
 import { mediaAssets, type NewMediaAsset } from "../db/schema";
 import { eq, and } from "drizzle-orm";
+import { fileUploadsCounter, getFileExtension } from "../metrics/business";
+
+// File size limits (in bytes)
+const FILE_SIZE_LIMITS = {
+  portrait: 10 * 1024 * 1024, // 10MB for images
+  banner: 10 * 1024 * 1024, // 10MB for images
+  voice: 50 * 1024 * 1024, // 50MB for audio
+  music: 50 * 1024 * 1024, // 50MB for audio
+  sound_effect: 20 * 1024 * 1024, // 20MB for audio
+};
+
+// Allowed file types
+const ALLOWED_FILE_TYPES = {
+  portrait: [".png", ".jpg", ".jpeg", ".webp", ".gif"],
+  banner: [".png", ".jpg", ".jpeg", ".webp", ".gif"],
+  voice: [".mp3", ".wav", ".ogg", ".m4a"],
+  music: [".mp3", ".wav", ".ogg", ".m4a"],
+  sound_effect: [".mp3", ".wav", ".ogg", ".m4a"],
+};
 
 export interface SaveMediaParams {
   type: "portrait" | "banner" | "voice" | "music" | "sound_effect";
@@ -71,16 +90,43 @@ export class MediaStorageService {
     } = params;
 
     try {
+      // SECURITY: Validate file size
+      const fileSize = data.byteLength || data.length;
+      const maxSize = FILE_SIZE_LIMITS[type];
+      if (fileSize > maxSize) {
+        throw new Error(
+          `File size ${(fileSize / 1024 / 1024).toFixed(2)}MB exceeds limit of ${(maxSize / 1024 / 1024).toFixed(0)}MB for ${type} files`,
+        );
+      }
+
+      // SECURITY: Validate file type
+      const fileExt = `.${fileName.split(".").pop()?.toLowerCase() || ""}`;
+      const allowedTypes = ALLOWED_FILE_TYPES[type];
+      if (!allowedTypes.includes(fileExt)) {
+        throw new Error(
+          `File type ${fileExt} not allowed for ${type}. Allowed types: ${allowedTypes.join(", ")}`,
+        );
+      }
+
+      // SECURITY: Sanitize file name to prevent path traversal
+      const sanitizedFileName = fileName
+        .replace(/\.\./g, "") // Remove ..
+        .replace(/\//g, "") // Remove /
+        .replace(/\\/g, "") // Remove \
+        .replace(/\0/g, "") // Remove null bytes
+        .trim();
+
+      if (!sanitizedFileName || sanitizedFileName.length === 0) {
+        throw new Error("Invalid file name after sanitization");
+      }
+
       // Build directory structure: media/{type}/{entity_type}/{entity_id}/
       const directoryParts: string[] = [type];
       if (entityType) directoryParts.push(entityType);
       if (entityId) directoryParts.push(entityId);
 
       const directory = directoryParts.join("/");
-      const fullPath = `${directory}/${fileName}`;
-
-      // Get file size for metadata
-      const fileSize = data.byteLength || data.length;
+      const fullPath = `${directory}/${sanitizedFileName}`;
 
       // Create FormData for CDN upload
       const formData = new FormData();
@@ -145,6 +191,10 @@ export class MediaStorageService {
         { context: "MediaStorage" },
         "   CDN webhook will create database record automatically",
       );
+
+      fileUploadsCounter.inc({
+        file_type: getFileExtension(fileName) || "unknown",
+      });
 
       // Note: We generate a temporary ID here since the webhook will create the actual record
       // In a real implementation, you might want to poll the database or use a different approach
@@ -239,19 +289,22 @@ export class MediaStorageService {
 
   /**
    * Delete media asset from CDN and database
+   * Requires ownership validation - users can only delete their own media
    */
-  async deleteMedia(mediaId: string): Promise<boolean> {
-    // Get the media asset record
+  async deleteMedia(mediaId: string, userId: string): Promise<boolean> {
+    // SECURITY: Get the media asset record with ownership check
     const [asset] = await db
       .select()
       .from(mediaAssets)
-      .where(eq(mediaAssets.id, mediaId))
+      .where(
+        and(eq(mediaAssets.id, mediaId), eq(mediaAssets.createdBy, userId)),
+      )
       .limit(1);
 
     if (!asset) {
       logger.warn(
-        { context: "MediaStorage" },
-        `Media asset not found: ${mediaId}`,
+        { mediaId, userId },
+        "Media asset not found or access denied",
       );
       return false;
     }
@@ -301,6 +354,8 @@ export class MediaStorageService {
 
   /**
    * Get media asset by ID
+   * Returns the media asset without authorization checks
+   * (Authorization should be handled at route level if needed)
    */
   async getMediaById(
     mediaId: string,
@@ -312,6 +367,33 @@ export class MediaStorageService {
       .limit(1);
 
     return asset || null;
+  }
+
+  /**
+   * Get media asset by ID with ownership validation
+   * Users can only access their own media
+   */
+  async getMediaByIdSecure(
+    mediaId: string,
+    userId: string,
+  ): Promise<typeof mediaAssets.$inferSelect | null> {
+    const [asset] = await db
+      .select()
+      .from(mediaAssets)
+      .where(
+        and(eq(mediaAssets.id, mediaId), eq(mediaAssets.createdBy, userId)),
+      )
+      .limit(1);
+
+    if (!asset) {
+      logger.warn(
+        { mediaId, userId },
+        "Media asset not found or access denied",
+      );
+      return null;
+    }
+
+    return asset;
   }
 
   /**

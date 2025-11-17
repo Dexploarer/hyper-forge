@@ -3,9 +3,12 @@
  */
 
 import { db } from "./index";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
 
 async function main() {
   logger.info({ }, '[Database Check] Checking for world_configurations table...');
@@ -32,32 +35,12 @@ async function main() {
       );
       logger.info({ }, '[Database Check] Applying migration manually...');
 
-      // Read and execute the migration file
-      const migrationSQL = await Bun.file(
-        "./server/db/migrations/0008_freezing_tarot.sql",
-      ).text();
-
-      // Split by statement breakpoint and execute each statement
-      const statements = migrationSQL
-        .split("--> statement-breakpoint")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      for (const statement of statements) {
-        try {
-          await db.execute(sql.raw(statement));
-          logger.info({ }, '[Database Check] ✓ Executed statement');
-        } catch (error: any) {
-          // Skip if table/index already exists
-          if (error.code === "42P07" || error.code === "42P06") {
-            logger.info({ }, '[Database Check] ⚠️  Already exists, skipping');
-          } else {
-            throw error;
-          }
-        }
-      }
-
-      logger.info({ }, '[Database Check] ✓ Migration applied successfully');
+      const migrationsFolder = resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        "./migrations",
+      );
+      await migrate(db, { migrationsFolder });
+      logger.info({ }, '[Database Check] ✓ Drizzle migrations applied');
     }
 
     // Verify table exists now

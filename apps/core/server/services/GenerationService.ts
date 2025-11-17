@@ -19,6 +19,12 @@ import { MaterialPreset } from "../models";
 import fs from "fs/promises";
 import path from "path";
 import fetch from "node-fetch";
+import {
+  assetGenerationCounter,
+  assetGenerationDuration,
+  assetGenerationErrors,
+  MetricsTimer,
+} from "../metrics/business";
 
 // ==================== Type Definitions ====================
 
@@ -242,19 +248,18 @@ export class GenerationService extends EventEmitter {
       config?.elevenLabsApiKey || env.ELEVENLABS_API_KEY || "";
 
     // Log which key sources are being used
-    logger.info({ context: "GenerationService" }, "Initializing with API keys");
     logger.info(
-      `  - Meshy: ${config?.meshyApiKey ? "user-provided" : "environment variable"}`,
-    );
-    logger.info(
-      `  - AI Gateway: ${config?.aiGatewayApiKey ? "user-provided" : "environment variable"}`,
-    );
-    logger.info(
-      { context: "GenerationService" },
-      "OpenAI: environment variable",
-    );
-    logger.info(
-      `  - ElevenLabs: ${config?.elevenLabsApiKey ? "user-provided" : "environment variable"}`,
+      {
+        meshySource: config?.meshyApiKey ? "user-provided" : "environment",
+        aiGatewaySource: config?.aiGatewayApiKey
+          ? "user-provided"
+          : "environment",
+        openaiSource: "environment",
+        elevenLabsSource: config?.elevenLabsApiKey
+          ? "user-provided"
+          : "environment",
+      },
+      "Initializing GenerationService with API keys",
     );
 
     // Check for required API keys
@@ -521,9 +526,7 @@ export class GenerationService extends EventEmitter {
     // Load pipeline from database
     const dbPipeline = await this.pipelineRepo.findById(pipelineId);
     if (!dbPipeline) {
-      logger.error(
-        `❌ [Pipeline ${pipelineId}] Pipeline not found in database!`,
-      );
+      logger.error({ pipelineId }, "Pipeline not found in database");
       return;
     }
 
@@ -548,6 +551,9 @@ export class GenerationService extends EventEmitter {
 
     // Cast the config to our local PipelineConfig type for proper typing
     const config = pipeline.config as PipelineConfig;
+    const metricType = this.getAssetMetricType(config);
+    const generationTimer = new MetricsTimer();
+    let metricStatus: "success" | "failure" = "failure";
 
     try {
       logger.info({ pipelineId }, "Setting status to processing");
@@ -581,13 +587,11 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.promptOptimization.progress = 100;
           pipeline.stages.promptOptimization.result = optimizationResult;
           pipeline.results.promptOptimization = optimizationResult;
-          logger.info(
-            `✅ [Pipeline ${pipelineId}] GPT-4 enhancement completed`,
-          );
+          logger.info({ pipelineId }, "GPT-4 enhancement completed");
         } catch (error) {
           logger.warn(
-            { err: error },
-            `⚠️ [Pipeline ${pipelineId}] GPT-4 enhancement failed, using original prompt`,
+            { err: error, pipelineId },
+            "GPT-4 enhancement failed, using original prompt",
           );
           pipeline.stages.promptOptimization.status = "completed";
           pipeline.stages.promptOptimization.progress = 100;
@@ -600,7 +604,8 @@ export class GenerationService extends EventEmitter {
 
         pipeline.progress = 10;
         logger.info(
-          `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
+          { pipelineId, progress: pipeline.progress },
+          "Pipeline progress updated",
         );
       } else {
         logger.info(
@@ -635,7 +640,8 @@ export class GenerationService extends EventEmitter {
           pipeline.stages.imageGeneration.result;
         pipeline.progress = 20;
         logger.info(
-          `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
+          { pipelineId, progress: pipeline.progress },
+          "Pipeline progress updated",
         );
       } else {
         logger.info(
@@ -712,13 +718,11 @@ export class GenerationService extends EventEmitter {
             "Image generation completed",
           );
           logger.info(
-            `📊 [Pipeline ${pipelineId}] Progress: ${pipeline.progress}%`,
+            { pipelineId, progress: pipeline.progress },
+            "Pipeline progress updated",
           );
         } catch (error) {
-          logger.error(
-            { err: error },
-            `❌ [Pipeline ${pipelineId}] Image generation failed`,
-          );
+          logger.error({ err: error, pipelineId }, "Image generation failed");
           pipeline.stages.imageGeneration.status = "failed";
           pipeline.stages.imageGeneration.error = (error as Error).message;
           throw error;
@@ -727,7 +731,8 @@ export class GenerationService extends EventEmitter {
 
       // Stage 3: Image to 3D with Meshy AI
       logger.info(
-        `📋 [Pipeline ${pipelineId}] Stage 3: Image to 3D Conversion`,
+        { pipelineId, stage: "image3D" },
+        "Stage 3: Image to 3D Conversion",
       );
       pipeline.stages.image3D.status = "processing";
 
@@ -843,10 +848,12 @@ export class GenerationService extends EventEmitter {
         const maxAttempts = Math.max(1, Math.ceil(timeoutMs / pollIntervalMs));
 
         logger.info(
-          `⏳ Meshy polling configured: quality=${quality}, model=${aiModel}, interval=${pollIntervalMs}ms, timeout=${timeoutMs}ms, maxAttempts=${maxAttempts}`,
+          { quality, aiModel, pollIntervalMs, timeoutMs, maxAttempts },
+          "Meshy polling configured",
         );
         logger.info(
-          `📋 Meshy Task ID: ${meshyTaskId} (stored for retexturing/rigging)`,
+          { meshyTaskId },
+          "Meshy Task ID stored for retexturing/rigging",
         );
 
         while (attempts < maxAttempts) {
@@ -870,13 +877,21 @@ export class GenerationService extends EventEmitter {
 
             // Log status
             logger.info(
-              `📊 Meshy task ${meshyTaskId}: ${status.status} (${Math.round(pipeline.stages.image3D.progress)}%) [attempt ${attempts}/${maxAttempts}]`,
+              {
+                meshyTaskId,
+                status: status.status,
+                progress: Math.round(pipeline.stages.image3D.progress),
+                attempts,
+                maxAttempts,
+              },
+              "Meshy task status update",
             );
 
             if (status.status === "SUCCEEDED") {
               meshyResult = status;
               logger.info(
-                `✅ Meshy conversion succeeded! Polycount: ${meshyResult.polycount || "N/A"}`,
+                { polycount: meshyResult.polycount || "N/A" },
+                "Meshy conversion succeeded",
               );
               break;
             } else if (status.status === "FAILED") {
@@ -887,8 +902,8 @@ export class GenerationService extends EventEmitter {
             // Continue polling for PENDING or IN_PROGRESS
           } catch (error) {
             logger.error(
-              { err: error },
-              `⚠️ Error polling Meshy task (attempt ${attempts}/${maxAttempts})`,
+              { err: error, attempts, maxAttempts },
+              "Error polling Meshy task",
             );
             // Continue polling unless it's the last attempt
             if (attempts >= maxAttempts) {
@@ -1124,7 +1139,12 @@ export class GenerationService extends EventEmitter {
 
           try {
             logger.info(
-              `🎨 Generating variant ${i + 1}/${totalVariants}: ${preset.displayName}`,
+              {
+                variantIndex: i + 1,
+                totalVariants,
+                presetName: preset.displayName,
+              },
+              "Generating variant",
             );
 
             // Update progress
@@ -1258,8 +1278,8 @@ export class GenerationService extends EventEmitter {
             });
           } catch (error) {
             logger.error(
-              { err: error },
-              `Failed to generate variant ${preset.displayName}`,
+              { err: error, presetName: preset.displayName },
+              "Failed to generate variant",
             );
             variants.push({
               id: `${config.assetId}-${preset.id}`,
@@ -1484,8 +1504,8 @@ export class GenerationService extends EventEmitter {
               .rm(tempRiggingDir, { recursive: true, force: true })
               .catch((err) =>
                 logger.warn(
-                  `Failed to cleanup temp rigging dir ${tempRiggingDir}:`,
-                  err,
+                  { err, tempRiggingDir },
+                  "Failed to cleanup temp rigging dir",
                 ),
               );
           }
@@ -1543,7 +1563,8 @@ export class GenerationService extends EventEmitter {
       // Note: CDN upload is now handled inline during each stage
       // The webhook handler will create/update database records automatically
       logger.info(
-        `✅ [Pipeline ${pipelineId}] All files uploaded to CDN, webhook notifications sent`,
+        { pipelineId },
+        "All files uploaded to CDN, webhook notifications sent",
       );
 
       // Complete
@@ -1563,10 +1584,21 @@ export class GenerationService extends EventEmitter {
         conceptArtUrl: `/assets/${config.assetId}/concept-art.png`,
         variants: textureResult?.variants || [],
       };
+      metricStatus = "success";
     } catch (error) {
       pipeline.status = "failed";
       pipeline.error = (error as Error).message;
+      assetGenerationErrors.inc({
+        type: metricType,
+        error_type: this.getAssetErrorLabel(error),
+      });
       throw error;
+    } finally {
+      assetGenerationCounter.inc({
+        type: metricType,
+        status: metricStatus,
+      });
+      generationTimer.observe(assetGenerationDuration, { type: metricType });
     }
   }
 
@@ -1693,7 +1725,8 @@ Your task is to enhance the user's description to create better results with ima
         : "gpt-4"; // Direct OpenAI uses just the model name
 
       logger.info(
-        `🤖 Using ${useAIGateway ? "Vercel AI Gateway" : "direct OpenAI API"} for GPT-4 enhancement`,
+        { source: useAIGateway ? "Vercel AI Gateway" : "direct OpenAI API" },
+        "Using GPT-4 enhancement",
       );
 
       const response = await this.fetchFn(endpoint, {
@@ -1787,7 +1820,8 @@ Your task is to enhance the user's description to create better results with ima
     formData.append("directory", "models");
 
     logger.info(
-      `[CDN Upload] Uploading ${files.length} files for asset ${assetId}`,
+      { assetId, fileCount: files.length },
+      "CDN Upload: Uploading files",
     );
 
     const response = await this.fetchFn(`${CDN_URL}/api/upload`, {
@@ -1808,7 +1842,8 @@ Your task is to enhance the user's description to create better results with ima
       files: Array<{ path: string; url: string; size: number }>;
     };
     logger.info(
-      `[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`,
+      { uploadedFileCount: result.files?.length || 0 },
+      "CDN Upload: Successfully uploaded files",
     );
 
     return result;
@@ -1974,5 +2009,27 @@ Your task is to enhance the user's description to create better results with ima
       logger.error({ err: error }, "Failed to cleanup old pipelines");
       throw error;
     }
+  }
+
+  private getAssetMetricType(config: PipelineConfig): string {
+    return (
+      config.type?.toLowerCase() ||
+      config.generationType?.toLowerCase() ||
+      "unknown"
+    );
+  }
+
+  private getAssetErrorLabel(error: unknown): string {
+    if (error instanceof Error) {
+      const message = error.message.toLowerCase();
+      if (message.includes("timeout")) return "timeout";
+      if (message.includes("auth")) return "authentication";
+      if (message.includes("network")) return "network";
+      if (message.includes("mesh")) return "meshy";
+      if (message.includes("gpt") || message.includes("openai"))
+        return "openai";
+      return error.name || "error";
+    }
+    return "unknown";
   }
 }

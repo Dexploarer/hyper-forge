@@ -392,7 +392,7 @@ export class RetextureService {
         // Image-based retexturing (takes precedence)
         imageStyleUrl = imageUrl;
         mode = "image reference";
-        logger.info({}, "🎨 Starting image-based retexture for ${baseAssetId}");
+        logger.info({}, `🎨 Starting image-based retexture for ${baseAssetId}`);
       } else if (customPrompt) {
         // Custom prompt retexturing
         textPrompt = customPrompt;
@@ -425,13 +425,13 @@ export class RetextureService {
         enableOriginalUV: true,
       });
 
-      logger.info({}, "🎨 Retexture task started: ${taskId}");
+      logger.info({}, `🎨 Retexture task started: ${taskId}`);
 
       // Wait for completion with progress updates
       const result = await this.meshyClient.waitForCompletion(
         taskId,
         (progress) => {
-          logger.info({}, "⏳ Retexture Progress: ${progress}%");
+          logger.info({}, `⏳ Retexture Progress: ${progress}%`);
         },
       );
 
@@ -591,7 +591,7 @@ export class RetextureService {
     // Upload to CDN (webhook will create database record and link to base)
     await this.uploadToCDN(variantName, filesToUpload);
 
-    logger.info({}, "✅ Successfully retextured and uploaded: ${variantName}");
+    logger.info({}, `✅ Successfully retextured and uploaded: ${variantName}`);
 
     return variantMetadata as AssetMetadataType;
   }
@@ -642,7 +642,7 @@ export class RetextureService {
 
     // For now, return a simulated success response
     // Full implementation would regenerate the base model from scratch
-    logger.info({}, "🔄 Regenerating base model: ${baseAssetId}");
+    logger.info({}, `🔄 Regenerating base model: ${baseAssetId}`);
 
     // Simulate processing time
     await new Promise((resolve) => setTimeout(resolve, 3000));

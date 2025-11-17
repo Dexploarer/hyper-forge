@@ -28,7 +28,7 @@
 import { db } from "../db/db";
 import { logger } from "../utils/logger";
 import { assets, type Asset, type NewAsset } from "../db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import type { AssetMetadataType } from "../models";
 import { embeddingService } from "./EmbeddingService";
 import { qdrantService } from "./QdrantService";
@@ -125,10 +125,12 @@ export class AssetDatabaseService {
    *
    * Updates an existing asset and automatically regenerates its vector embedding
    * for updated semantic search results. Supports updating the asset ID itself.
+   * Requires ownership validation - users can only update their own assets.
    *
    * @param assetId - Asset identifier (current ID)
    * @param updates - Partial asset updates to apply (can include new ID)
-   * @returns Updated asset record, or null if asset not found
+   * @param userId - User ID of the requester (for ownership validation)
+   * @returns Updated asset record, or null if asset not found or access denied
    * @throws Error if database update fails
    *
    * @example
@@ -136,50 +138,49 @@ export class AssetDatabaseService {
    * await assetDatabaseService.updateAssetRecord('bronze-sword-001', {
    *   description: 'A finely crafted bronze sword',
    *   tags: ['weapon', 'melee', 'bronze']
-   * });
+   * }, 'user-123');
    *
    * // Update with new ID
    * await assetDatabaseService.updateAssetRecord('old-id', {
    *   id: 'new-id',
    *   name: 'New Name'
-   * });
+   * }, 'user-123');
    * ```
    */
   async updateAssetRecord(
     assetId: string,
     updates: Partial<NewAsset>,
+    userId: string,
   ): Promise<Asset | null> {
     try {
-      // Get asset from database
-      const asset = await db.query.assets.findFirst({
-        where: eq(assets.id, assetId),
-      });
-
-      if (!asset) {
-        logger.warn(
-          `[AssetDatabaseService] No database record found for asset: ${assetId}`,
-        );
-        return null;
-      }
-
+      // Update with ownership validation in WHERE clause
       const [updated] = await db
         .update(assets)
         .set({
           ...updates,
           updatedAt: new Date(),
         })
-        .where(eq(assets.id, assetId))
+        .where(and(eq(assets.id, assetId), eq(assets.ownerId, userId)))
         .returning();
 
+      if (!updated) {
+        logger.warn(
+          { assetId, userId },
+          "[AssetDatabaseService] Asset not found or access denied",
+        );
+        return null;
+      }
+
       logger.info(
-        `[AssetDatabaseService] Updated database record for asset: ${assetId}`,
+        { assetId, userId },
+        "[AssetDatabaseService] Updated database record for asset",
       );
 
       // Regenerate and update embedding (async, don't block)
       this.indexAssetEmbedding(updated).catch((error) => {
         logger.warn(
-          `[AssetDatabaseService] Failed to re-index embedding for ${assetId}:`,
-          error,
+          { err: error, assetId },
+          "[AssetDatabaseService] Failed to re-index embedding",
         );
       });
 
@@ -198,29 +199,36 @@ export class AssetDatabaseService {
    *
    * Removes asset record from PostgreSQL and its vector embedding from Qdrant.
    * This does NOT delete the physical files from CDN - use CDN service for that.
+   * Requires ownership validation - users can only delete their own assets.
    *
    * @param assetId - Asset identifier
+   * @param userId - User ID of the requester (for ownership validation)
    * @param includeVariants - If true and asset is a base model, delete all variants too
-   * @throws Error if database delete fails
+   * @throws Error if database delete fails or access denied
    *
    * @example
    * ```typescript
-   * await assetDatabaseService.deleteAssetRecord('bronze-sword-001');
-   * await assetDatabaseService.deleteAssetRecord('bronze-sword-001', true); // Delete with variants
+   * await assetDatabaseService.deleteAssetRecord('bronze-sword-001', 'user-123');
+   * await assetDatabaseService.deleteAssetRecord('bronze-sword-001', 'user-123', true); // Delete with variants
    * ```
    */
   async deleteAssetRecord(
     assetId: string,
+    userId: string,
     includeVariants = false,
   ): Promise<void> {
     try {
-      // Get asset from database
+      // Get asset from database with ownership check
       const asset = await db.query.assets.findFirst({
-        where: eq(assets.id, assetId),
+        where: and(eq(assets.id, assetId), eq(assets.ownerId, userId)),
       });
 
       if (!asset) {
-        throw new Error(`Asset ${assetId} not found`);
+        logger.warn(
+          { assetId, userId },
+          "[AssetDatabaseService] Asset not found or access denied",
+        );
+        throw new Error(`Asset ${assetId} not found or access denied`);
       }
 
       // If it's a base asset and includeVariants is true, delete all variants
@@ -252,11 +260,14 @@ export class AssetDatabaseService {
         );
       }
 
-      // Delete the main asset from database
-      await db.delete(assets).where(eq(assets.id, assetId));
+      // Delete the main asset from database with ownership validation
+      await db
+        .delete(assets)
+        .where(and(eq(assets.id, assetId), eq(assets.ownerId, userId)));
 
       logger.info(
-        `[AssetDatabaseService] Deleted database record for asset: ${assetId}`,
+        { assetId, userId },
+        "[AssetDatabaseService] Deleted database record for asset",
       );
 
       // Delete from Qdrant (async, don't block)

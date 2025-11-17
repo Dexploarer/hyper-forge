@@ -125,7 +125,8 @@ export const debugStorageRoute = new Elysia({ prefix: "/api/debug" })
     "/storage-info",
     async () => {
       return {
-        message: "Asset-Forge uses CDN-first architecture.",
+        message:
+          "This endpoint is deprecated. Asset-Forge now uses CDN-first architecture.",
         redirect: "/api/debug/cdn-health",
         info: "All assets are stored on CDN.",
       };

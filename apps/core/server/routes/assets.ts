@@ -86,7 +86,11 @@ export const createAssetRoutes = (rootDir: string) => {
           const asset = assets.find((a) => a.id === id);
 
           const includeVariants = query.includeVariants === "true";
-          await assetDatabaseService.deleteAssetRecord(id, includeVariants);
+          await assetDatabaseService.deleteAssetRecord(
+            id,
+            user.id,
+            includeVariants,
+          );
 
           // Log asset deletion
           if (asset) {
@@ -176,12 +180,16 @@ export const createAssetRoutes = (rootDir: string) => {
             updatedMetadata.gameId = body.name;
 
             // Update database record with new name and ID
-            await assetDatabaseService.updateAssetRecord(id, {
-              id: body.name,
-              name: body.name,
-              type: body.type || currentAsset.type,
-              metadata: updatedMetadata,
-            });
+            await assetDatabaseService.updateAssetRecord(
+              id,
+              {
+                id: body.name,
+                name: body.name,
+                type: body.type || currentAsset.type,
+                metadata: updatedMetadata,
+              },
+              user.id,
+            );
 
             // Get updated asset with new ID
             const updatedAsset = await assetDatabaseService.getAssetWithOwner(
@@ -226,12 +234,16 @@ export const createAssetRoutes = (rootDir: string) => {
             };
           } else {
             // Just update metadata in database
-            await assetDatabaseService.updateAssetRecord(id, {
-              name: body.name || currentAsset.name,
-              description: currentAsset.description,
-              type: body.type || currentAsset.type,
-              metadata: updatedMetadata,
-            });
+            await assetDatabaseService.updateAssetRecord(
+              id,
+              {
+                name: body.name || currentAsset.name,
+                description: currentAsset.description,
+                type: body.type || currentAsset.type,
+                metadata: updatedMetadata,
+              },
+              user.id,
+            );
 
             // Get updated asset
             const updatedAsset =
@@ -347,11 +359,15 @@ export const createAssetRoutes = (rootDir: string) => {
               }
 
               // Update in database
-              await assetDatabaseService.updateAssetRecord(assetId, {
-                name: updates.name || currentAsset.name,
-                type: updates.type || currentAsset.type,
-                metadata: updatedMetadata,
-              });
+              await assetDatabaseService.updateAssetRecord(
+                assetId,
+                {
+                  name: updates.name || currentAsset.name,
+                  type: updates.type || currentAsset.type,
+                  metadata: updatedMetadata,
+                },
+                user.id,
+              );
 
               updated++;
             } catch (error) {

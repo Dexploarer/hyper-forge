@@ -128,11 +128,13 @@ export async function createTestUser(
   const [user] = await db
     .insert(users)
     .values({
-      privyUserId: `test-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      privyUserId: `test-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(7)}`,
       email: `test-${Date.now()}@test.com`,
       walletAddress: `0x${Math.random().toString(16).substring(2, 42)}`,
       displayName: "Test User",
-      role: "user",
+      role: "member",
       ...overrides,
     })
     .returning();

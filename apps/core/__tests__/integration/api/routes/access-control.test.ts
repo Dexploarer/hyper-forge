@@ -39,7 +39,7 @@ describe("Access Control - Visibility System", () => {
         email: "user1@test.com",
         walletAddress: "0xUser1",
         displayName: "Test User 1",
-        role: "user",
+        role: "member",
       })
       .returning();
     testUser1 = user1;
@@ -51,7 +51,7 @@ describe("Access Control - Visibility System", () => {
         email: "user2@test.com",
         walletAddress: "0xUser2",
         displayName: "Test User 2",
-        role: "user",
+        role: "member",
       })
       .returning();
     testUser2 = user2;

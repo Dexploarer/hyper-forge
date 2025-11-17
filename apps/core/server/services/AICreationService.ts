@@ -5,6 +5,11 @@
 
 import { getGenerationPrompts } from "../utils/promptLoader";
 import { logger } from "../utils/logger";
+import {
+  aiApiCallsCounter,
+  aiApiLatency,
+  MetricsTimer,
+} from "../metrics/business";
 
 // Type for fetch function (compatible with both global fetch and node-fetch)
 type FetchFunction = typeof fetch;
@@ -227,76 +232,109 @@ class ImageGenerationService {
           quality: "high",
         };
 
-    const response = await this.fetchFn(endpoint, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(
-        `Image generation API error: ${response.status} - ${error}`,
-      );
-    }
-
-    interface AIGatewayImageResponse {
-      choices?: Array<{
-        message?: {
-          images?: Array<{
-            image_url: { url: string };
-          }>;
-        };
-      }>;
-      data?: Array<{
-        url?: string;
-        b64_json?: string;
-      }>;
-    }
-
-    const data = (await response.json()) as AIGatewayImageResponse;
-    let imageUrl: string;
-
-    if (useAIGateway) {
-      // Log the full response to debug
-      logger.info(
-        { context: "AICreation", data: JSON.stringify(data, null, 2) },
-        "AI Gateway response:",
-      );
-
-      // AI Gateway returns images in choices[0].message.images array
-      const images = data.choices?.[0]?.message?.images;
-      if (images && images.length > 0) {
-        imageUrl = images[0].image_url.url;
-      } else {
-        logger.error({ err: data }, "No images found in response. Full data:");
-        throw new Error("No image data returned from AI Gateway");
+    const providerLabel = useAIGateway ? "vercel_ai_gateway" : "openai";
+    const latencyTimer = new MetricsTimer();
+    let latencyObserved = false;
+    const observeLatency = () => {
+      if (!latencyObserved) {
+        latencyTimer.observe(aiApiLatency, {
+          provider: providerLabel,
+          model: modelName,
+        });
+        latencyObserved = true;
       }
-    } else {
-      // Direct OpenAI returns images in data array
-      const imageData = data.data?.[0];
-      if (imageData?.b64_json) {
-        imageUrl = `data:image/png;base64,${imageData.b64_json}`;
-      } else if (imageData?.url) {
-        imageUrl = imageData.url;
-      } else {
-        throw new Error("No image data returned from OpenAI API");
-      }
-    }
-
-    return {
-      imageUrl: imageUrl,
-      prompt: prompt,
-      metadata: {
-        model: modelName,
-        resolution: imageDimensions,
-        quality: "high",
-        timestamp: new Date().toISOString(),
-      },
     };
+
+    try {
+      const response = await this.fetchFn(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(
+          `Image generation API error: ${response.status} - ${error}`,
+        );
+      }
+
+      interface AIGatewayImageResponse {
+        choices?: Array<{
+          message?: {
+            images?: Array<{
+              image_url: { url: string };
+            }>;
+          };
+        }>;
+        data?: Array<{
+          url?: string;
+          b64_json?: string;
+        }>;
+      }
+
+      const data = (await response.json()) as AIGatewayImageResponse;
+      observeLatency();
+      aiApiCallsCounter.inc({
+        provider: providerLabel,
+        model: modelName,
+        status: "success",
+      });
+
+      let imageUrl: string;
+
+      if (useAIGateway) {
+        // Log the full response to debug
+        logger.info(
+          { context: "AICreation", data: JSON.stringify(data, null, 2) },
+          "AI Gateway response:",
+        );
+
+        // AI Gateway returns images in choices[0].message.images array
+        const images = data.choices?.[0]?.message?.images;
+        if (images && images.length > 0) {
+          imageUrl = images[0].image_url.url;
+        } else {
+          logger.error(
+            { err: data },
+            "No images found in response. Full data:",
+          );
+          throw new Error("No image data returned from AI Gateway");
+        }
+      } else {
+        // Direct OpenAI returns images in data array
+        const imageData = data.data?.[0];
+        if (imageData?.b64_json) {
+          imageUrl = `data:image/png;base64,${imageData.b64_json}`;
+        } else if (imageData?.url) {
+          imageUrl = imageData.url;
+        } else {
+          throw new Error("No image data returned from OpenAI API");
+        }
+      }
+
+      return {
+        imageUrl: imageUrl,
+        prompt: prompt,
+        metadata: {
+          model: modelName,
+          resolution: imageDimensions,
+          quality: "high",
+          timestamp: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      observeLatency();
+      aiApiCallsCounter.inc({
+        provider: providerLabel,
+        model: modelName,
+        status: "failure",
+      });
+      throw error;
+    }
   }
 }
 
@@ -317,41 +355,72 @@ class MeshyService {
     imageUrl: string,
     options: ImageTo3DOptions,
   ): Promise<string | MeshyTaskResponse> {
-    const response = await this.fetchFn(
-      `${this.baseUrl}/openapi/v1/image-to-3d`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
+    const providerLabel = "meshy";
+    const modelLabel = options.ai_model || "meshy-4";
+    const latencyTimer = new MetricsTimer();
+    let latencyObserved = false;
+    const observeLatency = () => {
+      if (!latencyObserved) {
+        latencyTimer.observe(aiApiLatency, {
+          provider: providerLabel,
+          model: modelLabel,
+        });
+        latencyObserved = true;
+      }
+    };
+
+    try {
+      const response = await this.fetchFn(
+        `${this.baseUrl}/openapi/v1/image-to-3d`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            image_url: imageUrl,
+            enable_pbr: options.enable_pbr ?? false,
+            ai_model: modelLabel,
+            topology: options.topology || "quad",
+            target_polycount: options.targetPolycount || 2000,
+            texture_resolution: options.texture_resolution || 512,
+          }),
         },
-        body: JSON.stringify({
-          image_url: imageUrl,
-          enable_pbr: options.enable_pbr ?? false,
-          ai_model: options.ai_model || "meshy-4",
-          topology: options.topology || "quad",
-          target_polycount: options.targetPolycount || 2000,
-          texture_resolution: options.texture_resolution || 512,
-        }),
-      },
-    );
+      );
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Meshy API error: ${response.status} - ${error}`);
-    }
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Meshy API error: ${response.status} - ${error}`);
+      }
 
-    const data = (await response.json()) as MeshyTaskResponse;
-    // Normalize to task id string for polling
-    const taskId =
-      data.task_id ||
-      data.id ||
-      (data.result && (data.result.task_id || data.result.id));
-    if (!taskId) {
-      // Fallback to previous behavior but this will likely break polling
-      return data.result || data;
+      const data = (await response.json()) as MeshyTaskResponse;
+      observeLatency();
+      aiApiCallsCounter.inc({
+        provider: providerLabel,
+        model: modelLabel,
+        status: "success",
+      });
+
+      // Normalize to task id string for polling
+      const taskId =
+        data.task_id ||
+        data.id ||
+        (data.result && (data.result.task_id || data.result.id));
+      if (!taskId) {
+        // Fallback to previous behavior but this will likely break polling
+        return data.result || data;
+      }
+      return taskId;
+    } catch (error) {
+      observeLatency();
+      aiApiCallsCounter.inc({
+        provider: providerLabel,
+        model: modelLabel,
+        status: "failure",
+      });
+      throw error;
     }
-    return taskId;
   }
 
   async getTaskStatus(taskId: string): Promise<unknown> {
@@ -378,9 +447,23 @@ class MeshyService {
     style: RetextureStyle,
     options: RetextureOptions,
   ): Promise<string | MeshyTaskResponse> {
+    const providerLabel = "meshy";
+    const modelLabel = options.aiModel || "meshy-5";
+    const latencyTimer = new MetricsTimer();
+    let latencyObserved = false;
+    const observeLatency = () => {
+      if (!latencyObserved) {
+        latencyTimer.observe(aiApiLatency, {
+          provider: providerLabel,
+          model: modelLabel,
+        });
+        latencyObserved = true;
+      }
+    };
+
     const body: Record<string, unknown> = {
       art_style: options.artStyle || "realistic",
-      ai_model: options.aiModel || "meshy-5",
+      ai_model: modelLabel,
       enable_original_uv: options.enableOriginalUV ?? true,
     };
 
@@ -396,35 +479,52 @@ class MeshyService {
       body.image_style_url = style.imageStyleUrl;
     }
 
-    const response = await this.fetchFn(
-      `${this.baseUrl}/openapi/v1/retexture`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
+    try {
+      const response = await this.fetchFn(
+        `${this.baseUrl}/openapi/v1/retexture`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-      },
-    );
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(
-        `Meshy Retexture API error: ${response.status} - ${error}`,
       );
-    }
 
-    const data = (await response.json()) as MeshyTaskResponse;
-    // Normalize to task id string for polling
-    const taskId =
-      data.task_id ||
-      data.id ||
-      (data.result && (data.result.task_id || data.result.id));
-    if (!taskId) {
-      return data.result || data;
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(
+          `Meshy Retexture API error: ${response.status} - ${error}`,
+        );
+      }
+
+      const data = (await response.json()) as MeshyTaskResponse;
+      observeLatency();
+      aiApiCallsCounter.inc({
+        provider: providerLabel,
+        model: modelLabel,
+        status: "success",
+      });
+
+      // Normalize to task id string for polling
+      const taskId =
+        data.task_id ||
+        data.id ||
+        (data.result && (data.result.task_id || data.result.id));
+      if (!taskId) {
+        return data.result || data;
+      }
+      return taskId;
+    } catch (error) {
+      observeLatency();
+      aiApiCallsCounter.inc({
+        provider: providerLabel,
+        model: modelLabel,
+        status: "failure",
+      });
+      throw error;
     }
-    return taskId;
   }
 
   async getRetextureTaskStatus(taskId: string): Promise<unknown> {
@@ -451,6 +551,20 @@ class MeshyService {
     input: RiggingInput,
     options: RiggingOptions = {},
   ): Promise<string | MeshyTaskResponse> {
+    const providerLabel = "meshy";
+    const modelLabel = "meshy-rigging";
+    const latencyTimer = new MetricsTimer();
+    let latencyObserved = false;
+    const observeLatency = () => {
+      if (!latencyObserved) {
+        latencyTimer.observe(aiApiLatency, {
+          provider: providerLabel,
+          model: modelLabel,
+        });
+        latencyObserved = true;
+      }
+    };
+
     const body: Record<string, unknown> = {
       height_meters: options.heightMeters || 1.7,
     };
@@ -463,30 +577,49 @@ class MeshyService {
       throw new Error("Either inputTaskId or modelUrl must be provided");
     }
 
-    const response = await this.fetchFn(`${this.baseUrl}/openapi/v1/rigging`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+    try {
+      const response = await this.fetchFn(`${this.baseUrl}/openapi/v1/rigging`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Meshy rigging API error: ${response.status} - ${error}`);
-    }
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(
+          `Meshy rigging API error: ${response.status} - ${error}`,
+        );
+      }
 
-    const data = (await response.json()) as MeshyTaskResponse;
-    // Normalize to task id string for polling
-    const taskId =
-      data.task_id ||
-      data.id ||
-      (data.result && (data.result.task_id || data.result.id));
-    if (!taskId) {
-      return data.result || data;
+      const data = (await response.json()) as MeshyTaskResponse;
+      observeLatency();
+      aiApiCallsCounter.inc({
+        provider: providerLabel,
+        model: modelLabel,
+        status: "success",
+      });
+
+      // Normalize to task id string for polling
+      const taskId =
+        data.task_id ||
+        data.id ||
+        (data.result && (data.result.task_id || data.result.id));
+      if (!taskId) {
+        return data.result || data;
+      }
+      return taskId;
+    } catch (error) {
+      observeLatency();
+      aiApiCallsCounter.inc({
+        provider: providerLabel,
+        model: modelLabel,
+        status: "failure",
+      });
+      throw error;
     }
-    return taskId;
   }
 
   async getRiggingTaskStatus(taskId: string): Promise<unknown> {

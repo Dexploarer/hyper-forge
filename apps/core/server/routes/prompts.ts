@@ -297,10 +297,13 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
     },
   )
 
+  // Authenticated routes for custom prompt management
+  .use(requireAuthGuard)
+
   // Create custom prompt (user-created)
   .post(
     "/custom",
-    async ({ body, set }) => {
+    async ({ body, set, user }) => {
       try {
         const promptId = `user-${body.type}-${Date.now()}`;
 
@@ -316,16 +319,20 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
             isSystem: false,
             isActive: true,
             isPublic: body.isPublic || false,
-            createdBy: body.createdBy || null,
+            createdBy: user.id, // Use authenticated user's ID
             metadata: body.metadata || {},
           })
           .returning();
 
         set.status = 201;
+        logger.info(
+          { promptId: newPrompt.id, userId: user.id },
+          "Custom prompt created",
+        );
         return newPrompt;
       } catch (error) {
         logger.error(
-          { context: "Prompts", err: error },
+          { context: "Prompts", err: error, userId: user.id },
           "Error creating custom prompt",
         );
         set.status = 500;
@@ -339,13 +346,13 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
         content: t.Record(t.String(), t.Unknown()), // Prompt content JSONB - flexible structure
         description: t.Optional(t.String()),
         isPublic: t.Optional(t.Boolean()),
-        createdBy: t.Optional(t.String()),
         metadata: t.Optional(t.Record(t.String(), t.Unknown())), // Additional metadata for prompt categorization
       }),
       detail: {
         tags: ["Prompts"],
         summary: "Create custom prompt",
         description: "Create a new user-defined custom prompt template",
+        security: [{ BearerAuth: [] }],
       },
     },
   )
@@ -353,8 +360,44 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
   // Update custom prompt
   .put(
     "/custom/:id",
-    async ({ params, body, set }) => {
+    async ({ params, body, set, user }) => {
       try {
+        // First, fetch the prompt to check ownership
+        const [existingPrompt] = await db
+          .select()
+          .from(prompts)
+          .where(eq(prompts.id, params.id))
+          .limit(1);
+
+        if (!existingPrompt) {
+          set.status = 404;
+          return { error: "Custom prompt not found" };
+        }
+
+        // Check if it's a system prompt (cannot be updated)
+        if (existingPrompt.isSystem) {
+          logger.warn(
+            { promptId: params.id, userId: user.id },
+            "Attempted to update system prompt",
+          );
+          set.status = 403;
+          return { error: "System prompts cannot be updated" };
+        }
+
+        // Check ownership (must be owner or admin)
+        if (existingPrompt.createdBy !== user.id && user.role !== "admin") {
+          logger.warn(
+            {
+              promptId: params.id,
+              userId: user.id,
+              ownerId: existingPrompt.createdBy,
+            },
+            "Unauthorized prompt update attempt",
+          );
+          set.status = 403;
+          return { error: "Forbidden - you can only update your own prompts" };
+        }
+
         const [updatedPrompt] = await db
           .update(prompts)
           .set({
@@ -366,18 +409,22 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
             metadata: body.metadata || {},
             updatedAt: new Date(),
           })
-          .where(and(eq(prompts.id, params.id), eq(prompts.isSystem, false)))
+          .where(eq(prompts.id, params.id))
           .returning();
 
-        if (!updatedPrompt) {
-          set.status = 404;
-          return { error: "Custom prompt not found or is a system prompt" };
-        }
-
+        logger.info(
+          { promptId: params.id, userId: user.id },
+          "Custom prompt updated",
+        );
         return updatedPrompt;
       } catch (error) {
         logger.error(
-          { context: "Prompts", err: error },
+          {
+            context: "Prompts",
+            err: error,
+            promptId: params.id,
+            userId: user.id,
+          },
           `Error updating custom prompt: ${params.id}`,
         );
         set.status = 500;
@@ -400,34 +447,71 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
         tags: ["Prompts"],
         summary: "Update custom prompt",
         description: "Update an existing user-defined custom prompt",
+        security: [{ BearerAuth: [] }],
       },
     },
   )
 
-  // Authenticated routes for custom prompt management
-  .use(requireAuthGuard)
-
   // Delete custom prompt
   .delete(
     "/custom/:id",
-    async ({ params, set }) => {
+    async ({ params, set, user }) => {
       try {
-        const [deletedPrompt] = await db
-          .delete(prompts)
-          .where(and(eq(prompts.id, params.id), eq(prompts.isSystem, false)))
-          .returning();
+        // First, fetch the prompt to check ownership
+        const [existingPrompt] = await db
+          .select()
+          .from(prompts)
+          .where(eq(prompts.id, params.id))
+          .limit(1);
 
-        if (!deletedPrompt) {
+        if (!existingPrompt) {
           set.status = 404;
-          return {
-            error: "Custom prompt not found or is a system prompt",
-          };
+          return { error: "Custom prompt not found" };
         }
 
+        // Check if it's a system prompt (cannot be deleted)
+        if (existingPrompt.isSystem) {
+          logger.warn(
+            { promptId: params.id, userId: user.id },
+            "Attempted to delete system prompt",
+          );
+          set.status = 403;
+          return { error: "System prompts cannot be deleted" };
+        }
+
+        // Check ownership (must be owner or admin)
+        if (existingPrompt.createdBy !== user.id && user.role !== "admin") {
+          logger.warn(
+            {
+              promptId: params.id,
+              userId: user.id,
+              ownerId: existingPrompt.createdBy,
+            },
+            "Unauthorized prompt deletion attempt",
+          );
+          set.status = 403;
+          return { error: "Forbidden - you can only delete your own prompts" };
+        }
+
+        // Now delete
+        const [deletedPrompt] = await db
+          .delete(prompts)
+          .where(eq(prompts.id, params.id))
+          .returning();
+
+        logger.info(
+          { promptId: params.id, userId: user.id },
+          "Custom prompt deleted",
+        );
         return { success: true, id: params.id };
       } catch (error) {
         logger.error(
-          { context: "Prompts", err: error },
+          {
+            context: "Prompts",
+            err: error,
+            promptId: params.id,
+            userId: user.id,
+          },
           `Error deleting custom prompt: ${params.id}`,
         );
         set.status = 500;
@@ -443,6 +527,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
         summary: "Delete custom prompt",
         description:
           "Delete a user-defined custom prompt (system prompts cannot be deleted)",
+        security: [{ BearerAuth: [] }],
       },
     },
   )
@@ -451,12 +536,22 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
   .get(
     "/custom/user/:userId",
     async ({ params, set, user }) => {
+      // Authorization: Users can only view their own prompts (unless admin)
+      if (params.userId !== user.id && user.role !== "admin") {
+        logger.warn(
+          { requestedUserId: params.userId, authenticatedUserId: user.id },
+          "Unauthorized attempt to view user prompts",
+        );
+        set.status = 403;
+        return { error: "Forbidden - you can only view your own prompts" };
+      }
+
       try {
         logger.info(
           {
             context: "Prompts",
             userId: params.userId,
-            authenticatedUser: user?.id,
+            authenticatedUser: user.id,
           },
           "Loading user prompts",
         );

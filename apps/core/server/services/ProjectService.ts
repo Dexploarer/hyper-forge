@@ -4,7 +4,7 @@
  */
 
 import { db } from "../db/db";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 import { projects, type Project, type NewProject } from "../db/schema";
 import { eq, and, desc, count, sum, sql } from "drizzle-orm";
 
@@ -43,10 +43,16 @@ export class ProjectService {
         })
         .returning();
 
-      logger.info({ context: 'ProjectService' }, 'Created project: ${project.id}');
+      logger.info(
+        { projectId: project.id, ownerId: data.ownerId },
+        "Created project",
+      );
       return project;
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to create project:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to create project:",
+      );
       throw error;
     }
   }
@@ -62,7 +68,7 @@ export class ProjectService {
 
       return project || null;
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to get project:');
+      logger.error({ err: error }, "[ProjectService] Failed to get project:");
       throw error;
     }
   }
@@ -90,7 +96,10 @@ export class ProjectService {
 
       return await query;
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to get user projects:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to get user projects:",
+      );
       throw error;
     }
   }
@@ -111,7 +120,10 @@ export class ProjectService {
 
       return await query;
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to get all projects:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to get all projects:",
+      );
       throw error;
     }
   }
@@ -137,10 +149,13 @@ export class ProjectService {
         throw new Error(`Project not found: ${id}`);
       }
 
-      logger.info({ context: 'ProjectService' }, 'Updated project: ${id}');
+      logger.info({ projectId: id }, "Updated project");
       return updatedProject;
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to update project:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to update project:",
+      );
       throw error;
     }
   }
@@ -164,10 +179,13 @@ export class ProjectService {
         throw new Error(`Project not found: ${id}`);
       }
 
-      logger.info({ context: 'ProjectService' }, 'Archived project: ${id}');
+      logger.info({ projectId: id }, "Archived project");
       return archivedProject;
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to archive project:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to archive project:",
+      );
       throw error;
     }
   }
@@ -191,10 +209,13 @@ export class ProjectService {
         throw new Error(`Project not found: ${id}`);
       }
 
-      logger.info({ context: 'ProjectService' }, 'Restored project: ${id}');
+      logger.info({ projectId: id }, "Restored project");
       return restoredProject;
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to restore project:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to restore project:",
+      );
       throw error;
     }
   }
@@ -206,9 +227,12 @@ export class ProjectService {
     try {
       await db.delete(projects).where(eq(projects.id, id));
 
-      logger.info({ context: 'ProjectService' }, 'Deleted project: ${id}');
+      logger.info({ projectId: id }, "Deleted project");
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to delete project:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to delete project:",
+      );
       throw error;
     }
   }
@@ -221,7 +245,10 @@ export class ProjectService {
       const project = await this.getProjectById(projectId);
       return project?.ownerId === userId;
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to check ownership:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to check ownership:",
+      );
       return false;
     }
   }
@@ -256,7 +283,10 @@ export class ProjectService {
 
       return projectAssets;
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to get project assets:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to get project assets:",
+      );
       throw error;
     }
   }
@@ -332,7 +362,10 @@ export class ProjectService {
         lastModifiedAt: lastModifiedAt ? lastModifiedAt.toISOString() : null,
       };
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to get project stats:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to get project stats:",
+      );
       throw error;
     }
   }
@@ -350,7 +383,10 @@ export class ProjectService {
       // Filter only public projects
       return publicProjects.filter((p) => p.isPublic);
     } catch (error) {
-      logger.error({ err: error }, '[ProjectService] Failed to get public projects:');
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to get public projects:",
+      );
       throw error;
     }
   }
@@ -381,7 +417,9 @@ export class ProjectService {
       );
       return updatedProject;
     } catch (error) {
-      logger.error({ err: error }, "[ProjectService] Failed to update project visibility"
+      logger.error(
+        { err: error },
+        "[ProjectService] Failed to update project visibility",
       );
       throw error;
     }

@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Column sorting for name, email, join date, and last login
   - CSV export for activity logs
   - System statistics dashboard
+
   - User role management (promote/demote)
 
 - **World Configuration UI**:

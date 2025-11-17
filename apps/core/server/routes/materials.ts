@@ -185,8 +185,53 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
   // Update material preset
   .put(
     "/material-presets/:id",
-    async ({ params, body, set }) => {
+    async ({ params, body, set, request, headers }) => {
+      // Require authentication
+      const authResult = await requireAuth({ request, headers });
+      if (authResult instanceof Response) {
+        set.status = 401;
+        return { error: "Unauthorized - authentication required" };
+      }
+
+      const { user } = authResult;
+
       try {
+        // First, fetch the preset to check ownership
+        const [existingPreset] = await db
+          .select()
+          .from(materialPresets)
+          .where(eq(materialPresets.id, params.id))
+          .limit(1);
+
+        if (!existingPreset) {
+          set.status = 404;
+          return { error: "Material preset not found" };
+        }
+
+        // Check if it's a system preset (cannot be updated)
+        if (existingPreset.isSystem) {
+          logger.warn(
+            { presetId: params.id, userId: user.id },
+            "Attempted to update system material preset",
+          );
+          set.status = 403;
+          return { error: "System presets cannot be updated" };
+        }
+
+        // Check ownership (must be owner or admin)
+        if (existingPreset.createdBy !== user.id && user.role !== "admin") {
+          logger.warn(
+            {
+              presetId: params.id,
+              userId: user.id,
+              ownerId: existingPreset.createdBy,
+            },
+            "Unauthorized material preset update attempt",
+          );
+          set.status = 403;
+          return { error: "Forbidden - you can only update your own presets" };
+        }
+
         const [updatedPreset] = await db
           .update(materialPresets)
           .set({
@@ -201,25 +246,22 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
             metadata: body.metadata || {},
             updatedAt: new Date(),
           })
-          .where(
-            and(
-              eq(materialPresets.id, params.id),
-              eq(materialPresets.isSystem, false),
-            ),
-          )
+          .where(eq(materialPresets.id, params.id))
           .returning();
 
-        if (!updatedPreset) {
-          set.status = 404;
-          return {
-            error: "Material preset not found or is a system preset",
-          };
-        }
-
+        logger.info(
+          { presetId: params.id, userId: user.id },
+          "Material preset updated",
+        );
         return updatedPreset;
       } catch (error) {
         logger.error(
-          { context: "Material Presets", err: error },
+          {
+            context: "Material Presets",
+            err: error,
+            presetId: params.id,
+            userId: user.id,
+          },
           `Error updating material preset: ${params.id}`,
         );
         set.status = 500;
@@ -254,35 +296,71 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
   .delete(
     "/material-presets/:id",
     async ({ params, set, request, headers }) => {
-      // Require authentication (any authenticated user can delete)
+      // Require authentication
       const authResult = await requireAuth({ request, headers });
       if (authResult instanceof Response) {
         set.status = 401;
         return { error: "Unauthorized - authentication required" };
       }
 
-      try {
-        const [deletedPreset] = await db
-          .delete(materialPresets)
-          .where(
-            and(
-              eq(materialPresets.id, params.id),
-              eq(materialPresets.isSystem, false),
-            ),
-          )
-          .returning();
+      const { user } = authResult;
 
-        if (!deletedPreset) {
+      try {
+        // First, fetch the preset to check ownership
+        const [existingPreset] = await db
+          .select()
+          .from(materialPresets)
+          .where(eq(materialPresets.id, params.id))
+          .limit(1);
+
+        if (!existingPreset) {
           set.status = 404;
-          return {
-            error: "Material preset not found or is a system preset",
-          };
+          return { error: "Material preset not found" };
         }
 
+        // Check if it's a system preset (cannot be deleted)
+        if (existingPreset.isSystem) {
+          logger.warn(
+            { presetId: params.id, userId: user.id },
+            "Attempted to delete system material preset",
+          );
+          set.status = 403;
+          return { error: "System presets cannot be deleted" };
+        }
+
+        // Check ownership (must be owner or admin)
+        if (existingPreset.createdBy !== user.id && user.role !== "admin") {
+          logger.warn(
+            {
+              presetId: params.id,
+              userId: user.id,
+              ownerId: existingPreset.createdBy,
+            },
+            "Unauthorized material preset deletion attempt",
+          );
+          set.status = 403;
+          return { error: "Forbidden - you can only delete your own presets" };
+        }
+
+        // Now delete
+        const [deletedPreset] = await db
+          .delete(materialPresets)
+          .where(eq(materialPresets.id, params.id))
+          .returning();
+
+        logger.info(
+          { presetId: params.id, userId: user.id },
+          "Material preset deleted",
+        );
         return { success: true, id: params.id };
       } catch (error) {
         logger.error(
-          { context: "Material Presets", err: error },
+          {
+            context: "Material Presets",
+            err: error,
+            presetId: params.id,
+            userId: user.id,
+          },
           `Error deleting material preset: ${params.id}`,
         );
         set.status = 500;
