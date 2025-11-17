@@ -6,8 +6,8 @@
 
 import crypto from "crypto";
 import { db } from "../db/db";
-import { apiKeys } from "../db/schema";
-import { eq, and, isNull, or, gt, sql } from "drizzle-orm";
+import { apiKeys, users } from "../db/schema";
+import { eq, and, isNull, or, gt, sql, like, desc, count } from "drizzle-orm";
 import type { ApiKey } from "../db/schema";
 
 export class ApiKeyService {
@@ -243,5 +243,328 @@ export class ApiKeyService {
       updatedAt: key.updatedAt,
       revoked: key.revokedAt !== null,
     };
+  }
+
+  // ============================================
+  // ADMIN METHODS (Admin-only operations)
+  // ============================================
+
+  /**
+   * Get all API keys across all users (admin only)
+   * 
+   * @param filters - Optional filters
+   * @returns Paginated list of all API keys with user info
+   */
+  async getAllApiKeys(filters?: {
+    userId?: string;
+    status?: "active" | "revoked" | "expired" | "all";
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{
+    keys: Array<{
+      id: string;
+      userId: string;
+      userName: string | null;
+      userEmail: string | null;
+      name: string;
+      prefix: string;
+      permissions: string[];
+      rateLimit: number | null;
+      expiresAt: Date | null;
+      lastUsedAt: Date | null;
+      createdAt: Date;
+      updatedAt: Date;
+      revoked: boolean;
+      revokedAt: Date | null;
+    }>;
+    total: number;
+  }> {
+    const limit = filters?.limit || 50;
+    const offset = filters?.offset || 0;
+
+    // Build WHERE conditions
+    const conditions = [];
+
+    // Filter by user
+    if (filters?.userId) {
+      conditions.push(eq(apiKeys.userId, filters.userId));
+    }
+
+    // Filter by status
+    if (filters?.status === "active") {
+      conditions.push(
+        isNull(apiKeys.revokedAt),
+        or(isNull(apiKeys.expiresAt), gt(apiKeys.expiresAt, new Date())),
+      );
+    } else if (filters?.status === "revoked") {
+      conditions.push(sql`${apiKeys.revokedAt} IS NOT NULL`);
+    } else if (filters?.status === "expired") {
+      conditions.push(
+        isNull(apiKeys.revokedAt),
+        sql`${apiKeys.expiresAt} IS NOT NULL AND ${apiKeys.expiresAt} <= NOW()`,
+      );
+    }
+
+    // Build query with user join
+    let query = db
+      .select({
+        id: apiKeys.id,
+        userId: apiKeys.userId,
+        userName: users.displayName,
+        userEmail: users.email,
+        name: apiKeys.name,
+        prefix: apiKeys.keyPrefix,
+        permissions: apiKeys.permissions,
+        rateLimit: apiKeys.rateLimit,
+        expiresAt: apiKeys.expiresAt,
+        lastUsedAt: apiKeys.lastUsedAt,
+        createdAt: apiKeys.createdAt,
+        updatedAt: apiKeys.updatedAt,
+        revokedAt: apiKeys.revokedAt,
+      })
+      .from(apiKeys)
+      .leftJoin(users, eq(apiKeys.userId, users.id));
+
+    // Apply conditions
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    // Add search filter (searches user name and email)
+    if (filters?.search) {
+      const searchTerm = `%${filters.search}%`;
+      query = query.where(
+        or(
+          like(users.displayName, searchTerm),
+          like(users.email, searchTerm),
+        ),
+      ) as any;
+    }
+
+    // Get total count
+    const [totalResult] = await db
+      .select({ count: count() })
+      .from(apiKeys)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+
+    const total = totalResult?.count || 0;
+
+    // Get paginated results
+    const results = await query
+      .orderBy(desc(apiKeys.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return {
+      keys: results.map((row) => ({
+        ...row,
+        permissions: (row.permissions as string[]) || [],
+        revoked: row.revokedAt !== null,
+      })),
+      total,
+    };
+  }
+
+  /**
+   * Get system-wide API key statistics (admin only)
+   * 
+   * @returns System-wide statistics
+   */
+  async getSystemStats(): Promise<{
+    totalKeys: number;
+    activeKeys: number;
+    revokedKeys: number;
+    expiredKeys: number;
+    keysUsedLast24h: number;
+    keysByUser: Array<{
+      userId: string;
+      userName: string | null;
+      keyCount: number;
+    }>;
+  }> {
+    const now = new Date();
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Get all keys
+    const allKeys = await db
+      .select({
+        id: apiKeys.id,
+        userId: apiKeys.userId,
+        revokedAt: apiKeys.revokedAt,
+        expiresAt: apiKeys.expiresAt,
+        lastUsedAt: apiKeys.lastUsedAt,
+      })
+      .from(apiKeys);
+
+    const totalKeys = allKeys.length;
+    const activeKeys = allKeys.filter(
+      (k) =>
+        !k.revokedAt && (!k.expiresAt || k.expiresAt > now),
+    ).length;
+    const revokedKeys = allKeys.filter((k) => k.revokedAt).length;
+    const expiredKeys = allKeys.filter(
+      (k) =>
+        !k.revokedAt && k.expiresAt && k.expiresAt <= now,
+    ).length;
+    const keysUsedLast24h = allKeys.filter(
+      (k) => k.lastUsedAt && k.lastUsedAt >= yesterday,
+    ).length;
+
+    // Get keys by user
+    const keysByUserMap = new Map<string, number>();
+    allKeys.forEach((k) => {
+      const current = keysByUserMap.get(k.userId) || 0;
+      keysByUserMap.set(k.userId, current + 1);
+    });
+
+    // Get user details
+    const userIds = Array.from(keysByUserMap.keys());
+    const userDetails = await db
+      .select({
+        id: users.id,
+        displayName: users.displayName,
+      })
+      .from(users)
+      .where(
+        sql`${users.id} IN (${sql.join(userIds.map((id) => sql`${id}`), sql`, `)})`,
+      );
+
+    const keysByUser = userDetails.map((user) => ({
+      userId: user.id,
+      userName: user.displayName,
+      keyCount: keysByUserMap.get(user.id) || 0,
+    }));
+
+    return {
+      totalKeys,
+      activeKeys,
+      revokedKeys,
+      expiredKeys,
+      keysUsedLast24h,
+      keysByUser,
+    };
+  }
+
+  /**
+   * Admin revoke any API key (bypasses user ownership check)
+   * 
+   * @param keyId - UUID of the key to revoke
+   * @returns Revoked key details
+   * @throws Error if key not found
+   */
+  async adminRevokeApiKey(keyId: string): Promise<{
+    id: string;
+    userId: string;
+    name: string;
+    revokedAt: Date;
+  }> {
+    const result = await db
+      .update(apiKeys)
+      .set({ revokedAt: new Date() })
+      .where(eq(apiKeys.id, keyId))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error("API key not found");
+    }
+
+    return {
+      id: result[0].id,
+      userId: result[0].userId,
+      name: result[0].name,
+      revokedAt: result[0].revokedAt!,
+    };
+  }
+
+  /**
+   * Admin delete any API key permanently (bypasses user ownership check)
+   * 
+   * @param keyId - UUID of the key to delete
+   * @throws Error if key not found
+   */
+  async adminDeleteApiKey(keyId: string): Promise<void> {
+    const result = await db
+      .delete(apiKeys)
+      .where(eq(apiKeys.id, keyId))
+      .returning();
+
+    if (result.length === 0) {
+      throw new Error("API key not found");
+    }
+  }
+
+  /**
+   * Admin get API key details (bypasses user ownership check)
+   * 
+   * @param keyId - UUID of the key
+   * @returns Key details with user info or null if not found
+   */
+  async adminGetApiKey(keyId: string): Promise<{
+    id: string;
+    userId: string;
+    userName: string | null;
+    userEmail: string | null;
+    name: string;
+    prefix: string;
+    permissions: string[];
+    rateLimit: number | null;
+    expiresAt: Date | null;
+    lastUsedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    revoked: boolean;
+    revokedAt: Date | null;
+  } | null> {
+    const [result] = await db
+      .select({
+        id: apiKeys.id,
+        userId: apiKeys.userId,
+        userName: users.displayName,
+        userEmail: users.email,
+        name: apiKeys.name,
+        prefix: apiKeys.keyPrefix,
+        permissions: apiKeys.permissions,
+        rateLimit: apiKeys.rateLimit,
+        expiresAt: apiKeys.expiresAt,
+        lastUsedAt: apiKeys.lastUsedAt,
+        createdAt: apiKeys.createdAt,
+        updatedAt: apiKeys.updatedAt,
+        revokedAt: apiKeys.revokedAt,
+      })
+      .from(apiKeys)
+      .leftJoin(users, eq(apiKeys.userId, users.id))
+      .where(eq(apiKeys.id, keyId))
+      .limit(1);
+
+    if (!result) {
+      return null;
+    }
+
+    return {
+      ...result,
+      permissions: (result.permissions as string[]) || [],
+      revoked: result.revokedAt !== null,
+    };
+  }
+
+  /**
+   * Admin generate API key for any user
+   * 
+   * @param targetUserId - UUID of the user to generate key for
+   * @param options - Configuration options
+   * @returns The generated key (shown only once!) and key ID
+   */
+  async adminGenerateApiKey(
+    targetUserId: string,
+    options: {
+      name: string;
+      permissions?: string[];
+      rateLimit?: number;
+      expiresAt?: Date;
+    },
+  ): Promise<{ key: string; keyId: string }> {
+    // Use the existing generateApiKey method
+    return this.generateApiKey(targetUserId, options);
   }
 }

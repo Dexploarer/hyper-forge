@@ -5,6 +5,16 @@
 
 import { t, Static } from "elysia";
 
+// Import comprehensive asset metadata schemas
+import {
+  AssetMetadataSchema,
+  BaseAssetMetadataSchema,
+  VariantAssetMetadataSchema,
+  AssetTypeEnum,
+  WorkflowStatusEnum,
+  MaterialPresetInfoSchema,
+} from "./models/asset-metadata.models";
+
 // ==================== Common Models ====================
 
 /**
@@ -170,13 +180,17 @@ export const AssetList = t.Array(AssetMetadata);
  * Asset API Response
  * Full asset structure returned by the /api/assets endpoint
  * Includes the complete metadata object from metadata.json files
+ *
+ * Note: Uses flexible AssetMetadata schema (not strict AssetMetadataSchema)
+ * to accommodate database returns with wider types. Elysia's automatic
+ * normalization handles filtering extra properties.
  */
 export const AssetResponse = t.Object({
   id: t.String(),
   name: t.String(),
   description: t.String(),
   type: t.String(),
-  metadata: t.Any(), // Full metadata.json content (dynamic structure with many optional fields)
+  metadata: AssetMetadata, // Flexible schema for database compatibility
   hasModel: t.Boolean(),
   modelFile: t.Optional(t.String()),
   generatedAt: t.Optional(t.String()),
@@ -220,7 +234,7 @@ export const AssetUpdate = t.Object({
       t.Literal("archived"),
     ]),
   ),
-  metadata: t.Optional(t.Record(t.String(), t.Unknown())), // Allow arbitrary metadata updates
+  metadata: t.Optional(AssetMetadataSchema), // Type-safe asset metadata updates
 });
 
 export const BulkUpdateRequest = t.Object({
@@ -253,7 +267,7 @@ export const BulkUpdateRequest = t.Object({
     ),
     isFavorite: t.Optional(t.Boolean()),
     notes: t.Optional(t.String({ maxLength: 5000 })),
-    metadata: t.Optional(t.Record(t.String(), t.Unknown())), // Allow arbitrary metadata updates
+    metadata: t.Optional(AssetMetadataSchema), // Type-safe asset metadata updates
   }),
 });
 
@@ -1287,7 +1301,7 @@ export const PartialUpdateRequest = t.Object({
     t.Literal("economySettings"),
     t.Literal("aiPreferences"),
   ]),
-  data: t.Any(), // Dynamic based on section
+  data: t.Unknown(), // Dynamic based on section - requires explicit type narrowing
 });
 
 export const CloneConfigRequest = t.Object({

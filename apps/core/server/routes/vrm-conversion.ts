@@ -11,6 +11,7 @@ import {
   InternalServerError,
 } from "../errors";
 import { createChildLogger } from "../utils/logger";
+import { requireAuthGuard } from "../plugins/auth.plugin";
 
 const logger = createChildLogger("VRMConversionRoutes");
 
@@ -48,9 +49,7 @@ export const vrmConversionRoutes = new Elysia({
 
       // Validate input
       if (!file && !glbUrl) {
-        throw new BadRequestError(
-          "Either 'file' or 'glbUrl' must be provided",
-        );
+        throw new BadRequestError("Either 'file' or 'glbUrl' must be provided");
       }
 
       const vrmService = new VRMConversionService();
@@ -82,18 +81,23 @@ export const vrmConversionRoutes = new Elysia({
           "VRM conversion successful",
         );
 
-        // Return VRM file as download
-        return new Response(result.vrmBuffer, {
-          headers: {
-            "Content-Type": "application/octet-stream",
-            "Content-Disposition": `attachment; filename="${options?.avatarName || "avatar"}.vrm"`,
-            "Content-Length": result.vrmBuffer.length.toString(),
-            "X-VRM-Bones-Mapped": result.boneMappings.size.toString(),
-            "X-VRM-Warnings": result.warnings.length.toString(),
-            "X-VRM-Processing-Time-Ms":
-              result.metadata.processingTimeMs.toString(),
+        // Return VRM file as download (convert Buffer to Uint8Array for Blob)
+        return new Response(
+          new Blob([new Uint8Array(result.vrmBuffer)], {
+            type: "application/octet-stream",
+          }),
+          {
+            headers: {
+              "Content-Type": "application/octet-stream",
+              "Content-Disposition": `attachment; filename="${options?.avatarName || "avatar"}.vrm"`,
+              "Content-Length": result.vrmBuffer.length.toString(),
+              "X-VRM-Bones-Mapped": result.boneMappings.size.toString(),
+              "X-VRM-Warnings": result.warnings.length.toString(),
+              "X-VRM-Processing-Time-Ms":
+                result.metadata.processingTimeMs.toString(),
+            },
           },
-        });
+        );
       } catch (error) {
         logger.error({ err: error }, "VRM conversion failed");
         throw new InternalServerError(
@@ -134,12 +138,14 @@ export const vrmConversionRoutes = new Elysia({
                   file: {
                     type: "string",
                     format: "binary",
-                    description: "GLB file to convert (mutually exclusive with glbUrl)",
+                    description:
+                      "GLB file to convert (mutually exclusive with glbUrl)",
                   },
                   glbUrl: {
                     type: "string",
                     format: "uri",
-                    description: "URL to GLB file (mutually exclusive with file)",
+                    description:
+                      "URL to GLB file (mutually exclusive with file)",
                   },
                   options: {
                     type: "object",
@@ -204,14 +210,11 @@ export const vrmConversionRoutes = new Elysia({
   )
 
   // POST /api/vrm/convert-and-upload - Convert GLB to VRM and upload to CDN
+  .use(requireAuthGuard)
   .post(
     "/convert-and-upload",
     async ({ body, user }) => {
-      if (!user) {
-        throw new UnauthorizedError(
-          "Authentication required to upload VRM files",
-        );
-      }
+      // user is guaranteed to exist thanks to requireAuthGuard
 
       const { file, glbUrl, assetId, options } = body as {
         file?: File;
@@ -240,9 +243,7 @@ export const vrmConversionRoutes = new Elysia({
 
       // Validate input
       if (!file && !glbUrl) {
-        throw new BadRequestError(
-          "Either 'file' or 'glbUrl' must be provided",
-        );
+        throw new BadRequestError("Either 'file' or 'glbUrl' must be provided");
       }
 
       if (!assetId) {
@@ -266,7 +267,10 @@ export const vrmConversionRoutes = new Elysia({
         }
 
         logger.info(
-          { assetId, vrmSizeMB: (result.vrmBuffer.length / 1024 / 1024).toFixed(2) },
+          {
+            assetId,
+            vrmSizeMB: (result.vrmBuffer.length / 1024 / 1024).toFixed(2),
+          },
           "VRM conversion complete, uploading to CDN",
         );
 
@@ -282,7 +286,7 @@ export const vrmConversionRoutes = new Elysia({
 
         const fileName = `${options?.avatarName || assetId}.vrm`;
         const cdnFormData = new FormData();
-        const blob = new Blob([result.vrmBuffer], {
+        const blob = new Blob([new Uint8Array(result.vrmBuffer)], {
           type: "application/octet-stream",
         });
         cdnFormData.append("files", blob, `${assetId}/${fileName}`);

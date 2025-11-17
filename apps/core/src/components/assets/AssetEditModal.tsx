@@ -1,4 +1,11 @@
-import { X, Save, Trash2, AlertTriangle } from "lucide-react";
+import {
+  X,
+  Save,
+  Trash2,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 
 import type { Asset, AssetMetadata } from "../../types";
@@ -14,6 +21,13 @@ interface AssetEditModalProps {
   hasVariants?: boolean;
 }
 
+interface AssetEditData {
+  name?: string;
+  description?: string;
+  type?: string;
+  metadata?: Partial<AssetMetadata>;
+}
+
 export function AssetEditModal({
   asset,
   isOpen,
@@ -22,24 +36,11 @@ export function AssetEditModal({
   onDelete,
   hasVariants = false,
 }: AssetEditModalProps) {
-  interface EditedAssetData {
-    name: string;
-    type: string;
-    metadata: {
-      tier: string;
-      subtype: string;
-      notes?: string;
-    };
-  }
-
-  const [editedData, setEditedData] = useState<EditedAssetData>({
+  const [editedData, setEditedData] = useState<AssetEditData>({
     name: "",
+    description: "",
     type: "",
-    metadata: {
-      tier: "",
-      subtype: "",
-      notes: "",
-    },
+    metadata: {},
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -47,19 +48,22 @@ export function AssetEditModal({
   const [isSaving, setIsSaving] = useState(false);
   const { showNotification } = useApp();
 
+  // Collapsible sections state
+  const [sectionsOpen, setSectionsOpen] = useState({
+    basic: true,
+    generation: false,
+    files: false,
+    status: false,
+    advanced: false,
+  });
+
   useEffect(() => {
     if (asset) {
       setEditedData({
         name: asset.name,
+        description: asset.description,
         type: asset.type,
-        metadata: {
-          tier:
-            typeof asset.metadata.tier === "string"
-              ? asset.metadata.tier
-              : String(asset.metadata.tier || ""),
-          subtype: asset.metadata.subtype || "",
-          notes: asset.metadata.notes || "",
-        },
+        metadata: { ...asset.metadata },
       });
       setIsDirty(false);
       setShowDeleteConfirm(false);
@@ -77,18 +81,15 @@ export function AssetEditModal({
     return "";
   };
 
-  const handleChange = (field: string, value: string): void => {
+  const handleChange = (field: string, value: any): void => {
     setEditedData((prev) => {
-      if (field.includes(".")) {
-        const [parent, child] = field.split(".") as [
-          keyof EditedAssetData,
-          string,
-        ];
+      if (field.startsWith("metadata.")) {
+        const metadataField = field.replace("metadata.", "");
         return {
           ...prev,
-          [parent]: {
-            ...(prev[parent] as Record<string, string>),
-            [child]: value,
+          metadata: {
+            ...(prev.metadata || {}),
+            [metadataField]: value,
           },
         };
       }
@@ -102,7 +103,7 @@ export function AssetEditModal({
   };
 
   const handleSave = async (): Promise<void> => {
-    const error = validateName(editedData.name);
+    const error = validateName(editedData.name || "");
     if (error) {
       setNameError(error);
       return;
@@ -113,12 +114,14 @@ export function AssetEditModal({
       try {
         await onSave({
           id: asset.id,
-          name: editedData.name.trim(),
+          name: editedData.name?.trim(),
+          description: editedData.description,
           type: editedData.type,
           metadata: {
             ...asset.metadata,
-            ...editedData.metadata,
-          },
+            ...(editedData.metadata || {}),
+            updatedAt: new Date().toISOString(),
+          } as AssetMetadata,
         });
         // Don't close here - let the parent handle it after successful save
       } catch (error) {
@@ -140,12 +143,21 @@ export function AssetEditModal({
     }
   };
 
+  const toggleSection = (section: keyof typeof sectionsOpen) => {
+    setSectionsOpen((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
+
   if (!asset) return null;
 
+  // Safe accessor for metadata fields (handles union type)
+  const metadata = (editedData.metadata || {}) as Record<string, any>;
+
   return (
-    <Modal open={isOpen} onClose={onClose} className="max-w-md">
-      <div className="flex items-center justify-between mb-6 px-6 pt-6">
-        <h2 className="text-lg font-semibold text-text-primary">Edit Asset</h2>
+    <Modal open={isOpen} onClose={onClose} className="max-w-4xl max-h-[90vh]">
+      <div className="flex items-center justify-between mb-4 px-6 pt-6">
+        <h2 className="text-lg font-semibold text-text-primary">
+          Edit Asset Metadata
+        </h2>
         <button
           onClick={onClose}
           className="p-1.5 hover:bg-bg-tertiary rounded-lg transition-colors"
@@ -154,119 +166,487 @@ export function AssetEditModal({
         </button>
       </div>
 
-      <div className="space-y-4 px-6">
-        {/* Asset Name */}
-        <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1.5">
-            Asset Name
-          </label>
-          <Input
-            value={editedData.name}
-            onChange={(e) => handleChange("name", e.target.value)}
-            placeholder="e.g., sword-iron-basic"
-            className={`w-full ${nameError ? "border-error" : ""}`}
-          />
-          {nameError && <p className="text-xs text-error mt-1">{nameError}</p>}
-        </div>
-
-        {/* Asset Type */}
-        <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1.5">
-            Type
-          </label>
-          <select
-            value={editedData.type}
-            onChange={(e) => handleChange("type", e.target.value)}
-            className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+      {/* Scrollable Content */}
+      <div className="px-6 pb-6 overflow-y-auto max-h-[calc(90vh-180px)] space-y-4">
+        {/* Basic Info Section */}
+        <div className="border border-border-primary rounded-lg overflow-hidden">
+          <button
+            onClick={() => toggleSection("basic")}
+            className="w-full px-4 py-3 bg-bg-tertiary hover:bg-bg-hover flex items-center justify-between transition-colors"
           >
-            <option value="character">Character</option>
-            <option value="weapon">Weapon</option>
-            <option value="armor">Armor</option>
-            <option value="consumable">Consumable</option>
-            <option value="tool">Tool</option>
-            <option value="decoration">Decoration</option>
-            <option value="building">Building</option>
-            <option value="resource">Resource</option>
-            <option value="misc">Misc</option>
-          </select>
+            <span className="font-medium text-text-primary">
+              Basic Information
+            </span>
+            {sectionsOpen.basic ? (
+              <ChevronUp size={18} className="text-text-secondary" />
+            ) : (
+              <ChevronDown size={18} className="text-text-secondary" />
+            )}
+          </button>
+          {sectionsOpen.basic && (
+            <div className="p-4 space-y-4">
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Asset Name *
+                </label>
+                <Input
+                  value={editedData.name || ""}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  placeholder="e.g., sword-iron-basic"
+                  className={`w-full ${nameError ? "border-error" : ""}`}
+                />
+                {nameError && (
+                  <p className="text-xs text-error mt-1">{nameError}</p>
+                )}
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Description
+                </label>
+                <textarea
+                  value={editedData.description || ""}
+                  onChange={(e) => handleChange("description", e.target.value)}
+                  placeholder="Asset description..."
+                  rows={3}
+                  className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary placeholder-text-tertiary resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              {/* Type */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    Type *
+                  </label>
+                  <select
+                    value={editedData.type || ""}
+                    onChange={(e) => handleChange("type", e.target.value)}
+                    className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="character">Character</option>
+                    <option value="weapon">Weapon</option>
+                    <option value="armor">Armor</option>
+                    <option value="consumable">Consumable</option>
+                    <option value="tool">Tool</option>
+                    <option value="decoration">Decoration</option>
+                    <option value="building">Building</option>
+                    <option value="environment">Environment</option>
+                    <option value="prop">Prop</option>
+                    <option value="resource">Resource</option>
+                    <option value="misc">Misc</option>
+                  </select>
+                </div>
+
+                {/* Subtype */}
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    Subtype
+                  </label>
+                  <Input
+                    value={metadata.subtype || ""}
+                    onChange={(e) =>
+                      handleChange("metadata.subtype", e.target.value)
+                    }
+                    placeholder="e.g., body, helmet, sword"
+                  />
+                </div>
+              </div>
+
+              {/* Tier */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Tier
+                </label>
+                <select
+                  value={metadata.tier || ""}
+                  onChange={(e) =>
+                    handleChange("metadata.tier", e.target.value)
+                  }
+                  className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="">None</option>
+                  <option value="base">Base</option>
+                  <option value="bronze">Bronze</option>
+                  <option value="iron">Iron</option>
+                  <option value="steel">Steel</option>
+                  <option value="mithril">Mithril</option>
+                </select>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Notes
+                </label>
+                <textarea
+                  value={metadata.notes || ""}
+                  onChange={(e) =>
+                    handleChange("metadata.notes", e.target.value)
+                  }
+                  placeholder="Add notes about this asset..."
+                  rows={3}
+                  className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary placeholder-text-tertiary resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Tier (if applicable) */}
-        {editedData.metadata.tier && (
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">
-              Tier
-            </label>
-            <select
-              value={editedData.metadata.tier}
-              onChange={(e) => handleChange("metadata.tier", e.target.value)}
-              className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="base">Base</option>
-              <option value="bronze">Bronze</option>
-              <option value="iron">Iron</option>
-              <option value="steel">Steel</option>
-              <option value="mithril">Mithril</option>
-            </select>
-          </div>
-        )}
+        {/* Generation Data Section */}
+        <div className="border border-border-primary rounded-lg overflow-hidden">
+          <button
+            onClick={() => toggleSection("generation")}
+            className="w-full px-4 py-3 bg-bg-tertiary hover:bg-bg-hover flex items-center justify-between transition-colors"
+          >
+            <span className="font-medium text-text-primary">
+              Generation Data
+            </span>
+            {sectionsOpen.generation ? (
+              <ChevronUp size={18} className="text-text-secondary" />
+            ) : (
+              <ChevronDown size={18} className="text-text-secondary" />
+            )}
+          </button>
+          {sectionsOpen.generation && (
+            <div className="p-4 space-y-4">
+              {/* Meshy Task ID */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Meshy Task ID
+                </label>
+                <Input
+                  value={metadata.meshyTaskId || ""}
+                  onChange={(e) =>
+                    handleChange("metadata.meshyTaskId", e.target.value)
+                  }
+                  placeholder="Meshy task ID for retexturing"
+                />
+              </div>
 
-        {/* Subtype (if applicable) */}
-        {editedData.metadata.subtype && (
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-1.5">
-              Subtype
-            </label>
-            <Input
-              value={editedData.metadata.subtype}
-              onChange={(e) => handleChange("metadata.subtype", e.target.value)}
-              placeholder="e.g., body, helmet, legs"
-              className="w-full"
-            />
-          </div>
-        )}
+              {/* Generation Method */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    Generation Method
+                  </label>
+                  <select
+                    value={metadata.generationMethod || ""}
+                    onChange={(e) =>
+                      handleChange("metadata.generationMethod", e.target.value)
+                    }
+                    className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="">None</option>
+                    <option value="gpt-image-meshy">GPT + Image + Meshy</option>
+                    <option value="direct-meshy">Direct Meshy</option>
+                    <option value="manual">Manual</option>
+                    <option value="placeholder">Placeholder</option>
+                  </select>
+                </div>
 
-        {/* Notes */}
-        <div>
-          <label className="block text-sm font-medium text-text-secondary mb-1.5">
-            Notes
-          </label>
-          <textarea
-            value={editedData.metadata.notes || ""}
-            onChange={(e) => handleChange("metadata.notes", e.target.value)}
-            placeholder="Add notes about this asset..."
-            rows={3}
-            className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary placeholder-text-tertiary resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-          />
+                {/* Workflow */}
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    Workflow
+                  </label>
+                  <Input
+                    value={metadata.workflow || ""}
+                    onChange={(e) =>
+                      handleChange("metadata.workflow", e.target.value)
+                    }
+                    placeholder="e.g., standard, quick, premium"
+                  />
+                </div>
+              </div>
+
+              {/* Game ID */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Game ID
+                </label>
+                <Input
+                  value={metadata.gameId || ""}
+                  onChange={(e) =>
+                    handleChange("metadata.gameId", e.target.value)
+                  }
+                  placeholder="Game-specific identifier"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Status Info */}
-        <div className="flex flex-wrap gap-2 pt-2">
-          {asset.hasModel && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500 bg-opacity-20 text-green-300">
-              Has Model
+        {/* Status & Workflow Section */}
+        <div className="border border-border-primary rounded-lg overflow-hidden">
+          <button
+            onClick={() => toggleSection("status")}
+            className="w-full px-4 py-3 bg-bg-tertiary hover:bg-bg-hover flex items-center justify-between transition-colors"
+          >
+            <span className="font-medium text-text-primary">
+              Status & Workflow
             </span>
+            {sectionsOpen.status ? (
+              <ChevronUp size={18} className="text-text-secondary" />
+            ) : (
+              <ChevronDown size={18} className="text-text-secondary" />
+            )}
+          </button>
+          {sectionsOpen.status && (
+            <div className="p-4 space-y-4">
+              {/* Status */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    Status
+                  </label>
+                  <select
+                    value={metadata.status || "draft"}
+                    onChange={(e) =>
+                      handleChange("metadata.status", e.target.value)
+                    }
+                    className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="processing">Processing</option>
+                    <option value="completed">Completed</option>
+                    <option value="failed">Failed</option>
+                    <option value="approved">Approved</option>
+                    <option value="published">Published</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </div>
+
+                {/* Project ID */}
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    Project ID
+                  </label>
+                  <Input
+                    value={metadata.projectId || ""}
+                    onChange={(e) =>
+                      handleChange("metadata.projectId", e.target.value)
+                    }
+                    placeholder="Project identifier"
+                  />
+                </div>
+              </div>
+
+              {/* Checkboxes */}
+              <div className="grid grid-cols-2 gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={metadata.gddCompliant || false}
+                    onChange={(e) =>
+                      handleChange("metadata.gddCompliant", e.target.checked)
+                    }
+                    className="w-4 h-4 rounded border-border-primary bg-bg-tertiary checked:bg-primary cursor-pointer"
+                  />
+                  <span className="text-sm text-text-secondary">
+                    GDD Compliant
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={metadata.isPlaceholder || false}
+                    onChange={(e) =>
+                      handleChange("metadata.isPlaceholder", e.target.checked)
+                    }
+                    className="w-4 h-4 rounded border-border-primary bg-bg-tertiary checked:bg-primary cursor-pointer"
+                  />
+                  <span className="text-sm text-text-secondary">
+                    Is Placeholder
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={metadata.isFavorite || false}
+                    onChange={(e) =>
+                      handleChange("metadata.isFavorite", e.target.checked)
+                    }
+                    className="w-4 h-4 rounded border-border-primary bg-bg-tertiary checked:bg-primary cursor-pointer"
+                  />
+                  <span className="text-sm text-text-secondary">Favorite</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={metadata.normalized || false}
+                    onChange={(e) =>
+                      handleChange("metadata.normalized", e.target.checked)
+                    }
+                    className="w-4 h-4 rounded border-border-primary bg-bg-tertiary checked:bg-primary cursor-pointer"
+                  />
+                  <span className="text-sm text-text-secondary">
+                    Normalized
+                  </span>
+                </label>
+              </div>
+            </div>
           )}
-          {hasVariants && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500 bg-opacity-20 text-blue-300">
-              Has Variants
-            </span>
+        </div>
+
+        {/* Files & CDN Section */}
+        <div className="border border-border-primary rounded-lg overflow-hidden">
+          <button
+            onClick={() => toggleSection("files")}
+            className="w-full px-4 py-3 bg-bg-tertiary hover:bg-bg-hover flex items-center justify-between transition-colors"
+          >
+            <span className="font-medium text-text-primary">Files & CDN</span>
+            {sectionsOpen.files ? (
+              <ChevronUp size={18} className="text-text-secondary" />
+            ) : (
+              <ChevronDown size={18} className="text-text-secondary" />
+            )}
+          </button>
+          {sectionsOpen.files && (
+            <div className="p-4 space-y-4">
+              {/* Model Path */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Model Path
+                </label>
+                <Input
+                  value={metadata.modelPath || ""}
+                  onChange={(e) =>
+                    handleChange("metadata.modelPath", e.target.value)
+                  }
+                  placeholder="Path to model file"
+                />
+              </div>
+
+              {/* Concept Art Path */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Concept Art Path
+                </label>
+                <Input
+                  value={metadata.conceptArtPath || ""}
+                  onChange={(e) =>
+                    handleChange("metadata.conceptArtPath", e.target.value)
+                  }
+                  placeholder="Path to concept art"
+                />
+              </div>
+
+              {/* CDN URLs (Read-only) */}
+              {asset.cdnUrl && (
+                <div className="p-3 bg-bg-tertiary rounded-lg">
+                  <p className="text-xs text-text-tertiary mb-2">
+                    CDN URL (read-only):
+                  </p>
+                  <p className="text-xs text-text-secondary font-mono break-all">
+                    {asset.cdnUrl}
+                  </p>
+                </div>
+              )}
+
+              {/* Format */}
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  Format
+                </label>
+                <select
+                  value={metadata.format || "GLB"}
+                  onChange={(e) =>
+                    handleChange("metadata.format", e.target.value)
+                  }
+                  className="w-full px-3 py-2 bg-bg-tertiary border border-border-primary rounded-lg text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  <option value="GLB">GLB</option>
+                  <option value="FBX">FBX</option>
+                  <option value="OBJ">OBJ</option>
+                </select>
+              </div>
+            </div>
           )}
-          {asset.metadata.isBaseModel && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-bg-tertiary text-text-secondary">
-              Base Model
-            </span>
-          )}
-          {asset.metadata.isPlaceholder && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500 bg-opacity-20 text-yellow-300">
-              Placeholder
-            </span>
+        </div>
+
+        {/* Advanced Section */}
+        <div className="border border-border-primary rounded-lg overflow-hidden">
+          <button
+            onClick={() => toggleSection("advanced")}
+            className="w-full px-4 py-3 bg-bg-tertiary hover:bg-bg-hover flex items-center justify-between transition-colors"
+          >
+            <span className="font-medium text-text-primary">Advanced</span>
+            {sectionsOpen.advanced ? (
+              <ChevronUp size={18} className="text-text-secondary" />
+            ) : (
+              <ChevronDown size={18} className="text-text-secondary" />
+            )}
+          </button>
+          {sectionsOpen.advanced && (
+            <div className="p-4 space-y-4">
+              {/* Read-only metadata info */}
+              <div className="space-y-2 p-3 bg-bg-tertiary rounded-lg">
+                <div className="flex justify-between text-xs">
+                  <span className="text-text-tertiary">Is Base Model:</span>
+                  <span className="text-text-secondary">
+                    {metadata.isBaseModel ? "Yes" : "No"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-text-tertiary">Is Variant:</span>
+                  <span className="text-text-secondary">
+                    {metadata.isVariant ? "Yes" : "No"}
+                  </span>
+                </div>
+                {metadata.createdAt && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-text-tertiary">Created:</span>
+                    <span className="text-text-secondary">
+                      {new Date(metadata.createdAt).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {metadata.updatedAt && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-text-tertiary">Updated:</span>
+                    <span className="text-text-secondary">
+                      {new Date(metadata.updatedAt).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Status Badges */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                {asset.hasModel && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-500 bg-opacity-20 text-green-300">
+                    Has Model
+                  </span>
+                )}
+                {hasVariants && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-500 bg-opacity-20 text-blue-300">
+                    Has Variants
+                  </span>
+                )}
+                {metadata.isBaseModel && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-bg-tertiary text-text-secondary">
+                    Base Model
+                  </span>
+                )}
+                {metadata.isPlaceholder && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-500 bg-opacity-20 text-yellow-300">
+                    Placeholder
+                  </span>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex justify-between items-center mt-6 px-6 pb-6">
+      {/* Action Buttons - Fixed at bottom */}
+      <div className="flex justify-between items-center mt-4 px-6 pb-6 border-t border-border-primary pt-4">
         {/* Delete Button */}
         {onDelete && (
           <div>
@@ -324,7 +704,7 @@ export function AssetEditModal({
             ) : (
               <>
                 <Save size={16} className="mr-1.5" />
-                Save
+                Save Changes
               </>
             )}
           </Button>

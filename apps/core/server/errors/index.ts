@@ -14,7 +14,7 @@ export abstract class ApiError extends Error {
 
   constructor(
     message: string,
-    public context?: Record<string, any>,
+    public context?: Record<string, unknown>,
   ) {
     super(message);
     this.name = this.constructor.name;
@@ -37,7 +37,10 @@ export class BadRequestError extends ApiError {
   statusCode = 400;
   code = "BAD_REQUEST";
 
-  constructor(message: string = "Bad request", context?: Record<string, any>) {
+  constructor(
+    message: string = "Bad request",
+    context?: Record<string, unknown>,
+  ) {
     super(message, context);
   }
 }
@@ -51,7 +54,7 @@ export class UnauthorizedError extends ApiError {
 
   constructor(
     message: string = "Authentication required",
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ) {
     super(message, context);
   }
@@ -66,7 +69,7 @@ export class ForbiddenError extends ApiError {
 
   constructor(
     message: string = "Access forbidden",
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ) {
     super(message, context);
   }
@@ -82,7 +85,7 @@ export class NotFoundError extends ApiError {
   constructor(
     resource: string,
     identifier?: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ) {
     const message = identifier
       ? `${resource} not found: ${identifier}`
@@ -100,7 +103,7 @@ export class ConflictError extends ApiError {
 
   constructor(
     message: string = "Resource conflict",
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ) {
     super(message, context);
   }
@@ -116,7 +119,7 @@ export class ValidationError extends ApiError {
   constructor(
     message: string = "Validation failed",
     public fields?: Record<string, string>,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ) {
     super(message, context);
   }
@@ -141,7 +144,7 @@ export class RateLimitError extends ApiError {
   constructor(
     message: string = "Too many requests",
     public retryAfter?: number,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ) {
     super(message, context);
   }
@@ -165,7 +168,7 @@ export class InternalServerError extends ApiError {
 
   constructor(
     message: string = "Internal server error",
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ) {
     super(message, context);
   }
@@ -181,8 +184,8 @@ export class ExternalServiceError extends ApiError {
   constructor(
     service: string,
     message: string,
-    public originalError?: any,
-    context?: Record<string, any>,
+    public originalError?: unknown,
+    context?: Record<string, unknown>,
   ) {
     super(`${service}: ${message}`, { ...context, service, originalError });
   }
@@ -198,7 +201,7 @@ export class ServiceUnavailableError extends ApiError {
   constructor(
     service: string,
     message?: string,
-    context?: Record<string, any>,
+    context?: Record<string, unknown>,
   ) {
     super(message || `${service} is currently unavailable`, context);
   }
@@ -207,7 +210,7 @@ export class ServiceUnavailableError extends ApiError {
 /**
  * Helper function to determine if an error is an ApiError
  */
-export function isApiError(error: any): error is ApiError {
+export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError;
 }
 
@@ -234,7 +237,7 @@ export function toApiError(error: unknown): ApiError {
 /**
  * Helper function to extract error context for logging
  */
-export function getErrorContext(error: unknown): Record<string, any> {
+export function getErrorContext(error: unknown): Record<string, unknown> {
   if (isApiError(error)) {
     return {
       code: error.code,

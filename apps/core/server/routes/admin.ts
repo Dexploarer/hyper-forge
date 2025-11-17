@@ -9,6 +9,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { db, activityLog } from "../db";
 import { requireAdminGuard, requireAuth } from "../plugins/auth.plugin";
 import { userService } from "../services/UserService";
+import { ApiKeyService } from "../services/ApiKeyService";
 import { MediaStorageService } from "../services/MediaStorageService";
 import { importCDNAssets } from "../scripts/import-cdn-assets";
 import {
@@ -332,5 +333,337 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
           security: [{ BearerAuth: [] }],
         },
       },
-    ),
+    )
+
+      // ============================================
+      // API KEY MANAGEMENT ROUTES (Admin Only)
+      // ============================================
+
+      /**
+       * Get all API keys across all users
+       * GET /api/admin/api-keys
+       */
+      .get(
+        "/api-keys",
+        async ({ query }) => {
+          const apiKeyService = new ApiKeyService();
+          const result = await apiKeyService.getAllApiKeys({
+            userId: query.userId,
+            status: query.status as any,
+            search: query.search,
+            limit: query.limit ? parseInt(query.limit) : undefined,
+            offset: query.offset ? parseInt(query.offset) : undefined,
+          });
+
+          return {
+            success: true,
+            keys: result.keys,
+            total: result.total,
+          };
+        },
+        {
+          query: t.Object({
+            userId: t.Optional(t.String()),
+            status: t.Optional(
+              t.Union([
+                t.Literal("active"),
+                t.Literal("revoked"),
+                t.Literal("expired"),
+                t.Literal("all"),
+              ]),
+            ),
+            search: t.Optional(t.String()),
+            limit: t.Optional(t.String()),
+            offset: t.Optional(t.String()),
+          }),
+          detail: {
+            tags: ["Admin", "API Keys"],
+            summary: "Get all API keys (Admin only)",
+            description:
+              "Get all API keys across all users with optional filtering and search. Admin only.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
+
+      /**
+       * Get API key statistics
+       * GET /api/admin/api-keys/stats
+       */
+      .get(
+        "/api-keys/stats",
+        async () => {
+          const apiKeyService = new ApiKeyService();
+          const stats = await apiKeyService.getSystemStats();
+
+          return {
+            success: true,
+            stats,
+          };
+        },
+        {
+          detail: {
+            tags: ["Admin", "API Keys"],
+            summary: "Get API key statistics (Admin only)",
+            description:
+              "Get system-wide API key statistics including counts and usage. Admin only.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
+
+      /**
+       * Generate API key for a user
+       * POST /api/admin/users/:userId/api-keys
+       */
+      .post(
+        "/users/:userId/api-keys",
+        async (context) => {
+          const { user, params, body } = context as typeof context & {
+            user: AuthUser;
+          };
+          const apiKeyService = new ApiKeyService();
+
+          const { key, keyId } = await apiKeyService.adminGenerateApiKey(
+            params.userId,
+            {
+              name: body.name,
+              permissions: body.permissions,
+              rateLimit: body.rateLimit,
+              expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
+            },
+          );
+
+          // Get user details for logging
+          const targetUser = await userService.findById(params.userId);
+
+          // Log activity
+          await db.insert(activityLog).values({
+            userId: user.id,
+            action: "api_key_generated_for_user",
+            entityType: "api_key",
+            entityId: keyId,
+            details: {
+              targetUserId: params.userId,
+              targetUserName:
+                targetUser?.displayName || targetUser?.email || "Unknown",
+              keyName: body.name,
+              generatedBy: "admin",
+            },
+          });
+
+          return {
+            success: true,
+            key, // ONLY shown once!
+            keyId,
+            prefix: key.substring(0, 16),
+            userId: params.userId,
+            message: "Save this key securely and deliver to user.",
+          };
+        },
+        {
+          params: t.Object({
+            userId: t.String(),
+          }),
+          body: t.Object({
+            name: t.String({ minLength: 1, maxLength: 255 }),
+            permissions: t.Optional(t.Array(t.String())),
+            expiresAt: t.Optional(t.String({ format: "date-time" })),
+            rateLimit: t.Optional(t.Number()),
+          }),
+          detail: {
+            tags: ["Admin", "API Keys"],
+            summary: "Generate API key for user (Admin only)",
+            description:
+              "Generate a new API key for any user. The key is only shown once. Admin only.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
+
+      /**
+       * Get API keys for a specific user
+       * GET /api/admin/users/:userId/api-keys
+       */
+      .get(
+        "/users/:userId/api-keys",
+        async ({ params }) => {
+          const apiKeyService = new ApiKeyService();
+          const result = await apiKeyService.getAllApiKeys({
+            userId: params.userId,
+          });
+
+          // Get user details
+          const targetUser = await userService.findById(params.userId);
+
+          return {
+            success: true,
+            keys: result.keys,
+            user: {
+              id: params.userId,
+              displayName: targetUser?.displayName || null,
+              email: targetUser?.email || null,
+            },
+          };
+        },
+        {
+          params: t.Object({
+            userId: t.String(),
+          }),
+          detail: {
+            tags: ["Admin", "API Keys"],
+            summary: "Get user's API keys (Admin only)",
+            description:
+              "Get all API keys for a specific user. Admin only.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
+
+      /**
+       * Get API key details
+       * GET /api/admin/api-keys/:keyId
+       */
+      .get(
+        "/api-keys/:keyId",
+        async ({ params }) => {
+          const apiKeyService = new ApiKeyService();
+          const key = await apiKeyService.adminGetApiKey(params.keyId);
+
+          if (!key) {
+            throw new NotFoundError("API key", params.keyId);
+          }
+
+          return {
+            success: true,
+            key,
+          };
+        },
+        {
+          params: t.Object({
+            keyId: t.String(),
+          }),
+          detail: {
+            tags: ["Admin", "API Keys"],
+            summary: "Get API key details (Admin only)",
+            description:
+              "Get detailed information about a specific API key. Admin only.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
+
+      /**
+       * Revoke API key
+       * DELETE /api/admin/api-keys/:keyId/revoke
+       */
+      .delete(
+        "/api-keys/:keyId/revoke",
+        async (context) => {
+          const { user, params } = context as typeof context & {
+            user: AuthUser;
+          };
+          const apiKeyService = new ApiKeyService();
+
+          // Get key details before revoking
+          const keyDetails = await apiKeyService.adminGetApiKey(params.keyId);
+
+          if (!keyDetails) {
+            throw new NotFoundError("API key", params.keyId);
+          }
+
+          // Revoke the key
+          const result = await apiKeyService.adminRevokeApiKey(params.keyId);
+
+          // Log activity
+          await db.insert(activityLog).values({
+            userId: user.id,
+            action: "api_key_revoked_by_admin",
+            entityType: "api_key",
+            entityId: params.keyId,
+            details: {
+              keyOwnerUserId: keyDetails.userId,
+              keyOwnerName: keyDetails.userName || keyDetails.userEmail || "Unknown",
+              keyName: keyDetails.name,
+            },
+          });
+
+          return {
+            success: true,
+            message: "API key revoked successfully",
+            key: {
+              id: result.id,
+              userId: result.userId,
+              name: result.name,
+              revokedAt: result.revokedAt.toISOString(),
+            },
+          };
+        },
+        {
+          params: t.Object({
+            keyId: t.String(),
+          }),
+          detail: {
+            tags: ["Admin", "API Keys"],
+            summary: "Revoke API key (Admin only)",
+            description:
+              "Revoke any API key. The key will stop working immediately. Admin only.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
+
+      /**
+       * Delete API key permanently
+       * DELETE /api/admin/api-keys/:keyId
+       */
+      .delete(
+        "/api-keys/:keyId",
+        async (context) => {
+          const { user, params } = context as typeof context & {
+            user: AuthUser;
+          };
+          const apiKeyService = new ApiKeyService();
+
+          // Get key details before deleting
+          const keyDetails = await apiKeyService.adminGetApiKey(params.keyId);
+
+          if (!keyDetails) {
+            throw new NotFoundError("API key", params.keyId);
+          }
+
+          // Delete the key
+          await apiKeyService.adminDeleteApiKey(params.keyId);
+
+          // Log activity
+          await db.insert(activityLog).values({
+            userId: user.id,
+            action: "api_key_deleted_by_admin",
+            entityType: "api_key",
+            entityId: params.keyId,
+            details: {
+              keyOwnerUserId: keyDetails.userId,
+              keyOwnerName: keyDetails.userName || keyDetails.userEmail || "Unknown",
+              keyName: keyDetails.name,
+            },
+          });
+
+          return {
+            success: true,
+            message: "API key deleted permanently",
+          };
+        },
+        {
+          params: t.Object({
+            keyId: t.String(),
+          }),
+          detail: {
+            tags: ["Admin", "API Keys"],
+            summary: "Delete API key (Admin only)",
+            description:
+              "Permanently delete any API key. This action cannot be undone. Admin only.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      ),
   );

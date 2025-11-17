@@ -11,6 +11,7 @@ import {
   quests,
   dialogues,
   lores,
+  locations,
   type NPC,
   type NewNPC,
   type Quest,
@@ -19,6 +20,7 @@ import {
   type NewDialogue,
   type Lore,
   type NewLore,
+  type Location,
 } from "../db/schema";
 import { eq, desc } from "drizzle-orm";
 import { embeddingService } from "./EmbeddingService";
@@ -397,7 +399,10 @@ export class ContentDatabaseService {
 
       return result;
     } catch (error) {
-      logger.error({ err: error }, `[ContentDatabaseService] Failed to list Dialogues`);
+      logger.error(
+        { err: error },
+        `[ContentDatabaseService] Failed to list Dialogues`,
+      );
       return [];
     }
   }
@@ -433,7 +438,10 @@ export class ContentDatabaseService {
 
       return dialogue;
     } catch (error) {
-      logger.error({ err: error }, `[ContentDatabaseService] Failed to update Dialogue`);
+      logger.error(
+        { err: error },
+        `[ContentDatabaseService] Failed to update Dialogue`,
+      );
       throw error;
     }
   }
@@ -459,7 +467,10 @@ export class ContentDatabaseService {
         });
       }
     } catch (error) {
-      logger.error({ err: error }, `[ContentDatabaseService] Failed to delete Dialogue`);
+      logger.error(
+        { err: error },
+        `[ContentDatabaseService] Failed to delete Dialogue`,
+      );
       throw error;
     }
   }
@@ -612,6 +623,32 @@ export class ContentDatabaseService {
   }
 
   // ====================
+  // Location Operations
+  // ====================
+
+  /**
+   * List all Locations (newest first)
+   */
+  async listLocations(limit = 50, offset = 0): Promise<Location[]> {
+    try {
+      const result = await db
+        .select()
+        .from(locations)
+        .orderBy(desc(locations.createdAt))
+        .limit(limit)
+        .offset(offset);
+
+      return result;
+    } catch (error) {
+      logger.error(
+        { err: error },
+        "[ContentDatabaseService] Failed to list Locations:",
+      );
+      return [];
+    }
+  }
+
+  // ====================
   // Private Embedding Helpers
   // ====================
 
@@ -646,7 +683,10 @@ export class ContentDatabaseService {
         `Indexed NPC to Qdrant: ${npc.id}`,
       );
     } catch (error) {
-      logger.error({ err: error }, `[ContentDatabaseService] Error indexing NPC ${npc.id} to Qdrant`);
+      logger.error(
+        { err: error },
+        `[ContentDatabaseService] Error indexing NPC ${npc.id} to Qdrant`,
+      );
       throw error;
     }
   }
@@ -682,7 +722,10 @@ export class ContentDatabaseService {
         `[ContentDatabaseService] Indexed Quest to Qdrant: ${quest.id}`,
       );
     } catch (error) {
-      logger.error({ err: error }, `[ContentDatabaseService] Error indexing Quest ${quest.id} to Qdrant`);
+      logger.error(
+        { err: error },
+        `[ContentDatabaseService] Error indexing Quest ${quest.id} to Qdrant`,
+      );
       throw error;
     }
   }
@@ -718,7 +761,10 @@ export class ContentDatabaseService {
         `[ContentDatabaseService] Indexed Lore to Qdrant: ${lore.id}`,
       );
     } catch (error) {
-      logger.error({ err: error }, `[ContentDatabaseService] Error indexing Lore ${lore.id} to Qdrant`);
+      logger.error(
+        { err: error },
+        `[ContentDatabaseService] Error indexing Lore ${lore.id} to Qdrant`,
+      );
       throw error;
     }
   }
@@ -752,7 +798,10 @@ export class ContentDatabaseService {
         `[ContentDatabaseService] Indexed Dialogue to Qdrant: ${dialogue.id}`,
       );
     } catch (error) {
-      logger.error({ err: error }, `[ContentDatabaseService] Error indexing Dialogue ${dialogue.id} to Qdrant`);
+      logger.error(
+        { err: error },
+        `[ContentDatabaseService] Error indexing Dialogue ${dialogue.id} to Qdrant`,
+      );
       throw error;
     }
   }

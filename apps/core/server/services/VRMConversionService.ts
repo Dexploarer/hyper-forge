@@ -191,11 +191,12 @@ export class VRMConversionService {
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
 
-      // GLTFLoader.parse expects ArrayBuffer
+      // GLTFLoader.parse expects ArrayBuffer (not SharedArrayBuffer)
+      // Create a new ArrayBuffer from the Buffer
       const arrayBuffer = glbBuffer.buffer.slice(
         glbBuffer.byteOffset,
         glbBuffer.byteOffset + glbBuffer.byteLength,
-      );
+      ) as ArrayBuffer;
 
       loader.parse(
         arrayBuffer,
@@ -260,17 +261,21 @@ export class VRMConversionService {
       }
     });
 
-    if (armature && armature.parent) {
-      const armatureScale = armature.scale.x;
-      if (Math.abs(armatureScale - 1.0) > 0.001) {
-        logger.info({ armatureScale }, "Baking Armature scale into skeleton");
-        this.bones.forEach((bone) => {
-          bone.position.multiplyScalar(armatureScale);
-        });
-        armature.scale.set(1, 1, 1);
-        this.scene.updateMatrixWorld(true);
-        if (this.skinnedMesh.skeleton) {
-          this.skinnedMesh.skeleton.calculateInverses();
+    // Type guard: ensure armature is THREE.Object3D (not null) and has parent
+    if (armature !== null) {
+      const armatureObj = armature as THREE.Object3D;
+      if (armatureObj.parent) {
+        const armatureScale = armatureObj.scale.x;
+        if (Math.abs(armatureScale - 1.0) > 0.001) {
+          logger.info({ armatureScale }, "Baking Armature scale into skeleton");
+          this.bones.forEach((bone) => {
+            bone.position.multiplyScalar(armatureScale);
+          });
+          armatureObj.scale.set(1, 1, 1);
+          this.scene.updateMatrixWorld(true);
+          if (this.skinnedMesh.skeleton) {
+            this.skinnedMesh.skeleton.calculateInverses();
+          }
         }
       }
     }
@@ -435,7 +440,12 @@ export class VRMConversionService {
           const scale = new THREE.Vector3();
           mat.decompose(position, quaternion, scale);
           node.translation = [position.x, position.y, position.z];
-          node.rotation = [quaternion.x, quaternion.y, quaternion.z, quaternion.w];
+          node.rotation = [
+            quaternion.x,
+            quaternion.y,
+            quaternion.z,
+            quaternion.w,
+          ];
           node.scale = [scale.x, scale.y, scale.z];
           delete node.matrix;
         }
@@ -538,16 +548,17 @@ export class VRMConversionService {
     const binChunkLength_new = binChunkData
       ? Math.ceil(binChunkData.length / 4) * 4
       : 0;
-    const binPadding = binChunkData ? binChunkLength_new - binChunkData.length : 0;
+    const binPadding = binChunkData
+      ? binChunkLength_new - binChunkData.length
+      : 0;
     const totalLength =
-      12 + 8 + jsonChunkLength_new + (binChunkData ? 8 + binChunkLength_new : 0);
+      12 +
+      8 +
+      jsonChunkLength_new +
+      (binChunkData ? 8 + binChunkLength_new : 0);
 
     const glb = Buffer.alloc(totalLength);
-    const view = new DataView(
-      glb.buffer,
-      glb.byteOffset,
-      glb.byteLength,
-    );
+    const view = new DataView(glb.buffer, glb.byteOffset, glb.byteLength);
 
     // GLB header
     view.setUint32(0, 0x46546c67, true); // "glTF"
@@ -575,7 +586,10 @@ export class VRMConversionService {
       }
     }
 
-    logger.info({ sizeKB: (glb.length / 1024).toFixed(2) }, "GLB export complete");
+    logger.info(
+      { sizeKB: (glb.length / 1024).toFixed(2) },
+      "GLB export complete",
+    );
 
     return glb;
   }

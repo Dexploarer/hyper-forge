@@ -9,18 +9,19 @@ import { Elysia } from "elysia";
 import { randomUUID } from "crypto";
 
 export const requestID = () => {
-  return new Elysia({ name: "request-id" })
-    .derive(({ request }) => {
+  return new Elysia({ name: "request-id" }).derive(
+    { as: "global" },
+    ({ request, set }) => {
       // Check if request already has an ID from client (e.g., X-Request-ID header)
       const existingId = request.headers.get("x-request-id");
-      const requestID = existingId || randomUUID();
+      const id = existingId || randomUUID();
+
+      // Add request ID to response headers for client-side correlation
+      set.headers["x-request-id"] = id;
 
       return {
-        requestID,
+        requestID: id,
       };
-    })
-    .onAfterResponse(({ set, requestID }) => {
-      // Add request ID to response headers for client-side correlation
-      set.headers["x-request-id"] = requestID;
-    });
+    },
+  );
 };

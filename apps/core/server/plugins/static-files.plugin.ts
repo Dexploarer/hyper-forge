@@ -15,7 +15,7 @@
  * Uses dynamic pattern to reduce code repetition from ~400 lines to ~100 lines
  */
 
-import { Elysia } from "elysia";
+import { Elysia, type Context } from "elysia";
 import path from "path";
 import { fileURLToPath } from "url";
 import { logger } from "../utils/logger";
@@ -68,11 +68,36 @@ const STATIC_ROUTES: StaticRoute[] = [
 /**
  * Create GET and HEAD handlers for a static file route
  * Reduces repetition by using the same logic for all routes
+ *
+ * SECURITY: Includes path traversal prevention to block attacks like:
+ * - /temp-images/../../../.env
+ * - /emotes/../../server/config/env.ts
  */
 function createStaticHandler(route: StaticRoute) {
-  const getHandler = async ({ params, set }: any) => {
+  const getHandler = async ({
+    params,
+    set,
+  }: Context<{ params: Record<string, string> }>) => {
     const relativePath = params["*"] || "";
-    const filePath = path.join(ROOT_DIR, route.fsDir, relativePath);
+
+    // CRITICAL SECURITY: Validate path to prevent directory traversal
+    const baseDir = path.resolve(ROOT_DIR, route.fsDir);
+    const filePath = path.resolve(baseDir, relativePath);
+
+    // Ensure resolved path is within the allowed directory
+    if (!filePath.startsWith(baseDir + path.sep) && filePath !== baseDir) {
+      logger.warn(
+        {
+          baseDir,
+          requestedPath: relativePath,
+          resolvedPath: filePath,
+        },
+        "[Security] Blocked path traversal attempt",
+      );
+      set.status = 403;
+      return new Response("Access Denied", { status: 403 });
+    }
+
     const file = Bun.file(filePath);
 
     if (!(await file.exists())) {
@@ -84,9 +109,28 @@ function createStaticHandler(route: StaticRoute) {
     return new Response(file);
   };
 
-  const headHandler = async ({ params }: any) => {
+  const headHandler = async ({
+    params,
+  }: Context<{ params: Record<string, string> }>) => {
     const relativePath = params["*"] || "";
-    const filePath = path.join(ROOT_DIR, route.fsDir, relativePath);
+
+    // CRITICAL SECURITY: Validate path to prevent directory traversal
+    const baseDir = path.resolve(ROOT_DIR, route.fsDir);
+    const filePath = path.resolve(baseDir, relativePath);
+
+    // Ensure resolved path is within the allowed directory
+    if (!filePath.startsWith(baseDir + path.sep) && filePath !== baseDir) {
+      logger.warn(
+        {
+          baseDir,
+          requestedPath: relativePath,
+          resolvedPath: filePath,
+        },
+        "[Security] Blocked path traversal attempt",
+      );
+      return new Response(null, { status: 403 });
+    }
+
     const file = Bun.file(filePath);
 
     if (!(await file.exists())) {
@@ -118,29 +162,72 @@ export const staticFilesPlugin = new Elysia({ name: "static-files" })
   })
 
   // Vite build assets (must come BEFORE SPA fallback)
-  .get("/assets/*", async ({ params, set }) => {
-    const filePath = path.join(ROOT_DIR, "dist", "assets", params["*"]);
-    const file = Bun.file(filePath);
-    if (!(await file.exists())) {
-      set.status = 404;
-      return new Response("Not Found", { status: 404 });
-    }
-    // Wrap Bun.file() in Response for proper HEAD request handling
-    return new Response(file);
-  })
-  .head("/assets/*", async ({ params }) => {
-    const filePath = path.join(ROOT_DIR, "dist", "assets", params["*"]);
-    const file = Bun.file(filePath);
+  .get(
+    "/assets/*",
+    async ({ params, set }: Context<{ params: Record<string, string> }>) => {
+      const relativePath = params["*"] || "";
 
-    if (!(await file.exists())) {
-      return new Response(null, { status: 404 });
-    }
+      // CRITICAL SECURITY: Validate path to prevent directory traversal
+      const baseDir = path.resolve(ROOT_DIR, "dist", "assets");
+      const filePath = path.resolve(baseDir, relativePath);
 
-    return new Response(null, {
-      status: 200,
-      headers: { "Content-Type": "application/octet-stream" },
-    });
-  })
+      // Ensure resolved path is within the allowed directory
+      if (!filePath.startsWith(baseDir + path.sep) && filePath !== baseDir) {
+        logger.warn(
+          {
+            baseDir,
+            requestedPath: relativePath,
+            resolvedPath: filePath,
+          },
+          "[Security] Blocked path traversal attempt in /assets/*",
+        );
+        set.status = 403;
+        return new Response("Access Denied", { status: 403 });
+      }
+
+      const file = Bun.file(filePath);
+      if (!(await file.exists())) {
+        set.status = 404;
+        return new Response("Not Found", { status: 404 });
+      }
+      // Wrap Bun.file() in Response for proper HEAD request handling
+      return new Response(file);
+    },
+  )
+  .head(
+    "/assets/*",
+    async ({ params }: Context<{ params: Record<string, string> }>) => {
+      const relativePath = params["*"] || "";
+
+      // CRITICAL SECURITY: Validate path to prevent directory traversal
+      const baseDir = path.resolve(ROOT_DIR, "dist", "assets");
+      const filePath = path.resolve(baseDir, relativePath);
+
+      // Ensure resolved path is within the allowed directory
+      if (!filePath.startsWith(baseDir + path.sep) && filePath !== baseDir) {
+        logger.warn(
+          {
+            baseDir,
+            requestedPath: relativePath,
+            resolvedPath: filePath,
+          },
+          "[Security] Blocked path traversal attempt in /assets/*",
+        );
+        return new Response(null, { status: 403 });
+      }
+
+      const file = Bun.file(filePath);
+
+      if (!(await file.exists())) {
+        return new Response(null, { status: 404 });
+      }
+
+      return new Response(null, {
+        status: 200,
+        headers: { "Content-Type": "application/octet-stream" },
+      });
+    },
+  )
 
   // SPA fallback - handle HEAD request for root first (Coinbase Wallet CORS check)
   .head("/", async () => {

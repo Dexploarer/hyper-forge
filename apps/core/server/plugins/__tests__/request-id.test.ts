@@ -130,10 +130,13 @@ describe("Request ID Plugin", () => {
     it("should provide requestID to downstream plugins", async () => {
       const capturedID: string[] = [];
 
-      const testPlugin = new Elysia().derive(({ requestID }: any) => {
-        capturedID.push(requestID);
-        return {};
-      });
+      const testPlugin = new Elysia().derive(
+        { as: "global" },
+        ({ requestID }: any) => {
+          capturedID.push(requestID);
+          return {};
+        },
+      );
 
       const app = new Elysia()
         .use(requestID())
