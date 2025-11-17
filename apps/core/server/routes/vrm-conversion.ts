@@ -5,7 +5,6 @@
 
 import { Elysia, t } from "elysia";
 import { VRMConversionService } from "../services/VRMConversionService";
-import { optionalAuth } from "../plugins/auth.plugin";
 import {
   BadRequestError,
   UnauthorizedError,
@@ -19,7 +18,6 @@ export const vrmConversionRoutes = new Elysia({
   prefix: "/api/vrm",
   name: "vrm-conversion",
 })
-  .use(optionalAuth)
 
   // POST /api/vrm/convert - Convert GLB to VRM
   .post(

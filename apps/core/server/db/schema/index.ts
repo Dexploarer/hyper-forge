@@ -33,6 +33,9 @@ export * from "./asset-variants.schema";
 // API Errors
 export * from "./api-errors.schema";
 
+// API Keys
+export * from "./api-keys.schema";
+
 // Prompts
 export * from "./prompts.schema";
 
@@ -53,6 +56,7 @@ import * as achievementsSchema from "./achievements.schema";
 import * as generationPipelinesSchema from "./generation-pipelines.schema";
 import * as assetVariantsSchema from "./asset-variants.schema";
 import * as apiErrorsSchema from "./api-errors.schema";
+import * as apiKeysSchema from "./api-keys.schema";
 import * as promptsSchema from "./prompts.schema";
 import * as materialPresetsSchema from "./material-presets.schema";
 import * as staticAssetsSchema from "./static-assets.schema";
@@ -68,6 +72,7 @@ export const schema = {
   ...generationPipelinesSchema,
   ...assetVariantsSchema,
   ...apiErrorsSchema,
+  ...apiKeysSchema,
   ...promptsSchema,
   ...materialPresetsSchema,
   ...staticAssetsSchema,

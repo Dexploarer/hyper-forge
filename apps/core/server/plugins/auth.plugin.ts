@@ -33,6 +33,7 @@ import { PrivyClient } from "@privy-io/server-auth";
 import { UnauthorizedError, ForbiddenError } from "../errors";
 import type { AuthUser } from "../types/auth";
 import { userService } from "../services/UserService";
+import { ApiKeyService } from "../services/ApiKeyService";
 import { logger } from "../utils/logger";
 import { env } from "../config/env";
 
@@ -45,6 +46,10 @@ const privy = new PrivyClient(
 /**
  * Optional auth helper - attaches user if valid token present
  * Does not error if no token - use requireAuth for protected routes
+ * 
+ * NON-BREAKING: Supports both Privy JWT and API keys
+ * - API keys start with "af_" (af_live_* or af_test_*)
+ * - Privy JWT tokens are everything else
  */
 export async function optionalAuth({
   request,
@@ -52,7 +57,7 @@ export async function optionalAuth({
 }: {
   request: Request;
   headers: Record<string, string | undefined>;
-}): Promise<{ user?: AuthUser }> {
+}): Promise<{ user?: AuthUser; authMethod?: "privy" | "api_key" }> {
   try {
     // Extract token from Authorization header
     const authHeader =
@@ -64,6 +69,51 @@ export async function optionalAuth({
     }
 
     const token = authHeader.replace("Bearer ", "");
+
+    // NEW: Check if this is an API key (starts with "af_")
+    if (token.startsWith("af_")) {
+      const apiKeyService = new ApiKeyService();
+      const result = await apiKeyService.validateApiKey(token);
+
+      if (!result) {
+        // Invalid API key - continue without user
+        logger.warn({}, "[Auth Plugin] Invalid API key provided");
+        return {};
+      }
+
+      // Get user from database
+      const user = await userService.findById(result.userId);
+
+      if (!user) {
+        logger.error(
+          { userId: result.userId },
+          "[Auth Plugin] API key references non-existent user",
+        );
+        return {};
+      }
+
+      logger.info(
+        { userId: user.id, keyPrefix: token.substring(0, 16) },
+        "[Auth Plugin] Authenticated via API key",
+      );
+
+      return {
+        user: {
+          id: user.id,
+          privyUserId: user.privyUserId,
+          email: user.email,
+          walletAddress: user.walletAddress,
+          displayName: user.displayName,
+          role: user.role,
+          isAdmin: user.role === "admin",
+          profileCompleted: user.profileCompleted,
+          createdAt: user.createdAt,
+        },
+        authMethod: "api_key",
+      };
+    }
+
+    // EXISTING: Privy JWT authentication (unchanged)
 
     let privyUserId: string;
 
@@ -140,6 +190,7 @@ export async function optionalAuth({
         profileCompleted: user.profileCompleted,
         createdAt: user.createdAt,
       },
+      authMethod: "privy",
     };
   } catch (error) {
     // Invalid token or verification failed - continue without user
@@ -183,13 +234,18 @@ export async function requireAuth({
  * This plugin attaches user info if a valid token is present,
  * but doesn't block requests without authentication.
  *
- * Injects: { user?: AuthUser }
+ * NON-BREAKING: Supports both Privy JWT and API keys
+ *
+ * Injects: { user?: AuthUser; authMethod?: "privy" | "api_key" }
  */
 export const authPlugin = new Elysia({ name: "auth" }).derive(
   { as: "scoped" },
   async (context) => {
     const result = await optionalAuth(context);
-    return { user: result.user } as { user?: AuthUser };
+    return {
+      user: result.user,
+      authMethod: result.authMethod,
+    } as { user?: AuthUser; authMethod?: "privy" | "api_key" };
   },
 );
 
