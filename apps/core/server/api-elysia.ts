@@ -54,6 +54,7 @@ import { cachingPlugin } from "./plugins/caching.plugin";
 // Routes
 import { healthRoutes } from "./routes/health";
 import { openapiRoutes } from "./routes/openapi";
+import { vrmConversionRoutes } from "./routes/vrm-conversion";
 
 // Config-dependent routes (imported directly to avoid factory function type inference issues)
 import { createAssetRoutes } from "./routes/assets";
@@ -274,6 +275,7 @@ const app = new Elysia()
 
   // Standalone API routes (no config needed)
   .use(standaloneApiRoutes)
+  .use(vrmConversionRoutes) // VRM conversion API (public + authenticated endpoints)
 
   // Config-dependent routes (inline for proper TypeScript type inference)
   .use(createAssetRoutes(ROOT_DIR))

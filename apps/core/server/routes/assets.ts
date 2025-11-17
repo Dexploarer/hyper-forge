@@ -585,7 +585,7 @@ export const createAssetRoutes = (rootDir: string) => {
       // HEAD endpoint for model existence check
       .head(
         "/:id/model",
-        async ({ params, set }) => {
+        async ({ params }) => {
           const { id } = params;
 
           // Get asset from database to check for CDN URL
@@ -593,20 +593,19 @@ export const createAssetRoutes = (rootDir: string) => {
           const asset = assets.find((a) => a.id === id);
 
           if (!asset) {
-            set.status = 404;
-            return;
+            return new Response(null, { status: 404 });
           }
 
           // If asset has CDN URL, it exists
           if (asset.cdnUrl) {
-            set.status = 200;
-            set.headers["Content-Type"] = "model/gltf-binary";
-            return;
+            return new Response(null, {
+              status: 200,
+              headers: { "Content-Type": "model/gltf-binary" },
+            });
           }
 
           // No CDN URL - model does not exist
-          set.status = 404;
-          return;
+          return new Response(null, { status: 404 });
         },
         {
           params: t.Object({
