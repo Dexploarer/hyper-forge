@@ -14,7 +14,7 @@ Specialist in improving first-time user experience, onboarding, and documentatio
 ### CRITICAL - Security Issues
 
 1. **Remove hardcoded password** - LandingPage.tsx lines 51, 234
-   - Location: `${HOME}/asset-forge/packages/core/src/pages/LandingPage.tsx`
+   - Location: `${HOME}/asset-forge/apps/core/src/pages/LandingPage.tsx`
    - Issue: `const success = await login('admin123')` exposes credentials
    - Fix: Remove fake auth, show Privy login modal directly
    - Add proper "Sign In to Generate" CTA button
@@ -22,7 +22,7 @@ Specialist in improving first-time user experience, onboarding, and documentatio
 ### HIGH PRIORITY - Onboarding
 
 2. **Create onboarding tour component**
-   - File to create: `packages/core/src/components/common/OnboardingTour.tsx`
+   - File to create: `apps/core/src/components/common/OnboardingTour.tsx`
    - Trigger after first successful Privy login
    - Show 4-5 key features: Generate → Assets → Equipment → Export
    - Add skip option for advanced users
@@ -35,21 +35,21 @@ Specialist in improving first-time user experience, onboarding, and documentatio
    - Explain technical terms (retargeting, rigging, playtester swarm)
 
 4. **Create Getting Started guide**
-   - File: `packages/core/dev-book/getting-started.md`
+   - File: `apps/core/dev-book/getting-started.md`
    - Step-by-step first asset generation
    - Video tutorial embed (placeholder for now)
    - Common pitfalls and solutions
 
 5. **Build documentation system**
    - Fix "Docs" link in LandingPage.tsx (currently TODO)
-   - Create `packages/core/public/docs/` directory
+   - Create `apps/core/public/docs/` directory
    - Add quickstart.md, faq.md, best-practices.md
    - Link from topbar
 
 ### MEDIUM PRIORITY - UX Polish
 
 6. **Add example gallery**
-   - Component: `packages/core/src/components/common/ExampleGallery.tsx`
+   - Component: `apps/core/src/components/common/ExampleGallery.tsx`
    - Show sample outputs for each content type
    - "Use this template" buttons
    - Integrate with generation forms
@@ -64,7 +64,7 @@ Specialist in improving first-time user experience, onboarding, and documentatio
    - "Retarget Animate" → "Animation Tools"
    - "AI Swarm Testing" → "Test Your Content"
    - "Hand Rigging" → "Weapon Grips"
-   - File: `packages/core/src/constants/navigation.ts`
+   - File: `apps/core/src/constants/navigation.ts`
 
 ## Implementation Workflow
 
@@ -93,20 +93,20 @@ Specialist in improving first-time user experience, onboarding, and documentatio
 
 **CRITICAL:**
 
-- `packages/core/src/pages/LandingPage.tsx` (remove hardcoded auth)
+- `apps/core/src/pages/LandingPage.tsx` (remove hardcoded auth)
 
 **HIGH:**
 
-- Create `packages/core/src/components/common/OnboardingTour.tsx`
-- Create `packages/core/src/components/common/HelpTooltip.tsx`
-- Edit `packages/core/src/contexts/AuthContext.tsx` (add tour trigger)
-- Edit `packages/core/src/constants/navigation.ts` (rename items)
+- Create `apps/core/src/components/common/OnboardingTour.tsx`
+- Create `apps/core/src/components/common/HelpTooltip.tsx`
+- Edit `apps/core/src/contexts/AuthContext.tsx` (add tour trigger)
+- Edit `apps/core/src/constants/navigation.ts` (rename items)
 
 **MEDIUM:**
 
-- Create `packages/core/dev-book/getting-started.md`
-- Create `packages/core/public/docs/*.md`
-- Create `packages/core/src/components/common/ExampleGallery.tsx`
+- Create `apps/core/dev-book/getting-started.md`
+- Create `apps/core/public/docs/*.md`
+- Create `apps/core/src/components/common/ExampleGallery.tsx`
 
 ## Success Metrics
 

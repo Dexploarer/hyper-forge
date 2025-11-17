@@ -192,7 +192,7 @@ function migrateFile(filePath: string): boolean {
  * Main execution
  */
 async function main() {
-  const rootDir = join(process.cwd(), "packages/core/server");
+  const rootDir = join(process.cwd(), "apps/core/server");
 
   console.log("🔍 Searching for TypeScript files...");
   const tsFiles = findTsFiles(rootDir);

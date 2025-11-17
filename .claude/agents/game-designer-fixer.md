@@ -14,7 +14,7 @@ Specialist in content generation, quest systems, world building, and playtester 
 ### CRITICAL - Generation Workflow
 
 1. **Add generation history and revisions**
-   - File to edit: `packages/core/src/components/generation/GenerationHistory.tsx`
+   - File to edit: `apps/core/src/components/generation/GenerationHistory.tsx`
    - Issue: No way to track or revert to previous generations
    - Fix: Add revision history panel
    - Show: timestamp, prompt, parameters, preview thumbnail
@@ -22,7 +22,7 @@ Specialist in content generation, quest systems, world building, and playtester 
    - Backend: Add `generation_revisions` table to schema
 
 2. **Create prompt template library**
-   - File to create: `packages/core/src/components/generation/PromptTemplates.tsx`
+   - File to create: `apps/core/src/components/generation/PromptTemplates.tsx`
    - Categories: Characters, Weapons, Environments, Quests, Dialogues
    - User can save custom templates
    - Variables: {{enemy_type}}, {{difficulty}}, {{theme}}
@@ -31,20 +31,20 @@ Specialist in content generation, quest systems, world building, and playtester 
 ### HIGH PRIORITY - Quest Builder
 
 3. **Improve quest generation form**
-   - File: `packages/core/src/components/generation/QuestGenerationCard.tsx`
+   - File: `apps/core/src/components/generation/QuestGenerationCard.tsx`
    - Add visual quest builder (flowchart style)
    - Node types: Objective, Dialogue, Combat, Puzzle
    - Drag-and-drop connections
    - Preview quest structure before generation
 
 4. **Add quest testing workflow**
-   - Create: `packages/core/src/components/quests/QuestTester.tsx`
+   - Create: `apps/core/src/components/quests/QuestTester.tsx`
    - Integrate with AI Swarm Testing
    - Show: completion rate, player paths, bottlenecks
    - Suggest improvements based on playtest data
 
 5. **Create quest templates**
-   - File: `packages/core/src/data/quest-templates.ts`
+   - File: `apps/core/src/data/quest-templates.ts`
    - Common patterns: Fetch, Kill, Escort, Mystery, Collection
    - Parameter customization per template
    - One-click generation with tweaks
@@ -52,14 +52,14 @@ Specialist in content generation, quest systems, world building, and playtester 
 ### HIGH PRIORITY - World Building
 
 6. **Improve world configuration page**
-   - File: `packages/core/src/pages/WorldConfigPage.tsx`
+   - File: `apps/core/src/pages/WorldConfigPage.tsx`
    - Issue: Complex form with poor guidance
    - Fix: Multi-step wizard with progress indicator
    - Steps: Theme → Factions → Economy → Lore → Generate
    - Visual examples for each step
 
 7. **Add world template gallery**
-   - Create: `packages/core/src/components/world/WorldTemplates.tsx`
+   - Create: `apps/core/src/components/world/WorldTemplates.tsx`
    - Pre-built worlds: Fantasy RPG, Sci-Fi Space, Post-Apocalyptic, Steampunk
    - "Use Template" → Copy all settings
    - Allow saving custom templates
@@ -67,14 +67,14 @@ Specialist in content generation, quest systems, world building, and playtester 
 ### MEDIUM PRIORITY - Playtester Swarm
 
 8. **Redesign swarm interface**
-   - File: `packages/core/src/pages/AISwarmTestingPage.tsx`
+   - File: `apps/core/src/pages/AISwarmTestingPage.tsx`
    - Current: Technical, confusing
    - New: "Test Your Content" dashboard
    - Sections: Select Content → Configure Testers → Run Test → View Results
    - Add preset tester profiles: Speedrunner, Explorer, Completionist
 
 9. **Add real-time test visualization**
-   - Create: `packages/core/src/components/swarm/LiveTestViewer.tsx`
+   - Create: `apps/core/src/components/swarm/LiveTestViewer.tsx`
    - Show AI agents playing in real-time
    - Heat maps: Player paths, death locations, time spent
    - Live metrics: Progress, bugs found, feedback
@@ -83,7 +83,7 @@ Specialist in content generation, quest systems, world building, and playtester 
 
 10. **Create content collections**
     - Feature: Group related assets (character + weapons + quests)
-    - File: `packages/core/src/components/collections/CollectionManager.tsx`
+    - File: `apps/core/src/components/collections/CollectionManager.tsx`
     - Use case: "Dark Elf Assassin Pack" = model + daggers + stealth quest
     - Export collection as bundle
 
@@ -115,23 +115,23 @@ Specialist in content generation, quest systems, world building, and playtester 
 
 **CRITICAL:**
 
-- Edit `packages/core/src/components/generation/GenerationHistory.tsx`
-- Create `packages/core/src/components/generation/PromptTemplates.tsx`
-- Add `packages/core/server/db/schema/generation-revisions.schema.ts`
+- Edit `apps/core/src/components/generation/GenerationHistory.tsx`
+- Create `apps/core/src/components/generation/PromptTemplates.tsx`
+- Add `apps/core/server/db/schema/generation-revisions.schema.ts`
 
 **HIGH:**
 
-- Edit `packages/core/src/components/generation/QuestGenerationCard.tsx`
-- Create `packages/core/src/components/quests/QuestTester.tsx`
-- Create `packages/core/src/data/quest-templates.ts`
-- Edit `packages/core/src/pages/WorldConfigPage.tsx`
-- Create `packages/core/src/components/world/WorldTemplates.tsx`
+- Edit `apps/core/src/components/generation/QuestGenerationCard.tsx`
+- Create `apps/core/src/components/quests/QuestTester.tsx`
+- Create `apps/core/src/data/quest-templates.ts`
+- Edit `apps/core/src/pages/WorldConfigPage.tsx`
+- Create `apps/core/src/components/world/WorldTemplates.tsx`
 
 **MEDIUM:**
 
-- Edit `packages/core/src/pages/AISwarmTestingPage.tsx`
-- Create `packages/core/src/components/swarm/LiveTestViewer.tsx`
-- Create `packages/core/src/components/collections/CollectionManager.tsx`
+- Edit `apps/core/src/pages/AISwarmTestingPage.tsx`
+- Create `apps/core/src/components/swarm/LiveTestViewer.tsx`
+- Create `apps/core/src/components/collections/CollectionManager.tsx`
 
 ## Success Metrics
 

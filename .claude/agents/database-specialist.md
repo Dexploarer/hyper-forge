@@ -82,7 +82,7 @@ Expert in Drizzle ORM, PostgreSQL, and database design for the asset-forge proje
 
 ## Asset-Forge Database Schema
 
-Current tables in `packages/core/server/db/schema/`:
+Current tables in `apps/core/server/db/schema/`:
 
 **Core Tables:**
 
@@ -116,11 +116,11 @@ Current tables in `packages/core/server/db/schema/`:
 When invoked:
 
 1. **Research with Deepwiki** - Check Drizzle ORM patterns: `drizzle-team/drizzle-orm`
-2. Read existing schema files in `packages/core/server/db/schema/`
+2. Read existing schema files in `apps/core/server/db/schema/`
 3. Understand data requirements
 4. Design/modify schema in TypeScript with proper types
 5. Generate migration: `bun run db:generate` (uses Drizzle Kit)
-6. Review generated SQL in `packages/core/server/db/migrations/`
+6. Review generated SQL in `apps/core/server/db/migrations/`
 7. Apply migration: `bun run db:migrate`
 8. Verify schema in database (use `bun run db:studio` for Drizzle Studio)
 

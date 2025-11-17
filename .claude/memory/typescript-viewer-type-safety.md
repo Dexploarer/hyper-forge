@@ -53,10 +53,10 @@ type AnimationName = string; // In store
 type AnimationName = "tpose" | "walking" | "running"; // In component
 
 // ✅ CORRECT - Store and component must use same type definition
-// Store: packages/core/src/stores/viewerStore.ts
+// Store: apps/core/src/stores/viewerStore.ts
 export type AnimationName = "tpose" | "walking" | "running";
 
-// Component: packages/core/src/components/equipment/EquipmentViewer.tsx
+// Component: apps/core/src/components/equipment/EquipmentViewer.tsx
 export type AnimationName = "tpose" | "walking" | "running";
 ```
 
@@ -117,9 +117,9 @@ if (mode === 'armor' && armorViewerRef.current) {
 
 ### Files Affected (Reference)
 
-- `packages/core/src/components/common/ThemeSwitcher.tsx` - Main issue location
-- `packages/core/src/components/equipment/EquipmentViewer.tsx` - Default export, AnimationName type
-- `packages/core/src/stores/viewerStore.ts` - AnimationName type definition
+- `apps/core/src/components/common/ThemeSwitcher.tsx` - Main issue location
+- `apps/core/src/components/equipment/EquipmentViewer.tsx` - Default export, AnimationName type
+- `apps/core/src/stores/viewerStore.ts` - AnimationName type definition
 
 ### Related Documentation
 

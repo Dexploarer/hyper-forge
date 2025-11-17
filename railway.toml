@@ -9,10 +9,10 @@
 
 [build]
 builder = "RAILPACK"
-buildCommand = "cd packages/core && bun run clean && bunx vite build"
+buildCommand = "cd apps/core && bun run clean && bunx vite build"
 
 [deploy]
-startCommand = "cd packages/core && bun run start:api"
+startCommand = "cd apps/core && bun run start:api"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
@@ -20,7 +20,7 @@ restartPolicyMaxRetries = 10
 
 # Watch paths for automatic rebuilds
 [[deploy.watchPaths]]
-paths = ["packages/core/**"]
+paths = ["apps/core/**"]
 
 # Environment configuration
 [env]

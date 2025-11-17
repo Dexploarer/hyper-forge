@@ -19,7 +19,7 @@ Ask: "How to implement Privy authentication in React?"
 ## Tasks
 
 1. **Check Frontend Setup**
-   - Read `packages/core/src/components/providers/PrivyProvider.tsx`
+   - Read `apps/core/src/components/providers/PrivyProvider.tsx`
    - Verify Privy app ID is configured
    - Check PrivyProvider wraps app correctly
    - Verify proper React hooks usage
@@ -35,7 +35,7 @@ Ask: "How to implement Privy authentication in React?"
    - Check redirect logic for unauthenticated users
 
 4. **Check Backend Integration**
-   - Read `packages/core/server/middleware/auth.ts` (if exists)
+   - Read `apps/core/server/middleware/auth.ts` (if exists)
    - Verify JWT token verification
    - Check Elysia auth middleware
    - Verify proper error responses (401)

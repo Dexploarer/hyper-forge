@@ -22,7 +22,7 @@
 2. **Edit TypeScript Schema**
 
    ```bash
-   # Location: packages/core/server/db/schema/
+   # Location: apps/core/server/db/schema/
    # Edit or create schema files (users.ts, assets.ts, etc.)
    ```
 
@@ -61,8 +61,8 @@
 
 7. **Commit Both Files**
    ```bash
-   git add packages/core/server/db/schema/
-   git add packages/core/server/db/migrations/
+   git add apps/core/server/db/schema/
+   git add apps/core/server/db/migrations/
    git commit -m "feat(db): add new table for X"
    ```
 
@@ -81,7 +81,7 @@
 2. **Define Service Layer**
 
    ```typescript
-   // Location: packages/core/server/services/YourService.ts
+   // Location: apps/core/server/services/YourService.ts
    // - Define TypeBox schemas for validation
    // - Implement business logic
    // - Handle database operations via Drizzle
@@ -91,7 +91,7 @@
 3. **Create Route Handler**
 
    ```typescript
-   // Location: packages/core/server/routes/your-route.ts
+   // Location: apps/core/server/routes/your-route.ts
    // - Import service
    // - Add TypeBox validation
    // - Implement route handler
@@ -102,14 +102,14 @@
 4. **Add to Main Server**
 
    ```typescript
-   // Location: packages/core/server/api-elysia.ts
+   // Location: apps/core/server/api-elysia.ts
    // Import and register your route
    ```
 
 5. **Write Tests**
 
    ```typescript
-   // Location: packages/core/server/routes/your-route.test.ts
+   // Location: apps/core/server/routes/your-route.test.ts
    // - Test happy paths
    // - Test error cases
    // - Test validation
@@ -152,14 +152,14 @@
 
    ```bash
    # Look for similar patterns in:
-   # - packages/core/src/components/shared/ThreeViewer.tsx
-   # - packages/core/src/components/shared/VRMTestViewer.tsx
+   # - apps/core/src/components/shared/ThreeViewer.tsx
+   # - apps/core/src/components/shared/VRMTestViewer.tsx
    ```
 
 3. **Create Component**
 
    ```typescript
-   // Location: packages/core/src/components/shared/YourComponent.tsx
+   // Location: apps/core/src/components/shared/YourComponent.tsx
    // - Use TypeScript with strict typing
    // - Implement proper Three.js cleanup in useEffect
    // - Add loading states
@@ -253,7 +253,7 @@
 5. **Verify on Backend**
    ```typescript
    // Elysia middleware verifies JWT
-   // See: packages/core/server/middleware/auth.ts
+   // See: apps/core/server/middleware/auth.ts
    ```
 
 ## 5. Git Workflow for Features

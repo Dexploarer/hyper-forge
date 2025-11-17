@@ -9,7 +9,7 @@ You are verifying the Meshy AI integration in Asset-Forge.
 ## Tasks
 
 1. **Check Meshy Service**
-   - Read `packages/core/server/services/mesh/MeshyService.ts` (if exists)
+   - Read `apps/core/server/services/mesh/MeshyService.ts` (if exists)
    - Verify API key is properly configured
    - Check error handling for API failures
    - Verify proper TypeScript types

@@ -14,7 +14,7 @@ Specialist in API documentation, SDK generation, automation, and technical workf
 ### CRITICAL - API Documentation
 
 1. **Generate comprehensive API docs**
-   - File: `packages/core/server/api-elysia.ts` (already has Swagger)
+   - File: `apps/core/server/api-elysia.ts` (already has Swagger)
    - Issue: Swagger UI not easily accessible
    - Fix: Add `/api/docs` route that serves interactive docs
    - Use Elysia's built-in Swagger plugin
@@ -32,12 +32,12 @@ Specialist in API documentation, SDK generation, automation, and technical workf
 ### HIGH PRIORITY - Automation
 
 3. **Add webhook system**
-   - File: `packages/core/server/routes/webhooks.ts`
+   - File: `apps/core/server/routes/webhooks.ts`
    - Events: generation_complete, asset_ready, test_finished
    - User configures webhook URLs in settings
    - Retry logic with exponential backoff
    - Webhook signature verification (HMAC)
-   - UI: `packages/core/src/pages/WebhooksPage.tsx`
+   - UI: `apps/core/src/pages/WebhooksPage.tsx`
 
 4. **Create batch API endpoints**
    - Endpoint: `POST /api/batch/generate`
@@ -70,14 +70,14 @@ Specialist in API documentation, SDK generation, automation, and technical workf
 ### MEDIUM PRIORITY - Developer UX
 
 8. **Create code playground**
-   - File: `packages/core/src/pages/PlaygroundPage.tsx`
+   - File: `apps/core/src/pages/PlaygroundPage.tsx`
    - Interactive API explorer (like Postman)
    - Pre-filled examples for each endpoint
    - Test with user's API key
    - Show request/response in real-time
 
 9. **Add rate limiting dashboard**
-   - File: `packages/core/src/components/developer/RateLimitDashboard.tsx`
+   - File: `apps/core/src/components/developer/RateLimitDashboard.tsx`
    - Show current usage vs limits
    - Request breakdown by endpoint
    - Upgrade prompts for power users
@@ -116,22 +116,22 @@ Specialist in API documentation, SDK generation, automation, and technical workf
 
 **CRITICAL:**
 
-- Edit `packages/core/server/api-elysia.ts` (add /api/docs route)
+- Edit `apps/core/server/api-elysia.ts` (add /api/docs route)
 - Create `packages/sdk/src/index.ts` (new SDK package)
 - Update `package.json` workspaces to include sdk/
 
 **HIGH:**
 
-- Create `packages/core/server/routes/webhooks.ts`
-- Create `packages/core/src/pages/WebhooksPage.tsx`
-- Edit `packages/core/server/routes/content-generation.ts` (add batch endpoint)
+- Create `apps/core/server/routes/webhooks.ts`
+- Create `apps/core/src/pages/WebhooksPage.tsx`
+- Edit `apps/core/server/routes/content-generation.ts` (add batch endpoint)
 - Create `packages/cli/src/index.ts` (new CLI package)
 - Create `.github/actions/asset-forge/action.yml`
 
 **MEDIUM:**
 
-- Create `packages/core/src/pages/PlaygroundPage.tsx`
-- Create `packages/core/src/components/developer/RateLimitDashboard.tsx`
+- Create `apps/core/src/pages/PlaygroundPage.tsx`
+- Create `apps/core/src/components/developer/RateLimitDashboard.tsx`
 - Create `packages/examples/unity/`, `packages/examples/unreal/`, `packages/examples/godot/`
 
 ## Database Schema Changes
@@ -139,7 +139,7 @@ Specialist in API documentation, SDK generation, automation, and technical workf
 **Webhooks table:**
 
 ```typescript
-// packages/core/server/db/schema/webhooks.schema.ts
+// apps/core/server/db/schema/webhooks.schema.ts
 export const webhooks = pgTable("webhooks", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
@@ -154,7 +154,7 @@ export const webhooks = pgTable("webhooks", {
 **Batch jobs table:**
 
 ```typescript
-// packages/core/server/db/schema/batch-jobs.schema.ts
+// apps/core/server/db/schema/batch-jobs.schema.ts
 export const batchJobs = pgTable("batch_jobs", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),

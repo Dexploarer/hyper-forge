@@ -20,7 +20,7 @@ Comprehensive testing methodology for validating user experience improvements ac
 
 ### Location
 
-All UX tests live in: `packages/core/tests/ux/`
+All UX tests live in: `apps/core/tests/ux/`
 
 ### File Naming
 
@@ -413,7 +413,7 @@ bun test tests/ux/ --reporter=html
 ### Configuration
 
 ```typescript
-// packages/core/playwright.config.ts
+// apps/core/playwright.config.ts
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({

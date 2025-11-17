@@ -14,7 +14,7 @@ Specialist in efficiency features, keyboard shortcuts, bulk operations, and adva
 ### CRITICAL - Keyboard Shortcuts
 
 1. **Add comprehensive keyboard shortcut system**
-   - File: `packages/core/src/hooks/useKeyboardShortcuts.ts`
+   - File: `apps/core/src/hooks/useKeyboardShortcuts.ts`
    - Global shortcuts:
      - `G` → Generate page
      - `A` → Assets page
@@ -27,10 +27,10 @@ Specialist in efficiency features, keyboard shortcuts, bulk operations, and adva
      - `Ctrl/Cmd + S` → Save changes
      - `Esc` → Close modal/cancel
      - `Ctrl/Cmd + K` → Command palette
-   - File: `packages/core/src/components/common/ShortcutsModal.tsx`
+   - File: `apps/core/src/components/common/ShortcutsModal.tsx`
 
 2. **Create command palette**
-   - File: `packages/core/src/components/common/CommandPalette.tsx`
+   - File: `apps/core/src/components/common/CommandPalette.tsx`
    - Trigger: `Ctrl/Cmd + K`
    - Features: Search all actions, recent items, navigation
    - Actions: "Generate character", "Export selected", "Open settings"
@@ -39,14 +39,14 @@ Specialist in efficiency features, keyboard shortcuts, bulk operations, and adva
 ### HIGH PRIORITY - Bulk Operations
 
 3. **Expand bulk actions for assets**
-   - File: `packages/core/src/components/assets/BulkActionsBar.tsx`
+   - File: `apps/core/src/components/assets/BulkActionsBar.tsx`
    - Current: Delete selected
    - Add: Tag, Move to collection, Change visibility, Duplicate
    - Add: Apply material variant, Re-generate (with same params)
    - Progress indicator for long operations
 
 4. **Add smart filters and saved searches**
-   - File: `packages/core/src/components/assets/AdvancedFilters.tsx`
+   - File: `apps/core/src/components/assets/AdvancedFilters.tsx`
    - Filters: Date range, content type, tags, status, quality score
    - Boolean logic: AND, OR, NOT
    - Save filter presets: "My Weapons", "Untagged Assets", "Recent Failures"
@@ -54,21 +54,21 @@ Specialist in efficiency features, keyboard shortcuts, bulk operations, and adva
 
 5. **Create asset tagging system**
    - Database: Add `tags` table and `asset_tags` junction table
-   - UI: `packages/core/src/components/assets/TagManager.tsx`
+   - UI: `apps/core/src/components/assets/TagManager.tsx`
    - Features: Autocomplete, bulk tagging, tag colors
    - Tag suggestions based on asset content
 
 ### HIGH PRIORITY - Custom Workflows
 
 6. **Add custom generation pipelines**
-   - File: `packages/core/src/components/workflows/PipelineBuilder.tsx`
+   - File: `apps/core/src/components/workflows/PipelineBuilder.tsx`
    - Visual workflow editor (like Zapier)
    - Nodes: Generate → Apply Material → Export → Notify
    - Conditional logic: If quality < 7, regenerate
    - Save and reuse pipelines
 
 7. **Create template system for forms**
-   - File: `packages/core/src/components/common/FormTemplateManager.tsx`
+   - File: `apps/core/src/components/common/FormTemplateManager.tsx`
    - Save any generation form as template
    - Features: Name, description, thumbnail
    - One-click apply to new generation
@@ -77,21 +77,21 @@ Specialist in efficiency features, keyboard shortcuts, bulk operations, and adva
 ### MEDIUM PRIORITY - Advanced Features
 
 8. **Add asset version control**
-   - File: `packages/core/src/components/assets/VersionHistory.tsx`
+   - File: `apps/core/src/components/assets/VersionHistory.tsx`
    - Track all modifications: material changes, equipment edits, re-generations
    - Diff view: Compare versions side-by-side
    - Revert to any version
    - Branch: Create variant from older version
 
 9. **Create macro recorder**
-   - File: `packages/core/src/components/workflows/MacroRecorder.tsx`
+   - File: `apps/core/src/components/workflows/MacroRecorder.tsx`
    - Record user actions: clicks, form inputs, selections
    - Save as macro with name
    - Replay macro: Apply same actions to different assets
    - Use case: "Apply my custom material preset to 50 weapons"
 
 10. **Add favorites and recent items**
-    - File: `packages/core/src/components/common/FavoritesBar.tsx`
+    - File: `apps/core/src/components/common/FavoritesBar.tsx`
     - Star icon on any asset/quest/world
     - Quick access bar at top of pages
     - Recent items: Last 10 viewed assets
@@ -129,30 +129,30 @@ Specialist in efficiency features, keyboard shortcuts, bulk operations, and adva
 
 **CRITICAL:**
 
-- Create `packages/core/src/hooks/useKeyboardShortcuts.ts`
-- Create `packages/core/src/components/common/CommandPalette.tsx`
-- Create `packages/core/src/components/common/ShortcutsModal.tsx`
+- Create `apps/core/src/hooks/useKeyboardShortcuts.ts`
+- Create `apps/core/src/components/common/CommandPalette.tsx`
+- Create `apps/core/src/components/common/ShortcutsModal.tsx`
 
 **HIGH:**
 
-- Edit `packages/core/src/components/assets/BulkActionsBar.tsx`
-- Create `packages/core/src/components/assets/AdvancedFilters.tsx`
-- Create `packages/core/src/components/assets/TagManager.tsx`
-- Create `packages/core/src/components/workflows/PipelineBuilder.tsx`
-- Create `packages/core/src/components/common/FormTemplateManager.tsx`
+- Edit `apps/core/src/components/assets/BulkActionsBar.tsx`
+- Create `apps/core/src/components/assets/AdvancedFilters.tsx`
+- Create `apps/core/src/components/assets/TagManager.tsx`
+- Create `apps/core/src/components/workflows/PipelineBuilder.tsx`
+- Create `apps/core/src/components/common/FormTemplateManager.tsx`
 
 **MEDIUM:**
 
-- Create `packages/core/src/components/assets/VersionHistory.tsx`
-- Create `packages/core/src/components/workflows/MacroRecorder.tsx`
-- Create `packages/core/src/components/common/FavoritesBar.tsx`
+- Create `apps/core/src/components/assets/VersionHistory.tsx`
+- Create `apps/core/src/components/workflows/MacroRecorder.tsx`
+- Create `apps/core/src/components/common/FavoritesBar.tsx`
 
 ## Database Schema Changes
 
 **Tags:**
 
 ```typescript
-// packages/core/server/db/schema/tags.schema.ts
+// apps/core/server/db/schema/tags.schema.ts
 export const tags = pgTable("tags", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
@@ -176,7 +176,7 @@ export const assetTags = pgTable(
 **Saved filters:**
 
 ```typescript
-// packages/core/server/db/schema/saved-filters.schema.ts
+// apps/core/server/db/schema/saved-filters.schema.ts
 export const savedFilters = pgTable("saved_filters", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
@@ -189,7 +189,7 @@ export const savedFilters = pgTable("saved_filters", {
 **Workflows/pipelines:**
 
 ```typescript
-// packages/core/server/db/schema/workflows.schema.ts
+// apps/core/server/db/schema/workflows.schema.ts
 export const workflows = pgTable("workflows", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
@@ -204,7 +204,7 @@ export const workflows = pgTable("workflows", {
 **Macros:**
 
 ```typescript
-// packages/core/server/db/schema/macros.schema.ts
+// apps/core/server/db/schema/macros.schema.ts
 export const macros = pgTable("macros", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
@@ -217,7 +217,7 @@ export const macros = pgTable("macros", {
 **Favorites:**
 
 ```typescript
-// packages/core/server/db/schema/favorites.schema.ts
+// apps/core/server/db/schema/favorites.schema.ts
 export const favorites = pgTable(
   "favorites",
   {
@@ -236,7 +236,7 @@ export const favorites = pgTable(
 ## Keyboard Shortcut Map
 
 ```typescript
-// packages/core/src/config/shortcuts.ts
+// apps/core/src/config/shortcuts.ts
 export const shortcuts = {
   // Navigation
   g: { action: "navigate", target: "/generate", label: "Go to Generate" },

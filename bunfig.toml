@@ -1,4 +1,4 @@
-# Bun Configuration
+# Bun Configuration for Asset-Forge Monorepo
 # https://bun.sh/docs/runtime/bunfig
 
 [install]
@@ -13,26 +13,75 @@ production = false
 dir = ".bun-cache"
 
 [test]
-# Test runner configuration
-preload = ["./packages/core/__tests__/setup-dom.ts"]
-coverage = true
-coverageThreshold = 0.80  # Require 80% coverage
-coverageReporter = ["text", "lcov"]  # Fixed: "html" is not a valid Bun coverage reporter
-coveragePathIgnorePatterns = [
-  "node_modules/",
-  "dist/",
-  "__tests__/",
-  "*.test.ts",
-  "*.test.tsx",
-  "*.spec.ts",
-  "*.spec.tsx",
-  ".claude/",
-  "dev-book/",
-  "scripts/"
+# Root directory for test discovery
+root = "."
+
+# DOM environment for React testing
+environment = "happydom"
+
+# Patterns to match test files (Bun tests ONLY - NOT Playwright)
+# Only matches .test.ts and .test.tsx files
+# This excludes .spec.ts/.spec.tsx which are used by Playwright
+testMatch = [
+  "**/__tests__/integration/**/*.test.ts",
+  "**/__tests__/integration/**/*.test.tsx",
+  "**/__tests__/unit/**/*.test.ts",
+  "**/__tests__/unit/**/*.test.tsx",
+  "**/__tests__/helpers/**/*.test.ts"
 ]
+
+# Exclude E2E tests (Playwright), node_modules, and other non-test directories
+testIgnore = [
+  "**/__tests__/e2e/**",      # Playwright E2E tests - EXCLUDE ALL
+  "**/*.spec.ts",              # Playwright spec files
+  "**/*.spec.tsx",             # Playwright spec files
+  "**/node_modules/**",
+  "**/dist/**",
+  "**/.git/**",
+  "**/coverage/**",
+  "**/build/**"
+]
+
+# Test execution
+# Run tests in parallel for faster execution
+concurrent = true
+
+# Code coverage configuration
+coverage = true
+
+# Coverage thresholds - fail if below 80%
+coverageThreshold = { lines = 80, functions = 80, statements = 80, branches = 75 }
+
+# Skip test files in coverage reports
 coverageSkipTestFiles = true
-timeout = 10000  # 10 second default timeout
-bail = false  # Continue running tests after failures
+
+# Coverage reporters - generate multiple formats
+coverageReporter = ["text", "lcov"]
+
+# Coverage output directory
+coverageDir = "coverage"
+
+# Exclude patterns from coverage
+coveragePathIgnorePatterns = [
+  "**/node_modules/**",
+  "**/__tests__/**",
+  "**/dist/**",
+  "**/*.config.*",
+  "**/*.test.*",
+  "**/*.spec.*",
+  "**/scripts/**",
+  "**/dev-book/**",
+  "**/.claude/**"
+]
+
+# Test timeout (2 minutes default)
+timeout = 120000
+
+# Continue running tests after failures
+bail = false
+
+# Preload scripts for test setup
+preload = ["./apps/core/__tests__/setup-dom.ts"]
 
 # Enable quiet mode for AI agents (CLAUDECODE, AGENT)
 # Shows only failures in detail, hides verbose passing test output

@@ -14,14 +14,14 @@ Specialist in admin dashboards, user management, analytics, and system monitorin
 ### CRITICAL - Admin Dashboard
 
 1. **Create admin dashboard page**
-   - File: `packages/core/src/pages/AdminDashboardPage.tsx`
+   - File: `apps/core/src/pages/AdminDashboardPage.tsx`
    - Route: `/admin` (protected by role check)
    - Sections: Overview, Users, Content, System Health, Analytics
    - Role-based access control (RBAC)
    - Add `role` field to user schema (admin, moderator, user)
 
 2. **Add user management interface**
-   - File: `packages/core/src/components/admin/UserManagement.tsx`
+   - File: `apps/core/src/components/admin/UserManagement.tsx`
    - Features: Search, filter, ban, edit, impersonate
    - View: User details, generation history, assets, API usage
    - Actions: Reset password, change role, suspend account
@@ -30,21 +30,21 @@ Specialist in admin dashboards, user management, analytics, and system monitorin
 ### HIGH PRIORITY - Analytics
 
 3. **Create analytics dashboard**
-   - File: `packages/core/src/components/admin/AnalyticsDashboard.tsx`
+   - File: `apps/core/src/components/admin/AnalyticsDashboard.tsx`
    - Metrics: Daily active users, generation count, error rate, API usage
    - Charts: Time series, top content types, user cohorts
    - Export to CSV for further analysis
    - Use existing database for queries (no external analytics yet)
 
 4. **Add content moderation queue**
-   - File: `packages/core/src/components/admin/ModerationQueue.tsx`
+   - File: `apps/core/src/components/admin/ModerationQueue.tsx`
    - Review flagged content: NSFW, violent, copyrighted
    - Actions: Approve, reject, ban user, delete asset
    - Moderation reasons dropdown
    - Bulk actions for efficiency
 
 5. **Create system health monitor**
-   - File: `packages/core/src/components/admin/SystemHealth.tsx`
+   - File: `apps/core/src/components/admin/SystemHealth.tsx`
    - Metrics: API response time, database connections, Redis queue depth
    - Alerts: High error rate, slow queries, queue backlog
    - Integrations: Show Meshy API status, AI Gateway status
@@ -52,14 +52,14 @@ Specialist in admin dashboards, user management, analytics, and system monitorin
 ### HIGH PRIORITY - Operations
 
 6. **Add job queue manager**
-   - File: `packages/core/src/components/admin/JobQueueManager.tsx`
+   - File: `apps/core/src/components/admin/JobQueueManager.tsx`
    - View: Pending jobs, failed jobs, processing times
    - Actions: Retry failed jobs, cancel jobs, clear queue
    - Statistics: Success rate, average time, throughput
    - Use existing RedisQueueService
 
 7. **Create database admin panel**
-   - File: `packages/core/src/pages/DatabaseAdminPage.tsx`
+   - File: `apps/core/src/pages/DatabaseAdminPage.tsx`
    - View: Table sizes, slow queries, index usage
    - Actions: Run migrations, vacuum, reindex
    - Warning: Dangerous operations require confirmation
@@ -67,21 +67,21 @@ Specialist in admin dashboards, user management, analytics, and system monitorin
 ### MEDIUM PRIORITY - Reporting
 
 8. **Add user activity reports**
-   - File: `packages/core/src/components/admin/ActivityReports.tsx`
+   - File: `apps/core/src/components/admin/ActivityReports.tsx`
    - Reports: New signups, churn rate, feature usage
    - Date range selector
    - Export to PDF or CSV
    - Email scheduled reports
 
 9. **Create cost tracking**
-   - File: `packages/core/src/components/admin/CostTracking.tsx`
+   - File: `apps/core/src/components/admin/CostTracking.tsx`
    - Track: Meshy API costs, AI Gateway costs, storage costs
    - Per-user cost breakdown
    - Budget alerts
    - Monthly projections
 
 10. **Add feature flags system**
-    - File: `packages/core/src/components/admin/FeatureFlags.tsx`
+    - File: `apps/core/src/components/admin/FeatureFlags.tsx`
     - Toggle features without deployment
     - Per-user or percentage-based rollout
     - A/B testing support
@@ -117,31 +117,31 @@ Specialist in admin dashboards, user management, analytics, and system monitorin
 
 **CRITICAL:**
 
-- Create `packages/core/src/pages/AdminDashboardPage.tsx`
-- Create `packages/core/src/components/admin/UserManagement.tsx`
-- Edit `packages/core/server/db/schema/users.schema.ts` (add role field)
-- Create `packages/core/server/middleware/admin-auth.ts`
+- Create `apps/core/src/pages/AdminDashboardPage.tsx`
+- Create `apps/core/src/components/admin/UserManagement.tsx`
+- Edit `apps/core/server/db/schema/users.schema.ts` (add role field)
+- Create `apps/core/server/middleware/admin-auth.ts`
 
 **HIGH:**
 
-- Create `packages/core/src/components/admin/AnalyticsDashboard.tsx`
-- Create `packages/core/src/components/admin/ModerationQueue.tsx`
-- Create `packages/core/src/components/admin/SystemHealth.tsx`
-- Create `packages/core/src/components/admin/JobQueueManager.tsx`
-- Create `packages/core/src/pages/DatabaseAdminPage.tsx`
+- Create `apps/core/src/components/admin/AnalyticsDashboard.tsx`
+- Create `apps/core/src/components/admin/ModerationQueue.tsx`
+- Create `apps/core/src/components/admin/SystemHealth.tsx`
+- Create `apps/core/src/components/admin/JobQueueManager.tsx`
+- Create `apps/core/src/pages/DatabaseAdminPage.tsx`
 
 **MEDIUM:**
 
-- Create `packages/core/src/components/admin/ActivityReports.tsx`
-- Create `packages/core/src/components/admin/CostTracking.tsx`
-- Create `packages/core/src/components/admin/FeatureFlags.tsx`
+- Create `apps/core/src/components/admin/ActivityReports.tsx`
+- Create `apps/core/src/components/admin/CostTracking.tsx`
+- Create `apps/core/src/components/admin/FeatureFlags.tsx`
 
 ## Database Schema Changes
 
 **User role:**
 
 ```typescript
-// packages/core/server/db/schema/users.schema.ts
+// apps/core/server/db/schema/users.schema.ts
 export const users = pgTable("users", {
   // ... existing fields
   role: text("role").notNull().default("user"), // admin, moderator, user
@@ -151,7 +151,7 @@ export const users = pgTable("users", {
 **Admin actions audit log:**
 
 ```typescript
-// packages/core/server/db/schema/admin-audit.schema.ts
+// apps/core/server/db/schema/admin-audit.schema.ts
 export const adminAudit = pgTable("admin_audit", {
   id: uuid("id").primaryKey().defaultRandom(),
   adminUserId: text("admin_user_id").notNull(),
@@ -167,7 +167,7 @@ export const adminAudit = pgTable("admin_audit", {
 **Feature flags:**
 
 ```typescript
-// packages/core/server/db/schema/feature-flags.schema.ts
+// apps/core/server/db/schema/feature-flags.schema.ts
 export const featureFlags = pgTable("feature_flags", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull().unique(),
@@ -181,7 +181,7 @@ export const featureFlags = pgTable("feature_flags", {
 **Content moderation:**
 
 ```typescript
-// packages/core/server/db/schema/moderation.schema.ts
+// apps/core/server/db/schema/moderation.schema.ts
 export const moderationQueue = pgTable("moderation_queue", {
   id: uuid("id").primaryKey().defaultRandom(),
   assetId: uuid("asset_id").references(() => assets.id),
@@ -197,7 +197,7 @@ export const moderationQueue = pgTable("moderation_queue", {
 ## API Routes to Add
 
 ```typescript
-// packages/core/server/routes/admin.ts
+// apps/core/server/routes/admin.ts
 // GET /api/admin/users - List all users
 // PATCH /api/admin/users/:id - Update user
 // POST /api/admin/users/:id/ban - Ban user

@@ -9,13 +9,13 @@ You are analyzing the Asset-Forge 3D viewer components for proper configuration.
 ## Tasks
 
 1. **Check ThreeViewer.tsx**
-   - Read `packages/core/src/components/shared/ThreeViewer.tsx`
+   - Read `apps/core/src/components/shared/ThreeViewer.tsx`
    - Verify proper Three.js cleanup in useEffect
    - Check for memory leaks (geometry/material disposal)
    - Verify loading states and error boundaries
 
 2. **Check VRMTestViewer.tsx**
-   - Read `packages/core/src/components/shared/VRMTestViewer.tsx`
+   - Read `apps/core/src/components/shared/VRMTestViewer.tsx`
    - Verify VRM character scaling (should be ~1.7m height)
    - Check ground positioning (Y=0)
    - Verify animation support

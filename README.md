@@ -51,7 +51,7 @@ cd asset-forge
 bun install
 
 # Set up environment variables
-cp packages/core/.env.example packages/core/.env
+cp apps/core/.env.example apps/core/.env
 # Edit .env with your API keys and database URL
 
 # Run database migrations
@@ -122,17 +122,17 @@ asset-forge/
 
 ## Documentation
 
-Comprehensive documentation is available in [`packages/core/dev-book/`](./packages/core/dev-book/):
+Comprehensive documentation is available in [`apps/core/dev-book/`](./apps/core/dev-book/):
 
-- [Getting Started](./packages/core/dev-book/02-getting-started/)
-- [Architecture](./packages/core/dev-book/04-architecture/)
-- [API Reference](./packages/core/dev-book/12-api-reference/)
-- [Development Guide](./packages/core/dev-book/11-development/)
-- [Deployment](./packages/core/dev-book/14-deployment/)
+- [Getting Started](./apps/core/dev-book/02-getting-started/)
+- [Architecture](./apps/core/dev-book/04-architecture/)
+- [API Reference](./apps/core/dev-book/12-api-reference/)
+- [Development Guide](./apps/core/dev-book/11-development/)
+- [Deployment](./apps/core/dev-book/14-deployment/)
 
 ## Environment Variables
 
-See [`packages/core/.env.example`](./packages/core/.env.example) for all required environment variables.
+See [`apps/core/.env.example`](./apps/core/.env.example) for all required environment variables.
 
 Key variables:
 
@@ -192,7 +192,7 @@ bun test --coverage
 4. Connect GitHub repository
 5. Deploy!
 
-See [Deployment Guide](./packages/core/dev-book/14-deployment/) for detailed instructions.
+See [Deployment Guide](./apps/core/dev-book/14-deployment/) for detailed instructions.
 
 ## Contributing
 
@@ -210,7 +210,7 @@ Contributions are welcome! Please read our contributing guidelines before submit
 
 ## Support
 
-- **Documentation**: [dev-book](./packages/core/dev-book/)
+- **Documentation**: [dev-book](./apps/core/dev-book/)
 - **Issues**: [GitHub Issues](https://github.com/yourorg/asset-forge/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourorg/asset-forge/discussions)
 

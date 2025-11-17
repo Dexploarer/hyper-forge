@@ -85,7 +85,7 @@ Expert in Elysia framework, REST API design, and backend TypeScript development.
 ## Asset-Forge API Structure
 
 ```
-packages/core/server/
+apps/core/server/
 ├── api-elysia.ts          # Main Elysia server entry point
 ├── routes/
 │   ├── teams.ts           # Team collaboration
@@ -115,8 +115,8 @@ When invoked:
 2. Understand the API requirement
 3. Design the endpoint (method, path, params)
 4. Create TypeBox validation schema
-5. Implement service layer logic in `packages/core/server/services/`
-6. Create route handler in `packages/core/server/routes/`
+5. Implement service layer logic in `apps/core/server/services/`
+6. Create route handler in `apps/core/server/routes/`
 7. Add Swagger documentation (tags, descriptions, examples)
 8. Write tests in `*.test.ts` files (NO MOCKS - use real implementations)
 9. Run tests: `bun test`

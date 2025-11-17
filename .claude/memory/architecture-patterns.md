@@ -85,7 +85,7 @@ asset-forge/
 
 ### Service Layer
 
-Business logic in `packages/core/server/services/`:
+Business logic in `apps/core/server/services/`:
 
 - `TeamService` - Team collaboration
 - `AssetService` - Asset management
@@ -95,7 +95,7 @@ Business logic in `packages/core/server/services/`:
 
 ### Route Layer
 
-HTTP handlers in `packages/core/server/routes/`:
+HTTP handlers in `apps/core/server/routes/`:
 
 - TypeBox validation for all inputs/outputs
 - Elysia route handlers with proper HTTP methods
@@ -104,7 +104,7 @@ HTTP handlers in `packages/core/server/routes/`:
 
 ### Schema Layer
 
-Database schemas with Drizzle in `packages/core/server/db/schema/`:
+Database schemas with Drizzle in `apps/core/server/db/schema/`:
 
 - TypeScript-first schema definitions
 - Auto-generated migrations
@@ -112,7 +112,7 @@ Database schemas with Drizzle in `packages/core/server/db/schema/`:
 
 ### Component Layer
 
-Reusable React components in `packages/core/src/components/`:
+Reusable React components in `apps/core/src/components/`:
 
 - Functional components with hooks
 - TypeScript with strict typing

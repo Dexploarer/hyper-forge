@@ -101,7 +101,7 @@ Expert in React, Three.js, React Three Fiber, and modern frontend development.
 ## Asset-Forge Component Structure
 
 ```
-packages/core/src/
+apps/core/src/
 ├── components/
 │   ├── shared/
 │   │   ├── ThreeViewer.tsx       # Main 3D viewer (GLB/GLTF)
@@ -141,7 +141,7 @@ When invoked:
    - Three.js: `mrdoob/three.js`
 2. Understand UI/3D requirement
 3. Check existing components for reusable patterns
-4. Create/modify component with TypeScript in `packages/core/src/components/`
+4. Create/modify component with TypeScript in `apps/core/src/components/`
 5. Implement 3D logic if needed (GLB/VRM loading, controls, lights)
 6. Add error handling and loading states
 7. Test visually (suggest Playwright screenshots for visual regression)

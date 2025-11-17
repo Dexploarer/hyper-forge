@@ -200,7 +200,7 @@ This rule is **NON-NEGOTIABLE**. If you:
 
 ```bash
 # From package directory
-cd packages/core
+cd apps/core
 bun run typecheck
 
 # Expected output:

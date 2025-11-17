@@ -60,11 +60,12 @@ Default to using Bun instead of Node.js:
 
 ```
 asset-forge/
-├── packages/
-│   └── core/             # Main application
+├── apps/
+│   └── core/             # Main web application
 │       ├── src/          # React frontend
 │       ├── server/       # Elysia backend
 │       └── dev-book/     # Documentation
+├── packages/             # Shared libraries (future)
 ├── package.json          # Workspace root
 └── turbo.json            # Build orchestration
 ```
@@ -89,7 +90,7 @@ asset-forge/
 
 When schema changes are needed:
 
-1. Edit TypeScript schema in `packages/core/server/db/schema/`
+1. Edit TypeScript schema in `apps/core/server/db/schema/`
 2. Generate migration: `bun run db:generate`
 3. Review generated SQL in `server/db/migrations/`
 4. Apply migration: `bun run db:migrate`
@@ -142,7 +143,7 @@ bun run typecheck            # Check types
 
 ## Environment Variables
 
-Required in `packages/core/.env`:
+Required in `apps/core/.env`:
 
 - `DATABASE_URL` - PostgreSQL connection
 - `PRIVY_APP_ID` / `PRIVY_APP_SECRET` - Authentication
@@ -160,10 +161,10 @@ Required in `packages/core/.env`:
 
 ## Key Files
 
-- `packages/core/server/api-elysia.ts` - Main API server
-- `packages/core/server/db/schema/` - Database schemas
-- `packages/core/src/components/shared/ThreeViewer.tsx` - 3D viewer
-- `packages/core/dev-book/` - Comprehensive documentation
+- `apps/core/server/api-elysia.ts` - Main API server
+- `apps/core/server/db/schema/` - Database schemas
+- `apps/core/src/components/shared/ThreeViewer.tsx` - 3D viewer
+- `apps/core/dev-book/` - Comprehensive documentation
 
 ## Research-First Protocol
 
@@ -185,5 +186,4 @@ Before ANY code changes:
 
 For more details, see:
 
-- `packages/core/dev-book/` - Full documentation
-- `packages/core/CLAUDE.md` - Package-specific instructions
+- `apps/core/dev-book/` - Full documentation

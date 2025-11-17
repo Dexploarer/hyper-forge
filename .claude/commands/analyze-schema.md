@@ -21,8 +21,8 @@ Ask: "Best practices for schema design and relationships in Drizzle ORM"
 
 Reading schema files:
 
-- packages/core/server/db/schema/
-- packages/core/server/db/drizzle.config.ts
+- apps/core/server/db/schema/
+- apps/core/server/db/drizzle.config.ts
 
 ## Analysis Tasks
 
@@ -175,5 +175,5 @@ Based on analysis, provide:
 
 - `/migrate` - Generate and apply schema changes
 - `/db:studio` - Visual database browser (Drizzle Studio)
-- packages/core/server/db/schema/ - Schema source files
-- packages/core/server/db/drizzle.config.ts - Drizzle configuration
+- apps/core/server/db/schema/ - Schema source files
+- apps/core/server/db/drizzle.config.ts - Drizzle configuration

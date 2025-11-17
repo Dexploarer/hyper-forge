@@ -1,0 +1,20 @@
+{
+  "id": "intro",
+  "title": "Welcome to Asset-Forge",
+  "description": "Asset-Forge is an AI-powered 3D asset generation platform designed for game developers. Transform text descriptions into production-ready 3D models, characters, and game content using cutting-edge AI technology.",
+  "source": "@site/docs/intro.md",
+  "sourceDirName": ".",
+  "slug": "/",
+  "permalink": "/docs/",
+  "draft": false,
+  "unlisted": false,
+  "editUrl": "https://github.com/yourorg/asset-forge/tree/main/apps/docs/docs/intro.md",
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 1,
+  "frontMatter": {
+    "sidebar_position": 1,
+    "slug": "/"
+  },
+  "sidebar": "guidesSidebar"
+}

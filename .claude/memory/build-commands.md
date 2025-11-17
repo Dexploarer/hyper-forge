@@ -26,10 +26,10 @@ bun run dev:server           # Alternative command
 bun run build                # Build both frontend and backend
 
 # Build frontend only
-bun run build:frontend       # Outputs to packages/core/dist/
+bun run build:frontend       # Outputs to apps/core/dist/
 
 # Build backend only
-bun run build:backend        # Outputs to packages/core/server/dist/
+bun run build:backend        # Outputs to apps/core/server/dist/
 ```
 
 ## Database (Drizzle ORM)
@@ -146,7 +146,7 @@ bun run build:all
 
 ```bash
 # Copy example environment file
-cp packages/core/.env.example packages/core/.env
+cp apps/core/.env.example apps/core/.env
 
 # Edit environment variables
 # Required:
