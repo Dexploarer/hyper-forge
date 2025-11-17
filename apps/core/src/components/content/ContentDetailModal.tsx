@@ -98,8 +98,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
           (asset: any) => asset.type === "portrait",
         );
         if (portrait) {
-          // Prefer CDN URL, fallback to fileUrl
-          setPortraitUrl(portrait.cdnUrl || portrait.fileUrl);
+          // Standardized field access: prefer fileUrl, fallback to cdnUrl
+          setPortraitUrl(portrait.fileUrl || portrait.cdnUrl);
         }
       }
     } catch (error) {
@@ -119,8 +119,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
           (asset: any) => asset.type === "banner",
         );
         if (banner) {
-          // Prefer CDN URL, fallback to fileUrl
-          setBannerUrl(banner.cdnUrl || banner.fileUrl);
+          // Standardized field access: prefer fileUrl, fallback to cdnUrl
+          setBannerUrl(banner.fileUrl || banner.cdnUrl);
         }
       }
     } catch (error) {

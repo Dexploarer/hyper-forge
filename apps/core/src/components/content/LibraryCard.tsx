@@ -189,7 +189,8 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
           (asset: any) => asset.type === "portrait",
         );
         if (portrait) {
-          setPortraitUrl(portrait.fileUrl);
+          // Standardized field access: prefer fileUrl, fallback to cdnUrl
+          setPortraitUrl(portrait.fileUrl || portrait.cdnUrl);
         }
       }
     } catch (error) {
@@ -253,7 +254,8 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
           (asset: any) => asset.type === "banner",
         );
         if (banner) {
-          setBannerUrl(banner.fileUrl);
+          // Standardized field access: prefer fileUrl, fallback to cdnUrl
+          setBannerUrl(banner.fileUrl || banner.cdnUrl);
         }
       }
     } catch (error) {
