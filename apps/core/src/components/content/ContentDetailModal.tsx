@@ -202,13 +202,14 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   };
 
   const handleGeneratePortrait = async () => {
-    if (item.type !== "npc") return;
+    if (item.type !== "npc" || !item.id) return;
     const npc = item.data as NPCData;
 
     try {
       setIsGeneratingPortrait(true);
       const result = await api.api.content["generate-npc-portrait"].post({
         npcName: npc.name,
+        entityId: item.id, // Pass entity ID so backend can save immediately
         archetype: npc.archetype || "default",
         appearance:
           npc.appearance?.description || "Generic appearance for a character",
@@ -225,10 +226,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         );
       }
 
+      // Backend already saved it - just update UI with permanent URL
       setPortraitUrl(result.data!.imageUrl);
-      notify.success("Portrait generated! Saving...");
-      // Auto-save after generation
-      await handleSavePortrait(result.data!.imageUrl);
+      notify.success("Portrait generated and saved!");
+      await fetchPortrait();
+      onImageGenerated?.();
     } catch (error) {
       console.error("Failed to generate portrait:", error);
       notify.error("Failed to generate portrait");
@@ -238,14 +240,14 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   };
 
   const handleGenerateBanner = async () => {
-    if (item.type !== "quest") return;
+    if (item.type !== "quest" || !item.id) return;
     const quest = item.data as QuestData;
 
     try {
       setIsGeneratingBanner(true);
-      // Generate banner with only visual requirements - no game metadata
       const result = await api.api.content["generate-quest-banner"].post({
         questTitle: quest.title,
+        entityId: item.id, // Pass entity ID so backend can save immediately
         description: quest.description || "",
       });
 
@@ -257,10 +259,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         );
       }
 
+      // Backend already saved it - just update UI with permanent URL
       setBannerUrl(result.data!.imageUrl);
-      notify.success("Banner generated! Saving...");
-      // Auto-save after generation
-      await handleSaveBanner(result.data!.imageUrl);
+      notify.success("Banner generated and saved!");
+      await fetchBanner();
+      onImageGenerated?.();
     } catch (error) {
       console.error("Failed to generate banner:", error);
       notify.error("Failed to generate banner");

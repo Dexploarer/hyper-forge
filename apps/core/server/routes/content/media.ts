@@ -106,19 +106,61 @@ export const mediaRoutes = new Elysia()
         .generateImage(imagePrompt, "portrait", "realistic");
 
       logger.info(
-        { context: "ContentGeneration", npcName: body.npcName },
-        "Portrait generated successfully",
+        {
+          context: "ContentGeneration",
+          npcName: body.npcName,
+          tempUrl: imageResult.imageUrl,
+        },
+        "Portrait generated, downloading and saving to volume...",
+      );
+
+      // BEST PRACTICE: Immediately download and save to blob storage
+      // Don't return temporary URLs - they expire!
+      const response = await fetch(imageResult.imageUrl);
+      if (!response.ok) {
+        throw new InternalServerError(
+          `Failed to download generated image: ${response.status}`,
+        );
+      }
+
+      const imageData = Buffer.from(await response.arrayBuffer());
+      const fileName = `portrait_${body.npcName.replace(/[^a-zA-Z0-9]/g, "_")}_${Date.now()}.png`;
+
+      // Save to volume and database
+      const savedMedia = await mediaStorageService.saveMedia({
+        type: "portrait",
+        entityType: "npc",
+        entityId: body.entityId,
+        fileName,
+        data: imageData,
+        metadata: {
+          prompt: imageResult.prompt,
+          mimeType: "image/png",
+          size: imageData.length,
+        },
+        createdBy: user.id,
+      });
+
+      logger.info(
+        {
+          context: "ContentGeneration",
+          npcName: body.npcName,
+          permanentUrl: savedMedia.cdnUrl,
+        },
+        "Portrait saved to volume successfully",
       );
 
       return {
         success: true,
-        imageUrl: imageResult.imageUrl,
+        imageUrl: savedMedia.cdnUrl, // Return permanent URL, not temporary
         prompt: imageResult.prompt,
+        mediaId: savedMedia.id,
       };
     },
     {
       body: t.Object({
         npcName: t.String({ minLength: 1, maxLength: 100 }),
+        entityId: t.String({ minLength: 1, maxLength: 255 }),
         archetype: t.String({ minLength: 1, maxLength: 50 }),
         appearance: t.String({ minLength: 10, maxLength: 500 }),
         personality: t.String({ minLength: 10, maxLength: 500 }),
@@ -127,6 +169,7 @@ export const mediaRoutes = new Elysia()
         success: t.Boolean(),
         imageUrl: t.String(),
         prompt: t.String(),
+        mediaId: t.String(),
       }),
       detail: {
         tags: ["Media Assets"],
@@ -191,19 +234,61 @@ export const mediaRoutes = new Elysia()
         .generateImage(imagePrompt, "banner", "fantasy");
 
       logger.info(
-        { context: "ContentGeneration", questTitle: body.questTitle },
-        "Banner generated successfully",
+        {
+          context: "ContentGeneration",
+          questTitle: body.questTitle,
+          tempUrl: imageResult.imageUrl,
+        },
+        "Banner generated, downloading and saving to volume...",
+      );
+
+      // BEST PRACTICE: Immediately download and save to blob storage
+      // Don't return temporary URLs - they expire!
+      const response = await fetch(imageResult.imageUrl);
+      if (!response.ok) {
+        throw new InternalServerError(
+          `Failed to download generated image: ${response.status}`,
+        );
+      }
+
+      const imageData = Buffer.from(await response.arrayBuffer());
+      const fileName = `banner_${body.questTitle.replace(/[^a-zA-Z0-9]/g, "_")}_${Date.now()}.png`;
+
+      // Save to volume and database
+      const savedMedia = await mediaStorageService.saveMedia({
+        type: "banner",
+        entityType: "quest",
+        entityId: body.entityId,
+        fileName,
+        data: imageData,
+        metadata: {
+          prompt: imageResult.prompt,
+          mimeType: "image/png",
+          size: imageData.length,
+        },
+        createdBy: user.id,
+      });
+
+      logger.info(
+        {
+          context: "ContentGeneration",
+          questTitle: body.questTitle,
+          permanentUrl: savedMedia.cdnUrl,
+        },
+        "Banner saved to volume successfully",
       );
 
       return {
         success: true,
-        imageUrl: imageResult.imageUrl,
+        imageUrl: savedMedia.cdnUrl, // Return permanent URL, not temporary
         prompt: imageResult.prompt,
+        mediaId: savedMedia.id,
       };
     },
     {
       body: t.Object({
         questTitle: t.String({ minLength: 1, maxLength: 200 }),
+        entityId: t.String({ minLength: 1, maxLength: 255 }),
         description: t.String({ minLength: 10, maxLength: 1000 }),
         questType: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
         difficulty: t.Optional(
@@ -219,6 +304,7 @@ export const mediaRoutes = new Elysia()
         success: t.Boolean(),
         imageUrl: t.String(),
         prompt: t.String(),
+        mediaId: t.String(),
       }),
       detail: {
         tags: ["Media Assets"],
