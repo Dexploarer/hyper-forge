@@ -7,13 +7,9 @@ import { Elysia, t } from "elysia";
 import type { GenerationService } from "../services/GenerationService";
 import { optionalAuth } from "../plugins/auth.plugin";
 import * as Models from "../models";
-import {
-  UnauthorizedError,
-  InternalServerError,
-  NotFoundError,
-} from "../errors";
+import { UnauthorizedError, NotFoundError } from "../errors";
 import { createChildLogger } from "../utils/logger";
-import { generationJobService } from "../services/GenerationJobService";
+import { generationPipelineService } from "../services/GenerationPipelineService";
 import { ActivityLogService } from "../services/ActivityLogService";
 
 const logger = createChildLogger("GenerationRoutes");
@@ -71,33 +67,63 @@ export const createGenerationRoutes = (
                 "Starting pipeline for authenticated user",
               );
 
-              // Generate unique pipeline ID
-              const pipelineId = `pipeline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+              // Generate unique pipeline ID (UUID)
+              const id = crypto.randomUUID();
 
-              // Update body with verified userId
-              const configWithUser = {
+              // Apply smart defaults for optional fields
+              const configWithDefaults = {
                 ...body,
+                // Auto-generate assetId from name if not provided
+                assetId:
+                  body.assetId ||
+                  `${body.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`,
+                // Use provided type or default to "item"
+                type: body.type || "item",
+                // Use provided subtype or default to "general"
+                subtype: body.subtype || "general",
+                // Apply other defaults
+                tier: body.tier ?? 1,
+                quality: body.quality || "balanced",
+                style: body.style || "fantasy",
+                enableRigging: body.enableRigging ?? false,
+                enableRetexturing: body.enableRetexturing ?? false,
+                enableSprites: body.enableSprites ?? false,
+                // Inject user context from authentication
                 user: {
-                  ...body.user,
                   userId,
+                  walletAddress: authUser.walletAddress || undefined,
+                  isAdmin: authUser.isAdmin || false,
                 },
               };
 
-              // Create job in database
-              const job = await generationJobService.createJob(
-                pipelineId,
-                configWithUser as any,
+              logger.info(
+                {
+                  providedFields: Object.keys(body),
+                  generatedAssetId: !body.assetId,
+                  appliedDefaults: {
+                    type: !body.type,
+                    subtype: !body.subtype,
+                    tier: body.tier === undefined,
+                  },
+                },
+                "Applied smart defaults to pipeline config",
+              );
+
+              // Create pipeline in database
+              const pipeline = await generationPipelineService.createPipeline(
+                id,
+                configWithDefaults as any,
               );
 
               logger.info(
-                { pipelineId, userId },
-                "Pipeline job created, starting processing",
+                { pipelineId: id, userId },
+                "Pipeline created, starting processing",
               );
 
               // Log generation started
               await ActivityLogService.logGenerationStarted({
                 userId,
-                pipelineId,
+                pipelineId: id,
                 generationType: body.type || "3d-asset",
                 assetName: body.name,
                 request,
@@ -108,13 +134,13 @@ export const createGenerationRoutes = (
 
               // Start processing asynchronously (no worker queue needed)
               generationService
-                .processPipelineFromJob(job)
+                .processPipelineFromJob(pipeline)
                 .catch(async (error) => {
                   logger.error(
-                    { err: error, pipelineId },
+                    { err: error, pipelineId: id },
                     "Pipeline processing failed",
                   );
-                  await generationJobService.updateJob(pipelineId, {
+                  await generationPipelineService.updateJob(id, {
                     status: "failed",
                     error: error.message,
                     completedAt: new Date(),
@@ -123,14 +149,14 @@ export const createGenerationRoutes = (
                   // Log generation failed
                   await ActivityLogService.logGenerationCompleted({
                     userId,
-                    pipelineId,
+                    pipelineId: id,
                     success: false,
                   });
                 });
 
               // Return immediately with processing status
               return {
-                pipelineId,
+                pipelineId: id,
                 status: "processing",
                 message: "Generation pipeline started successfully",
                 stages: {
@@ -154,41 +180,43 @@ export const createGenerationRoutes = (
                   "Initiates a new AI-powered 3D asset generation pipeline using Meshy AI and OpenAI. The pipeline generates concept art, creates 3D models, and tracks generation progress. Requires Privy authentication for ownership tracking and job management.",
                 security: [{ BearerAuth: [] }],
                 requestBody: {
-                  description: "Pipeline configuration for asset generation",
+                  description:
+                    "Pipeline configuration for asset generation. Only name and description are required - all other fields have smart defaults.",
                   content: {
                     "application/json": {
                       examples: {
+                        minimal: {
+                          summary: "Minimal request (recommended)",
+                          value: {
+                            name: "Quest Giver",
+                            description:
+                              "Quest giver NPC in T-pose, wearing ornate robes with mystical symbols, RuneScape 3 style",
+                          },
+                        },
                         weapon: {
                           summary: "Generate a fantasy sword",
                           value: {
                             name: "Dragon Blade",
+                            description:
+                              "A glowing dragon-themed sword with red runes and intricate patterns",
                             type: "weapon",
                             subtype: "sword",
                             tier: 3,
-                            prompt:
-                              "A glowing dragon-themed sword with red runes",
                             style: "fantasy",
-                            artStyle: "realistic",
-                            user: {
-                              userId: "user_123456",
-                            },
                           },
                         },
-                        armor: {
-                          summary: "Generate sci-fi armor",
+                        withOptions: {
+                          summary: "With optional settings",
                           value: {
                             name: "Quantum Armor",
+                            description:
+                              "Futuristic energy-based chest armor with blue glow",
                             type: "armor",
                             subtype: "chest",
                             tier: 5,
-                            prompt:
-                              "Futuristic energy-based chest armor with blue glow",
                             style: "sci-fi",
-                            artStyle: "stylized",
-                            projectId: "proj_abc123",
-                            user: {
-                              userId: "user_123456",
-                            },
+                            quality: "high",
+                            enableRigging: true,
                           },
                         },
                       },
@@ -267,14 +295,14 @@ export const createGenerationRoutes = (
 
               // Get job from generation_jobs table (where POST creates it)
               const job =
-                await generationJobService.getJobByPipelineId(pipelineId);
+                await generationPipelineService.getJobByPipelineId(pipelineId);
 
               if (!job) {
                 throw new NotFoundError("Pipeline", pipelineId);
               }
 
               // Convert job to pipeline format for API response
-              const status = generationJobService.jobToPipeline(job);
+              const status = generationPipelineService.jobToPipeline(job);
               return status;
             },
             {
@@ -411,7 +439,7 @@ export const createGenerationRoutes = (
                     try {
                       // Get job from generation_jobs table (same as GET endpoint)
                       const job =
-                        await generationJobService.getJobByPipelineId(
+                        await generationPipelineService.getJobByPipelineId(
                           pipelineId,
                         );
 
@@ -425,7 +453,8 @@ export const createGenerationRoutes = (
                       }
 
                       // Convert job to pipeline format
-                      const status = generationJobService.jobToPipeline(job);
+                      const status =
+                        generationPipelineService.jobToPipeline(job);
 
                       // Send update
                       const message = `event: pipeline-update\ndata: ${JSON.stringify(status)}\nid: ${Date.now()}\n\n`;

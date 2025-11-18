@@ -366,7 +366,7 @@ export class GenerationService extends EventEmitter {
    * Start a new generation pipeline
    */
   async startPipeline(config: PipelineConfig): Promise<StartPipelineResponse> {
-    const pipelineId = `pipeline-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const pipelineId = crypto.randomUUID();
 
     // Create initial pipeline state
     const pipeline: Pipeline = {
@@ -433,51 +433,63 @@ export class GenerationService extends EventEmitter {
   }
 
   /**
-   * Process a pipeline from an existing GenerationJob (no worker queue needed)
+   * Process a pipeline from an existing GenerationPipeline (no worker queue needed)
    * This is called directly from the route handler for synchronous processing
    */
   async processPipelineFromJob(
-    job: import("../db/schema").GenerationJob,
+    job: import("../db/schema").GenerationPipeline,
   ): Promise<void> {
-    const { generationJobService } = await import(
-      "../services/GenerationJobService"
+    const { generationPipelineService } = await import(
+      "../services/GenerationPipelineService"
     );
     const { ActivityLogService } = await import(
       "../services/ActivityLogService"
     );
 
-    const pipelineId = job.pipelineId;
+    const pipelineId = job.id; // Database only has 'id', not 'pipelineId'
     const config = job.config as PipelineConfig; // Type assertion for JSONB field
 
     logger.info({ pipelineId }, "processPipelineFromJob() called");
 
     // Update job to processing
-    await generationJobService.updateJob(pipelineId, {
+    await generationPipelineService.updateJob(pipelineId, {
       status: "processing",
       startedAt: new Date(),
     });
 
     try {
-      // Create pipeline record in pipelineRepo for processPipeline() to work with
-      // This is a bridge until we fully migrate away from pipelineRepo
-      await this.pipelineRepo.create({
-        id: pipelineId,
-        userId: config.user?.userId || "anonymous",
-        config: config as unknown, // JSONB field accepts unknown
-        status: "processing",
-        progress: 0,
-        results: {} as unknown, // JSONB field accepts unknown
-        createdAt: new Date(),
-      });
+      // Check if record already exists (created by GenerationPipelineService in route)
+      // If it exists, use it. If not, create a temporary record for processing.
+      const existingPipeline = await this.pipelineRepo.findById(pipelineId);
 
-      // Run the actual processing logic
+      if (!existingPipeline) {
+        logger.info(
+          { pipelineId },
+          "Pipeline record not found in repository, creating temporary record",
+        );
+        await this.pipelineRepo.create({
+          id: pipelineId,
+          userId: config.user?.userId || "anonymous",
+          config: config as unknown, // JSONB field accepts unknown
+          status: "processing",
+          progress: 0,
+          results: {} as unknown, // JSONB field accepts unknown
+          createdAt: new Date(),
+        });
+      } else {
+        logger.info(
+          { pipelineId },
+          "Using existing pipeline record for processing",
+        );
+      }
+
       await this.processPipeline(pipelineId);
 
       // Get final results from pipeline
       const dbPipeline = await this.pipelineRepo.findById(pipelineId);
 
       // Sync results back to job
-      await generationJobService.updateJob(pipelineId, {
+      await generationPipelineService.updateJob(pipelineId, {
         status: "completed",
         progress: 100,
         results: (dbPipeline?.results as Record<string, unknown>) || {},
@@ -498,7 +510,7 @@ export class GenerationService extends EventEmitter {
       }
     } catch (error) {
       // Update job as failed
-      await generationJobService.updateJob(pipelineId, {
+      await generationPipelineService.updateJob(pipelineId, {
         status: "failed",
         error: (error as Error).message,
         completedAt: new Date(),
@@ -1155,9 +1167,16 @@ export class GenerationService extends EventEmitter {
           });
 
           // Upload to CDN first to get CDN URLs
-          const cdnResult = await this.uploadToCDN(config.assetId, filesToUpload);
-          
-          if (!cdnResult.success || !cdnResult.files || cdnResult.files.length === 0) {
+          const cdnResult = await this.uploadToCDN(
+            config.assetId,
+            filesToUpload,
+          );
+
+          if (
+            !cdnResult.success ||
+            !cdnResult.files ||
+            cdnResult.files.length === 0
+          ) {
             throw new Error("CDN upload failed - no files returned");
           }
 
@@ -1169,11 +1188,15 @@ export class GenerationService extends EventEmitter {
           }
 
           // Extract CDN URLs from upload result
-          const mainModelFile = cdnResult.files.find(f => f.path.endsWith('.glb') && !f.path.includes('_raw'));
-          const conceptArtFile = cdnResult.files.find(f => f.path.includes('concept-art'));
+          const mainModelFile = cdnResult.files.find(
+            (f) => f.path.endsWith(".glb") && !f.path.includes("_raw"),
+          );
+          const conceptArtFile = cdnResult.files.find((f) =>
+            f.path.includes("concept-art"),
+          );
           const cdnUrl = mainModelFile?.url || cdnResult.files[0]?.url || null;
           const cdnConceptArtUrl = conceptArtFile?.url || null;
-          const cdnFiles = cdnResult.files.map(f => f.url);
+          const cdnFiles = cdnResult.files.map((f) => f.url);
 
           // Update metadata with CDN URLs
           const metadataWithCdn = {

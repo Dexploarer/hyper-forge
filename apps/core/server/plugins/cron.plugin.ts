@@ -14,7 +14,7 @@
 import { Elysia } from "elysia";
 import { cron } from "@elysiajs/cron";
 import { logger } from "../utils/logger";
-import { generationJobService } from "../services/GenerationJobService";
+import { generationPipelineService } from "../services/GenerationPipelineService";
 
 /**
  * Cron Jobs Plugin
@@ -29,8 +29,8 @@ export const cronPlugin = new Elysia({ name: "cron" })
       pattern: "0 * * * *", // Every hour
       async run() {
         logger.info({}, "[Cron] Running job cleanup...");
-        const expiredCount = await generationJobService.cleanupExpiredJobs();
-        const failedCount = await generationJobService.cleanupOldFailedJobs();
+        const expiredCount = await generationPipelineService.cleanupExpiredJobs();
+        const failedCount = await generationPipelineService.cleanupOldFailedJobs();
         logger.info(
           { expiredCount, failedCount },
           "Cleaned up expired and old failed jobs",

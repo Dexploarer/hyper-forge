@@ -345,18 +345,21 @@ export const RegenerateBaseResponse = t.Object({
 // ==================== Generation Pipeline Models ====================
 
 export const PipelineConfig = t.Object({
-  description: t.String({ minLength: 1 }),
-  assetId: t.String({ minLength: 1 }),
+  // REQUIRED: Only name and description
   name: t.String({ minLength: 1 }),
-  type: t.String({ minLength: 1 }),
-  subtype: t.String({ minLength: 1 }),
+  description: t.String({ minLength: 1 }),
+
+  // OPTIONAL: Auto-generated or inferred if not provided
+  assetId: t.Optional(t.String({ minLength: 1 })), // Auto-generated from name if not provided
+  type: t.Optional(t.String({ minLength: 1 })), // Inferred from description if not provided
+  subtype: t.Optional(t.String({ minLength: 1 })), // Inferred from description if not provided
   generationType: t.Optional(t.String()),
-  tier: t.Optional(t.Number()),
-  quality: t.Optional(t.String()),
-  style: t.Optional(t.String()),
-  enableRigging: t.Optional(t.Boolean()),
-  enableRetexturing: t.Optional(t.Boolean()),
-  enableSprites: t.Optional(t.Boolean()),
+  tier: t.Optional(t.Number()), // Default: 1
+  quality: t.Optional(t.String()), // Default: "balanced"
+  style: t.Optional(t.String()), // Default: "fantasy"
+  enableRigging: t.Optional(t.Boolean()), // Default: false
+  enableRetexturing: t.Optional(t.Boolean()), // Default: false
+  enableSprites: t.Optional(t.Boolean()), // Default: false
   materialPresets: t.Optional(t.Array(MaterialPreset)),
   customPrompts: t.Optional(
     t.Object({
@@ -369,12 +372,7 @@ export const PipelineConfig = t.Object({
       useGPT4Enhancement: t.Optional(t.Boolean()),
     }),
   ),
-  // User context for ownership tracking (required - authentication mandatory)
-  user: t.Object({
-    userId: t.String({ minLength: 1 }), // Required for generation
-    walletAddress: t.Optional(t.String()),
-    isAdmin: t.Optional(t.Boolean()),
-  }),
+  // NOTE: User context removed from body - automatically injected from authentication
 });
 
 export const PipelineResponse = t.Object({

@@ -6,8 +6,8 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { db } from "../../server/db/db";
-import { users, generationJobs } from "../../server/db/schema";
-import { generationJobService } from "../../server/services/GenerationJobService";
+import { users, generationPipelines } from "../../server/db/schema";
+import { generationPipelineService } from "../../server/services/GenerationPipelineService";
 import { lt, eq } from "drizzle-orm";
 
 /**
@@ -33,7 +33,7 @@ async function createTestUser() {
 async function cleanupTestData(userId?: string) {
   try {
     if (userId) {
-      await db.delete(generationJobs).where(eq(generationJobs.userId, userId));
+      await db.delete(generationPipelines).where(eq(generationPipelines.userId, userId));
       await db.delete(users).where(eq(users.id, userId));
     }
   } catch (error) {
@@ -56,7 +56,7 @@ describe("Cron Jobs", () => {
         expiredDate.setHours(expiredDate.getHours() - 2);
 
         const [expiredJob] = await db
-          .insert(generationJobs)
+          .insert(generationPipelines)
           .values({
             pipelineId: `pipeline-expired-${Date.now()}`,
             assetId: "test-asset",
@@ -72,12 +72,13 @@ describe("Cron Jobs", () => {
           .returning();
 
         // Run cleanup
-        const cleanedCount = await generationJobService.cleanupExpiredJobs();
+        const cleanedCount =
+          await generationPipelineService.cleanupExpiredJobs();
 
         expect(cleanedCount).toBeGreaterThanOrEqual(1);
 
         // Verify job was deleted
-        const job = await generationJobService.getJobById(expiredJob.id);
+        const job = await generationPipelineService.getJobById(expiredJob.id);
         expect(job).toBeNull();
 
         await cleanupTestData(user.id);
@@ -96,7 +97,7 @@ describe("Cron Jobs", () => {
         expiredDate.setHours(expiredDate.getHours() - 2);
 
         const [processingJob] = await db
-          .insert(generationJobs)
+          .insert(generationPipelines)
           .values({
             pipelineId: `pipeline-processing-${Date.now()}`,
             assetId: "test-asset",
@@ -112,10 +113,12 @@ describe("Cron Jobs", () => {
           .returning();
 
         // Run cleanup
-        await generationJobService.cleanupExpiredJobs();
+        await generationPipelineService.cleanupExpiredJobs();
 
         // Verify processing job was NOT deleted
-        const job = await generationJobService.getJobById(processingJob.id);
+        const job = await generationPipelineService.getJobById(
+          processingJob.id,
+        );
         expect(job).not.toBeNull();
         expect(job?.status).toBe("processing");
 
@@ -135,7 +138,7 @@ describe("Cron Jobs", () => {
         futureDate.setHours(futureDate.getHours() + 24);
 
         const [futureJob] = await db
-          .insert(generationJobs)
+          .insert(generationPipelines)
           .values({
             pipelineId: `pipeline-future-${Date.now()}`,
             assetId: "test-asset",
@@ -151,10 +154,10 @@ describe("Cron Jobs", () => {
           .returning();
 
         // Run cleanup
-        await generationJobService.cleanupExpiredJobs();
+        await generationPipelineService.cleanupExpiredJobs();
 
         // Verify job still exists
-        const job = await generationJobService.getJobById(futureJob.id);
+        const job = await generationPipelineService.getJobById(futureJob.id);
         expect(job).not.toBeNull();
 
         await cleanupTestData(user.id);
@@ -172,7 +175,7 @@ describe("Cron Jobs", () => {
         expiredDate.setHours(expiredDate.getHours() - 2);
 
         // Create multiple expired jobs
-        await db.insert(generationJobs).values([
+        await db.insert(generationPipelines).values([
           {
             pipelineId: `pipeline-expired-1-${Date.now()}`,
             assetId: "test-asset-1",
@@ -199,7 +202,8 @@ describe("Cron Jobs", () => {
           },
         ]);
 
-        const cleanedCount = await generationJobService.cleanupExpiredJobs();
+        const cleanedCount =
+          await generationPipelineService.cleanupExpiredJobs();
 
         expect(cleanedCount).toBeGreaterThanOrEqual(2);
 
@@ -212,7 +216,7 @@ describe("Cron Jobs", () => {
 
     it("should handle empty job queue", async () => {
       // Run cleanup when no expired jobs exist
-      const cleanedCount = await generationJobService.cleanupExpiredJobs();
+      const cleanedCount = await generationPipelineService.cleanupExpiredJobs();
 
       // Should not throw error
       expect(cleanedCount).toBeGreaterThanOrEqual(0);
@@ -229,7 +233,7 @@ describe("Cron Jobs", () => {
         oldDate.setDate(oldDate.getDate() - 8);
 
         const [oldFailedJob] = await db
-          .insert(generationJobs)
+          .insert(generationPipelines)
           .values({
             pipelineId: `pipeline-old-failed-${Date.now()}`,
             assetId: "test-asset",
@@ -247,12 +251,13 @@ describe("Cron Jobs", () => {
           .returning();
 
         // Run cleanup
-        const cleanedCount = await generationJobService.cleanupOldFailedJobs();
+        const cleanedCount =
+          await generationPipelineService.cleanupOldFailedJobs();
 
         expect(cleanedCount).toBeGreaterThanOrEqual(1);
 
         // Verify job was deleted
-        const job = await generationJobService.getJobById(oldFailedJob.id);
+        const job = await generationPipelineService.getJobById(oldFailedJob.id);
         expect(job).toBeNull();
 
         await cleanupTestData(user.id);
@@ -271,7 +276,7 @@ describe("Cron Jobs", () => {
         recentDate.setDate(recentDate.getDate() - 3);
 
         const [recentFailedJob] = await db
-          .insert(generationJobs)
+          .insert(generationPipelines)
           .values({
             pipelineId: `pipeline-recent-failed-${Date.now()}`,
             assetId: "test-asset",
@@ -289,10 +294,12 @@ describe("Cron Jobs", () => {
           .returning();
 
         // Run cleanup
-        await generationJobService.cleanupOldFailedJobs();
+        await generationPipelineService.cleanupOldFailedJobs();
 
         // Verify job still exists
-        const job = await generationJobService.getJobById(recentFailedJob.id);
+        const job = await generationPipelineService.getJobById(
+          recentFailedJob.id,
+        );
         expect(job).not.toBeNull();
 
         await cleanupTestData(user.id);
@@ -311,7 +318,7 @@ describe("Cron Jobs", () => {
         oldDate.setDate(oldDate.getDate() - 8);
 
         const [oldCompletedJob] = await db
-          .insert(generationJobs)
+          .insert(generationPipelines)
           .values({
             pipelineId: `pipeline-old-completed-${Date.now()}`,
             assetId: "test-asset",
@@ -328,10 +335,12 @@ describe("Cron Jobs", () => {
           .returning();
 
         // Run cleanup
-        await generationJobService.cleanupOldFailedJobs();
+        await generationPipelineService.cleanupOldFailedJobs();
 
         // Verify completed job still exists (only failed jobs are cleaned)
-        const job = await generationJobService.getJobById(oldCompletedJob.id);
+        const job = await generationPipelineService.getJobById(
+          oldCompletedJob.id,
+        );
         expect(job).not.toBeNull();
 
         await cleanupTestData(user.id);
@@ -349,7 +358,7 @@ describe("Cron Jobs", () => {
         oldDate.setDate(oldDate.getDate() - 8);
 
         // Create multiple old failed jobs
-        await db.insert(generationJobs).values([
+        await db.insert(generationPipelines).values([
           {
             pipelineId: `pipeline-old-failed-1-${Date.now()}`,
             assetId: "test-asset-1",
@@ -380,7 +389,8 @@ describe("Cron Jobs", () => {
           },
         ]);
 
-        const cleanedCount = await generationJobService.cleanupOldFailedJobs();
+        const cleanedCount =
+          await generationPipelineService.cleanupOldFailedJobs();
 
         expect(cleanedCount).toBeGreaterThanOrEqual(2);
 
@@ -431,8 +441,8 @@ describe("Cron Jobs", () => {
       try {
         const start = Date.now();
 
-        await generationJobService.cleanupExpiredJobs();
-        await generationJobService.cleanupOldFailedJobs();
+        await generationPipelineService.cleanupExpiredJobs();
+        await generationPipelineService.cleanupOldFailedJobs();
 
         const duration = Date.now() - start;
 
@@ -465,9 +475,9 @@ describe("Cron Jobs", () => {
       try {
         // Run cleanup multiple times concurrently
         const promises = [
-          generationJobService.cleanupExpiredJobs(),
-          generationJobService.cleanupExpiredJobs(),
-          generationJobService.cleanupOldFailedJobs(),
+          generationPipelineService.cleanupExpiredJobs(),
+          generationPipelineService.cleanupExpiredJobs(),
+          generationPipelineService.cleanupOldFailedJobs(),
         ];
 
         const results = await Promise.all(promises);

@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeAll, afterEach } from "bun:test";
 import { Elysia } from "elysia";
 import { generationQueueRoutes } from "../../../../server/routes/generation-queue";
-import { generationJobService } from "../../../../server/services/GenerationJobService";
+import { generationPipelineService } from "../../../../server/services/GenerationPipelineService";
 import { cleanDatabase } from "../../../helpers/db";
 
 describe("Generation Queue Routes", () => {
@@ -35,7 +35,7 @@ describe("Generation Queue Routes", () => {
     it("should return job status with all required fields", async () => {
       // Create a test job
       const pipelineId = `test-pipeline-${Date.now()}`;
-      await generationJobService.createJob({
+      await generationPipelineService.createJob({
         pipelineId,
         userId: "test-user",
         assetName: "Test Asset",
@@ -59,7 +59,7 @@ describe("Generation Queue Routes", () => {
 
     it("should work without authentication", async () => {
       const pipelineId = `test-pipeline-2-${Date.now()}`;
-      await generationJobService.createJob({
+      await generationPipelineService.createJob({
         pipelineId,
         userId: "test-user",
         assetName: "Test Asset 2",
@@ -85,7 +85,7 @@ describe("Generation Queue Routes", () => {
 
     it("should set SSE headers for streaming", async () => {
       const pipelineId = `test-pipeline-stream-${Date.now()}`;
-      await generationJobService.createJob({
+      await generationPipelineService.createJob({
         pipelineId,
         userId: "test-user",
         assetName: "Stream Test",
@@ -109,7 +109,7 @@ describe("Generation Queue Routes", () => {
 
     it("should return streaming response", async () => {
       const pipelineId = `test-pipeline-stream-2-${Date.now()}`;
-      await generationJobService.createJob({
+      await generationPipelineService.createJob({
         pipelineId,
         userId: "test-user",
         assetName: "Stream Test 2",
@@ -142,7 +142,7 @@ describe("Generation Queue Routes", () => {
 
     it("should cancel job in processing state", async () => {
       const pipelineId = `test-pipeline-cancel-${Date.now()}`;
-      await generationJobService.createJob({
+      await generationPipelineService.createJob({
         pipelineId,
         userId: "test-user",
         assetName: "Cancel Test",
@@ -150,7 +150,7 @@ describe("Generation Queue Routes", () => {
       });
 
       // Update to processing state
-      await generationJobService.updateJob(pipelineId, {
+      await generationPipelineService.updateJob(pipelineId, {
         status: "processing",
       });
 
@@ -171,7 +171,7 @@ describe("Generation Queue Routes", () => {
 
     it("should reject cancellation of completed job", async () => {
       const pipelineId = `test-pipeline-completed-${Date.now()}`;
-      await generationJobService.createJob({
+      await generationPipelineService.createJob({
         pipelineId,
         userId: "test-user",
         assetName: "Completed Test",
@@ -179,7 +179,7 @@ describe("Generation Queue Routes", () => {
       });
 
       // Update to completed state
-      await generationJobService.updateJob(pipelineId, {
+      await generationPipelineService.updateJob(pipelineId, {
         status: "completed",
       });
 
@@ -196,14 +196,14 @@ describe("Generation Queue Routes", () => {
 
     it("should reject cancellation of failed job", async () => {
       const pipelineId = `test-pipeline-failed-${Date.now()}`;
-      await generationJobService.createJob({
+      await generationPipelineService.createJob({
         pipelineId,
         userId: "test-user",
         assetName: "Failed Test",
         stages: ["init"],
       });
 
-      await generationJobService.updateJob(pipelineId, {
+      await generationPipelineService.updateJob(pipelineId, {
         status: "failed",
       });
 
@@ -250,7 +250,7 @@ describe("Generation Queue Routes", () => {
       const userId = `test-user-${Date.now()}`;
       const pipelineId = `test-pipeline-user-${Date.now()}`;
 
-      await generationJobService.createJob({
+      await generationPipelineService.createJob({
         pipelineId,
         userId,
         assetName: "User Job Test",
@@ -311,7 +311,7 @@ describe("Generation Queue Routes", () => {
       const userId = `test-user-summary-${Date.now()}`;
       const pipelineId = `test-pipeline-summary-${Date.now()}`;
 
-      await generationJobService.createJob({
+      await generationPipelineService.createJob({
         pipelineId,
         userId,
         assetName: "Summary Test",

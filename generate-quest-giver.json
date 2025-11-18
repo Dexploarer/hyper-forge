@@ -1,0 +1,21 @@
+{
+  "description": "Quest giver NPC in T-pose stance, wearing ornate robes with mystical symbols, medieval fantasy aesthetic inspired by RuneScape 3. Character should have distinctive features suitable for an important quest-giving NPC. Full body model in T-pose for rigging.",
+  "assetId": "quest-giver-tpose-rs3-001",
+  "name": "Quest Giver - T-Pose",
+  "type": "character",
+  "subtype": "npc",
+  "generationType": "text-to-3d",
+  "tier": 3,
+  "quality": "high",
+  "style": "fantasy-medieval",
+  "enableRigging": true,
+  "enableRetexturing": false,
+  "enableSprites": false,
+  "customPrompts": {
+    "gameStyle": "RuneScape 3 inspired fantasy MMORPG - stylized realism with vibrant colors and medieval fantasy aesthetic"
+  },
+  "metadata": {
+    "characterHeight": 1.8,
+    "useGPT4Enhancement": true
+  }
+}

@@ -68,6 +68,22 @@ const getAudioTypeColors = (type: string) => {
   );
 };
 
+// MediaError code translation
+const getMediaErrorType = (code: number): string => {
+  switch (code) {
+    case 1:
+      return "MEDIA_ERR_ABORTED - Download was aborted";
+    case 2:
+      return "MEDIA_ERR_NETWORK - Network error occurred";
+    case 3:
+      return "MEDIA_ERR_DECODE - Error decoding media";
+    case 4:
+      return "MEDIA_ERR_SRC_NOT_SUPPORTED - Media format not supported";
+    default:
+      return `Unknown error code: ${code}`;
+  }
+};
+
 export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
   item,
   onClick,
@@ -101,11 +117,15 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
     const updateDuration = () => setDuration(audioEl.duration);
     const handleEnded = () => setIsPlaying(false);
     const handleError = (e: Event) => {
-      console.error("Audio playback error:", {
+      const audioError = audioEl.error;
+      const errorDetails = {
         audioUrl,
         fileName: audioFile.fileName,
-        error: e,
-      });
+        errorCode: audioError?.code,
+        errorMessage: audioError?.message,
+        errorType: audioError ? getMediaErrorType(audioError.code) : "Unknown",
+      };
+      console.error("Audio playback error:", errorDetails);
       setHasError(true);
       setIsPlaying(false);
     };

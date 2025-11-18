@@ -18,14 +18,11 @@ export * from "./media.schema";
 // World Configuration
 export * from "./world-config.schema";
 
-// Generation Jobs
-export * from "./generation-jobs.schema";
+// Generation Pipelines
+export * from "./generation-pipelines.schema";
 
 // Achievements
 export * from "./achievements.schema";
-
-// Generation Pipelines
-export * from "./generation-pipelines.schema";
 
 // Asset Variants
 export * from "./asset-variants.schema";
@@ -51,9 +48,8 @@ import * as assetsSchema from "./assets.schema";
 import * as contentSchema from "./content.schema";
 import * as mediaSchema from "./media.schema";
 import * as worldConfigSchema from "./world-config.schema";
-import * as generationJobsSchema from "./generation-jobs.schema";
-import * as achievementsSchema from "./achievements.schema";
 import * as generationPipelinesSchema from "./generation-pipelines.schema";
+import * as achievementsSchema from "./achievements.schema";
 import * as assetVariantsSchema from "./asset-variants.schema";
 import * as apiErrorsSchema from "./api-errors.schema";
 import * as apiKeysSchema from "./api-keys.schema";
@@ -67,9 +63,8 @@ export const schema = {
   ...contentSchema,
   ...mediaSchema,
   ...worldConfigSchema,
-  ...generationJobsSchema,
-  ...achievementsSchema,
   ...generationPipelinesSchema,
+  ...achievementsSchema,
   ...assetVariantsSchema,
   ...apiErrorsSchema,
   ...apiKeysSchema,
