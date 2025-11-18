@@ -12,7 +12,7 @@ import {
   type VoiceSettings,
   type ImageSettings,
 } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { fileUploadsCounter, getFileExtension } from "../metrics/business";
 import { cdnUploadService } from "../utils/CDNUploadService";
 
@@ -273,11 +273,22 @@ export class MediaStorageService {
    */
   async getMediaByType(
     type: string,
-    options?: { limit?: number; createdBy?: string },
+    options?: {
+      limit?: number;
+      createdBy?: string;
+      includeUnassigned?: boolean;
+    },
   ): Promise<(typeof mediaAssets.$inferSelect)[]> {
     // Build where conditions
     const conditions = [eq(mediaAssets.type, type)];
-    if (options?.createdBy) {
+
+    // If includeUnassigned is true, fetch all unassigned voices (for assignment to entities)
+    // Otherwise, filter by creator (default behavior)
+    if (options?.includeUnassigned) {
+      // Only include unassigned voices (entityType and entityId are null)
+      conditions.push(isNull(mediaAssets.entityType));
+      conditions.push(isNull(mediaAssets.entityId));
+    } else if (options?.createdBy) {
       conditions.push(eq(mediaAssets.createdBy, options.createdBy));
     }
 
@@ -292,7 +303,7 @@ export class MediaStorageService {
 
     logger.info(
       { context: "MediaStorage" },
-      `Found ${assets.length} ${type} assets`,
+      `Found ${assets.length} ${type} assets${options?.includeUnassigned ? " (unassigned only)" : ""}`,
     );
 
     return assets;

@@ -276,9 +276,13 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         headers["Authorization"] = `Bearer ${token}`;
       }
 
-      const response = await fetch("/api/content/media?type=voice", {
-        headers,
-      });
+      // Fetch all unassigned voice files for assignment to NPCs
+      const response = await fetch(
+        "/api/content/media?type=voice&includeUnassigned=true",
+        {
+          headers,
+        },
+      );
       if (response.ok) {
         const data = await response.json();
         const voices = data.media || (Array.isArray(data) ? data : []);
@@ -367,9 +371,23 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       audio.currentTime = 0;
       setPreviewingVoiceId(null);
     } else {
+      // Validate URL before attempting playback
+      const voiceUrl =
+        (voice.cdnUrl && voice.cdnUrl.trim()) ||
+        (voice.fileUrl && voice.fileUrl.trim());
+
+      if (!voiceUrl) {
+        console.error("Voice preview: No valid audio URL found");
+        notify.error("Voice file URL not available");
+        return;
+      }
+
       // Start preview
-      audio.src = voice.cdnUrl || voice.fileUrl;
-      audio.play();
+      audio.src = voiceUrl;
+      audio.play().catch((error) => {
+        console.error("Voice preview playback failed:", error);
+        notify.error("Failed to play voice preview");
+      });
       setPreviewingVoiceId(voice.id);
     }
   };
@@ -1532,7 +1550,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       AUDIO_TYPE_COLORS.default;
     const Icon = colors.icon;
 
-    const audioUrl = audioFile.cdnUrl || audioFile.fileUrl || null;
+    // Ensure we filter out empty strings and only use valid URLs
+    const audioUrl =
+      (audioFile.cdnUrl && audioFile.cdnUrl.trim()) ||
+      (audioFile.fileUrl && audioFile.fileUrl.trim()) ||
+      null;
 
     // Audio event handlers
     useEffect(() => {
@@ -1542,7 +1564,12 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       const updateTime = () => setCurrentTime(audioEl.currentTime);
       const updateDuration = () => setDuration(audioEl.duration);
       const handleEnded = () => setIsPlaying(false);
-      const handleError = () => {
+      const handleError = (e: Event) => {
+        console.error("Audio playback error:", {
+          audioUrl,
+          fileName: audioFile.fileName,
+          error: e,
+        });
         setHasAudioError(true);
         setIsPlaying(false);
       };

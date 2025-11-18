@@ -556,17 +556,21 @@ export const mediaRoutes = new Elysia()
           throw new InternalServerError("type query parameter is required");
         }
 
+        const includeUnassigned = query.includeUnassigned === "true";
+
         logger.info(
           {
             context: "MediaFetch",
             type: query.type,
             userId: user.id,
+            includeUnassigned,
           },
           "Fetching media by type",
         );
 
         const media = await mediaStorageService.getMediaByType(query.type, {
-          createdBy: user.id,
+          createdBy: includeUnassigned ? undefined : user.id,
+          includeUnassigned,
         });
 
         // Transform cdnUrl to fileUrl for frontend compatibility
@@ -590,12 +594,13 @@ export const mediaRoutes = new Elysia()
     {
       query: t.Object({
         type: t.String({ minLength: 1, maxLength: 50 }),
+        includeUnassigned: t.Optional(t.String()),
       }),
       detail: {
         tags: ["Media Assets"],
         summary: "Get media by type",
         description:
-          "Retrieve all media assets of a specific type (voice, music, etc). Requires authentication.",
+          "Retrieve all media assets of a specific type (voice, music, etc). Use includeUnassigned=true to fetch all unassigned media for assignment purposes. Requires authentication.",
         security: [{ BearerAuth: [] }],
       },
     },

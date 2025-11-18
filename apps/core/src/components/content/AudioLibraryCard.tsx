@@ -87,16 +87,25 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
   const Icon = colors.icon;
 
   // Use CDN URL if available, otherwise fall back to file URL
-  const audioUrl = audioFile.cdnUrl || audioFile.fileUrl || null;
+  // Ensure we filter out empty strings and only use valid URLs
+  const audioUrl =
+    (audioFile.cdnUrl && audioFile.cdnUrl.trim()) ||
+    (audioFile.fileUrl && audioFile.fileUrl.trim()) ||
+    null;
 
   useEffect(() => {
     const audioEl = audioRef.current;
-    if (!audioEl) return;
+    if (!audioEl || !audioUrl) return;
 
     const updateTime = () => setCurrentTime(audioEl.currentTime);
     const updateDuration = () => setDuration(audioEl.duration);
     const handleEnded = () => setIsPlaying(false);
-    const handleError = () => {
+    const handleError = (e: Event) => {
+      console.error("Audio playback error:", {
+        audioUrl,
+        fileName: audioFile.fileName,
+        error: e,
+      });
       setHasError(true);
       setIsPlaying(false);
     };
