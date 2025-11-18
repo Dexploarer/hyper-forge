@@ -78,11 +78,59 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     }
   }, [open, item.id, item.type]);
 
+  // Periodically refetch portrait when modal is open (to catch updates from LibraryCard)
+  useEffect(() => {
+    if (!open || item.type !== "npc") return;
+
+    // Refetch immediately when modal opens
+    fetchPortrait();
+
+    // Set up periodic refetch every 3 seconds while modal is open
+    const interval = setInterval(() => {
+      fetchPortrait();
+    }, 3000);
+
+    // Also refetch when window regains focus (user switches back to tab)
+    const handleFocus = () => {
+      fetchPortrait();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [open, item.id, item.type]);
+
   // Fetch banner for Quest items
   useEffect(() => {
     if (open && item.type === "quest") {
       fetchBanner();
     }
+  }, [open, item.id, item.type]);
+
+  // Periodically refetch banner when modal is open (to catch updates from LibraryCard)
+  useEffect(() => {
+    if (!open || item.type !== "quest") return;
+
+    // Refetch immediately when modal opens
+    fetchBanner();
+
+    // Set up periodic refetch every 3 seconds while modal is open
+    const interval = setInterval(() => {
+      fetchBanner();
+    }, 3000);
+
+    // Also refetch when window regains focus (user switches back to tab)
+    const handleFocus = () => {
+      fetchBanner();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [open, item.id, item.type]);
 
   const fetchPortrait = async () => {
@@ -100,10 +148,18 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         if (portrait) {
           // Standardized field access: prefer fileUrl, fallback to cdnUrl
           setPortraitUrl(portrait.fileUrl || portrait.cdnUrl);
+        } else {
+          // Clear portrait URL if not found (so UI shows generate button)
+          setPortraitUrl(null);
         }
+      } else {
+        // Clear portrait URL on error
+        setPortraitUrl(null);
       }
     } catch (error) {
       console.error("Failed to fetch portrait:", error);
+      // Clear portrait URL on error
+      setPortraitUrl(null);
     }
   };
 
@@ -121,10 +177,18 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         if (banner) {
           // Standardized field access: prefer fileUrl, fallback to cdnUrl
           setBannerUrl(banner.fileUrl || banner.cdnUrl);
+        } else {
+          // Clear banner URL if not found (so UI shows generate button)
+          setBannerUrl(null);
         }
+      } else {
+        // Clear banner URL on error
+        setBannerUrl(null);
       }
     } catch (error) {
       console.error("Failed to fetch banner:", error);
+      // Clear banner URL on error
+      setBannerUrl(null);
     }
   };
 

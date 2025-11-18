@@ -191,11 +191,18 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         if (portrait) {
           // Standardized field access: prefer fileUrl, fallback to cdnUrl
           setPortraitUrl(portrait.fileUrl || portrait.cdnUrl);
+        } else {
+          // Clear portrait URL if not found (so UI shows generate button)
+          setPortraitUrl(null);
         }
+      } else {
+        // Clear portrait URL on error
+        setPortraitUrl(null);
       }
     } catch (error) {
-      // Silently fail - portrait is optional
+      // Silently fail - portrait is optional, but clear URL
       console.debug("No portrait available for this item", error);
+      setPortraitUrl(null);
     }
   };
 
@@ -256,11 +263,18 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         if (banner) {
           // Standardized field access: prefer fileUrl, fallback to cdnUrl
           setBannerUrl(banner.fileUrl || banner.cdnUrl);
+        } else {
+          // Clear banner URL if not found (so UI shows generate button)
+          setBannerUrl(null);
         }
+      } else {
+        // Clear banner URL on error
+        setBannerUrl(null);
       }
     } catch (error) {
-      // Silently fail - banner is optional
+      // Silently fail - banner is optional, but clear URL
       console.debug("No banner available for this item", error);
+      setBannerUrl(null);
     }
   };
 
