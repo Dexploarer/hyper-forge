@@ -219,7 +219,6 @@ function App() {
   return (
     <PrivyProvider
       appId={import.meta.env.VITE_PRIVY_APP_ID || ""}
-      clientId={import.meta.env.VITE_PRIVY_CLIENT_ID || import.meta.env.VITE_PRIVY_APP_ID || ""}
       config={{
         appearance: {
           theme: "dark",
