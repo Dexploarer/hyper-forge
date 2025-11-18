@@ -24,7 +24,6 @@ import { logger } from "./utils/logger";
 import { env } from "./config/env";
 
 // Services
-import { RetextureService } from "./services/RetextureService";
 import { GenerationService } from "./services/GenerationService";
 import { CDNWebSocketService } from "./services/CDNWebSocketService";
 
@@ -85,6 +84,7 @@ initializeQdrantCollections().catch((error) => {
 
 // Initialize services
 const API_PORT = env.PORT || env.API_PORT;
+const ASSETS_DIR = path.join(ROOT_DIR, "assets");
 
 // ==================== ENVIRONMENT VALIDATION ====================
 
@@ -123,11 +123,6 @@ const IMAGE_SERVER_URL =
 
 // ==================== SERVICE INITIALIZATION ====================
 
-const retextureService = new RetextureService({
-  meshyApiKey: env.MESHY_API_KEY || "",
-  imageServerBaseUrl: IMAGE_SERVER_URL,
-});
-
 // Lazy-load GenerationService to save ~2MB memory at startup
 // Service is only initialized when first generation request is made
 let generationServiceInstance: GenerationService | null = null;
@@ -150,11 +145,6 @@ const getGenerationService = (): GenerationService => {
 };
 
 // ==================== APP COMPOSITION ====================
-
-// Calculate legacy assets directory for retexture service
-const legacyAssetsDir = process.env.RAILWAY_VOLUME_MOUNT_PATH
-  ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "assets-legacy")
-  : path.join(ROOT_DIR, "assets-legacy");
 
 // Create Elysia app with full type inference for Eden Treaty
 // Config-dependent routes are registered inline (not via factory) for proper type inference
@@ -283,7 +273,7 @@ const app = new Elysia()
 
   // Config-dependent routes (inline for proper TypeScript type inference)
   .use(createAssetRoutes(ROOT_DIR))
-  .use(createRetextureRoutes(ROOT_DIR, retextureService, legacyAssetsDir))
+  .use(createRetextureRoutes(ASSETS_DIR))
   .use(createGenerationRoutes(getGenerationService))
   .use(createCDNRoutes(ROOT_DIR, CDN_URL))
 
