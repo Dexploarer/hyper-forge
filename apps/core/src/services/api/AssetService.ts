@@ -63,6 +63,7 @@ export interface RetextureResponse {
 class AssetServiceClass {
   async listAssets(): Promise<Asset[]> {
     // Type assertion needed - Eden Treaty types incomplete for assets.get()
+    console.log("[AssetService] Fetching assets from API...");
     const { data, error } = await (api.api.assets as any).get({
       query: { t: Date.now().toString() },
       headers: {
@@ -72,7 +73,8 @@ class AssetServiceClass {
     });
 
     if (error) {
-      console.error("Failed to fetch assets:", error);
+      console.error("[AssetService] Failed to fetch assets:", error);
+      console.error("[AssetService] Error details:", JSON.stringify(error, null, 2));
       throw new Error(`Failed to fetch assets: ${error.value?.message || error.value?.summary || "Unknown error"}`);
     }
 

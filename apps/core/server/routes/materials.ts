@@ -144,6 +144,64 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
     },
   )
 
+  // Get material presets grouped by category (public endpoint)
+  .get(
+    "/material-presets/by-category",
+    async ({ query, set }) => {
+      try {
+        const { userId, includeInactive = "false" } = query;
+
+        // Build query conditions using helper
+        const conditions = [buildVisibilityConditions(userId)];
+
+        if (includeInactive !== "true") {
+          conditions.push(eq(materialPresets.isActive, true));
+        }
+
+        const results = await db
+          .select()
+          .from(materialPresets)
+          .where(and(...conditions))
+          .orderBy(asc(materialPresets.tier), asc(materialPresets.name));
+
+        // Group by category
+        const grouped = results.reduce(
+          (acc, preset) => {
+            if (!acc[preset.category]) {
+              acc[preset.category] = [];
+            }
+            acc[preset.category].push(preset);
+            return acc;
+          },
+          {} as Record<string, typeof results>,
+        );
+
+        return grouped;
+      } catch (error) {
+        logger.error(
+          { context: "Material Presets", err: error },
+          "Error loading material presets by category",
+        );
+        throw new InternalServerError(
+          "Failed to load material presets by category",
+          { originalError: error },
+        );
+      }
+    },
+    {
+      query: t.Object({
+        userId: t.Optional(t.String()),
+        includeInactive: t.Optional(t.String()),
+      }),
+      detail: {
+        tags: ["Material Presets"],
+        summary: "Get material presets grouped by category",
+        description:
+          "Returns material presets organized by category (metal, leather, wood, custom, etc.)",
+      },
+    },
+  )
+
   // Create custom material preset (user-created)
   .post(
     "/material-presets/custom",
@@ -459,64 +517,6 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
         description:
           "Get all custom material presets created by a specific user",
         security: [{ BearerAuth: [] }],
-      },
-    },
-  )
-
-  // Get material presets grouped by category
-  .get(
-    "/material-presets/by-category",
-    async ({ query, set }) => {
-      try {
-        const { userId, includeInactive = "false" } = query;
-
-        // Build query conditions using helper
-        const conditions = [buildVisibilityConditions(userId)];
-
-        if (includeInactive !== "true") {
-          conditions.push(eq(materialPresets.isActive, true));
-        }
-
-        const results = await db
-          .select()
-          .from(materialPresets)
-          .where(and(...conditions))
-          .orderBy(asc(materialPresets.tier), asc(materialPresets.name));
-
-        // Group by category
-        const grouped = results.reduce(
-          (acc, preset) => {
-            if (!acc[preset.category]) {
-              acc[preset.category] = [];
-            }
-            acc[preset.category].push(preset);
-            return acc;
-          },
-          {} as Record<string, typeof results>,
-        );
-
-        return grouped;
-      } catch (error) {
-        logger.error(
-          { context: "Material Presets", err: error },
-          "Error loading material presets by category",
-        );
-        throw new InternalServerError(
-          "Failed to load material presets by category",
-          { originalError: error },
-        );
-      }
-    },
-    {
-      query: t.Object({
-        userId: t.Optional(t.String()),
-        includeInactive: t.Optional(t.String()),
-      }),
-      detail: {
-        tags: ["Material Presets"],
-        summary: "Get material presets grouped by category",
-        description:
-          "Returns material presets organized by category (metal, leather, wood, custom, etc.)",
       },
     },
   );

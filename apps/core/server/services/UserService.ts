@@ -77,6 +77,124 @@ export class UserService {
   }
 
   /**
+   * Find user by email address
+   */
+  async findByEmail(email: string): Promise<User | null> {
+    try {
+      if (!email) return null;
+      const user = await db.query.users.findFirst({
+        where: eq(users.email, email),
+      });
+
+      return user || null;
+    } catch (error) {
+      logger.error(
+        { err: error },
+        "[UserService] Failed to find user by email:",
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Find user by wallet address
+   */
+  async findByWalletAddress(walletAddress: string): Promise<User | null> {
+    try {
+      if (!walletAddress) return null;
+      const user = await db.query.users.findFirst({
+        where: eq(users.walletAddress, walletAddress),
+      });
+
+      return user || null;
+    } catch (error) {
+      logger.error(
+        { err: error },
+        "[UserService] Failed to find user by wallet address:",
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Link a new Privy user ID to an existing user account
+   * Used when a user signs in with a different auth method (wallet vs email)
+   * that creates a new Privy account, but matches an existing database user
+   */
+  async linkPrivyUserId(
+    userId: string,
+    newPrivyUserId: string,
+    email?: string,
+    walletAddress?: string,
+  ): Promise<User> {
+    try {
+      // First, check if the new privyUserId is already in use
+      const existingUserWithNewPrivyId = await this.findByPrivyUserId(
+        newPrivyUserId,
+      );
+      if (existingUserWithNewPrivyId && existingUserWithNewPrivyId.id !== userId) {
+        logger.warn(
+          {
+            userId,
+            newPrivyUserId,
+            existingUserId: existingUserWithNewPrivyId.id,
+          },
+          "Cannot link privyUserId - already in use by another user",
+        );
+        throw new Error(
+          `Privy user ID ${newPrivyUserId} is already linked to another account`,
+        );
+      }
+
+      // Update the user's privyUserId and optionally email/wallet
+      const updateData: Partial<NewUser> = {
+        privyUserId: newPrivyUserId,
+        updatedAt: new Date(),
+      };
+
+      // Only update email/wallet if provided and not already set
+      const currentUser = await this.findById(userId);
+      if (!currentUser) {
+        throw new Error(`User not found: ${userId}`);
+      }
+
+      if (email && !currentUser.email) {
+        updateData.email = email;
+      }
+      if (walletAddress && !currentUser.walletAddress) {
+        updateData.walletAddress = walletAddress;
+      }
+
+      const [updatedUser] = await db
+        .update(users)
+        .set(updateData)
+        .where(eq(users.id, userId))
+        .returning();
+
+      if (!updatedUser) {
+        throw new Error(`User not found: ${userId}`);
+      }
+
+      logger.info(
+        {
+          userId,
+          oldPrivyUserId: currentUser.privyUserId,
+          newPrivyUserId,
+        },
+        "Linked new Privy user ID to existing account",
+      );
+
+      return updatedUser;
+    } catch (error) {
+      logger.error(
+        { err: error, userId, newPrivyUserId },
+        "[UserService] Failed to link privyUserId:",
+      );
+      throw error;
+    }
+  }
+
+  /**
    * Create new user
    * Uses transaction to ensure user creation is atomic
    * Future: Can include initial achievement grants, welcome data, etc.

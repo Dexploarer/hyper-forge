@@ -101,6 +101,7 @@ export const AssetsPage: React.FC = () => {
   // Get state and actions from store
   const {
     selectedAsset,
+    setSelectedAsset,
     showGroundPlane,
     isWireframe,
     isLightBackground,
@@ -344,6 +345,11 @@ export const AssetsPage: React.FC = () => {
                 isOpen={showDetailsPanel}
                 onClose={() => setShowDetailsPanel(false)}
                 modelInfo={modelInfo}
+                onAssetUpdated={async (updatedAsset) => {
+                  // Update the selected asset and refresh the list
+                  setSelectedAsset(updatedAsset);
+                  await reloadAssets();
+                }}
               />
             </>
           ) : (

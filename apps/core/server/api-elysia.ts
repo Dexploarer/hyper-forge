@@ -289,8 +289,8 @@ const app = new Elysia()
         }
 
         // Check if request origin is allowed
-        if (!requestOrigin) {
-          // No origin header (e.g., same-origin request, Postman)
+        if (!requestOrigin || typeof requestOrigin !== "string") {
+          // No origin header (e.g., same-origin request, Postman) or invalid type
           return true;
         }
 

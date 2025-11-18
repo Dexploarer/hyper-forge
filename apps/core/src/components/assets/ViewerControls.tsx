@@ -57,44 +57,44 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
   return (
     <>
       {/* Top-left controls - Model Actions */}
-      <div className="absolute top-4 left-4 flex gap-2 animate-fade-in">
+      <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[calc(100%-8rem)] animate-fade-in">
         {canRetexture && (
           <button
             onClick={() => setShowRetextureModal(true)}
-            className="px-4 py-2 bg-primary hover:bg-[var(--color-primary-dark)] text-white rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2"
+            className="px-3 sm:px-4 py-2 bg-primary hover:bg-[var(--color-primary-dark)] text-white rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1.5 sm:gap-2 flex-shrink-0"
             title="Create texture variants"
           >
-            <Palette size={16} />
-            <span className="text-sm font-medium">Retexture</span>
+            <Palette size={16} className="flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium whitespace-nowrap hidden sm:inline">Retexture</span>
           </button>
         )}
 
         <button
           onClick={() => setShowRegenerateModal(true)}
-          className="px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
+          className="px-3 sm:px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1.5 sm:gap-2 border border-border-primary flex-shrink-0"
           title="Regenerate model"
         >
-          <RefreshCw size={16} />
-          <span className="text-sm font-medium">Regenerate</span>
+          <RefreshCw size={16} className="flex-shrink-0" />
+          <span className="text-xs sm:text-sm font-medium whitespace-nowrap hidden sm:inline">Regenerate</span>
         </button>
 
         <button
           onClick={() => setShowSpriteModal(true)}
-          className="px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
+          className="px-3 sm:px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1.5 sm:gap-2 border border-border-primary flex-shrink-0"
           title="Generate sprite sheet"
         >
-          <Grid3x3 size={16} />
-          <span className="text-sm font-medium">Sprites</span>
+          <Grid3x3 size={16} className="flex-shrink-0" />
+          <span className="text-xs sm:text-sm font-medium whitespace-nowrap hidden sm:inline">Sprites</span>
         </button>
 
         {onShowVariantTree && (
           <button
             onClick={onShowVariantTree}
-            className="px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 border border-border-primary"
+            className="px-3 sm:px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-lg shadow-lg transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1.5 sm:gap-2 border border-border-primary flex-shrink-0"
             title="View variant relationship tree"
           >
-            <GitBranch size={16} />
-            <span className="text-sm font-medium">Variant Tree</span>
+            <GitBranch size={16} className="flex-shrink-0" />
+            <span className="text-xs sm:text-sm font-medium whitespace-nowrap hidden sm:inline">Variant Tree</span>
           </button>
         )}
       </div>

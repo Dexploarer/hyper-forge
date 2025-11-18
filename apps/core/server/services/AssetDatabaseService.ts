@@ -346,8 +346,58 @@ export class AssetDatabaseService {
   }
 
   /**
+   * Fetch asset metadata from CDN
+   * Attempts to fetch metadata.json from CDN for a given asset
+   */
+  private async fetchCDNMetadata(
+    cdnAssetId: string,
+  ): Promise<AssetMetadataType | null> {
+    const CDN_URL = process.env.CDN_URL;
+    if (!CDN_URL) {
+      return null;
+    }
+
+    try {
+      const metadataUrl = `${CDN_URL}/models/${cdnAssetId}/metadata.json`;
+      const response = await fetch(metadataUrl);
+      if (response.ok) {
+        const metadata = (await response.json()) as AssetMetadataType;
+        return metadata;
+      }
+    } catch (error) {
+      // Silently fail - CDN metadata is optional
+      logger.debug(
+        { err: error, cdnAssetId },
+        "[AssetDatabaseService] Failed to fetch CDN metadata",
+      );
+    }
+    return null;
+  }
+
+  /**
+   * Extract CDN asset ID from CDN URL
+   * Example: "https://cdn.example.com/models/spiked-helmet/spiked-helmet.glb" -> "spiked-helmet"
+   */
+  private extractCDNAssetId(cdnUrl: string | null): string | null {
+    if (!cdnUrl) return null;
+    try {
+      const url = new URL(cdnUrl);
+      const pathParts = url.pathname.split("/");
+      // Find "models" in path and get the next segment
+      const modelsIndex = pathParts.indexOf("models");
+      if (modelsIndex >= 0 && modelsIndex < pathParts.length - 1) {
+        return pathParts[modelsIndex + 1];
+      }
+    } catch (error) {
+      // Invalid URL, return null
+    }
+    return null;
+  }
+
+  /**
    * List all assets with CDN URLs
    * Returns all assets from database ordered by creation date
+   * Fetches metadata from CDN when database metadata is empty or incomplete
    *
    * @returns Array of assets with CDN URLs and metadata
    * @example
@@ -361,22 +411,89 @@ export class AssetDatabaseService {
         .from(assets)
         .orderBy(desc(assets.createdAt));
 
-      return dbAssets.map((asset) => ({
-        id: asset.id,
-        name: asset.name,
-        description: asset.description || "",
-        type: asset.type,
-        metadata: asset.metadata as AssetMetadataType,
-        hasModel: !!asset.cdnUrl,
-        modelFile: asset.cdnUrl ? path.basename(asset.cdnUrl) : undefined,
-        generatedAt: asset.createdAt.toISOString(),
-        cdnUrl: asset.cdnUrl || null,
-        cdnThumbnailUrl: asset.cdnThumbnailUrl,
-        cdnConceptArtUrl: asset.cdnConceptArtUrl,
-        // Access control fields for route-level filtering
-        visibility: asset.visibility,
-        ownerId: asset.ownerId,
-      }));
+      // Process assets in parallel, fetching CDN metadata when needed
+      const assetsWithMetadata = await Promise.all(
+        dbAssets.map(async (asset) => {
+          let metadata = (asset.metadata as AssetMetadataType) || {};
+
+          // Check if metadata is empty or missing required fields
+          const isEmpty =
+            !metadata || Object.keys(metadata).length === 0 || !metadata.id;
+
+          // Try to fetch from CDN if metadata is empty or missing id
+          if (isEmpty && asset.cdnUrl) {
+            // Extract CDN asset ID from URL or use metadata.cdnAssetId
+            const cdnAssetId =
+              (metadata as any)?.cdnAssetId ||
+              this.extractCDNAssetId(asset.cdnUrl);
+
+            if (cdnAssetId) {
+              const cdnMetadata = await this.fetchCDNMetadata(cdnAssetId);
+              if (cdnMetadata) {
+                // Merge CDN metadata with database metadata (CDN takes precedence)
+                metadata = {
+                  ...metadata,
+                  ...cdnMetadata,
+                };
+              }
+            }
+          }
+
+          // Clean up metadata: convert null to undefined for optional fields
+          // TypeBox t.Optional() accepts undefined but not null
+          // Recursively clean nested objects and arrays
+          const cleanValue = (val: any): any => {
+            if (val === null) {
+              return undefined;
+            }
+            if (Array.isArray(val)) {
+              return val.map(cleanValue);
+            }
+            if (typeof val === "object" && val !== null) {
+              const cleaned: Record<string, any> = {};
+              for (const [k, v] of Object.entries(val)) {
+                const cleanedVal = cleanValue(v);
+                // Only include if not undefined (to keep objects clean)
+                if (cleanedVal !== undefined) {
+                  cleaned[k] = cleanedVal;
+                }
+              }
+              return cleaned;
+            }
+            return val;
+          };
+
+          const cleanMetadata = cleanValue(metadata) as Record<string, any>;
+
+          // Ensure metadata.id is always set to the database asset ID
+          metadata = {
+            ...cleanMetadata,
+            id: asset.id,
+            name: cleanMetadata.name || asset.name,
+            description: cleanMetadata.description || asset.description || "",
+            type: cleanMetadata.type || asset.type,
+          } as AssetMetadataType;
+
+          return {
+            id: asset.id,
+            name: asset.name,
+            description: asset.description || "",
+            type: asset.type,
+            metadata: metadata as AssetMetadataType,
+            hasModel: !!asset.cdnUrl,
+            modelFile: asset.cdnUrl ? path.basename(asset.cdnUrl) : undefined,
+            generatedAt: asset.createdAt.toISOString(),
+            cdnUrl: asset.cdnUrl || null,
+            cdnThumbnailUrl: asset.cdnThumbnailUrl,
+            cdnConceptArtUrl: asset.cdnConceptArtUrl,
+            // Access control fields for route-level filtering
+            visibility: asset.visibility,
+            ownerId: asset.ownerId,
+          };
+        }),
+      );
+
+      return assetsWithMetadata;
     } catch (error) {
       logger.error({ err: error }, "Failed to list assets");
       return [];

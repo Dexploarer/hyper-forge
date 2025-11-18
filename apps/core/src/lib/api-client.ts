@@ -18,9 +18,16 @@ import type { App } from "../../server/api-elysia";
 import { getAuthToken } from "@/utils/auth-token-store";
 
 // Get API base URL
-// In production (Railway), frontend and API are served from same domain, so use relative URLs
-// In development, Vite proxy handles /api routes to backend, so use relative URLs
-const API_BASE_URL = import.meta.env.VITE_API_URL || ""; // Empty string = relative URL (Vite proxy handles /api -> backend in dev)
+// In development: Use http://localhost:3004 (direct connection to local backend)
+// In production: Use VITE_API_URL if set, otherwise relative path /api
+const API_BASE_URL = import.meta.env.DEV 
+  ? "http://localhost:3004" // Dev mode: Direct connection to local backend
+  : (import.meta.env.VITE_API_URL || "/api"); // Production: Use VITE_API_URL or relative path
+
+// Debug logging
+if (import.meta.env.DEV) {
+  console.log("[API Client] Dev mode - connecting to local backend, API_BASE_URL:", API_BASE_URL);
+}
 
 /**
  * Get authentication headers with Privy token
@@ -184,7 +191,12 @@ export const apiFetch = async <T = unknown>(
   options?: RequestInit,
 ): Promise<{ data: T | null; error: string | null }> => {
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    // Ensure endpoint starts with / if API_BASE_URL is relative
+    const endpointPath = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+    const url = API_BASE_URL.startsWith("http")
+      ? `${API_BASE_URL}${endpointPath}` // Absolute URL
+      : `${API_BASE_URL}${endpointPath}`; // Relative URL (Vite proxy handles it)
+    const response = await fetch(url, {
       ...options,
       headers: {
         "Content-Type": "application/json",

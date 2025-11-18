@@ -7,17 +7,16 @@ export interface RequestOptions extends RequestInit {
 }
 
 // Get API base URL for constructing full URLs
-// In production (Railway), frontend and API are served from same domain, so use relative URLs
-// In development, Vite proxy handles /api routes, so use relative URLs
+// In development: Always use relative URLs (Vite proxy handles /api -> localhost:3004)
+// In production: Use VITE_API_URL if set, otherwise relative URLs (same domain)
 const getApiBaseUrl = (): string => {
-  // If VITE_API_URL is explicitly set, use it
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
+  // In dev mode, always use proxy (ignore VITE_API_URL)
+  if (import.meta.env.DEV) {
+    return "";
   }
 
-  // In production, use relative URLs (same domain)
-  // In development, use relative URLs (Vite proxy handles /api -> backend)
-  return "";
+  // In production, use VITE_API_URL if set, otherwise relative URLs
+  return import.meta.env.VITE_API_URL || "";
 }
 
 export async function apiFetch(input: string, init: RequestOptions = {}): Promise<Response> {

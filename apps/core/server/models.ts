@@ -67,23 +67,23 @@ export const SuccessResponse = t.Object({
 // ==================== Asset Models ====================
 
 export const MaterialPresetInfo = t.Object({
-  id: t.String(),
-  displayName: t.String(),
-  category: t.String(),
-  tier: t.Number(),
-  color: t.String(),
+  id: t.Optional(t.String()),
+  displayName: t.Optional(t.String()),
+  category: t.Optional(t.String()),
+  tier: t.Optional(t.Number()),
+  color: t.Optional(t.String()),
   stylePrompt: t.Optional(t.String()),
 });
 
 export const AssetDimensions = t.Object({
-  width: t.Number(),
-  height: t.Number(),
-  depth: t.Number(),
+  width: t.Optional(t.Number()),
+  height: t.Optional(t.Number()),
+  depth: t.Optional(t.Number()),
 });
 
 export const AssetMetadata = t.Object({
-  id: t.String(),
-  name: t.String(),
+  id: t.Optional(t.String()),
+  name: t.Optional(t.String()),
   description: t.Optional(t.String()),
   type: t.Optional(t.String()),
   subtype: t.Optional(t.String()),
@@ -186,12 +186,12 @@ export const AssetList = t.Array(AssetMetadata);
  * normalization handles filtering extra properties.
  */
 export const AssetResponse = t.Object({
-  id: t.String(),
-  name: t.String(),
-  description: t.String(),
-  type: t.String(),
-  metadata: AssetMetadata, // Flexible schema for database compatibility
-  hasModel: t.Boolean(),
+  id: t.Optional(t.String()),
+  name: t.Optional(t.String()),
+  description: t.Optional(t.String()),
+  type: t.Optional(t.String()),
+  metadata: t.Optional(AssetMetadata), // Flexible schema for database compatibility
+  hasModel: t.Optional(t.Boolean()),
   modelFile: t.Optional(t.String()),
   generatedAt: t.Optional(t.String()),
   // CDN URLs for asset files

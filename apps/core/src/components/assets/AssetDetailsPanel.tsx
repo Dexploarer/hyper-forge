@@ -22,10 +22,12 @@ import {
   FileCode,
   Link,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { getTierColor } from "@/constants";
-import { Asset } from "@/types";
+import { Asset, AssetMetadata } from "@/types";
 import { AssetService } from "@/services/api/AssetService";
+import { api } from "@/lib/api-client";
+import { Save, X as XIcon } from "lucide-react";
 
 interface AssetDetailsPanelProps {
   asset: Asset;
@@ -34,6 +36,7 @@ interface AssetDetailsPanelProps {
   onCreateVariants?: (asset: Asset) => void;
   onDelete?: (asset: Asset) => void;
   onEdit?: (asset: Asset) => void;
+  onAssetUpdated?: (asset: Asset) => void;
   modelInfo?: {
     vertices: number;
     faces: number;
@@ -49,6 +52,7 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
   onCreateVariants,
   onDelete,
   onEdit,
+  onAssetUpdated,
   modelInfo,
 }) => {
   const [copiedId, setCopiedId] = useState(false);
@@ -58,9 +62,59 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
     "info",
   );
   const [imageError, setImageError] = useState(false);
+  const [isEditingMetadata, setIsEditingMetadata] = useState(false);
+  const [editedMetadata, setEditedMetadata] = useState<Record<string, any>>({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const previewUrl = AssetService.getPreviewImageUrl(asset);
   const hasPreview = previewUrl && !imageError;
+
+  // Initialize edited metadata when entering edit mode
+  useEffect(() => {
+    if (isEditingMetadata && asset.metadata) {
+      setEditedMetadata({ ...asset.metadata });
+    }
+  }, [isEditingMetadata, asset.metadata]);
+
+  const handleSaveMetadata = async () => {
+    setIsSaving(true);
+    try {
+      const { data, error } = await api.api
+        .assets({ id: asset.id })
+        .patch({
+          metadata: editedMetadata as AssetMetadata,
+        } as any);
+
+      if (error) {
+        console.error("Failed to update metadata:", error);
+        throw new Error("Failed to update metadata");
+      }
+
+      const updatedAsset = data as Asset;
+      setIsEditingMetadata(false);
+      
+      if (onAssetUpdated) {
+        onAssetUpdated(updatedAsset);
+      }
+    } catch (error) {
+      console.error("Error saving metadata:", error);
+      alert("Failed to save metadata. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingMetadata(false);
+    setEditedMetadata({});
+  };
+
+  const handleMetadataFieldChange = (key: string, value: any) => {
+    setEditedMetadata((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -412,14 +466,49 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
           {/* METADATA TAB */}
           {activeTab === "metadata" && (
             <div className="p-5">
-              {Object.keys(asset.metadata).filter(
+              {/* Edit Mode Toggle */}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-semibold text-text-primary">
+                  Metadata
+                </h3>
+                {!isEditingMetadata ? (
+                  <button
+                    onClick={() => setIsEditingMetadata(true)}
+                    className="px-3 py-1.5 text-xs font-semibold bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded transition-colors flex items-center gap-1.5 border border-border-primary"
+                  >
+                    <Edit size={14} />
+                    Edit
+                  </button>
+                ) : (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={isSaving}
+                      className="px-3 py-1.5 text-xs font-semibold bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded transition-colors flex items-center gap-1.5 border border-border-primary disabled:opacity-50"
+                    >
+                      <XIcon size={14} />
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveMetadata}
+                      disabled={isSaving}
+                      className="px-3 py-1.5 text-xs font-semibold bg-primary hover:bg-primary/90 text-white rounded transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      <Save size={14} />
+                      {isSaving ? "Saving..." : "Save"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {Object.keys(asset.metadata || {}).filter(
                 (key) =>
                   !["tier", "subtype", "isPlaceholder", "isFavorite"].includes(
                     key,
                   ),
               ).length > 0 ? (
                 <div className="space-y-4">
-                  {Object.entries(asset.metadata)
+                  {Object.entries(asset.metadata || {})
                     .filter(
                       ([key]) =>
                         ![
@@ -429,24 +518,79 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
                           "isFavorite",
                         ].includes(key),
                     )
-                    .map(([key, value]) => (
-                      <div key={key} className="space-y-1.5">
-                        <label className="block text-xs font-semibold text-text-muted uppercase">
-                          {key.replace(/([A-Z])/g, " $1").trim()}
-                        </label>
-                        <div className="px-3 py-2 bg-bg-secondary border border-border-primary rounded">
-                          <p className="text-sm text-text-primary font-medium break-all">
-                            {typeof value === "boolean"
-                              ? value
-                                ? "Yes"
-                                : "No"
-                              : typeof value === "object"
-                                ? JSON.stringify(value, null, 2)
-                                : String(value)}
-                          </p>
+                    .map(([key, value]) => {
+                      const displayValue = isEditingMetadata
+                        ? editedMetadata[key] ?? value
+                        : value;
+                      const isEditable = isEditingMetadata;
+
+                      return (
+                        <div key={key} className="space-y-1.5">
+                          <label className="block text-xs font-semibold text-text-muted uppercase">
+                            {key.replace(/([A-Z])/g, " $1").trim()}
+                          </label>
+                          {isEditable ? (
+                            <div>
+                              {typeof displayValue === "boolean" ? (
+                                <select
+                                  value={displayValue ? "true" : "false"}
+                                  onChange={(e) =>
+                                    handleMetadataFieldChange(
+                                      key,
+                                      e.target.value === "true",
+                                    )
+                                  }
+                                  className="w-full px-3 py-2 bg-bg-secondary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                                >
+                                  <option value="true">Yes</option>
+                                  <option value="false">No</option>
+                                </select>
+                              ) : typeof displayValue === "object" &&
+                                displayValue !== null ? (
+                                <textarea
+                                  value={JSON.stringify(displayValue, null, 2)}
+                                  onChange={(e) => {
+                                    try {
+                                      const parsed = JSON.parse(e.target.value);
+                                      handleMetadataFieldChange(key, parsed);
+                                    } catch {
+                                      // Invalid JSON, store as string for now
+                                      handleMetadataFieldChange(
+                                        key,
+                                        e.target.value,
+                                      );
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 bg-bg-secondary border border-border-primary rounded text-sm text-text-primary font-mono focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
+                                  rows={6}
+                                />
+                              ) : (
+                                <input
+                                  type="text"
+                                  value={String(displayValue ?? "")}
+                                  onChange={(e) =>
+                                    handleMetadataFieldChange(key, e.target.value)
+                                  }
+                                  className="w-full px-3 py-2 bg-bg-secondary border border-border-primary rounded text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                                />
+                              )}
+                            </div>
+                          ) : (
+                            <div className="px-3 py-2 bg-bg-secondary border border-border-primary rounded">
+                              <p className="text-sm text-text-primary font-medium break-all">
+                                {typeof displayValue === "boolean"
+                                  ? displayValue
+                                    ? "Yes"
+                                    : "No"
+                                  : typeof displayValue === "object"
+                                    ? JSON.stringify(displayValue, null, 2)
+                                    : String(displayValue ?? "")}
+                              </p>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                 </div>
               ) : (
                 <div className="text-center py-16">

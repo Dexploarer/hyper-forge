@@ -166,24 +166,115 @@ export async function optionalAuth({
     if (!user) {
       logger.info(
         { privyUserId, context: "auth" },
-        "User not found for Privy userId, creating new user",
+        "User not found for Privy userId, checking for account linking",
       );
-      // Auto-create user on first request with valid Privy token
+
+      // Fetch Privy user to get email/wallet for account linking check
+      let privyUserEmail: string | undefined;
+      let privyUserWallet: string | undefined;
+
       try {
-        user = await userService.createUser({
-          privyUserId,
-          role: "member", // Default role - admins must be promoted manually
-        });
-        logger.info(
-          { userId: user.id, privyUserId, context: "auth" },
-          "Created new user for Privy userId",
-        );
+        // Only fetch Privy user in production (test mode doesn't have real Privy)
+        if (env.NODE_ENV !== "test") {
+          const privyUser = await privy.getUser(privyUserId);
+          // Extract email from linked accounts
+          const emailAccount = privyUser.linkedAccounts?.find(
+            (acc) => acc.type === "email",
+          );
+          privyUserEmail = emailAccount?.address;
+
+          // Extract wallet address from linked accounts
+          const walletAccount = privyUser.linkedAccounts?.find(
+            (acc) => acc.type === "wallet",
+          );
+          privyUserWallet = walletAccount?.address;
+        }
       } catch (error) {
-        logger.error(
+        logger.warn(
           { err: error, privyUserId, context: "auth" },
-          "Failed to create user for Privy userId",
+          "Failed to fetch Privy user for account linking check, proceeding with new user creation",
         );
-        throw error;
+        // Continue with user creation even if Privy fetch fails
+      }
+
+      // Check for existing user with matching email or wallet (account linking)
+      let existingUser: Awaited<ReturnType<typeof userService.findByEmail>> =
+        null;
+      if (privyUserEmail) {
+        existingUser = await userService.findByEmail(privyUserEmail);
+      }
+      if (!existingUser && privyUserWallet) {
+        existingUser = await userService.findByWalletAddress(privyUserWallet);
+      }
+
+      if (existingUser) {
+        // Link the new Privy user ID to the existing account
+        logger.info(
+          {
+            existingUserId: existingUser.id,
+            existingPrivyUserId: existingUser.privyUserId,
+            newPrivyUserId: privyUserId,
+            email: privyUserEmail,
+            wallet: privyUserWallet,
+            context: "auth",
+          },
+          "Found existing user with matching email/wallet, linking Privy accounts",
+        );
+
+        try {
+          user = await userService.linkPrivyUserId(
+            existingUser.id,
+            privyUserId,
+            privyUserEmail,
+            privyUserWallet,
+          );
+          logger.info(
+            {
+              userId: user.id,
+              oldPrivyUserId: existingUser.privyUserId,
+              newPrivyUserId: privyUserId,
+              context: "auth",
+            },
+            "Successfully linked Privy user ID to existing account",
+          );
+        } catch (error) {
+          logger.error(
+            {
+              err: error,
+              existingUserId: existingUser.id,
+              privyUserId,
+              context: "auth",
+            },
+            "Failed to link Privy user ID, creating new user instead",
+          );
+          // Fall back to creating a new user if linking fails
+          user = await userService.createUser({
+            privyUserId,
+            email: privyUserEmail,
+            walletAddress: privyUserWallet,
+            role: "member",
+          });
+        }
+      } else {
+        // No existing user found, create new user
+        try {
+          user = await userService.createUser({
+            privyUserId,
+            email: privyUserEmail,
+            walletAddress: privyUserWallet,
+            role: "member", // Default role - admins must be promoted manually
+          });
+          logger.info(
+            { userId: user.id, privyUserId, context: "auth" },
+            "Created new user for Privy userId",
+          );
+        } catch (error) {
+          logger.error(
+            { err: error, privyUserId, context: "auth" },
+            "Failed to create user for Privy userId",
+          );
+          throw error;
+        }
       }
     } else {
       logger.info(
