@@ -174,7 +174,9 @@ export class MediaStorageService {
         throw new Error("CDN upload succeeded but no files were returned");
       }
 
-      const cdnUrl = result.files[0].url;
+      // CDN returns path, we need to construct full URL
+      const cdnPath = result.files[0].path;
+      const cdnUrl = `${this.cdnUrl}/${cdnPath}`;
 
       logger.info({ context: "MediaStorage" }, `✅ Uploaded to CDN: ${cdnUrl}`);
 
