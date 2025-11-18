@@ -498,7 +498,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
                     onClick={() => portraitUrl && setShowImageModal(true)}
                     disabled={!portraitUrl}
                     className={cn(
-                      "w-32 h-32 rounded-full border-4 border-bg-primary shadow-xl overflow-hidden transition-all duration-300",
+                      "w-32 h-32 rounded-full border-4 border-border-primary shadow-xl overflow-hidden transition-all duration-300",
                       portraitUrl
                         ? "cursor-pointer hover:scale-105 hover:shadow-2xl hover:border-primary/50"
                         : "cursor-default",
@@ -529,7 +529,7 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
 
                   {/* Profile completion indicator */}
                   {savedPortraitId && (
-                    <div className="absolute bottom-1 right-1 w-8 h-8 bg-green-500 rounded-full border-2 border-bg-primary flex items-center justify-center">
+                    <div className="absolute bottom-1 right-1 w-8 h-8 bg-green-500 rounded-full border-2 border-border-primary flex items-center justify-center">
                       <Check className="w-5 h-5 text-white" />
                     </div>
                   )}

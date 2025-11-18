@@ -55,6 +55,7 @@ interface AssetsState {
   setMaterialFilter: (material: string) => void
   setShowFavoritesOnly: (show: boolean) => void
   toggleFavoritesFilter: () => void
+  clearAllFilters: () => void
   setShowGroundPlane: (show: boolean) => void
   setIsWireframe: (wireframe: boolean) => void
   setIsLightBackground: (light: boolean) => void
@@ -143,6 +144,13 @@ export const useAssetsStore = create<AssetsState>()(
 
           toggleFavoritesFilter: () => set(state => {
             state.showFavoritesOnly = !state.showFavoritesOnly
+          }),
+
+          clearAllFilters: () => set(state => {
+            state.searchTerm = ''
+            state.typeFilter = ''
+            state.materialFilter = ''
+            state.showFavoritesOnly = false
           }),
 
           setShowGroundPlane: (show) => set(state => {

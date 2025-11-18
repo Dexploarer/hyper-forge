@@ -36,8 +36,21 @@ export const AssetsPage: React.FC = () => {
   const {
     data: assets = [],
     isLoading: loading,
+    error,
     refetch: reloadAssets,
   } = useAssets();
+
+  // Debug logging
+  useEffect(() => {
+    if (error) {
+      console.error("[AssetsPage] Error loading assets:", error);
+    }
+    if (assets.length === 0 && !loading) {
+      console.warn("[AssetsPage] No assets found. Total:", assets.length);
+    } else if (assets.length > 0) {
+      console.log(`[AssetsPage] Loaded ${assets.length} assets`);
+    }
+  }, [assets, loading, error]);
   const { selectedAssetIds, clearSelection } = useAssetsStore();
   const [showBulkActionsTray, setShowBulkActionsTray] = useState(false);
 
@@ -126,6 +139,19 @@ export const AssetsPage: React.FC = () => {
 
   // Filter assets based on current filters
   const filteredAssets = getFilteredAssets(assets);
+
+  // Debug: Log filter state and results
+  useEffect(() => {
+    const store = useAssetsStore.getState();
+    console.log('[AssetsPage] Filter state:', {
+      searchTerm: store.searchTerm,
+      typeFilter: store.typeFilter,
+      materialFilter: store.materialFilter,
+      showFavoritesOnly: store.showFavoritesOnly,
+      totalAssets: assets.length,
+      filteredAssets: filteredAssets.length,
+    });
+  }, [assets.length, filteredAssets.length]);
 
   const handleModelLoad = useCallback(
     (info: {

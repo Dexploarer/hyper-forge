@@ -10,6 +10,9 @@ import type { UserContextType } from "../models";
 import { AICreationService } from "./AICreationService";
 import { ImageHostingService } from "./ImageHostingService";
 import { assetDatabaseService } from "./AssetDatabaseService";
+import { db } from "../db/db";
+import { assets } from "../db/schema";
+import { eq } from "drizzle-orm";
 import {
   getGenerationPrompts,
   getGPT4EnhancementPrompts,
@@ -1151,8 +1154,75 @@ export class GenerationService extends EventEmitter {
             type: "application/json",
           });
 
-          // Upload to CDN (webhook will create database record)
-          await this.uploadToCDN(config.assetId, filesToUpload);
+          // Upload to CDN first to get CDN URLs
+          const cdnResult = await this.uploadToCDN(config.assetId, filesToUpload);
+          
+          if (!cdnResult.success || !cdnResult.files || cdnResult.files.length === 0) {
+            throw new Error("CDN upload failed - no files returned");
+          }
+
+          // CRITICAL: Create database record AFTER CDN upload with CDN URLs
+          // This ensures assets are always in the database with correct CDN URLs
+          const ownerId = config.user?.userId;
+          if (!ownerId) {
+            throw new Error("Cannot create asset: user ID is required");
+          }
+
+          // Extract CDN URLs from upload result
+          const mainModelFile = cdnResult.files.find(f => f.path.endsWith('.glb') && !f.path.includes('_raw'));
+          const conceptArtFile = cdnResult.files.find(f => f.path.includes('concept-art'));
+          const cdnUrl = mainModelFile?.url || cdnResult.files[0]?.url || null;
+          const cdnConceptArtUrl = conceptArtFile?.url || null;
+          const cdnFiles = cdnResult.files.map(f => f.url);
+
+          // Update metadata with CDN URLs
+          const metadataWithCdn = {
+            ...metadata,
+            cdnUrl,
+            cdnConceptArtUrl,
+            cdnFiles,
+          };
+
+          try {
+            // Check if asset already exists
+            const existing = await db.query.assets.findFirst({
+              where: eq(assets.id, config.assetId),
+            });
+
+            if (existing) {
+              // Update existing asset with CDN URLs
+              await db
+                .update(assets)
+                .set({
+                  cdnUrl,
+                  cdnConceptArtUrl,
+                  cdnFiles,
+                  updatedAt: new Date(),
+                })
+                .where(eq(assets.id, config.assetId));
+              logger.info(
+                { assetId: config.assetId },
+                "[GenerationService] Updated existing asset with CDN URLs",
+              );
+            } else {
+              // Create new asset record with CDN URLs
+              await assetDatabaseService.createAssetRecord(
+                config.assetId,
+                metadataWithCdn as any,
+                ownerId,
+              );
+              logger.info(
+                { assetId: config.assetId, ownerId },
+                "[GenerationService] Created database record with CDN URLs",
+              );
+            }
+          } catch (error: any) {
+            logger.error(
+              { err: error, assetId: config.assetId },
+              "[GenerationService] CRITICAL: Failed to create/update database record after CDN upload",
+            );
+            // Don't throw - asset is on CDN, webhook might still work
+          }
 
           baseModelPath = `models/${config.assetId}/${config.assetId}.glb`;
         } finally {

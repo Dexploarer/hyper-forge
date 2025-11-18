@@ -140,6 +140,7 @@ async function syncCDNToDatabase() {
         name: assetName,
         description: `Imported from CDN: ${file.path}`,
         type: assetType,
+        ownerId: null, // CRITICAL: Explicitly null - CDN assets have no owner to prevent cascade deletes
         tags: [],
         metadata: {
           source: 'cdn-sync',

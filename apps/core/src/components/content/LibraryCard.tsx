@@ -611,7 +611,8 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         className={cn(
           "group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer",
           "hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-1",
-          colors.border,
+          "outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+          colors.border || "border-border-primary",
           "bg-gradient-to-br from-bg-secondary to-bg-tertiary",
           className,
         )}
@@ -650,7 +651,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
           <div className="flex items-end gap-3">
             <div
               className={cn(
-                "w-24 h-24 rounded-full border-4 border-bg-primary shadow-xl overflow-hidden",
+                "w-24 h-24 rounded-full border-4 border-border-primary shadow-xl overflow-hidden",
                 "bg-gradient-to-br from-bg-tertiary to-bg-secondary flex items-center justify-center",
                 "group-hover:scale-105 transition-transform duration-300 relative",
               )}
@@ -888,6 +889,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         className={cn(
           "group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer",
           "hover:shadow-2xl hover:shadow-amber-500/20 hover:-translate-y-1",
+          "outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50",
           "border-amber-500/30",
           "bg-gradient-to-br from-amber-500/10 via-bg-secondary to-bg-tertiary",
           className,
@@ -1117,6 +1119,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         className={cn(
           "group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer",
           "hover:shadow-2xl hover:shadow-green-500/20 hover:-translate-y-1",
+          "outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500/50",
           "border-green-500/30",
           "bg-gradient-to-br from-green-500/10 via-bg-secondary to-bg-tertiary",
           className,
@@ -1217,6 +1220,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         className={cn(
           "group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer",
           "hover:shadow-2xl hover:shadow-purple-500/20 hover:-translate-y-1",
+          "outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50",
           "border-purple-500/30",
           "bg-gradient-to-br from-purple-500/10 via-bg-secondary to-bg-tertiary",
           className,

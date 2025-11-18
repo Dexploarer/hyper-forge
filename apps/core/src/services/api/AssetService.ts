@@ -73,10 +73,13 @@ class AssetServiceClass {
 
     if (error) {
       console.error("Failed to fetch assets:", error);
-      throw new Error("Failed to fetch assets");
+      throw new Error(`Failed to fetch assets: ${error.value?.message || error.value?.summary || "Unknown error"}`);
     }
 
-    return data as Asset[];
+    const assets = (data as Asset[]) || [];
+    console.log(`[AssetService] Fetched ${assets.length} assets from API`);
+    
+    return assets;
   }
 
   async getMaterialPresets(): Promise<MaterialPreset[]> {

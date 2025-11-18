@@ -165,7 +165,8 @@ export const AudioLibraryCard: React.FC<AudioLibraryCardProps> = ({
       className={cn(
         "group relative overflow-hidden rounded-2xl border transition-all duration-300 cursor-pointer",
         "hover:shadow-2xl hover:-translate-y-1",
-        colors.border,
+        "outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+        colors.border || "border-border-primary",
         "bg-gradient-to-br from-bg-secondary to-bg-tertiary",
         className,
       )}

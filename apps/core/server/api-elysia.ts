@@ -206,7 +206,9 @@ const app = new Elysia()
         await runStartupHealthCheck(baseUrl);
 
         // Test frontend-to-backend connectivity
-        await testFrontendConnectivity(baseUrl);
+        // Use FRONTEND_URL if set, otherwise use baseUrl
+        const frontendUrl = env.FRONTEND_URL || baseUrl;
+        await testFrontendConnectivity(frontendUrl);
       } catch (error) {
         logger.error(
           { err: error },
@@ -252,7 +254,66 @@ const app = new Elysia()
   .use(securityHeaders)
   .use(
     cors({
-      origin: env.NODE_ENV === "production" ? env.FRONTEND_URL || "*" : true,
+      origin: (requestOrigin) => {
+        // Build list of allowed origins
+        const allowedOrigins: string[] = [];
+
+        // Add explicitly configured origins from CORS_ALLOWED_ORIGINS
+        if (env.CORS_ALLOWED_ORIGINS && env.CORS_ALLOWED_ORIGINS.length > 0) {
+          allowedOrigins.push(...env.CORS_ALLOWED_ORIGINS);
+        }
+
+        // Add FRONTEND_URL if set
+        if (env.FRONTEND_URL) {
+          allowedOrigins.push(env.FRONTEND_URL);
+        }
+
+        // In development, allow localhost origins
+        if (env.NODE_ENV === "development") {
+          allowedOrigins.push(
+            "http://localhost:3000",
+            "http://localhost:3003",
+            "http://localhost:5173",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3003",
+            "http://127.0.0.1:5173",
+          );
+        }
+
+        // If no origins configured and in production, log warning
+        if (allowedOrigins.length === 0 && env.NODE_ENV === "production") {
+          logger.warn(
+            {},
+            "[CORS] No allowed origins configured. Set CORS_ALLOWED_ORIGINS or FRONTEND_URL",
+          );
+        }
+
+        // Check if request origin is allowed
+        if (!requestOrigin) {
+          // No origin header (e.g., same-origin request, Postman)
+          return true;
+        }
+
+        const isAllowed = allowedOrigins.some(
+          (allowed) =>
+            requestOrigin === allowed ||
+            requestOrigin.startsWith(allowed.replace(/\/$/, "")),
+        );
+
+        if (isAllowed) {
+          logger.debug(
+            { origin: requestOrigin },
+            "[CORS] Allowed origin",
+          );
+          return requestOrigin;
+        }
+
+        logger.warn(
+          { origin: requestOrigin, allowedOrigins },
+          "[CORS] Blocked origin",
+        );
+        return false;
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     }),

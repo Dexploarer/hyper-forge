@@ -131,7 +131,7 @@ export function toNewAsset(
     type: metadata.type,
     subtype: metadata.subtype,
     category: metadata.subtype,
-    ownerId,
+    ownerId: null, // CRITICAL: CDN assets have no owner to prevent cascade deletes when users are deleted
     projectId: null,
     gameId: null,
     fileSize: metadata.fileSize,

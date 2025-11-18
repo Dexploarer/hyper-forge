@@ -194,11 +194,31 @@ export async function testFrontendConnectivity(
       return false;
     }
 
-    const healthData = await apiResponse.json();
-    logger.info(
-      {},
-      `✅ API accessible: ${JSON.stringify(healthData).substring(0, 100)}...`,
-    );
+    // Try to parse JSON, but handle non-JSON responses gracefully
+    let healthData;
+    const contentType = apiResponse.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      try {
+        healthData = await apiResponse.json();
+        logger.info(
+          {},
+          `✅ API accessible: ${JSON.stringify(healthData).substring(0, 100)}...`,
+        );
+      } catch (parseError) {
+        logger.warn(
+          { err: parseError },
+          "⚠️  API returned JSON content-type but failed to parse",
+        );
+        return false;
+      }
+    } else {
+      const text = await apiResponse.text();
+      logger.warn(
+        {},
+        `⚠️  API returned non-JSON response (${contentType}): ${text.substring(0, 100)}...`,
+      );
+      return false;
+    }
 
     // Test 3: Check CORS headers
     const corsHeaders = {

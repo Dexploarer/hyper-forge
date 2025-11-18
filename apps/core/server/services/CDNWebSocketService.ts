@@ -148,18 +148,6 @@ export class CDNWebSocketService {
         `[CDN WebSocket] Processing upload event for asset ${event.assetId} (${event.files.length} files)`,
       );
 
-      // Check if asset exists
-      const existingAsset = await db.query.assets.findFirst({
-        where: eq(assets.id, event.assetId),
-      });
-
-      if (!existingAsset) {
-        logger.warn(
-          `[CDN WebSocket] Asset ${event.assetId} not found in database - skipping`,
-        );
-        return;
-      }
-
       // Build CDN URL (use the first file's URL as base, then extract base path)
       const firstFile = event.files[0];
       if (!firstFile) {
@@ -179,19 +167,106 @@ export class CDNWebSocketService {
       // Build cdnFiles array with all CDN URLs
       const cdnFiles: string[] = event.files.map((file) => file.cdnUrl);
 
-      // Update asset with CDN information
-      await db
-        .update(assets)
-        .set({
-          cdnUrl,
-          cdnFiles,
-          publishedAt: new Date(event.uploadedAt),
-        })
-        .where(eq(assets.id, event.assetId));
-
-      logger.info(
-        `[CDN WebSocket] Updated asset ${event.assetId} with CDN URL: ${cdnUrl}`,
+      // Find concept art and thumbnail files
+      const conceptArtFile = event.files.find((f) =>
+        f.relativePath.includes("concept-art") || f.name.endsWith(".png"),
       );
+      const thumbnailFile = event.files.find((f) =>
+        f.relativePath.includes("thumbnail") || f.name.includes("thumbnail"),
+      );
+      const cdnConceptArtUrl = conceptArtFile?.cdnUrl || null;
+      const cdnThumbnailUrl = thumbnailFile?.cdnUrl || null;
+
+      // Check if asset exists
+      const existingAsset = await db.query.assets.findFirst({
+        where: eq(assets.id, event.assetId),
+      });
+
+      if (!existingAsset) {
+        // CRITICAL: Asset doesn't exist - CREATE it from CDN upload
+        logger.info(
+          `[CDN WebSocket] Asset ${event.assetId} not found in database - creating new record`,
+        );
+
+        // Extract asset metadata from file paths
+        const assetName = event.assetId
+          .split("-")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+
+        // Infer asset type from path or assetId
+        let assetType = "unknown";
+        if (
+          event.assetId.includes("character") ||
+          event.assetId.includes("npc")
+        ) {
+          assetType = "character";
+        } else if (
+          event.assetId.includes("weapon") ||
+          event.assetId.includes("sword") ||
+          event.assetId.includes("axe")
+        ) {
+          assetType = "weapon";
+        } else if (
+          event.assetId.includes("armor") ||
+          event.assetId.includes("helmet")
+        ) {
+          assetType = "armor";
+        } else if (
+          event.assetId.includes("environment") ||
+          event.assetId.includes("building")
+        ) {
+          assetType = "environment";
+        } else if (event.assetId.includes("prop")) {
+          assetType = "prop";
+        }
+
+        // Create new asset record
+        // CRITICAL: Do NOT set ownerId - CDN assets have no owner to prevent cascade deletes
+        await db.insert(assets).values({
+          id: event.assetId,
+          name: assetName,
+          description: `Imported from CDN`,
+          type: assetType,
+          ownerId: null, // Explicitly null - CDN assets have no owner to prevent cascade deletes
+          cdnUrl,
+          cdnThumbnailUrl,
+          cdnConceptArtUrl,
+          cdnFiles,
+          metadata: {
+            name: assetName,
+            type: assetType,
+            importedFromCDN: true,
+            cdnFiles,
+            uploadedAt: event.uploadedAt,
+          },
+          status: "completed",
+          visibility: "public",
+          tags: [],
+          publishedAt: new Date(event.uploadedAt),
+        });
+
+        logger.info(
+          `[CDN WebSocket] Created asset ${event.assetId} with CDN URL: ${cdnUrl}`,
+        );
+      } else {
+        // Asset exists - update CDN URLs
+        await db
+          .update(assets)
+          .set({
+            cdnUrl,
+            cdnThumbnailUrl,
+            cdnConceptArtUrl,
+            cdnFiles,
+            publishedAt: new Date(event.uploadedAt),
+            updatedAt: new Date(),
+          })
+          .where(eq(assets.id, event.assetId));
+
+        logger.info(
+          `[CDN WebSocket] Updated asset ${event.assetId} with CDN URL: ${cdnUrl}`,
+        );
+      }
     } catch (error) {
       logger.error(
         { err: error },

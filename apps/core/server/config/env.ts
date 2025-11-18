@@ -139,6 +139,16 @@ const envSchema = z.object({
     .optional()
     .default("true")
     .transform((val) => val === "true"),
+  // =========================================
+  // CORS Configuration
+  // =========================================
+  CORS_ALLOWED_ORIGINS: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val) return [];
+      return val.split(",").map((origin) => origin.trim()).filter(Boolean);
+    }),
   FRONTEND_URL: z
     .string()
     .optional()

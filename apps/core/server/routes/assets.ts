@@ -39,21 +39,33 @@ export const createAssetRoutes = (rootDir: string) => {
           };
 
           // Get all assets from database (includes CDN URLs)
+          // Single-team app - everyone sees all assets, no permission filtering
           const allAssets = await assetDatabaseService.listAssets();
 
-          // Admins see all assets, regular users see only their own
-          const userAssets = user.isAdmin
-            ? allAssets
-            : allAssets.filter((asset) => asset.ownerId === user.id);
+          logger.info(
+            {
+              userId: user.id,
+              totalAssets: allAssets.length,
+            },
+            "[Assets] Listing assets",
+          );
 
           // Apply projectId filter if provided
           if (query.projectId) {
-            return userAssets.filter(
+            const filtered = allAssets.filter(
               (asset) => asset.metadata.projectId === query.projectId,
             );
+            logger.info(
+              {
+                projectId: query.projectId,
+                filteredCount: filtered.length,
+              },
+              "[Assets] Applied projectId filter",
+            );
+            return filtered;
           }
 
-          return userAssets;
+          return allAssets;
         },
         {
           query: t.Object({
