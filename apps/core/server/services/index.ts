@@ -17,7 +17,6 @@ export * from "./ElevenLabsSoundEffectsService";
 // Content & World Services
 export * from "./ContentGenerationService";
 export * from "./ContentDatabaseService";
-export * from "./SeedDataService";
 export * from "./WorldConfigService";
 export * from "./RelationshipService";
 export * from "./PlaytesterSwarmOrchestrator";

@@ -20,7 +20,6 @@ import { voiceGenerationRoutes } from "../routes/voice-generation";
 import { musicRoutes } from "../routes/music";
 import { soundEffectsRoutes } from "../routes/sound-effects";
 import { contentRoutes } from "../routes/content";
-import { seedDataRoutes } from "../routes/seed-data";
 import { worldConfigRoutes } from "../routes/world-config";
 import { vectorSearchRoutes } from "../routes/vector-search";
 import { adminRoutes } from "../routes/admin";
@@ -60,7 +59,6 @@ export const standaloneApiRoutes = new Elysia({ name: "standalone-api-routes" })
 
   // Content generation routes
   .use(contentRoutes)
-  .use(seedDataRoutes)
   .use(worldConfigRoutes)
   .use(vectorSearchRoutes)
 
