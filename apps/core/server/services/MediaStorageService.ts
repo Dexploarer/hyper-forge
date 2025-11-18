@@ -1,7 +1,7 @@
 /**
- * Media Storage Service - Local Volume Storage
- * Saves media files to /gdd-assets volume for generated content
- * Direct filesystem storage for persistence across deploys
+ * Media Storage Service - CDN-First Architecture
+ * Uploads media files directly to CDN (portraits, voices, music)
+ * Webhook automatically creates database records after successful upload
  */
 
 import { db } from "../db";
@@ -15,8 +15,6 @@ import {
 import { eq, and } from "drizzle-orm";
 import { fileUploadsCounter, getFileExtension } from "../metrics/business";
 import { cdnUploadService } from "../utils/CDNUploadService";
-import * as fs from "fs";
-import * as path from "path";
 
 // File size limits (in bytes)
 const FILE_SIZE_LIMITS = {
@@ -56,35 +54,31 @@ export interface SaveMediaParams {
 }
 
 export class MediaStorageService {
-  private volumePath: string;
-  private baseUrl: string;
+  private cdnUrl: string;
+  private cdnApiKey: string;
 
   constructor() {
-    // Use /gdd-assets volume in production, local path for development
-    this.volumePath = process.env.RAILWAY_VOLUME_MOUNT_PATH || "/gdd-assets";
+    this.cdnUrl =
+      process.env.CDN_URL ||
+      (() => {
+        if (process.env.NODE_ENV === "production") {
+          throw new Error("CDN_URL must be set in production environment");
+        }
+        return "http://localhost:3005";
+      })();
 
-    // Base URL for serving files
-    this.baseUrl = process.env.RAILWAY_PUBLIC_DOMAIN
-      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-      : "http://localhost:3004";
+    this.cdnApiKey = process.env.CDN_API_KEY || "";
 
-    // Ensure volume directory exists
-    if (!fs.existsSync(this.volumePath)) {
+    if (!this.cdnApiKey) {
       logger.warn(
-        `[MediaStorageService] Creating volume directory: ${this.volumePath}`,
+        "[MediaStorageService] CDN_API_KEY not set - media uploads will fail!",
       );
-      fs.mkdirSync(this.volumePath, { recursive: true });
     }
-
-    logger.info(
-      { volumePath: this.volumePath },
-      "[MediaStorageService] Initialized with volume storage",
-    );
   }
 
   /**
-   * Save media file to volume storage and create database record
-   * Writes directly to /gdd-assets volume for persistence
+   * Upload media file to CDN and create database record
+   * Creates database record directly for data consistency
    */
   async saveMedia(params: SaveMediaParams): Promise<{
     id: string;
@@ -132,48 +126,64 @@ export class MediaStorageService {
         throw new Error("Invalid file name after sanitization");
       }
 
-      // Build directory structure: {volumePath}/{type}/{entity_type}/{entity_id}/
-      const directoryParts: string[] = [this.volumePath, type];
+      // Build directory structure: media/{type}/{entity_type}/{entity_id}/
+      const directoryParts: string[] = [type];
       if (entityType) directoryParts.push(entityType);
       if (entityId) directoryParts.push(entityId);
 
-      const directory = path.join(...directoryParts);
-      const filePath = path.join(directory, sanitizedFileName);
+      const directory = directoryParts.join("/");
+      const fullPath = `${directory}/${sanitizedFileName}`;
 
-      // Create directory if it doesn't exist
-      if (!fs.existsSync(directory)) {
-        fs.mkdirSync(directory, { recursive: true });
-      }
+      // Prepare metadata for CDN upload
+      const uploadMetadata = {
+        type,
+        entityType,
+        entityId,
+        fileName,
+        metadata: {
+          ...metadata,
+          fileSize,
+        },
+        createdBy,
+      };
 
       logger.info(
         { context: "MediaStorage" },
-        `Saving ${type} to volume: ${filePath}`,
+        `Uploading ${type} to CDN: ${fullPath}`,
       );
 
-      // Convert Uint8Array to Buffer if needed
+      // Convert Uint8Array to Buffer if needed (CDNUploadService expects Buffer | ArrayBuffer)
       const buffer = data instanceof Buffer ? data : Buffer.from(data);
 
-      // Write file to volume
-      fs.writeFileSync(filePath, buffer);
-
-      // Build URL for accessing the file: /api/media/{type}/{entityType}/{entityId}/{fileName}
-      const urlParts = ["/api/media", type];
-      if (entityType) urlParts.push(entityType);
-      if (entityId) urlParts.push(entityId);
-      urlParts.push(sanitizedFileName);
-
-      const fileUrl = `${this.baseUrl}${urlParts.join("/")}`;
-
-      logger.info(
-        { context: "MediaStorage" },
-        `✅ Saved to volume: ${filePath}`,
+      // Upload to CDN using shared service
+      const result = await cdnUploadService.uploadSingle(
+        {
+          buffer,
+          fileName: sanitizedFileName,
+          mimeType: metadata.mimeType || this.getMimeType(fileName),
+        },
+        {
+          assetId: directory,
+          directory: "media",
+          userId: createdBy,
+          metadata: uploadMetadata,
+        },
       );
+
+      if (!result.success || !result.files || result.files.length === 0) {
+        throw new Error("CDN upload succeeded but no files were returned");
+      }
+
+      const cdnUrl = result.files[0].url;
+
+      logger.info({ context: "MediaStorage" }, `✅ Uploaded to CDN: ${cdnUrl}`);
 
       fileUploadsCounter.inc({
         file_type: getFileExtension(fileName) || "unknown",
       });
 
-      // Create database record
+      // Create database record directly for data consistency
+      // This ensures we have a reliable record even if webhooks fail
       const [dbRecord] = await db
         .insert(mediaAssets)
         .values({
@@ -181,18 +191,17 @@ export class MediaStorageService {
           entityType: entityType || null,
           entityId: entityId || null,
           fileName: sanitizedFileName,
-          cdnUrl: fileUrl,
+          cdnUrl,
           metadata: {
             ...metadata,
             fileSize,
-            volumePath: filePath,
           },
           createdBy: createdBy || null,
         })
         .returning();
 
       if (!dbRecord) {
-        throw new Error("Failed to create database record after file save");
+        throw new Error("Failed to create database record after CDN upload");
       }
 
       logger.info(
@@ -202,13 +211,13 @@ export class MediaStorageService {
 
       return {
         id: dbRecord.id,
-        cdnUrl: fileUrl,
+        cdnUrl,
         fileName: sanitizedFileName,
       };
     } catch (error) {
-      logger.error({ err: error }, "[MediaStorage] Failed to save media:");
+      logger.error({ err: error }, "[MediaStorage] Failed to upload media:");
       throw new Error(
-        `Media save failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Media upload failed: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
   }

@@ -18,38 +18,6 @@ import {
 } from "./shared";
 
 export const mediaRoutes = new Elysia()
-  // GET /api/media/{type}/{entityType}/{entityId}/{fileName} - Serve files from volume
-  .get(
-    "/media/*",
-    async ({ params }) => {
-      const volumePath = process.env.RAILWAY_VOLUME_MOUNT_PATH || "/gdd-assets";
-      const requestPath = (params as any)["*"] as string;
-      const filePath = `${volumePath}/${requestPath}`;
-
-      try {
-        const file = Bun.file(filePath);
-        const exists = await file.exists();
-
-        if (!exists) {
-          return new Response("File not found", { status: 404 });
-        }
-
-        return new Response(file);
-      } catch (error) {
-        logger.error({ error, filePath }, "Failed to serve file from volume");
-        return new Response("Internal Server Error", { status: 500 });
-      }
-    },
-    {
-      detail: {
-        tags: ["Media Assets"],
-        summary: "Serve media file from volume",
-        description:
-          "Serves media files from /gdd-assets volume. Public endpoint.",
-      },
-    },
-  )
-
   .use(requireAuthGuard)
 
   // POST /api/content/generate-npc-portrait
@@ -111,7 +79,7 @@ export const mediaRoutes = new Elysia()
           npcName: body.npcName,
           tempUrl: imageResult.imageUrl,
         },
-        "Portrait generated, downloading and saving to volume...",
+        "Portrait generated, downloading and uploading to CDN...",
       );
 
       // BEST PRACTICE: Immediately download and save to blob storage
@@ -126,7 +94,7 @@ export const mediaRoutes = new Elysia()
       const imageData = Buffer.from(await response.arrayBuffer());
       const fileName = `portrait_${body.npcName.replace(/[^a-zA-Z0-9]/g, "_")}_${Date.now()}.png`;
 
-      // Save to volume and database
+      // Upload to CDN and create database record
       const savedMedia = await mediaStorageService.saveMedia({
         type: "portrait",
         entityType: "npc",
@@ -147,7 +115,7 @@ export const mediaRoutes = new Elysia()
           npcName: body.npcName,
           permanentUrl: savedMedia.cdnUrl,
         },
-        "Portrait saved to volume successfully",
+        "Portrait uploaded to CDN successfully",
       );
 
       return {
@@ -239,7 +207,7 @@ export const mediaRoutes = new Elysia()
           questTitle: body.questTitle,
           tempUrl: imageResult.imageUrl,
         },
-        "Banner generated, downloading and saving to volume...",
+        "Banner generated, downloading and uploading to CDN...",
       );
 
       // BEST PRACTICE: Immediately download and save to blob storage
@@ -254,7 +222,7 @@ export const mediaRoutes = new Elysia()
       const imageData = Buffer.from(await response.arrayBuffer());
       const fileName = `banner_${body.questTitle.replace(/[^a-zA-Z0-9]/g, "_")}_${Date.now()}.png`;
 
-      // Save to volume and database
+      // Upload to CDN and create database record
       const savedMedia = await mediaStorageService.saveMedia({
         type: "banner",
         entityType: "quest",
@@ -275,7 +243,7 @@ export const mediaRoutes = new Elysia()
           questTitle: body.questTitle,
           permanentUrl: savedMedia.cdnUrl,
         },
-        "Banner saved to volume successfully",
+        "Banner uploaded to CDN successfully",
       );
 
       return {
@@ -391,10 +359,10 @@ export const mediaRoutes = new Elysia()
             entityId: body.entityId,
             context: "media",
           },
-          "Saving image to volume storage...",
+          "Uploading image to CDN...",
         );
 
-        // Save to /gdd-assets volume with error handling
+        // Upload to CDN with error handling
         const result = await mediaStorageService.saveMedia({
           type: mediaType as
             | "portrait"
@@ -425,7 +393,7 @@ export const mediaRoutes = new Elysia()
             fileUrl: result.cdnUrl,
             context: "media",
           },
-          "Successfully saved image to volume and database",
+          "Successfully uploaded image to CDN and saved to database",
         );
 
         return {
