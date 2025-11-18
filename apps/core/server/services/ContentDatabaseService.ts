@@ -22,7 +22,7 @@ import {
   type NewLore,
   type Location,
 } from "../db/schema";
-import { eq, desc, and, isNull } from "drizzle-orm";
+import { eq, desc, and, isNull, or } from "drizzle-orm";
 import { embeddingService } from "./EmbeddingService";
 import { qdrantService, type CollectionName } from "./QdrantService";
 
@@ -187,13 +187,14 @@ export class ContentDatabaseService {
   async deleteNPC(id: string, userId: string): Promise<void> {
     try {
       // P0-CRITICAL: Ownership validation
+      // Allow deletion if user owns it OR if created_by is null (legacy data)
       const [existing] = await db
         .select()
         .from(npcs)
         .where(
           and(
             eq(npcs.id, id),
-            eq(npcs.createdBy, userId),
+            or(eq(npcs.createdBy, userId), isNull(npcs.createdBy)),
             isNull(npcs.deletedAt),
           ),
         )

@@ -51,7 +51,7 @@ export const EditNPCModal: React.FC<EditNPCModalProps> = ({
       open,
       onUpdate: updateNPC,
       onClose,
-      validator: (data) => !!data.name.trim(),
+      validator: (data) => !!data.name?.trim(),
       transformer: (data) => ({
         name: data.name,
         archetype: data.archetype,
