@@ -285,8 +285,9 @@ export class MediaStorageService {
     // If includeUnassigned is true, fetch all unassigned voices (for assignment to entities)
     // Otherwise, filter by creator (default behavior)
     if (options?.includeUnassigned) {
-      // Only include unassigned voices (entityType and entityId are null)
-      conditions.push(isNull(mediaAssets.entityType));
+      // Only include unassigned voices (entityId is null)
+      // Note: entityType can be set (e.g., "npc") to indicate what type of entity it can be assigned to,
+      // but the actual assignment happens when entityId is set to a specific instance
       conditions.push(isNull(mediaAssets.entityId));
     } else if (options?.createdBy) {
       conditions.push(eq(mediaAssets.createdBy, options.createdBy));

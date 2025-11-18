@@ -94,33 +94,47 @@ async function checkQdrant(): Promise<HealthCheckResult> {
  */
 async function checkDiskSpace(): Promise<HealthCheckResult> {
   try {
-    // Get temp directory stats (where we store temporary processing files)
-    const tmpDir = os.tmpdir();
+    // Use df to check actual disk usage on root filesystem
+    const proc = Bun.spawn(["df", "-h", "/"], {
+      stdout: "pipe",
+      stderr: "pipe",
+    });
 
-    // Check temp directory
-    const checks = await Promise.allSettled([fs.stat(tmpDir)]);
+    const output = await new Response(proc.stdout).text();
+    const lines = output.trim().split("\n");
 
-    // Get filesystem stats (Note: statvfs not available in Node.js, use process)
-    // We'll check available system memory as a proxy for disk health
-    const freeMem = os.freemem();
-    const totalMem = os.totalmem();
-    const freeMemGB = freeMem / (1024 * 1024 * 1024);
-    const usedMemPercent = ((totalMem - freeMem) / totalMem) * 100;
+    if (lines.length < 2) {
+      throw new Error("Failed to parse df output");
+    }
 
-    // Warn if less than 1GB free or >90% used
+    // Parse df output: Filesystem Size Used Avail Use% Mounted
+    const dataLine = lines[1].trim().split(/\s+/);
+    if (dataLine.length < 6) {
+      throw new Error("Invalid df output format");
+    }
+
+    const usagePercentStr = dataLine[4].replace("%", "");
+    const usagePercent = parseInt(usagePercentStr, 10);
+    const available = dataLine[3];
+
+    // Determine status based on usage thresholds
+    // Warning at 80%, Critical at 90%, Emergency at 95%
     const status =
-      freeMemGB < 1 || usedMemPercent > 90
-        ? "degraded"
-        : freeMemGB < 0.5
-          ? "unhealthy"
+      usagePercent >= 95
+        ? "unhealthy"
+        : usagePercent >= 80
+          ? "degraded"
           : "healthy";
 
     return {
       status,
       details: {
-        freeGB: parseFloat(freeMemGB.toFixed(2)),
-        usedPercent: parseFloat(usedMemPercent.toFixed(2)),
-        tmpDirExists: checks[0].status === "fulfilled",
+        filesystem: dataLine[0],
+        size: dataLine[1],
+        used: dataLine[2],
+        available,
+        usedPercent: usagePercent,
+        mountPoint: dataLine[5],
       },
     };
   } catch (error) {

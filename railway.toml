@@ -12,8 +12,8 @@ builder = "RAILPACK"
 buildCommand = "cd apps/core && bun run clean && bunx vite build"
 
 [deploy]
-startCommand = "cd apps/core && bun run start:api"
-healthcheckPath = "/api/health"
+startCommand = "cd apps/core && bun scripts/quick-cleanup.sh && bun run start:api"
+healthcheckPath = "/api/health/live"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10

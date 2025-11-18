@@ -6,6 +6,7 @@
  * - cleanup-expired-jobs: Cleanup expired and old failed generation jobs (hourly)
  * - aggregate-errors: Aggregate API errors for analytics (hourly at :05)
  * - cleanup-old-errors: Delete old error logs and aggregations (daily at 2 AM)
+ * - cleanup-disk-space: Clean up temporary files and caches (daily at 3 AM)
  *
  * Uses @elysiajs/cron for scheduling
  */
@@ -85,6 +86,37 @@ export const cronPlugin = new Elysia({ name: "cron" })
           );
         } catch (error) {
           logger.error({ err: error }, "Error cleanup failed");
+        }
+      },
+    }),
+  )
+
+  // Cleanup disk space daily at 3 AM
+  .use(
+    cron({
+      name: "cleanup-disk-space",
+      pattern: "0 3 * * *", // Daily at 3 AM
+      async run() {
+        logger.info({}, "[Cron] Running disk space cleanup...");
+        try {
+          // Run the cleanup script
+          const proc = Bun.spawn(["bash", "scripts/quick-cleanup.sh"], {
+            cwd: process.cwd(),
+            stdout: "pipe",
+            stderr: "pipe",
+          });
+
+          const output = await new Response(proc.stdout).text();
+          const exitCode = await proc.exited;
+
+          if (exitCode === 0) {
+            logger.info({ output }, "Disk cleanup completed successfully");
+          } else {
+            const errorOutput = await new Response(proc.stderr).text();
+            logger.error({ exitCode, errorOutput }, "Disk cleanup failed");
+          }
+        } catch (error) {
+          logger.error({ err: error }, "Disk cleanup failed");
         }
       },
     }),
