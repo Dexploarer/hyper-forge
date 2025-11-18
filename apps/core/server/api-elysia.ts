@@ -283,7 +283,7 @@ const app = new Elysia()
   .use(createAssetRoutes(ROOT_DIR))
   .use(createRetextureRoutes(ROOT_DIR, retextureService, legacyAssetsDir))
   .use(createGenerationRoutes(getGenerationService))
-  .use(createCDNRoutes(CDN_URL))
+  .use(createCDNRoutes(ROOT_DIR, CDN_URL))
 
   .use(metricsPlugin) // Prometheus scraping
 

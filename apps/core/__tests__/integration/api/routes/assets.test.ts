@@ -98,7 +98,7 @@ describe("Asset Routes", () => {
       privyUserId: "user-123",
       email: "user-123@test.com",
       displayName: "Test User 123",
-      role: "user",
+      role: "member",
     });
 
     await createTestAdmin({
@@ -111,7 +111,7 @@ describe("Asset Routes", () => {
       privyUserId: "other-user",
       email: "other-user@test.com",
       displayName: "Other User",
-      role: "user",
+      role: "member",
     });
 
     app = new Elysia().use(

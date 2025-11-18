@@ -7,10 +7,42 @@
 import { Elysia, t } from "elysia";
 import { db } from "../db";
 import { materialPresets } from "../db/schema/material-presets.schema";
-import { eq, and, or, desc, sql } from "drizzle-orm";
+import { eq, and, or, desc, asc, sql } from "drizzle-orm";
 import { logger } from "../utils/logger";
 import * as Models from "../models";
-import { requireAuth } from "../plugins/auth.plugin";
+import { requireAuthGuard } from "../plugins/auth.plugin";
+import {
+  NotFoundError,
+  ForbiddenError,
+  InternalServerError,
+} from "../errors";
+
+/**
+ * Helper: Build visibility filter conditions for material presets
+ * Returns system presets, public presets, and optionally user's private presets
+ *
+ * @param userId - Optional user ID to include private presets
+ * @returns Array of conditions for Drizzle where clause
+ */
+function buildVisibilityConditions(userId?: string) {
+  // Always show system presets and public presets
+  // If userId is provided, also show that user's private presets
+  if (userId) {
+    // or() can return SQL | undefined, but with 3 valid conditions it's guaranteed to return SQL
+    // The non-null assertion is safe here because we're passing valid eq() conditions
+    return or(
+      eq(materialPresets.isSystem, true),
+      eq(materialPresets.isPublic, true),
+      eq(materialPresets.createdBy, userId),
+    )!;
+  }
+
+  // Same guarantee for 2 valid conditions
+  return or(
+    eq(materialPresets.isSystem, true),
+    eq(materialPresets.isPublic, true),
+  )!;
+}
 
 export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
   // Get all material presets (system + public user presets)
@@ -20,27 +52,8 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
       try {
         const { category, tier, includeInactive = "false", userId } = query;
 
-        // Build query conditions
-        const conditions = [];
-
-        // Always show system presets and public presets
-        // If userId is provided, also show that user's private presets
-        if (userId) {
-          conditions.push(
-            or(
-              eq(materialPresets.isSystem, true),
-              eq(materialPresets.isPublic, true),
-              eq(materialPresets.createdBy, userId),
-            )!,
-          );
-        } else {
-          conditions.push(
-            or(
-              eq(materialPresets.isSystem, true),
-              eq(materialPresets.isPublic, true),
-            )!,
-          );
-        }
+        // Build query conditions using helper
+        const conditions = [buildVisibilityConditions(userId)];
 
         if (includeInactive !== "true") {
           conditions.push(eq(materialPresets.isActive, true));
@@ -58,7 +71,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           .select()
           .from(materialPresets)
           .where(and(...conditions))
-          .orderBy(materialPresets.tier, materialPresets.name);
+          .orderBy(asc(materialPresets.tier), asc(materialPresets.name));
 
         return results;
       } catch (error) {
@@ -66,8 +79,9 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           { context: "Material Presets", err: error },
           "Error loading material presets",
         );
-        set.status = 500;
-        return { error: "Failed to load material presets" };
+        throw new InternalServerError("Failed to load material presets", {
+          originalError: error,
+        });
       }
     },
     {
@@ -98,18 +112,24 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           .limit(1);
 
         if (!preset) {
-          set.status = 404;
-          return { error: "Material preset not found" };
+          throw new NotFoundError("Material preset", params.id);
         }
 
         return preset;
       } catch (error) {
+        // Re-throw ApiErrors as-is
+        if (error instanceof NotFoundError || error instanceof InternalServerError) {
+          throw error;
+        }
+
         logger.error(
           { context: "Material Presets", err: error },
           `Error loading material preset: ${params.id}`,
         );
-        set.status = 500;
-        return { error: "Failed to load material preset" };
+        throw new InternalServerError("Failed to load material preset", {
+          originalError: error,
+          presetId: params.id,
+        });
       }
     },
     {
@@ -150,15 +170,15 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           })
           .returning();
 
-        set.status = 201;
         return newPreset;
       } catch (error) {
         logger.error(
           { context: "Material Presets", err: error },
           "Error creating custom material preset",
         );
-        set.status = 500;
-        return { error: "Failed to create custom material preset" };
+        throw new InternalServerError("Failed to create custom material preset", {
+          originalError: error,
+        });
       }
     },
     {
@@ -182,19 +202,13 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
     },
   )
 
+  // Authenticated routes for material preset management
+  .use(requireAuthGuard)
+
   // Update material preset
   .put(
     "/material-presets/:id",
-    async ({ params, body, set, request, headers }) => {
-      // Require authentication
-      const authResult = await requireAuth({ request, headers });
-      if (authResult instanceof Response) {
-        set.status = 401;
-        return { error: "Unauthorized - authentication required" };
-      }
-
-      const { user } = authResult;
-
+    async ({ params, body, set, user }) => {
       try {
         // First, fetch the preset to check ownership
         const [existingPreset] = await db
@@ -204,8 +218,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           .limit(1);
 
         if (!existingPreset) {
-          set.status = 404;
-          return { error: "Material preset not found" };
+          throw new NotFoundError("Material preset", params.id);
         }
 
         // Check if it's a system preset (cannot be updated)
@@ -214,8 +227,10 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
             { presetId: params.id, userId: user.id },
             "Attempted to update system material preset",
           );
-          set.status = 403;
-          return { error: "System presets cannot be updated" };
+          throw new ForbiddenError("System presets cannot be updated", {
+            presetId: params.id,
+            userId: user.id,
+          });
         }
 
         // Check ownership (must be owner or admin)
@@ -228,8 +243,11 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
             },
             "Unauthorized material preset update attempt",
           );
-          set.status = 403;
-          return { error: "Forbidden - you can only update your own presets" };
+          throw new ForbiddenError("You can only update your own presets", {
+            presetId: params.id,
+            userId: user.id,
+            ownerId: existingPreset.createdBy,
+          });
         }
 
         const [updatedPreset] = await db
@@ -255,6 +273,15 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
         );
         return updatedPreset;
       } catch (error) {
+        // Re-throw ApiErrors as-is
+        if (
+          error instanceof NotFoundError ||
+          error instanceof ForbiddenError ||
+          error instanceof InternalServerError
+        ) {
+          throw error;
+        }
+
         logger.error(
           {
             context: "Material Presets",
@@ -264,8 +291,11 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           },
           `Error updating material preset: ${params.id}`,
         );
-        set.status = 500;
-        return { error: "Failed to update material preset" };
+        throw new InternalServerError("Failed to update material preset", {
+          originalError: error,
+          presetId: params.id,
+          userId: user.id,
+        });
       }
     },
     {
@@ -288,6 +318,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
         summary: "Update material preset",
         description:
           "Update an existing user-defined material preset (system presets cannot be updated)",
+        security: [{ BearerAuth: [] }],
       },
     },
   )
@@ -295,16 +326,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
   // Delete material preset
   .delete(
     "/material-presets/:id",
-    async ({ params, set, request, headers }) => {
-      // Require authentication
-      const authResult = await requireAuth({ request, headers });
-      if (authResult instanceof Response) {
-        set.status = 401;
-        return { error: "Unauthorized - authentication required" };
-      }
-
-      const { user } = authResult;
-
+    async ({ params, set, user }) => {
       try {
         // First, fetch the preset to check ownership
         const [existingPreset] = await db
@@ -314,8 +336,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           .limit(1);
 
         if (!existingPreset) {
-          set.status = 404;
-          return { error: "Material preset not found" };
+          throw new NotFoundError("Material preset", params.id);
         }
 
         // Check if it's a system preset (cannot be deleted)
@@ -324,8 +345,10 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
             { presetId: params.id, userId: user.id },
             "Attempted to delete system material preset",
           );
-          set.status = 403;
-          return { error: "System presets cannot be deleted" };
+          throw new ForbiddenError("System presets cannot be deleted", {
+            presetId: params.id,
+            userId: user.id,
+          });
         }
 
         // Check ownership (must be owner or admin)
@@ -338,8 +361,11 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
             },
             "Unauthorized material preset deletion attempt",
           );
-          set.status = 403;
-          return { error: "Forbidden - you can only delete your own presets" };
+          throw new ForbiddenError("You can only delete your own presets", {
+            presetId: params.id,
+            userId: user.id,
+            ownerId: existingPreset.createdBy,
+          });
         }
 
         // Now delete
@@ -354,6 +380,15 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
         );
         return { success: true, id: params.id };
       } catch (error) {
+        // Re-throw ApiErrors as-is
+        if (
+          error instanceof NotFoundError ||
+          error instanceof ForbiddenError ||
+          error instanceof InternalServerError
+        ) {
+          throw error;
+        }
+
         logger.error(
           {
             context: "Material Presets",
@@ -363,8 +398,11 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           },
           `Error deleting material preset: ${params.id}`,
         );
-        set.status = 500;
-        return { error: "Failed to delete material preset" };
+        throw new InternalServerError("Failed to delete material preset", {
+          originalError: error,
+          presetId: params.id,
+          userId: user.id,
+        });
       }
     },
     {
@@ -376,6 +414,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
         summary: "Delete material preset",
         description:
           "Delete a user-defined material preset (system presets cannot be deleted)",
+        security: [{ BearerAuth: [] }],
       },
     },
   )
@@ -383,14 +422,9 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
   // List user's custom material presets
   .get(
     "/material-presets/user/:userId",
-    async ({ params, set, request, headers }) => {
-      // Require authentication (any authenticated user can delete)
-      const authResult = await requireAuth({ request, headers });
-      if (authResult instanceof Response) {
-        set.status = 401;
-        return { error: "Unauthorized - authentication required" };
-      }
-
+    async ({ params, set, user }) => {
+      // Note: Any authenticated user can view user presets (not just the owner)
+      // This allows discovery of public presets by other users
       try {
         const userPresets = await db
           .select()
@@ -409,8 +443,10 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           { context: "Material Presets", err: error },
           `Error loading user material presets for: ${params.userId}`,
         );
-        set.status = 500;
-        return { error: "Failed to load user material presets" };
+        throw new InternalServerError("Failed to load user material presets", {
+          originalError: error,
+          userId: params.userId,
+        });
       }
     },
     {
@@ -422,6 +458,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
         summary: "List user's custom material presets",
         description:
           "Get all custom material presets created by a specific user",
+        security: [{ BearerAuth: [] }],
       },
     },
   )
@@ -433,24 +470,8 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
       try {
         const { userId, includeInactive = "false" } = query;
 
-        const conditions = [];
-
-        if (userId) {
-          conditions.push(
-            or(
-              eq(materialPresets.isSystem, true),
-              eq(materialPresets.isPublic, true),
-              eq(materialPresets.createdBy, userId),
-            )!,
-          );
-        } else {
-          conditions.push(
-            or(
-              eq(materialPresets.isSystem, true),
-              eq(materialPresets.isPublic, true),
-            )!,
-          );
-        }
+        // Build query conditions using helper
+        const conditions = [buildVisibilityConditions(userId)];
 
         if (includeInactive !== "true") {
           conditions.push(eq(materialPresets.isActive, true));
@@ -460,7 +481,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           .select()
           .from(materialPresets)
           .where(and(...conditions))
-          .orderBy(materialPresets.tier, materialPresets.name);
+          .orderBy(asc(materialPresets.tier), asc(materialPresets.name));
 
         // Group by category
         const grouped = results.reduce(
@@ -480,8 +501,10 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           { context: "Material Presets", err: error },
           "Error loading material presets by category",
         );
-        set.status = 500;
-        return { error: "Failed to load material presets by category" };
+        throw new InternalServerError(
+          "Failed to load material presets by category",
+          { originalError: error },
+        );
       }
     },
     {

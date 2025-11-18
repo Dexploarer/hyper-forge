@@ -1,6 +1,7 @@
 /**
  * CDN Routes
  * Webhook receiver for CDN uploads (CDN-first architecture)
+ * Asset publishing routes for uploading assets to CDN
  */
 
 import { Elysia, t } from "elysia";
@@ -19,12 +20,22 @@ import {
   ServiceUnavailableError,
   UnauthorizedError,
   InternalServerError,
+  NotFoundError,
+  ForbiddenError,
 } from "../errors";
+import { requireAuthGuard } from "../plugins/auth.plugin";
+import { cdnUploadService } from "../utils/CDNUploadService";
+import type { AuthUser } from "../types/auth";
+import fs from "fs/promises";
+import path from "path";
 
-export const createCDNRoutes = (cdnUrl: string) => {
+export const createCDNRoutes = (
+  assetsDir: string,
+  cdnUrl: string,
+) => {
   return (
     new Elysia({ prefix: "/api/cdn", name: "cdn" })
-      .derive(() => ({ cdnUrl }))
+      .derive(() => ({ cdnUrl, assetsDir }))
       // Check CDN health
       .get(
         "/health",
@@ -207,6 +218,375 @@ export const createCDNRoutes = (cdnUrl: string) => {
             summary: "Webhook receiver for CDN uploads (Internal)",
             description:
               "Receives webhook notifications from CDN when files are uploaded. Automatically creates or updates asset database records. Requires webhook signature authentication. This is an internal endpoint called by the CDN server.",
+          },
+        },
+      )
+
+      // ==================== ASSET PUBLISHING ROUTES ====================
+      // These routes allow users to publish their assets to CDN
+
+      .use(requireAuthGuard)
+      // Publish a single asset to CDN
+      .post(
+        "/publish/:assetId",
+        async ({ params: { assetId }, user, cdnUrl, assetsDir }) => {
+          const authUser = user as AuthUser;
+
+          try {
+            // Get asset from database
+            const [asset] = await db
+              .select()
+              .from(assets)
+              .where(eq(assets.id, assetId))
+              .limit(1);
+
+            if (!asset) {
+              return {
+                success: false,
+                assetId,
+                error: "Asset not found",
+              };
+            }
+
+            // Check ownership (user owns asset OR user is admin)
+            if (asset.ownerId !== authUser.id && authUser.role !== "admin") {
+              return {
+                success: false,
+                assetId,
+                error: "Permission denied: You do not own this asset",
+              };
+            }
+
+            // Check if asset has filePath
+            if (!asset.filePath) {
+              return {
+                success: false,
+                assetId,
+                error: "Asset has no file path to publish",
+              };
+            }
+
+            // Read asset files from filesystem
+            const assetPath = path.join(assetsDir, asset.filePath);
+            const assetDir = path.dirname(assetPath);
+
+            try {
+              // Read directory contents
+              const files = await fs.readdir(assetDir);
+              const filesToUpload = [];
+
+              for (const fileName of files) {
+                const filePath = path.join(assetDir, fileName);
+                const stats = await fs.stat(filePath);
+
+                if (stats.isFile()) {
+                  const buffer = await fs.readFile(filePath);
+                  const ext = path.extname(fileName).toLowerCase();
+                  let mimeType = "application/octet-stream";
+
+                  // Determine MIME type
+                  if (ext === ".glb") {
+                    mimeType = "model/gltf-binary";
+                  } else if (ext === ".png") {
+                    mimeType = "image/png";
+                  } else if (ext === ".jpg" || ext === ".jpeg") {
+                    mimeType = "image/jpeg";
+                  } else if (ext === ".json") {
+                    mimeType = "application/json";
+                  }
+
+                  filesToUpload.push({
+                    buffer,
+                    fileName,
+                    mimeType,
+                  });
+                }
+              }
+
+              if (filesToUpload.length === 0) {
+                return {
+                  success: false,
+                  assetId,
+                  error: "No files found to upload",
+                };
+              }
+
+              // Upload to CDN
+              const uploadResult = await cdnUploadService.upload(
+                filesToUpload.map((f) => ({
+                  buffer: f.buffer,
+                  fileName: f.fileName,
+                  mimeType: f.mimeType,
+                })),
+                {
+                  assetId: asset.id,
+                  directory: "models",
+                  userId: authUser.id,
+                  metadata: {
+                    name: asset.name,
+                    type: asset.type,
+                    ownerId: asset.ownerId,
+                  },
+                },
+              );
+
+              // Update asset with CDN URLs
+              const primaryFile = uploadResult.files[0];
+              if (primaryFile) {
+                await db
+                  .update(assets)
+                  .set({
+                    cdnUrl: primaryFile.url,
+                    cdnFiles: uploadResult.files.map((f) => f.url),
+                    publishedAt: new Date(),
+                    updatedAt: new Date(),
+                  })
+                  .where(eq(assets.id, asset.id));
+              }
+
+              return {
+                success: true,
+                assetId: asset.id,
+                filesPublished: uploadResult.files.length,
+                cdnUrls: uploadResult.files.map((f) => f.url),
+              };
+            } catch (fsError) {
+              logger.error(
+                { err: fsError, assetId, assetPath },
+                "Failed to read asset files from filesystem",
+              );
+              return {
+                success: false,
+                assetId,
+                error:
+                  fsError instanceof Error
+                    ? fsError.message
+                    : "Failed to read asset files",
+              };
+            }
+          } catch (error) {
+            logger.error(
+              { err: error, assetId },
+              "Failed to publish asset to CDN",
+            );
+            return {
+              success: false,
+              assetId,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Unknown error occurred",
+            };
+          }
+        },
+        {
+          params: t.Object({
+            assetId: t.String(),
+          }),
+          detail: {
+            tags: ["CDN"],
+            summary: "Publish asset to CDN",
+            description:
+              "Publishes a single asset to CDN by reading files from local storage and uploading them. Requires authentication and ownership (or admin role).",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
+
+      // Batch publish multiple assets
+      .post(
+        "/publish-batch",
+        async ({ body, user, cdnUrl, assetsDir }) => {
+          const authUser = user as AuthUser;
+          const { assetIds } = body as { assetIds: string[] };
+
+          if (!Array.isArray(assetIds)) {
+            return {
+              success: false,
+              error: "assetIds must be an array",
+              published: 0,
+              failed: 0,
+              results: [],
+            };
+          }
+
+          if (assetIds.length === 0) {
+            return {
+              success: true,
+              published: 0,
+              failed: 0,
+              results: [],
+            };
+          }
+
+          const results = [];
+          let published = 0;
+          let failed = 0;
+
+          for (const assetId of assetIds) {
+            try {
+              // Get asset from database
+              const [asset] = await db
+                .select()
+                .from(assets)
+                .where(eq(assets.id, assetId))
+                .limit(1);
+
+              if (!asset) {
+                results.push({
+                  assetId,
+                  success: false,
+                  error: "Asset not found",
+                });
+                failed++;
+                continue;
+              }
+
+              // Check ownership (user owns asset OR user is admin)
+              if (
+                asset.ownerId !== authUser.id &&
+                authUser.role !== "admin"
+              ) {
+                results.push({
+                  assetId,
+                  success: false,
+                  error: "Permission denied",
+                });
+                failed++;
+                continue;
+              }
+
+              // Check if asset has filePath
+              if (!asset.filePath) {
+                results.push({
+                  assetId,
+                  success: false,
+                  error: "Asset has no file path",
+                });
+                failed++;
+                continue;
+              }
+
+              // Read and upload files (simplified - same logic as single publish)
+              const assetPath = path.join(assetsDir, asset.filePath);
+              const assetDir = path.dirname(assetPath);
+
+              try {
+                const files = await fs.readdir(assetDir);
+                const filesToUpload = [];
+
+                for (const fileName of files) {
+                  const filePath = path.join(assetDir, fileName);
+                  const stats = await fs.stat(filePath);
+
+                  if (stats.isFile()) {
+                    const buffer = await fs.readFile(filePath);
+                    const ext = path.extname(fileName).toLowerCase();
+                    let mimeType = "application/octet-stream";
+
+                    if (ext === ".glb") {
+                      mimeType = "model/gltf-binary";
+                    } else if (ext === ".png") {
+                      mimeType = "image/png";
+                    } else if (ext === ".jpg" || ext === ".jpeg") {
+                      mimeType = "image/jpeg";
+                    } else if (ext === ".json") {
+                      mimeType = "application/json";
+                    }
+
+                    filesToUpload.push({
+                      buffer,
+                      fileName,
+                      mimeType,
+                    });
+                  }
+                }
+
+                if (filesToUpload.length === 0) {
+                  results.push({
+                    assetId,
+                    success: false,
+                    error: "No files found",
+                  });
+                  failed++;
+                  continue;
+                }
+
+                // Upload to CDN
+                const uploadResult = await cdnUploadService.upload(
+                  filesToUpload.map((f) => ({
+                    buffer: f.buffer,
+                    fileName: f.fileName,
+                    mimeType: f.mimeType,
+                  })),
+                  {
+                    assetId: asset.id,
+                    directory: "models",
+                    userId: authUser.id,
+                  },
+                );
+
+                // Update asset with CDN URLs
+                const primaryFile = uploadResult.files[0];
+                if (primaryFile) {
+                  await db
+                    .update(assets)
+                    .set({
+                      cdnUrl: primaryFile.url,
+                      cdnFiles: uploadResult.files.map((f) => f.url),
+                      publishedAt: new Date(),
+                      updatedAt: new Date(),
+                    })
+                    .where(eq(assets.id, asset.id));
+                }
+
+                results.push({
+                  assetId,
+                  success: true,
+                  filesPublished: uploadResult.files.length,
+                });
+                published++;
+              } catch (fsError) {
+                results.push({
+                  assetId,
+                  success: false,
+                  error:
+                    fsError instanceof Error
+                      ? fsError.message
+                      : "Failed to read files",
+                });
+                failed++;
+              }
+            } catch (error) {
+              results.push({
+                assetId,
+                success: false,
+                error:
+                  error instanceof Error
+                    ? error.message
+                    : "Unknown error",
+              });
+              failed++;
+            }
+          }
+
+          return {
+            success: true,
+            published,
+            failed,
+            results,
+          };
+        },
+        {
+          body: t.Object({
+            assetIds: t.Array(t.String()),
+          }),
+          detail: {
+            tags: ["CDN"],
+            summary: "Batch publish assets to CDN",
+            description:
+              "Publishes multiple assets to CDN in a single request. Returns per-asset results. Requires authentication and ownership (or admin role).",
+            security: [{ BearerAuth: [] }],
           },
         },
       )
