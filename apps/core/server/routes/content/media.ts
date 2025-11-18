@@ -299,43 +299,28 @@ export const mediaRoutes = new Elysia()
       }
     },
     {
-      body: t.Union([
-        // Pattern 1: File upload via FormData
-        t.Object({
-          image: t.File({
+      body: t.Object({
+        // Optional file for Pattern 1 (multipart/form-data)
+        image: t.Optional(
+          t.File({
             type: "image/*",
             maxSize: "10m",
           }),
-          entityType: t.Union([
-            t.Literal("npc"),
-            t.Literal("quest"),
-            t.Literal("lore"),
-            t.Literal("location"),
-            t.Literal("world"),
-            t.Literal("dialogue"),
-          ]),
-          entityId: t.String({ minLength: 1, maxLength: 255 }),
-          type: t.Optional(
-            t.Union([t.Literal("portrait"), t.Literal("banner")]),
-          ),
-        }),
-        // Pattern 2: URL via JSON (for AI-generated images)
-        t.Object({
-          imageUrl: t.String({ minLength: 1, maxLength: 5000 }),
-          entityType: t.Union([
-            t.Literal("npc"),
-            t.Literal("quest"),
-            t.Literal("lore"),
-            t.Literal("location"),
-            t.Literal("world"),
-            t.Literal("dialogue"),
-          ]),
-          entityId: t.String({ minLength: 1, maxLength: 255 }),
-          type: t.Optional(
-            t.Union([t.Literal("portrait"), t.Literal("banner")]),
-          ),
-        }),
-      ]),
+        ),
+        // Optional URL for Pattern 2 (JSON)
+        imageUrl: t.Optional(t.String({ minLength: 1, maxLength: 5000 })),
+        // Required fields for both patterns
+        entityType: t.Union([
+          t.Literal("npc"),
+          t.Literal("quest"),
+          t.Literal("lore"),
+          t.Literal("location"),
+          t.Literal("world"),
+          t.Literal("dialogue"),
+        ]),
+        entityId: t.String({ minLength: 1, maxLength: 255 }),
+        type: t.Optional(t.Union([t.Literal("portrait"), t.Literal("banner")])),
+      }),
       detail: {
         tags: ["Media Assets"],
         summary: "Save portrait image",
