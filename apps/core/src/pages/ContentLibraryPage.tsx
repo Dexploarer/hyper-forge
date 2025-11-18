@@ -56,6 +56,7 @@ export const ContentLibraryPage: React.FC = () => {
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Filter content based on type and search
   const filteredContent = allContent.filter((item) => {
@@ -214,6 +215,7 @@ export const ContentLibraryPage: React.FC = () => {
                   onClick={() => setSelectedItem(item)}
                   onEdit={() => setEditingItem(item)}
                   onDelete={() => handleDelete(item)}
+                  refreshKey={refreshKey}
                 />
               </div>
             ))}
@@ -230,6 +232,7 @@ export const ContentLibraryPage: React.FC = () => {
                   onClick={() => setSelectedItem(item)}
                   onEdit={() => setEditingItem(item)}
                   onDelete={() => handleDelete(item)}
+                  refreshKey={refreshKey}
                 />
               </div>
             ))}
@@ -248,6 +251,10 @@ export const ContentLibraryPage: React.FC = () => {
             setSelectedItem(null);
           }}
           onDelete={() => handleDelete(selectedItem)}
+          onImageGenerated={() => {
+            // Increment refreshKey to trigger LibraryCard refresh
+            setRefreshKey((prev) => prev + 1);
+          }}
         />
       )}
 

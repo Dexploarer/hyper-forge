@@ -57,7 +57,7 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
   return (
     <>
       {/* Top-left controls - Model Actions */}
-      <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[calc(100%-8rem)] animate-fade-in">
+      <div className="absolute top-4 left-4 flex flex-wrap gap-2 animate-fade-in z-10 max-w-[calc(100%-12rem)] sm:max-w-none">
         {canRetexture && (
           <button
             onClick={() => setShowRetextureModal(true)}
@@ -100,7 +100,7 @@ const ViewerControls: React.FC<ViewerControlsProps> = ({
       </div>
 
       {/* Top-right controls - View Options */}
-      <div className="absolute top-4 right-4 flex gap-2 animate-fade-in">
+      <div className="absolute top-4 right-4 flex gap-2 animate-fade-in z-20">
         {/* Animation Toggle - Only for character assets with rigging */}
         {assetType === "character" && hasRigging && (
           <button

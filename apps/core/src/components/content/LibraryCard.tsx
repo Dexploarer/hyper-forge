@@ -50,6 +50,7 @@ interface LibraryCardProps {
   onEdit: () => void;
   onDelete: () => void;
   className?: string;
+  refreshKey?: number;
 }
 
 // Archetype-based color schemes for NPCs
@@ -148,6 +149,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
   onEdit,
   onDelete,
   className,
+  refreshKey,
 }) => {
   const [showActions, setShowActions] = useState(false);
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
@@ -166,14 +168,14 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     if (item.type === "npc") {
       fetchPortrait();
     }
-  }, [item.id, item.type]);
+  }, [item.id, item.type, refreshKey]);
 
   // Fetch banner for quest cards
   useEffect(() => {
     if (item.type === "quest") {
       fetchBanner();
     }
-  }, [item.id, item.type]);
+  }, [item.id, item.type, refreshKey]);
 
   const fetchPortrait = async () => {
     try {
@@ -674,17 +676,6 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleGeneratePortrait();
-                        }}
-                        disabled={isGeneratingPortrait || isSavingPortrait}
-                        className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors disabled:opacity-50"
-                        title="Regenerate Portrait"
-                      >
-                        <RefreshCw className="w-4 h-4 text-white" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
                           portraitInputRef.current?.click();
                         }}
                         disabled={isSavingPortrait}
@@ -708,35 +699,7 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
                   )}
                 </>
               ) : (
-                <>
-                  <User className="w-12 h-12 text-text-tertiary/50" />
-                  {/* Generate Portrait Button Overlay */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleGeneratePortrait();
-                    }}
-                    disabled={isGeneratingPortrait || isSavingPortrait}
-                    className={cn(
-                      "absolute inset-0 flex flex-col items-center justify-center gap-1",
-                      "bg-black/50 backdrop-blur-sm hover:bg-black/70 rounded-full transition-all",
-                      "disabled:opacity-50 disabled:cursor-not-allowed",
-                      "group-hover:bg-black/60",
-                    )}
-                    title="Generate Portrait"
-                  >
-                    {isGeneratingPortrait || isSavingPortrait ? (
-                      <LoadingSpinner size="md" className="text-white" />
-                    ) : (
-                      <>
-                        <SparklesIcon className="w-6 h-6 text-white" />
-                        <span className="text-xs text-white font-medium">
-                          Generate
-                        </span>
-                      </>
-                    )}
-                  </button>
-                </>
+                <User className="w-12 h-12 text-text-tertiary/50" />
               )}
             </div>
             {/* Hidden file input for portrait upload */}
@@ -920,20 +883,6 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleGenerateBanner();
-                    }}
-                    disabled={isGeneratingBanner || isSavingBanner}
-                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-1"
-                    title="Regenerate Banner"
-                  >
-                    <RefreshCw className="w-4 h-4 text-white" />
-                    <span className="text-xs text-white font-medium">
-                      Retry
-                    </span>
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
                       bannerInputRef.current?.click();
                     }}
                     disabled={isSavingBanner}
@@ -964,34 +913,6 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             </>
           ) : (
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHBhdGggZD0iTTAgMGgyMHYyMEgweiIgZmlsbD0ibm9uZSIvPjxwYXRoIGQ9Ik0xMCAwdjIwTTAgMTBoMjAiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9Ii4wNSIgc3Ryb2tlLXdpZHRoPSIuNSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNhKSIvPjwvc3ZnPg==')] opacity-50" />
-          )}
-          {/* Generate Banner Button Overlay */}
-          {!bannerUrl && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleGenerateBanner();
-              }}
-              disabled={isGeneratingBanner || isSavingBanner}
-              className={cn(
-                "absolute inset-0 flex flex-col items-center justify-center gap-1",
-                "bg-black/40 backdrop-blur-sm hover:bg-black/60 rounded-t-2xl transition-all",
-                "disabled:opacity-50 disabled:cursor-not-allowed",
-                "group-hover:bg-black/50",
-              )}
-              title="Generate Banner"
-            >
-              {isGeneratingBanner || isSavingBanner ? (
-                <LoadingSpinner size="md" className="text-white" />
-              ) : (
-                <>
-                  <SparklesIcon className="w-6 h-6 text-white" />
-                  <span className="text-xs text-white font-medium">
-                    Generate Banner
-                  </span>
-                </>
-              )}
-            </button>
           )}
           <div className="absolute top-2 right-2 z-10">
             <span

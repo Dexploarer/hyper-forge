@@ -289,27 +289,35 @@ const app = new Elysia()
         }
 
         // Check if request origin is allowed
-        if (!requestOrigin || typeof requestOrigin !== "string") {
-          // No origin header (e.g., same-origin request, Postman) or invalid type
+        // Handle cases where requestOrigin might be undefined, null, or non-string
+        if (!requestOrigin) {
+          // No origin header (e.g., same-origin request, Postman)
+          return true;
+        }
+
+        // Ensure requestOrigin is a string before using string methods
+        const originString = String(requestOrigin).trim();
+        if (!originString || originString.length === 0) {
           return true;
         }
 
         const isAllowed = allowedOrigins.some(
-          (allowed) =>
-            requestOrigin === allowed ||
-            requestOrigin.startsWith(allowed.replace(/\/$/, "")),
+          (allowed) => {
+            const allowedBase = String(allowed).replace(/\/$/, "");
+            return originString === allowed || originString.startsWith(allowedBase);
+          },
         );
 
         if (isAllowed) {
           logger.debug(
-            { origin: requestOrigin },
+            { origin: originString },
             "[CORS] Allowed origin",
           );
-          return requestOrigin;
+          return originString;
         }
 
         logger.warn(
-          { origin: requestOrigin, allowedOrigins },
+          { origin: originString, allowedOrigins },
           "[CORS] Blocked origin",
         );
         return false;

@@ -138,10 +138,12 @@ export const ProjectsPage: React.FC = () => {
           <div className="flex items-center justify-between gap-4">
             {/* Stats */}
             <div className="flex items-center gap-4">
-              <Badge variant="primary" className="px-3 py-1.5">
-                <Folder className="w-3 h-3 mr-1" />
-                {activeProjects.length} Active
-              </Badge>
+              {activeProjects.length > 0 && (
+                <Badge variant="primary" className="px-3 py-1.5">
+                  <Folder className="w-3 h-3 mr-1" />
+                  {activeProjects.length} Active
+                </Badge>
+              )}
               {archivedProjects.length > 0 && (
                 <Badge
                   variant="secondary"

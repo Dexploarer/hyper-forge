@@ -51,6 +51,7 @@ interface ContentDetailModalProps {
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onImageGenerated?: () => void;
 }
 
 export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
@@ -59,6 +60,7 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   onClose,
   onEdit,
   onDelete,
+  onImageGenerated,
 }) => {
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
   const [bannerUrl, setBannerUrl] = useState<string | null>(null);
@@ -202,8 +204,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         {
           npcName: npc.name,
           archetype: npc.archetype || "default",
-          appearance: npc.appearance?.description || "",
-          personality: npc.personality?.traits?.join(", ") || "",
+          appearance:
+            npc.appearance?.description || "Generic appearance for a character",
+          personality:
+            npc.personality?.traits?.join(", ") ||
+            "Neutral and balanced personality",
         },
       );
 
@@ -218,6 +223,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       setPortraitUrl(result.data!.imageUrl);
       notify.success("Portrait generated successfully!");
       await handleSavePortrait(result.data!.imageUrl);
+      // Notify parent to refresh library cards AFTER save completes
+      // Add small delay to ensure backend has processed everything
+      setTimeout(() => {
+        onImageGenerated?.();
+      }, 500);
     } catch (error) {
       console.error("Failed to generate portrait:", error);
       notify.error("Failed to generate portrait");
@@ -251,6 +261,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       setBannerUrl(result.data!.imageUrl);
       notify.success("Banner generated successfully!");
       await handleSaveBanner(result.data!.imageUrl);
+      // Notify parent to refresh library cards AFTER save completes
+      // Add small delay to ensure backend has processed everything
+      setTimeout(() => {
+        onImageGenerated?.();
+      }, 500);
     } catch (error) {
       console.error("Failed to generate banner:", error);
       notify.error("Failed to generate banner");
@@ -291,6 +306,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
         notify.success("Portrait saved successfully!");
         await fetchPortrait();
+        // Notify parent to refresh library cards after save completes
+        setTimeout(() => {
+          onImageGenerated?.();
+        }, 300);
       };
 
       reader.readAsDataURL(blob);
@@ -335,6 +354,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
         notify.success("Banner saved successfully!");
         await fetchBanner();
+        // Notify parent to refresh library cards after save completes
+        setTimeout(() => {
+          onImageGenerated?.();
+        }, 300);
       };
 
       reader.readAsDataURL(blob);
@@ -575,12 +598,12 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
               </>
             ) : (
               <div className="w-full h-full flex items-center justify-center relative">
-                <User className="w-16 h-16 text-text-tertiary/30" />
+                <User className="w-16 h-16 text-text-tertiary/30 relative z-0" />
                 {/* Generate Portrait Button */}
                 <button
                   onClick={handleGeneratePortrait}
                   disabled={isGeneratingPortrait || isSavingPortrait}
-                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-all disabled:opacity-50"
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 backdrop-blur-sm hover:bg-black/70 transition-all disabled:opacity-50 z-10 rounded-xl"
                   title="Generate Portrait"
                 >
                   {isGeneratingPortrait || isSavingPortrait ? (
@@ -864,12 +887,12 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
             </>
           ) : (
             <div className="relative w-full h-full flex items-center justify-center">
-              <ImageIcon className="w-16 h-16 text-text-tertiary/30" />
+              <ImageIcon className="w-16 h-16 text-text-tertiary/30 relative z-0" />
               {/* Generate Banner Button */}
               <button
                 onClick={handleGenerateBanner}
                 disabled={isGeneratingBanner || isSavingBanner}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 backdrop-blur-sm hover:bg-black/60 transition-all disabled:opacity-50"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/40 backdrop-blur-sm hover:bg-black/60 transition-all disabled:opacity-50 z-10 rounded-xl"
                 title="Generate Banner"
               >
                 {isGeneratingBanner || isSavingBanner ? (
