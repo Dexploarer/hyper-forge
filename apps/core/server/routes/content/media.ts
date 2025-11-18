@@ -203,46 +203,8 @@ export const mediaRoutes = new Elysia()
     "/media/save-portrait",
     async ({ body, user }) => {
       try {
-        // Accept either imageUrl (for generated images) or imageData (for uploads)
-        let imageData: Buffer;
-
-        if (body.imageUrl) {
-          // Check if it's a data URL (base64-encoded image)
-          if (body.imageUrl.startsWith("data:")) {
-            logger.info(
-              { imageUrlPrefix: body.imageUrl.substring(0, 50) + "..." },
-              "Extracting base64 data from data URL for portrait save",
-            );
-            // Data URL format: data:image/png;base64,<base64data>
-            // Extract the base64 portion after the comma
-            const base64Data = body.imageUrl.split(",")[1];
-            if (!base64Data) {
-              throw new Error("Invalid data URL format - missing base64 data");
-            }
-            imageData = Buffer.from(base64Data, "base64");
-          } else {
-            // HTTP/HTTPS URL - fetch from remote server
-            logger.info(
-              { imageUrl: body.imageUrl },
-              "Fetching image from HTTP URL for portrait save",
-            );
-            const response = await fetch(body.imageUrl);
-            if (!response.ok) {
-              throw new Error(
-                `Failed to fetch image from URL: ${response.statusText}`,
-              );
-            }
-            const arrayBuffer = await response.arrayBuffer();
-            imageData = Buffer.from(arrayBuffer);
-          }
-        } else if (body.imageData) {
-          // Use base64 image data directly
-          imageData = Buffer.from(body.imageData, "base64");
-        } else {
-          throw new InternalServerError(
-            "Either imageUrl or imageData must be provided",
-          );
-        }
+        // Use Elysia's File handling - proper way to receive images
+        const imageData = Buffer.from(await body.image.arrayBuffer());
 
         const mediaType = body.type || "portrait";
         const fileName = `${mediaType}_${Date.now()}.png`;
@@ -266,19 +228,16 @@ export const mediaRoutes = new Elysia()
           fileName,
           data: imageData,
           metadata: {
-            prompt: body.prompt,
-            model: body.model || "dall-e-3",
-            mimeType: "image/png",
+            mimeType: body.image.type,
+            size: body.image.size,
           },
           createdBy: user.id,
         });
 
-        // Media assets are linked via entityType/entityId - no relationship needed
-
         return {
           success: true,
           mediaId: result.id,
-          fileUrl: result.cdnUrl, // Match frontend expectation
+          fileUrl: result.cdnUrl,
         };
       } catch (error) {
         logger.error(
@@ -290,20 +249,6 @@ export const mediaRoutes = new Elysia()
           "Failed to save portrait",
         );
 
-        // Provide specific error messages
-        if (error instanceof Error) {
-          if (error.message.includes("CDN")) {
-            throw new InternalServerError(
-              "Failed to upload image to CDN. Please try again.",
-            );
-          }
-          if (error.message.includes("database")) {
-            throw new InternalServerError(
-              "Failed to save media record. Please try again.",
-            );
-          }
-        }
-
         throw new InternalServerError(
           "Failed to save portrait. Please try again.",
         );
@@ -311,6 +256,10 @@ export const mediaRoutes = new Elysia()
     },
     {
       body: t.Object({
+        image: t.File({
+          type: "image/*",
+          maxSize: "10m",
+        }),
         entityType: t.Union([
           t.Literal("npc"),
           t.Literal("quest"),
@@ -320,17 +269,13 @@ export const mediaRoutes = new Elysia()
           t.Literal("dialogue"),
         ]),
         entityId: t.String({ minLength: 1, maxLength: 255 }),
-        imageUrl: t.Optional(t.String({ minLength: 1, maxLength: 5000 })),
-        imageData: t.Optional(t.String({ minLength: 1 })),
         type: t.Optional(t.Union([t.Literal("portrait"), t.Literal("banner")])),
-        prompt: t.Optional(t.String({ maxLength: 2000 })),
-        model: t.Optional(t.String({ maxLength: 100 })),
       }),
       detail: {
         tags: ["Media Assets"],
         summary: "Save portrait image",
         description:
-          "Save a generated portrait image to persistent storage. Requires authentication.",
+          "Save image file using multipart/form-data upload. Requires authentication.",
         security: [{ BearerAuth: [] }],
       },
     },

@@ -276,19 +276,37 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     try {
       setIsSavingPortrait(true);
 
-      // Send URL directly to backend (no CORS issues server-side)
-      const result = await api.api.content.media["save-portrait"].post({
-        entityType: "npc",
-        entityId: item.id,
-        imageUrl: urlToSave,
+      // Convert URL/base64 to Blob for proper file upload
+      let blob: Blob;
+      if (urlToSave.startsWith("data:")) {
+        // Convert data URL to blob
+        const response = await fetch(urlToSave);
+        blob = await response.blob();
+      } else {
+        // Fetch from HTTP URL
+        const response = await fetch(urlToSave);
+        blob = await response.blob();
+      }
+
+      // Use FormData for file upload (Elysia best practice)
+      const formData = new FormData();
+      formData.append("image", blob, "portrait.png");
+      formData.append("entityType", "npc");
+      formData.append("entityId", item.id);
+      formData.append("type", "portrait");
+
+      // Send as multipart/form-data
+      const token = getAuthToken();
+      const response = await fetch("/api/content/media/save-portrait", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
       });
 
-      if (result.error) {
-        throw new Error(
-          result.error.value?.message ||
-            result.error.value?.summary ||
-            "Failed to save portrait",
-        );
+      if (!response.ok) {
+        throw new Error("Failed to save portrait");
       }
 
       notify.success("Portrait saved successfully!");
@@ -312,20 +330,37 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     try {
       setIsSavingBanner(true);
 
-      // Send URL directly to backend (no CORS issues server-side)
-      const result = await api.api.content.media["save-portrait"].post({
-        entityType: "quest",
-        entityId: item.id,
-        imageUrl: urlToSave,
-        type: "banner",
+      // Convert URL/base64 to Blob for proper file upload
+      let blob: Blob;
+      if (urlToSave.startsWith("data:")) {
+        // Convert data URL to blob
+        const response = await fetch(urlToSave);
+        blob = await response.blob();
+      } else {
+        // Fetch from HTTP URL
+        const response = await fetch(urlToSave);
+        blob = await response.blob();
+      }
+
+      // Use FormData for file upload (Elysia best practice)
+      const formData = new FormData();
+      formData.append("image", blob, "banner.png");
+      formData.append("entityType", "quest");
+      formData.append("entityId", item.id);
+      formData.append("type", "banner");
+
+      // Send as multipart/form-data
+      const token = getAuthToken();
+      const response = await fetch("/api/content/media/save-portrait", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
       });
 
-      if (result.error) {
-        throw new Error(
-          result.error.value?.message ||
-            result.error.value?.summary ||
-            "Failed to save banner",
-        );
+      if (!response.ok) {
+        throw new Error("Failed to save banner");
       }
 
       notify.success("Banner saved successfully!");
@@ -355,35 +390,34 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
     try {
       setIsSavingPortrait(true);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64data = reader.result as string;
-        const base64Image = base64data.split(",")[1];
 
-        const result = await api.api.content.media["save-portrait"].post({
-          entityType: "npc",
-          entityId: item.id,
-          imageData: base64Image,
-        });
+      // Use FormData for file upload
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("entityType", "npc");
+      formData.append("entityId", item.id);
+      formData.append("type", "portrait");
 
-        if (result.error) {
-          throw new Error(
-            result.error.value?.message ||
-              result.error.value?.summary ||
-              "Failed to upload portrait",
-          );
-        }
+      // Send as multipart/form-data
+      const token = getAuthToken();
+      const response = await fetch("/api/content/media/save-portrait", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
-        notify.success("Portrait uploaded successfully!");
-        await fetchPortrait();
-        // Notify parent to refresh library cards after upload completes
-        // Increased delay to ensure backend has fully processed and saved the media
-        setTimeout(() => {
-          onImageGenerated?.();
-        }, 1500); // 1.5 seconds to ensure backend processing is complete
-      };
+      if (!response.ok) {
+        throw new Error("Failed to upload portrait");
+      }
 
-      reader.readAsDataURL(file);
+      notify.success("Portrait uploaded successfully!");
+      await fetchPortrait();
+      // Notify parent to refresh library cards after upload completes
+      setTimeout(() => {
+        onImageGenerated?.();
+      }, 1500);
     } catch (error) {
       console.error("Failed to upload portrait:", error);
       notify.error("Failed to upload portrait");
@@ -406,36 +440,34 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
     try {
       setIsSavingBanner(true);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64data = reader.result as string;
-        const base64Image = base64data.split(",")[1];
 
-        const result = await api.api.content.media["save-portrait"].post({
-          entityType: "quest",
-          entityId: item.id,
-          imageData: base64Image,
-          type: "banner",
-        });
+      // Use FormData for file upload
+      const formData = new FormData();
+      formData.append("image", file);
+      formData.append("entityType", "quest");
+      formData.append("entityId", item.id);
+      formData.append("type", "banner");
 
-        if (result.error) {
-          throw new Error(
-            result.error.value?.message ||
-              result.error.value?.summary ||
-              "Failed to upload banner",
-          );
-        }
+      // Send as multipart/form-data
+      const token = getAuthToken();
+      const response = await fetch("/api/content/media/save-portrait", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
-        notify.success("Banner uploaded successfully!");
-        await fetchBanner();
-        // Notify parent to refresh library cards after upload completes
-        // Increased delay to ensure backend has fully processed and saved the media
-        setTimeout(() => {
-          onImageGenerated?.();
-        }, 1500); // 1.5 seconds to ensure backend processing is complete
-      };
+      if (!response.ok) {
+        throw new Error("Failed to upload banner");
+      }
 
-      reader.readAsDataURL(file);
+      notify.success("Banner uploaded successfully!");
+      await fetchBanner();
+      // Notify parent to refresh library cards after upload completes
+      setTimeout(() => {
+        onImageGenerated?.();
+      }, 1500);
     } catch (error) {
       console.error("Failed to upload banner:", error);
       notify.error("Failed to upload banner");
