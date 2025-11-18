@@ -32,6 +32,11 @@ import {
   Mic,
   Sparkles as SparklesIcon,
   Image as ImageIcon,
+  Play,
+  Pause,
+  Volume2,
+  Music,
+  Zap,
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/common";
 import { cn } from "@/styles";
@@ -73,6 +78,24 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
   const [showBannerControls, setShowBannerControls] = useState(false);
   const portraitInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  // Audio playback state
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [hasAudioError, setHasAudioError] = useState(false);
+
+  // Voice assignment state
+  const [assignedVoice, setAssignedVoice] = useState<any | null>(null);
+  const [availableVoices, setAvailableVoices] = useState<any[]>([]);
+  const [isLoadingVoices, setIsLoadingVoices] = useState(false);
+  const [isAssigningVoice, setIsAssigningVoice] = useState(false);
+  const [showVoicePicker, setShowVoicePicker] = useState(false);
+  const voicePreviewRef = useRef<HTMLAudioElement>(null);
+  const [previewingVoiceId, setPreviewingVoiceId] = useState<string | null>(
+    null,
+  );
 
   // Fetch portrait for NPC items
   useEffect(() => {
@@ -136,6 +159,24 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     };
   }, [open, item.id, item.type]);
 
+  // Fetch assigned voice for NPC items
+  useEffect(() => {
+    if (open && item.type === "npc") {
+      fetchAssignedVoice();
+    }
+  }, [open, item.id, item.type]);
+
+  // Clean up voice preview when modal closes
+  useEffect(() => {
+    return () => {
+      if (voicePreviewRef.current) {
+        voicePreviewRef.current.pause();
+        voicePreviewRef.current.src = "";
+      }
+      setPreviewingVoiceId(null);
+    };
+  }, [open]);
+
   const fetchPortrait = async () => {
     try {
       // Use authenticated fetch
@@ -198,6 +239,138 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     } catch (error) {
       console.error("Failed to fetch banner:", error);
       // Don't clear banner URL on error - preserve what we have
+    }
+  };
+
+  const fetchAssignedVoice = async () => {
+    if (item.type !== "npc") return;
+
+    try {
+      const token = getAuthToken();
+      const headers: HeadersInit = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(
+        `/api/content/media/${item.type}/${item.id}`,
+        { headers },
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const mediaAssets = data.media || (Array.isArray(data) ? data : []);
+        const voice = mediaAssets.find((asset: any) => asset.type === "voice");
+        setAssignedVoice(voice || null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch assigned voice:", error);
+    }
+  };
+
+  const fetchAvailableVoices = async () => {
+    try {
+      setIsLoadingVoices(true);
+      const token = getAuthToken();
+      const headers: HeadersInit = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/content/media?type=voice", {
+        headers,
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const voices = data.media || (Array.isArray(data) ? data : []);
+        setAvailableVoices(voices);
+      }
+    } catch (error) {
+      console.error("Failed to fetch available voices:", error);
+    } finally {
+      setIsLoadingVoices(false);
+    }
+  };
+
+  const handleAssignVoice = async (voiceId: string) => {
+    if (!item.id) return;
+
+    try {
+      setIsAssigningVoice(true);
+      const token = getAuthToken();
+
+      const response = await fetch("/api/content/media/assign-voice", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          voiceId,
+          npcId: item.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to assign voice");
+      }
+
+      notify.success("Voice assigned successfully!");
+      await fetchAssignedVoice();
+      setShowVoicePicker(false);
+    } catch (error) {
+      console.error("Failed to assign voice:", error);
+      notify.error("Failed to assign voice");
+    } finally {
+      setIsAssigningVoice(false);
+    }
+  };
+
+  const handleUnassignVoice = async () => {
+    if (!assignedVoice) return;
+
+    try {
+      setIsAssigningVoice(true);
+      const token = getAuthToken();
+
+      const response = await fetch("/api/content/media/unassign-voice", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          voiceId: assignedVoice.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to unassign voice");
+      }
+
+      notify.success("Voice unassigned successfully!");
+      setAssignedVoice(null);
+    } catch (error) {
+      console.error("Failed to unassign voice:", error);
+      notify.error("Failed to unassign voice");
+    } finally {
+      setIsAssigningVoice(false);
+    }
+  };
+
+  const handlePreviewVoice = (voice: any) => {
+    const audio = voicePreviewRef.current;
+    if (!audio) return;
+
+    if (previewingVoiceId === voice.id) {
+      // Stop preview
+      audio.pause();
+      audio.currentTime = 0;
+      setPreviewingVoiceId(null);
+    } else {
+      // Start preview
+      audio.src = voice.cdnUrl || voice.fileUrl;
+      audio.play();
+      setPreviewingVoiceId(voice.id);
     }
   };
 
@@ -780,6 +953,159 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
             )}
           </div>
         </div>
+
+        {/* Voice */}
+        <div className="bg-bg-tertiary/50 rounded-xl p-5 border border-border-primary">
+          <h3 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
+            <Mic className="w-5 h-5 text-cyan-400" />
+            Voice
+          </h3>
+          <div className="space-y-4">
+            {assignedVoice ? (
+              <div className="bg-bg-secondary rounded-lg p-4 border border-border-primary">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <Mic className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-text-primary">
+                        {assignedVoice.fileName || "Voice File"}
+                      </div>
+                      {assignedVoice.metadata?.voiceName && (
+                        <div className="text-xs text-text-tertiary">
+                          {assignedVoice.metadata.voiceName}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePreviewVoice(assignedVoice)}
+                      className="p-2 bg-cyan-500/20 hover:bg-cyan-500/30 rounded-lg transition-colors"
+                      title="Preview Voice"
+                    >
+                      {previewingVoiceId === assignedVoice.id ? (
+                        <Pause className="w-4 h-4 text-cyan-400" />
+                      ) : (
+                        <Play className="w-4 h-4 text-cyan-400" />
+                      )}
+                    </button>
+                    <button
+                      onClick={handleUnassignVoice}
+                      disabled={isAssigningVoice}
+                      className="px-3 py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-xs text-red-400 font-medium transition-colors disabled:opacity-50"
+                      title="Remove Voice"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Mic className="w-12 h-12 text-text-tertiary/30 mx-auto mb-3" />
+                <p className="text-text-tertiary text-sm mb-4">
+                  No voice assigned to this NPC
+                </p>
+                <button
+                  onClick={() => {
+                    setShowVoicePicker(true);
+                    fetchAvailableVoices();
+                  }}
+                  className="px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 rounded-lg text-cyan-400 font-medium transition-colors"
+                >
+                  Assign Voice
+                </button>
+              </div>
+            )}
+
+            {/* Voice Picker Modal */}
+            {showVoicePicker && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-modal flex items-center justify-center p-4">
+                <div className="bg-bg-primary border border-border-primary rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-6 border-b border-border-primary">
+                    <h4 className="text-xl font-bold text-text-primary flex items-center gap-2">
+                      <Mic className="w-6 h-6 text-cyan-400" />
+                      Select Voice
+                    </h4>
+                    <button
+                      onClick={() => setShowVoicePicker(false)}
+                      className="p-2 hover:bg-bg-tertiary rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5 text-text-tertiary" />
+                    </button>
+                  </div>
+
+                  {/* Voice List */}
+                  <div className="p-6 overflow-y-auto max-h-[60vh]">
+                    {isLoadingVoices ? (
+                      <div className="flex items-center justify-center py-12">
+                        <LoadingSpinner size="lg" />
+                      </div>
+                    ) : availableVoices.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Mic className="w-16 h-16 text-text-tertiary/30 mx-auto mb-4" />
+                        <p className="text-text-tertiary">
+                          No voice files available in library
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {availableVoices.map((voice) => (
+                          <div
+                            key={voice.id}
+                            className="flex items-center justify-between p-4 bg-bg-secondary hover:bg-bg-tertiary rounded-lg border border-border-primary transition-colors"
+                          >
+                            <div className="flex items-center gap-3 flex-1">
+                              <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                                <Mic className="w-5 h-5 text-cyan-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-text-primary truncate">
+                                  {voice.fileName || "Voice File"}
+                                </div>
+                                {voice.metadata?.voiceName && (
+                                  <div className="text-xs text-text-tertiary truncate">
+                                    {voice.metadata.voiceName}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handlePreviewVoice(voice)}
+                                className="p-2 bg-cyan-500/20 hover:bg-cyan-500/30 rounded-lg transition-colors"
+                                title="Preview"
+                              >
+                                {previewingVoiceId === voice.id ? (
+                                  <Pause className="w-4 h-4 text-cyan-400" />
+                                ) : (
+                                  <Play className="w-4 h-4 text-cyan-400" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleAssignVoice(voice.id)}
+                                disabled={isAssigningVoice}
+                                className="px-4 py-2 bg-primary/20 hover:bg-primary/30 border border-primary/30 rounded-lg text-primary font-medium text-sm transition-colors disabled:opacity-50"
+                              >
+                                {isAssigningVoice ? "Assigning..." : "Assign"}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Hidden audio element for voice preview */}
+        <audio ref={voicePreviewRef} />
       </div>
     );
   };
@@ -1166,6 +1492,306 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     );
   };
 
+  const renderAudioDetails = () => {
+    const audioFile = item.data as any; // Audio file data structure
+
+    // Audio type color schemes
+    const AUDIO_TYPE_COLORS = {
+      music: {
+        from: "from-purple-500/20",
+        to: "to-violet-500/20",
+        accent: "text-purple-400",
+        border: "border-purple-500/30",
+        icon: Music,
+      },
+      voice: {
+        from: "from-blue-500/20",
+        to: "to-cyan-500/20",
+        accent: "text-blue-400",
+        border: "border-blue-500/30",
+        icon: Mic,
+      },
+      sound_effect: {
+        from: "from-green-500/20",
+        to: "to-emerald-500/20",
+        accent: "text-green-400",
+        border: "border-green-500/30",
+        icon: Zap,
+      },
+      default: {
+        from: "from-primary/20",
+        to: "to-accent/20",
+        accent: "text-primary",
+        border: "border-primary/30",
+        icon: Volume2,
+      },
+    };
+
+    const colors =
+      AUDIO_TYPE_COLORS[audioFile.type as keyof typeof AUDIO_TYPE_COLORS] ||
+      AUDIO_TYPE_COLORS.default;
+    const Icon = colors.icon;
+
+    const audioUrl = audioFile.cdnUrl || audioFile.fileUrl || null;
+
+    // Audio event handlers
+    useEffect(() => {
+      const audioEl = audioRef.current;
+      if (!audioEl || !audioUrl) return;
+
+      const updateTime = () => setCurrentTime(audioEl.currentTime);
+      const updateDuration = () => setDuration(audioEl.duration);
+      const handleEnded = () => setIsPlaying(false);
+      const handleError = () => {
+        setHasAudioError(true);
+        setIsPlaying(false);
+      };
+
+      audioEl.addEventListener("timeupdate", updateTime);
+      audioEl.addEventListener("loadedmetadata", updateDuration);
+      audioEl.addEventListener("ended", handleEnded);
+      audioEl.addEventListener("error", handleError);
+
+      return () => {
+        audioEl.removeEventListener("timeupdate", updateTime);
+        audioEl.removeEventListener("loadedmetadata", updateDuration);
+        audioEl.removeEventListener("ended", handleEnded);
+        audioEl.removeEventListener("error", handleError);
+      };
+    }, [audioUrl]);
+
+    const togglePlayPause = async () => {
+      if (!audioRef.current) return;
+
+      try {
+        if (isPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+        } else {
+          await audioRef.current.play();
+          setIsPlaying(true);
+        }
+      } catch (error) {
+        console.error("Audio playback error:", error);
+        setHasAudioError(true);
+        setIsPlaying(false);
+      }
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newTime = parseFloat(e.target.value);
+      setCurrentTime(newTime);
+      if (audioRef.current) {
+        audioRef.current.currentTime = newTime;
+      }
+    };
+
+    const formatTime = (seconds: number) => {
+      if (!seconds || isNaN(seconds)) return "0:00";
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs.toString().padStart(2, "0")}`;
+    };
+
+    const handleDownload = () => {
+      if (!audioUrl) return;
+      const link = document.createElement("a");
+      link.href = audioUrl;
+      link.download = audioFile.fileName || `audio_${audioFile.id}.mp3`;
+      link.click();
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Header with Audio Waveform Visual */}
+        <div
+          className={cn(
+            "relative h-48 rounded-xl overflow-hidden border-2 shadow-xl bg-gradient-to-r",
+            colors.from,
+            colors.to,
+            colors.border,
+          )}
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-transparent via-black/5 to-black/10" />
+          {/* Decorative waveform pattern */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex items-end gap-2 h-32">
+              {Array.from({ length: 40 }).map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "w-2 bg-white/70 rounded-t transition-all",
+                    colors.accent,
+                  )}
+                  style={{
+                    height: `${Math.sin(i * 0.3) * 40 + 50}%`,
+                    opacity:
+                      isPlaying && i / 40 < currentTime / duration ? 1 : 0.3,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+          {/* Type Badge */}
+          <div className="absolute top-4 right-4 z-10">
+            <span className="px-4 py-2 bg-black/40 backdrop-blur-sm rounded-full text-sm font-semibold text-white capitalize flex items-center gap-2">
+              <Icon className="w-4 h-4" />
+              {audioFile.type.replace("_", " ")}
+            </span>
+          </div>
+          {/* Large Play/Pause Button */}
+          <div className="absolute inset-0 flex items-center justify-center z-20">
+            <button
+              onClick={togglePlayPause}
+              disabled={!audioUrl}
+              className={cn(
+                "w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-2xl",
+                "bg-black/40 backdrop-blur-md hover:bg-black/60 hover:scale-110",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+              )}
+            >
+              {isPlaying ? (
+                <Pause className="w-10 h-10 text-white" />
+              ) : (
+                <Play className="w-10 h-10 text-white ml-1" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Title & Info */}
+        <div>
+          <h2 className="text-3xl font-bold text-text-primary mb-3 flex items-center gap-3">
+            <Volume2 className={cn("w-8 h-8", colors.accent)} />
+            {item.name}
+          </h2>
+          {audioFile.fileName && (
+            <p className="text-text-tertiary text-sm">
+              File: {audioFile.fileName}
+            </p>
+          )}
+        </div>
+
+        {/* Audio Controls */}
+        <div className="bg-bg-tertiary/50 rounded-xl p-6 border border-border-primary">
+          <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
+            <Volume2 className={cn("w-5 h-5", colors.accent)} />
+            Playback Controls
+          </h3>
+          <div className="space-y-4">
+            {/* Progress Bar */}
+            <div className="space-y-2">
+              <input
+                type="range"
+                min="0"
+                max={duration || 0}
+                value={currentTime}
+                onChange={handleSeek}
+                disabled={!audioUrl}
+                className="w-full h-2 rounded-full bg-bg-primary appearance-none cursor-pointer disabled:cursor-not-allowed [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
+              />
+              <div className="flex justify-between text-sm text-text-tertiary">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Controls Row */}
+            <div className="flex items-center justify-between">
+              <button
+                onClick={togglePlayPause}
+                disabled={!audioUrl}
+                className={cn(
+                  "px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-colors font-medium",
+                  "bg-primary/20 hover:bg-primary/30 disabled:opacity-50 disabled:cursor-not-allowed",
+                  colors.accent,
+                )}
+              >
+                {isPlaying ? (
+                  <>
+                    <Pause className="w-5 h-5" />
+                    <span>Pause</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-5 h-5" />
+                    <span>Play</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={handleDownload}
+                disabled={!audioUrl}
+                className="px-6 py-3 rounded-xl flex items-center gap-2 bg-bg-secondary hover:bg-bg-tertiary transition-colors disabled:opacity-50 disabled:cursor-not-allowed border border-border-primary"
+                title="Download"
+              >
+                <Download className="w-5 h-5 text-text-tertiary" />
+                <span className="text-text-primary font-medium">Download</span>
+              </button>
+            </div>
+
+            {!audioUrl && (
+              <p className="text-amber-400 text-sm text-center">
+                File not available in CDN
+              </p>
+            )}
+            {hasAudioError && audioUrl && (
+              <p className="text-red-400 text-sm text-center">
+                Failed to load audio file
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Metadata */}
+        {audioFile.metadata && Object.keys(audioFile.metadata).length > 0 && (
+          <div className="bg-bg-tertiary/50 rounded-xl p-6 border border-border-primary">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">
+              Metadata
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              {audioFile.metadata.duration && (
+                <div>
+                  <label className="text-xs font-medium text-text-tertiary uppercase tracking-wide flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Duration
+                  </label>
+                  <div className="text-text-primary mt-1">
+                    {formatTime(audioFile.metadata.duration)}
+                  </div>
+                </div>
+              )}
+              {audioFile.metadata.voiceName && (
+                <div>
+                  <label className="text-xs font-medium text-text-tertiary uppercase tracking-wide">
+                    Voice
+                  </label>
+                  <div className="text-text-primary mt-1">
+                    {audioFile.metadata.voiceName}
+                  </div>
+                </div>
+              )}
+              {audioFile.metadata.prompt && (
+                <div className="col-span-2">
+                  <label className="text-xs font-medium text-text-tertiary uppercase tracking-wide">
+                    Generation Prompt
+                  </label>
+                  <p className="text-text-secondary mt-1 italic leading-relaxed">
+                    "{audioFile.metadata.prompt}"
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Hidden Audio Element */}
+        {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
+      </div>
+    );
+  };
+
   const renderLoreDetails = () => {
     const lore = item.data as LoreData;
 
@@ -1257,6 +1883,8 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         return renderDialogueDetails();
       case "lore":
         return renderLoreDetails();
+      case "audio":
+        return renderAudioDetails();
       default:
         return null;
     }

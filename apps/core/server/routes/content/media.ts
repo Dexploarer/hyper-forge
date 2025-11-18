@@ -547,6 +547,60 @@ export const mediaRoutes = new Elysia()
     },
   )
 
+  // GET /api/content/media?type=voice (fetch all media by type)
+  .get(
+    "/media",
+    async ({ query, user }) => {
+      try {
+        if (!query.type) {
+          throw new InternalServerError("type query parameter is required");
+        }
+
+        logger.info(
+          {
+            context: "MediaFetch",
+            type: query.type,
+            userId: user.id,
+          },
+          "Fetching media by type",
+        );
+
+        const media = await mediaStorageService.getMediaByType(query.type, {
+          createdBy: user.id,
+        });
+
+        // Transform cdnUrl to fileUrl for frontend compatibility
+        const transformedMedia = media.map((asset) => ({
+          ...asset,
+          fileUrl: asset.cdnUrl, // Add fileUrl field
+        }));
+
+        return { success: true, media: transformedMedia };
+      } catch (error) {
+        logger.error(
+          {
+            err: error,
+            type: query.type,
+          },
+          "Failed to fetch media by type",
+        );
+        throw new InternalServerError("Failed to retrieve media assets");
+      }
+    },
+    {
+      query: t.Object({
+        type: t.String({ minLength: 1, maxLength: 50 }),
+      }),
+      detail: {
+        tags: ["Media Assets"],
+        summary: "Get media by type",
+        description:
+          "Retrieve all media assets of a specific type (voice, music, etc). Requires authentication.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
+  )
+
   // GET /api/content/media/:entityType/:entityId
   .get(
     "/media/:entityType/:entityId",
@@ -586,6 +640,136 @@ export const mediaRoutes = new Elysia()
         summary: "Get entity media",
         description:
           "Retrieve all media assets for an entity. Requires authentication.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
+  )
+
+  // POST /api/content/media/assign-voice
+  .post(
+    "/media/assign-voice",
+    async ({ body, user }) => {
+      try {
+        logger.info(
+          {
+            context: "VoiceAssignment",
+            voiceId: body.voiceId,
+            npcId: body.npcId,
+          },
+          "Assigning voice to NPC",
+        );
+
+        const result = await mediaStorageService.assignVoiceToEntity(
+          body.voiceId,
+          "npc",
+          body.npcId,
+        );
+
+        logger.info(
+          {
+            context: "VoiceAssignment",
+            voiceId: body.voiceId,
+            npcId: body.npcId,
+          },
+          "Voice assigned successfully",
+        );
+
+        return {
+          success: true,
+          mediaId: result.id,
+          message: "Voice assigned to NPC successfully",
+        };
+      } catch (error) {
+        logger.error(
+          {
+            err: error,
+            voiceId: body.voiceId,
+            npcId: body.npcId,
+          },
+          "Failed to assign voice to NPC",
+        );
+
+        throw new InternalServerError(
+          `Failed to assign voice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
+    },
+    {
+      body: t.Object({
+        voiceId: t.String({ minLength: 1, maxLength: 255 }),
+        npcId: t.String({ minLength: 1, maxLength: 255 }),
+      }),
+      response: t.Object({
+        success: t.Boolean(),
+        mediaId: t.String(),
+        message: t.String(),
+      }),
+      detail: {
+        tags: ["Media Assets"],
+        summary: "Assign voice to NPC",
+        description:
+          "Link an existing voice file from the audio library to an NPC character. Requires authentication.",
+        security: [{ BearerAuth: [] }],
+      },
+    },
+  )
+
+  // POST /api/content/media/unassign-voice
+  .post(
+    "/media/unassign-voice",
+    async ({ body, user }) => {
+      try {
+        logger.info(
+          {
+            context: "VoiceAssignment",
+            voiceId: body.voiceId,
+          },
+          "Unassigning voice from entity",
+        );
+
+        const result = await mediaStorageService.unassignVoice(body.voiceId);
+
+        logger.info(
+          {
+            context: "VoiceAssignment",
+            voiceId: body.voiceId,
+          },
+          "Voice unassigned successfully",
+        );
+
+        return {
+          success: true,
+          mediaId: result.id,
+          message: "Voice unassigned successfully",
+        };
+      } catch (error) {
+        logger.error(
+          {
+            err: error,
+            voiceId: body.voiceId,
+          },
+          "Failed to unassign voice",
+        );
+
+        throw new InternalServerError(
+          `Failed to unassign voice: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
+    },
+    {
+      body: t.Object({
+        voiceId: t.String({ minLength: 1, maxLength: 255 }),
+      }),
+      response: t.Object({
+        success: t.Boolean(),
+        mediaId: t.String(),
+        message: t.String(),
+      }),
+      detail: {
+        tags: ["Media Assets"],
+        summary: "Unassign voice from entity",
+        description:
+          "Remove voice assignment from an entity. Voice file remains in library. Requires authentication.",
         security: [{ BearerAuth: [] }],
       },
     },

@@ -408,6 +408,102 @@ export class MediaStorageService {
   }
 
   /**
+   * Assign voice file to an entity (NPC, quest, etc.)
+   * Updates the entityType and entityId fields to link the voice to the entity
+   */
+  async assignVoiceToEntity(
+    voiceId: string,
+    entityType: string,
+    entityId: string,
+  ): Promise<typeof mediaAssets.$inferSelect> {
+    // Verify the media asset exists and is a voice file
+    const [existing] = await db
+      .select()
+      .from(mediaAssets)
+      .where(eq(mediaAssets.id, voiceId))
+      .limit(1);
+
+    if (!existing) {
+      throw new Error(`Voice file not found: ${voiceId}`);
+    }
+
+    if (existing.type !== "voice") {
+      throw new Error(
+        `Media asset ${voiceId} is type '${existing.type}', not 'voice'`,
+      );
+    }
+
+    // Update the entity assignment
+    const [updated] = await db
+      .update(mediaAssets)
+      .set({
+        entityType,
+        entityId,
+        updatedAt: new Date(),
+      })
+      .where(eq(mediaAssets.id, voiceId))
+      .returning();
+
+    logger.info(
+      {
+        context: "VoiceAssignment",
+        voiceId,
+        entityType,
+        entityId,
+      },
+      `Assigned voice to ${entityType}:${entityId}`,
+    );
+
+    return updated;
+  }
+
+  /**
+   * Unassign voice file from its current entity
+   * Clears the entityType and entityId fields
+   */
+  async unassignVoice(
+    voiceId: string,
+  ): Promise<typeof mediaAssets.$inferSelect> {
+    // Verify the media asset exists and is a voice file
+    const [existing] = await db
+      .select()
+      .from(mediaAssets)
+      .where(eq(mediaAssets.id, voiceId))
+      .limit(1);
+
+    if (!existing) {
+      throw new Error(`Voice file not found: ${voiceId}`);
+    }
+
+    if (existing.type !== "voice") {
+      throw new Error(
+        `Media asset ${voiceId} is type '${existing.type}', not 'voice'`,
+      );
+    }
+
+    // Clear the entity assignment
+    const [updated] = await db
+      .update(mediaAssets)
+      .set({
+        entityType: null,
+        entityId: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(mediaAssets.id, voiceId))
+      .returning();
+
+    logger.info(
+      {
+        context: "VoiceAssignment",
+        voiceId,
+      },
+      `Unassigned voice from entity`,
+    );
+
+    return updated;
+  }
+
+  /**
    * Verify CDN health
    * Checks if CDN is reachable
    */
