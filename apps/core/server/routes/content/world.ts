@@ -54,7 +54,6 @@ export const worldRoutes = new Elysia()
     },
     {
       body: Models.GenerateWorldRequest,
-      response: Models.GenerateWorldResponse,
       detail: {
         tags: ["Content Generation"],
         summary: "Generate complete game world",

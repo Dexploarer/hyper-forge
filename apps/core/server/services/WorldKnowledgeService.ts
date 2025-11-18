@@ -51,14 +51,14 @@ interface LocationData {
   [key: string]: unknown;
 }
 
-interface EntityRelationshipData {
+export interface EntityRelationshipData {
   sourceId: string;
   targetId: string;
   relationshipType: string;
   strength: string | null;
 }
 
-interface RelationshipConnection {
+export interface RelationshipConnection {
   relationship: string;
   strength: string;
   depth: number;
@@ -71,7 +71,7 @@ interface RelationshipConnection {
   };
 }
 
-interface ConsistencyIssue {
+export interface ConsistencyIssue {
   id: string;
   severity: "error" | "warning" | "info";
   type: string;

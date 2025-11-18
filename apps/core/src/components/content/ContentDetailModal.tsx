@@ -144,10 +144,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       const response = await fetch(
         `/api/content/media/${item.type}/${item.id}`,
-        { headers }
+        { headers },
       );
       if (response.ok) {
         const data = await response.json();
@@ -159,18 +159,13 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         if (portrait) {
           // Standardized field access: prefer fileUrl, fallback to cdnUrl
           setPortraitUrl(portrait.fileUrl || portrait.cdnUrl);
-        } else {
-          // Clear portrait URL if not found (so UI shows generate button)
-          setPortraitUrl(null);
         }
-      } else {
-        // Clear portrait URL on error
-        setPortraitUrl(null);
+        // Don't clear URL if not found - preserve what we have
       }
+      // Don't clear portrait URL on error - preserve what we have
     } catch (error) {
       console.error("Failed to fetch portrait:", error);
-      // Clear portrait URL on error
-      setPortraitUrl(null);
+      // Don't clear portrait URL on error - preserve what we have
     }
   };
 
@@ -182,10 +177,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       const response = await fetch(
         `/api/content/media/${item.type}/${item.id}`,
-        { headers }
+        { headers },
       );
       if (response.ok) {
         const data = await response.json();
@@ -196,18 +191,13 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         if (banner) {
           // Standardized field access: prefer fileUrl, fallback to cdnUrl
           setBannerUrl(banner.fileUrl || banner.cdnUrl);
-        } else {
-          // Clear banner URL if not found (so UI shows generate button)
-          setBannerUrl(null);
         }
-      } else {
-        // Clear banner URL on error
-        setBannerUrl(null);
+        // Don't clear URL if not found - preserve what we have
       }
+      // Don't clear banner URL on error - preserve what we have
     } catch (error) {
       console.error("Failed to fetch banner:", error);
-      // Clear banner URL on error
-      setBannerUrl(null);
+      // Don't clear banner URL on error - preserve what we have
     }
   };
 
@@ -217,17 +207,15 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
     try {
       setIsGeneratingPortrait(true);
-      const result = await api.api.content["generate-npc-portrait"].post(
-        {
-          npcName: npc.name,
-          archetype: npc.archetype || "default",
-          appearance:
-            npc.appearance?.description || "Generic appearance for a character",
-          personality:
-            npc.personality?.traits?.join(", ") ||
-            "Neutral and balanced personality",
-        },
-      );
+      const result = await api.api.content["generate-npc-portrait"].post({
+        npcName: npc.name,
+        archetype: npc.archetype || "default",
+        appearance:
+          npc.appearance?.description || "Generic appearance for a character",
+        personality:
+          npc.personality?.traits?.join(", ") ||
+          "Neutral and balanced personality",
+      });
 
       if (result.error) {
         throw new Error(
@@ -238,13 +226,9 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       }
 
       setPortraitUrl(result.data!.imageUrl);
-      notify.success("Portrait generated successfully!");
+      notify.success("Portrait generated! Saving...");
+      // Auto-save after generation
       await handleSavePortrait(result.data!.imageUrl);
-      // Notify parent to refresh library cards AFTER save completes
-      // Increased delay to ensure backend has fully processed and saved the media
-      setTimeout(() => {
-        onImageGenerated?.();
-      }, 2000); // 2 seconds to ensure backend processing is complete
     } catch (error) {
       console.error("Failed to generate portrait:", error);
       notify.error("Failed to generate portrait");
@@ -260,12 +244,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     try {
       setIsGeneratingBanner(true);
       // Generate banner with only visual requirements - no game metadata
-      const result = await api.api.content["generate-quest-banner"].post(
-        {
-          questTitle: quest.title,
-          description: quest.description || "",
-        },
-      );
+      const result = await api.api.content["generate-quest-banner"].post({
+        questTitle: quest.title,
+        description: quest.description || "",
+      });
 
       if (result.error) {
         throw new Error(
@@ -276,13 +258,9 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       }
 
       setBannerUrl(result.data!.imageUrl);
-      notify.success("Banner generated successfully!");
+      notify.success("Banner generated! Saving...");
+      // Auto-save after generation
       await handleSaveBanner(result.data!.imageUrl);
-      // Notify parent to refresh library cards AFTER save completes
-      // Increased delay to ensure backend has fully processed and saved the media
-      setTimeout(() => {
-        onImageGenerated?.();
-      }, 2000); // 2 seconds to ensure backend processing is complete
     } catch (error) {
       console.error("Failed to generate banner:", error);
       notify.error("Failed to generate banner");
@@ -297,40 +275,28 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
     try {
       setIsSavingPortrait(true);
-      const response = await fetch(urlToSave);
-      const blob = await response.blob();
-      const reader = new FileReader();
 
-      reader.onloadend = async () => {
-        const base64data = reader.result as string;
-        const base64Image = base64data.split(",")[1];
+      // Send URL directly to backend (no CORS issues server-side)
+      const result = await api.api.content.media["save-portrait"].post({
+        entityType: "npc",
+        entityId: item.id,
+        imageUrl: urlToSave,
+      });
 
-        const result = await api.api.content.media["save-portrait"].post(
-          {
-            entityType: "npc",
-            entityId: item.id,
-            imageData: base64Image,
-          },
+      if (result.error) {
+        throw new Error(
+          result.error.value?.message ||
+            result.error.value?.summary ||
+            "Failed to save portrait",
         );
+      }
 
-        if (result.error) {
-          throw new Error(
-            result.error.value?.message ||
-              result.error.value?.summary ||
-              "Failed to save portrait",
-          );
-        }
-
-        notify.success("Portrait saved successfully!");
-        await fetchPortrait();
-        // Notify parent to refresh library cards after save completes
-        // Increased delay to ensure backend has fully processed and saved the media
-        setTimeout(() => {
-          onImageGenerated?.();
-        }, 1500); // 1.5 seconds to ensure backend processing is complete
-      };
-
-      reader.readAsDataURL(blob);
+      notify.success("Portrait saved successfully!");
+      await fetchPortrait();
+      // Notify parent to refresh library cards after save completes
+      setTimeout(() => {
+        onImageGenerated?.();
+      }, 1500);
     } catch (error) {
       console.error("Failed to save portrait:", error);
       notify.error("Failed to save portrait");
@@ -345,41 +311,29 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
     try {
       setIsSavingBanner(true);
-      const response = await fetch(urlToSave);
-      const blob = await response.blob();
-      const reader = new FileReader();
 
-      reader.onloadend = async () => {
-        const base64data = reader.result as string;
-        const base64Image = base64data.split(",")[1];
+      // Send URL directly to backend (no CORS issues server-side)
+      const result = await api.api.content.media["save-portrait"].post({
+        entityType: "quest",
+        entityId: item.id,
+        imageUrl: urlToSave,
+        type: "banner",
+      });
 
-        const result = await api.api.content.media["save-portrait"].post(
-          {
-            entityType: "quest",
-            entityId: item.id,
-            imageData: base64Image,
-            type: "banner",
-          },
+      if (result.error) {
+        throw new Error(
+          result.error.value?.message ||
+            result.error.value?.summary ||
+            "Failed to save banner",
         );
+      }
 
-        if (result.error) {
-          throw new Error(
-            result.error.value?.message ||
-              result.error.value?.summary ||
-              "Failed to save banner",
-          );
-        }
-
-        notify.success("Banner saved successfully!");
-        await fetchBanner();
-        // Notify parent to refresh library cards after save completes
-        // Increased delay to ensure backend has fully processed and saved the media
-        setTimeout(() => {
-          onImageGenerated?.();
-        }, 1500); // 1.5 seconds to ensure backend processing is complete
-      };
-
-      reader.readAsDataURL(blob);
+      notify.success("Banner saved successfully!");
+      await fetchBanner();
+      // Notify parent to refresh library cards after save completes
+      setTimeout(() => {
+        onImageGenerated?.();
+      }, 1500);
     } catch (error) {
       console.error("Failed to save banner:", error);
       notify.error("Failed to save banner");
@@ -406,13 +360,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1];
 
-        const result = await api.api.content.media["save-portrait"].post(
-          {
-            entityType: "npc",
-            entityId: item.id,
-            imageData: base64Image,
-          },
-        );
+        const result = await api.api.content.media["save-portrait"].post({
+          entityType: "npc",
+          entityId: item.id,
+          imageData: base64Image,
+        });
 
         if (result.error) {
           throw new Error(
@@ -459,14 +411,12 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1];
 
-        const result = await api.api.content.media["save-portrait"].post(
-          {
-            entityType: "quest",
-            entityId: item.id,
-            imageData: base64Image,
-            type: "banner",
-          },
-        );
+        const result = await api.api.content.media["save-portrait"].post({
+          entityType: "quest",
+          entityId: item.id,
+          imageData: base64Image,
+          type: "banner",
+        });
 
         if (result.error) {
           throw new Error(

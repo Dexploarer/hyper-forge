@@ -57,7 +57,7 @@ class PromptServiceClass {
       console.error("Failed to load game style prompts:", error);
       throw new Error("Failed to load game style prompts");
     }
-    return data as PromptsResponse<Record<string, GameStylePrompt>>;
+    return data as unknown as PromptsResponse<Record<string, GameStylePrompt>>;
   }
 
   async saveGameStylePrompts(
@@ -90,7 +90,7 @@ class PromptServiceClass {
       console.error("Failed to load asset type prompts:", error);
       throw new Error("Failed to load asset type prompts");
     }
-    return data as AssetTypePromptsByCategory;
+    return data as unknown as AssetTypePromptsByCategory;
   }
 
   async saveAssetTypePrompts(

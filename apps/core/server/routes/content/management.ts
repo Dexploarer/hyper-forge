@@ -22,19 +22,23 @@ export const managementRoutes = new Elysia()
   // ==================== NPC Management ====================
   .put(
     "/npcs/:id",
-    async ({ params, body }) => {
+    async ({ params, body, user }) => {
       const existing = await contentDatabaseService.getNPC(params.id);
       if (!existing) throw new NotFoundError("NPC", params.id);
 
-      const updated = await contentDatabaseService.updateNPC(params.id, {
-        name: body.name,
-        archetype: body.archetype,
-        data: body.data,
-        generationParams: body.generationParams,
-        tags: body.tags,
-        version: (existing.version || 1) + 1,
-        parentId: body.createVersion ? existing.id : existing.parentId,
-      });
+      const updated = await contentDatabaseService.updateNPC(
+        params.id,
+        user.id,
+        {
+          name: body.name,
+          archetype: body.archetype,
+          data: body.data,
+          generationParams: body.generationParams,
+          tags: body.tags,
+          version: (existing.version || 1) + 1,
+          parentId: body.createVersion ? existing.id : existing.parentId,
+        },
+      );
 
       return { success: true, npc: updated };
     },
@@ -63,8 +67,8 @@ export const managementRoutes = new Elysia()
   )
   .delete(
     "/npcs/:id",
-    async ({ params }) => {
-      await contentDatabaseService.deleteNPC(params.id);
+    async ({ params, user }) => {
+      await contentDatabaseService.deleteNPC(params.id, user.id);
       return { success: true, message: "NPC deleted" };
     },
     {
@@ -91,16 +95,20 @@ export const managementRoutes = new Elysia()
         );
       }
 
-      const updated = await contentDatabaseService.updateQuest(params.id, {
-        title: body.title,
-        questType: body.questType,
-        difficulty: body.difficulty,
-        data: body.data,
-        generationParams: body.generationParams,
-        tags: body.tags,
-        version: (existing.version || 1) + 1,
-        parentId: body.createVersion ? existing.id : existing.parentId,
-      });
+      const updated = await contentDatabaseService.updateQuest(
+        params.id,
+        user.id,
+        {
+          title: body.title,
+          questType: body.questType,
+          difficulty: body.difficulty,
+          data: body.data,
+          generationParams: body.generationParams,
+          tags: body.tags,
+          version: (existing.version || 1) + 1,
+          parentId: body.createVersion ? existing.id : existing.parentId,
+        },
+      );
 
       return { success: true, quest: updated };
     },
@@ -148,7 +156,7 @@ export const managementRoutes = new Elysia()
     "/quests/:id",
     async ({ user, params, request }) => {
       const quest = await contentDatabaseService.getQuest(params.id);
-      await contentDatabaseService.deleteQuest(params.id);
+      await contentDatabaseService.deleteQuest(params.id, user.id);
 
       if (quest) {
         await ActivityLogService.logContentDeleted({
@@ -186,14 +194,18 @@ export const managementRoutes = new Elysia()
         );
       }
 
-      const updated = await contentDatabaseService.updateDialogue(params.id, {
-        npcName: body.npcName,
-        context: body.context,
-        nodes: body.nodes,
-        generationParams: body.generationParams,
-        version: (existing.version || 1) + 1,
-        parentId: body.createVersion ? existing.id : existing.parentId,
-      });
+      const updated = await contentDatabaseService.updateDialogue(
+        params.id,
+        user.id,
+        {
+          npcName: body.npcName,
+          context: body.context,
+          nodes: body.nodes,
+          generationParams: body.generationParams,
+          version: (existing.version || 1) + 1,
+          parentId: body.createVersion ? existing.id : existing.parentId,
+        },
+      );
 
       return { success: true, dialogue: updated };
     },
@@ -217,8 +229,8 @@ export const managementRoutes = new Elysia()
   )
   .delete(
     "/dialogues/:id",
-    async ({ params }) => {
-      await contentDatabaseService.deleteDialogue(params.id);
+    async ({ params, user }) => {
+      await contentDatabaseService.deleteDialogue(params.id, user.id);
       return { success: true, message: "Dialogue deleted" };
     },
     {
@@ -245,16 +257,20 @@ export const managementRoutes = new Elysia()
         );
       }
 
-      const updated = await contentDatabaseService.updateLore(params.id, {
-        title: body.title,
-        category: body.category,
-        summary: body.summary,
-        data: body.data,
-        generationParams: body.generationParams,
-        tags: body.tags,
-        version: (existing.version || 1) + 1,
-        parentId: body.createVersion ? existing.id : existing.parentId,
-      });
+      const updated = await contentDatabaseService.updateLore(
+        params.id,
+        user.id,
+        {
+          title: body.title,
+          category: body.category,
+          summary: body.summary,
+          data: body.data,
+          generationParams: body.generationParams,
+          tags: body.tags,
+          version: (existing.version || 1) + 1,
+          parentId: body.createVersion ? existing.id : existing.parentId,
+        },
+      );
 
       return { success: true, lore: updated };
     },
@@ -298,7 +314,7 @@ export const managementRoutes = new Elysia()
     "/lores/:id",
     async ({ user, params, request }) => {
       const lore = await contentDatabaseService.getLore(params.id);
-      await contentDatabaseService.deleteLore(params.id);
+      await contentDatabaseService.deleteLore(params.id, user.id);
 
       if (lore) {
         await ActivityLogService.logContentDeleted({

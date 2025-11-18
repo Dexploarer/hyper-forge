@@ -98,7 +98,7 @@
     "elysiajs-cdn-cache": "^0.0.13",
     "express": "^5.1.0",
     "immer": "^10.2.0",
-    "lucide-react": "^0.553.0",
+    "lucide-react": "^0.554.0",
     "node-fetch": "^3.3.2",
     "opossum": "^9.0.0",
     "pino": "^10.1.0",

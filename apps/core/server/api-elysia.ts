@@ -158,7 +158,7 @@ const legacyAssetsDir = process.env.RAILWAY_VOLUME_MOUNT_PATH
 
 // Create Elysia app with full type inference for Eden Treaty
 // Config-dependent routes are registered inline (not via factory) for proper type inference
-// @ts-ignore TS2742 - Transitive dependency issue with @elysiajs/cron -> croner (safe for apps)
+// @ts-ignore TS2742 - Transitive dependency croner in @elysiajs/cron causes non-portable type (safe to ignore)
 const app = new Elysia()
   // ==================== LIFECYCLE HOOKS ====================
   .onStart(async () => {
@@ -254,36 +254,9 @@ const app = new Elysia()
   .use(securityHeaders)
   .use(
     cors({
-      // In development, allow all origins. In production, use configured origins
-      origin:
-        env.NODE_ENV === "development"
-          ? true
-          : (() => {
-              const allowedOrigins: string[] = [];
-              if (
-                env.CORS_ALLOWED_ORIGINS &&
-                env.CORS_ALLOWED_ORIGINS.length > 0
-              ) {
-                allowedOrigins.push(...env.CORS_ALLOWED_ORIGINS);
-              }
-              if (env.FRONTEND_URL) {
-                allowedOrigins.push(env.FRONTEND_URL);
-              }
-              if (allowedOrigins.length === 0) {
-                logger.warn(
-                  {},
-                  "[CORS] No allowed origins configured. Set CORS_ALLOWED_ORIGINS or FRONTEND_URL",
-                );
-                return false;
-              }
-              return allowedOrigins;
-            })(),
+      origin: env.NODE_ENV === "production" ? env.FRONTEND_URL || "*" : true,
       credentials: true,
-      methods: true, // Mirror request method
-      allowedHeaders: true, // Mirror requested headers
-      exposeHeaders: true, // Expose all response headers
-      maxAge: 5,
-      preflight: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     }),
   )
 

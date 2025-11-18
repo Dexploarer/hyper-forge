@@ -203,13 +203,48 @@ export const mediaRoutes = new Elysia()
     "/media/save-portrait",
     async ({ body, user }) => {
       try {
-        // Validate base64 image data
-        if (!body.imageData || body.imageData.length < 100) {
-          throw new InternalServerError("Invalid or missing image data");
+        // Accept either imageUrl (for generated images) or imageData (for uploads)
+        let imageData: Buffer;
+
+        if (body.imageUrl) {
+          // Check if it's a data URL (base64-encoded image)
+          if (body.imageUrl.startsWith("data:")) {
+            logger.info(
+              { imageUrlPrefix: body.imageUrl.substring(0, 50) + "..." },
+              "Extracting base64 data from data URL for portrait save",
+            );
+            // Data URL format: data:image/png;base64,<base64data>
+            // Extract the base64 portion after the comma
+            const base64Data = body.imageUrl.split(",")[1];
+            if (!base64Data) {
+              throw new Error("Invalid data URL format - missing base64 data");
+            }
+            imageData = Buffer.from(base64Data, "base64");
+          } else {
+            // HTTP/HTTPS URL - fetch from remote server
+            logger.info(
+              { imageUrl: body.imageUrl },
+              "Fetching image from HTTP URL for portrait save",
+            );
+            const response = await fetch(body.imageUrl);
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch image from URL: ${response.statusText}`,
+              );
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            imageData = Buffer.from(arrayBuffer);
+          }
+        } else if (body.imageData) {
+          // Use base64 image data directly
+          imageData = Buffer.from(body.imageData, "base64");
+        } else {
+          throw new InternalServerError(
+            "Either imageUrl or imageData must be provided",
+          );
         }
 
         const mediaType = body.type || "portrait";
-        const imageData = Buffer.from(body.imageData, "base64");
         const fileName = `${mediaType}_${Date.now()}.png`;
 
         // Save to CDN with error handling
@@ -238,17 +273,7 @@ export const mediaRoutes = new Elysia()
           createdBy: user.id,
         });
 
-        // Create relationship with error handling
-        await relationshipService.createRelationship({
-          sourceType: body.entityType as any,
-          sourceId: body.entityId,
-          targetType: body.entityType as any,
-          targetId: result.id,
-          relationshipType: "related_to" as any,
-          strength: "strong",
-          metadata: { mediaType: mediaType },
-          createdBy: user.id,
-        });
+        // Media assets are linked via entityType/entityId - no relationship needed
 
         return {
           success: true,
@@ -295,7 +320,8 @@ export const mediaRoutes = new Elysia()
           t.Literal("dialogue"),
         ]),
         entityId: t.String({ minLength: 1, maxLength: 255 }),
-        imageData: t.String({ minLength: 100 }),
+        imageUrl: t.Optional(t.String({ minLength: 10, maxLength: 2048 })),
+        imageData: t.Optional(t.String({ minLength: 100 })),
         type: t.Optional(t.Union([t.Literal("portrait"), t.Literal("banner")])),
         prompt: t.Optional(t.String({ maxLength: 2000 })),
         model: t.Optional(t.String({ maxLength: 100 })),
@@ -339,24 +365,13 @@ export const mediaRoutes = new Elysia()
           metadata: {
             voiceId: body.voiceId,
             voiceSettings: body.voiceSettings,
-            text: body.text,
             duration: body.duration,
             mimeType: "audio/mpeg",
           },
           createdBy: user.id,
         });
 
-        // Create relationship with error handling
-        await relationshipService.createRelationship({
-          sourceType: "npc",
-          sourceId: body.entityId,
-          targetType: "npc" as any,
-          targetId: result.id,
-          relationshipType: "related_to" as any,
-          strength: "strong",
-          metadata: { mediaType: "voice" },
-          createdBy: user.id,
-        });
+        // Media assets are linked via entityType/entityId - no relationship needed
 
         return {
           success: true,

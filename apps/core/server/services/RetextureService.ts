@@ -151,7 +151,7 @@ class MeshyClient {
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
       },
-      body: formData as BodyInit,
+      body: formData,
     });
 
     if (!response.ok) {

@@ -120,7 +120,6 @@ export function usePromptLibrary() {
           content: data.content as any,
           description: data.description || "",
           isPublic: data.isPublic || false,
-          createdBy: user.id,
           metadata: data.metadata || {},
         });
 

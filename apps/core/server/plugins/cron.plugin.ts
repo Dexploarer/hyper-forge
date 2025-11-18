@@ -19,7 +19,7 @@ import { generationJobService } from "../services/GenerationJobService";
  * Cron Jobs Plugin
  * Registers all scheduled background tasks
  */
-// @ts-ignore TS2742 - Transitive dependency issue with @elysiajs/cron -> croner (safe for apps)
+// @ts-ignore TS2742 - Transitive dependency croner causes non-portable type (safe to ignore)
 export const cronPlugin = new Elysia({ name: "cron" })
   // Cleanup expired and old failed generation jobs every hour
   .use(

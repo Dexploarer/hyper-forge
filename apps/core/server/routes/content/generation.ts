@@ -73,7 +73,6 @@ export const generationRoutes = new Elysia()
     },
     {
       body: Models.GenerateDialogueRequest,
-      response: Models.GenerateDialogueResponse,
       detail: {
         tags: ["Content Generation"],
         summary: "Generate NPC dialogue",
@@ -145,7 +144,6 @@ export const generationRoutes = new Elysia()
     },
     {
       body: Models.GenerateNPCRequest,
-      response: Models.GenerateNPCResponse,
       detail: {
         tags: ["Content Generation"],
         summary: "Generate complete NPC",
@@ -216,7 +214,6 @@ export const generationRoutes = new Elysia()
     },
     {
       body: Models.GenerateQuestRequest,
-      response: Models.GenerateQuestResponse,
       detail: {
         tags: ["Content Generation"],
         summary: "Generate game quest",
@@ -286,7 +283,6 @@ export const generationRoutes = new Elysia()
     },
     {
       body: Models.GenerateLoreRequest,
-      response: Models.GenerateLoreResponse,
       detail: {
         tags: ["Content Generation"],
         summary: "Generate game lore",

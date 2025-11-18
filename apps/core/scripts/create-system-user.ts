@@ -17,7 +17,7 @@ async function createSystemUser() {
         privyUserId: "system-cdn-webhook",
         email: "system+cdn-webhook@hyperforge.app",
         displayName: "CDN Webhook System",
-        role: "system",
+        role: "admin",
         settings: {
           description: "System user for assets uploaded via CDN webhook",
         },
@@ -30,9 +30,7 @@ async function createSystemUser() {
     console.log(`   Email: ${systemUser[0].email}`);
     console.log("");
     console.log("🔧 Set this environment variable in Railway:");
-    console.log(
-      `   WEBHOOK_SYSTEM_USER_ID=${systemUser[0].id}`,
-    );
+    console.log(`   WEBHOOK_SYSTEM_USER_ID=${systemUser[0].id}`);
 
     process.exit(0);
   } catch (error) {
@@ -52,9 +50,7 @@ async function createSystemUser() {
         console.log(`   Email: ${existingUser[0].email}`);
         console.log("");
         console.log("🔧 Set this environment variable in Railway:");
-        console.log(
-          `   WEBHOOK_SYSTEM_USER_ID=${existingUser[0].id}`,
-        );
+        console.log(`   WEBHOOK_SYSTEM_USER_ID=${existingUser[0].id}`);
         process.exit(0);
       }
     }

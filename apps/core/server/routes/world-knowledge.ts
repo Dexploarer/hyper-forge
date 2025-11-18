@@ -1,7 +1,7 @@
 /**
  * World Knowledge API Routes
  * Provides comprehensive world context for AI agents and users
- * 
+ *
  * All endpoints are designed to work equally well for:
  * - AI agents building worlds autonomously
  * - Human users exploring/managing content
@@ -44,10 +44,17 @@ export const worldKnowledgeRoutes = new Elysia({
       try {
         const context = await worldKnowledgeService.getWorldContext({
           userId: authUser.id,
-          includeRelationships: query.includeRelationships !== undefined ? query.includeRelationships : true,
-          includeFullData: query.includeFullData !== undefined ? query.includeFullData : false,
-          maxEntities: query.maxEntities !== undefined ? Number(query.maxEntities) : 1000,
-          format: (query.format as "summary" | "detailed" | "llm-optimized") || "summary",
+          includeRelationships:
+            query.includeRelationships !== undefined
+              ? query.includeRelationships
+              : true,
+          includeFullData:
+            query.includeFullData !== undefined ? query.includeFullData : false,
+          maxEntities:
+            query.maxEntities !== undefined ? Number(query.maxEntities) : 1000,
+          format:
+            (query.format as "summary" | "detailed" | "llm-optimized") ||
+            "summary",
         });
 
         return {
@@ -196,8 +203,7 @@ export const worldKnowledgeRoutes = new Elysia({
           worldConfig: context.worldConfig
             ? {
                 name: context.worldConfig.name,
-                theme: context.worldConfig.theme,
-                complexity: context.worldConfig.complexity,
+                genre: context.worldConfig.genre,
               }
             : null,
         };
@@ -324,7 +330,10 @@ export const worldKnowledgeRoutes = new Elysia({
             entityId: params.entityId,
             userId: authUser.id,
             limit: query.limit !== undefined ? Number(query.limit) : 10,
-            threshold: query.scoreThreshold !== undefined ? Number(query.scoreThreshold) : 0.7,
+            threshold:
+              query.scoreThreshold !== undefined
+                ? Number(query.scoreThreshold)
+                : 0.7,
           },
         );
 
@@ -396,7 +405,10 @@ export const worldKnowledgeRoutes = new Elysia({
         const graph = await worldKnowledgeService.getRelationshipGraph({
           entityId: params.entityId,
           userId: authUser.id,
-          depth: Math.min(query.depth !== undefined ? Number(query.depth) : 2, 5),
+          depth: Math.min(
+            query.depth !== undefined ? Number(query.depth) : 2,
+            5,
+          ),
           relationshipTypes,
         });
 
@@ -444,7 +456,8 @@ export const worldKnowledgeRoutes = new Elysia({
       try {
         const snapshot = await worldKnowledgeService.exportWorldSnapshot({
           userId: authUser.id,
-          includeAssets: query.includeAssets !== undefined ? query.includeAssets : true,
+          includeAssets:
+            query.includeAssets !== undefined ? query.includeAssets : true,
         });
 
         return {
