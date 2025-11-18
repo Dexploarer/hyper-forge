@@ -18,6 +18,38 @@ import {
 } from "./shared";
 
 export const mediaRoutes = new Elysia()
+  // GET /api/media/{type}/{entityType}/{entityId}/{fileName} - Serve files from volume
+  .get(
+    "/media/*",
+    async ({ params }) => {
+      const volumePath = process.env.RAILWAY_VOLUME_MOUNT_PATH || "/gdd-assets";
+      const requestPath = (params as any)["*"] as string;
+      const filePath = `${volumePath}/${requestPath}`;
+
+      try {
+        const file = Bun.file(filePath);
+        const exists = await file.exists();
+
+        if (!exists) {
+          return new Response("File not found", { status: 404 });
+        }
+
+        return new Response(file);
+      } catch (error) {
+        logger.error({ error, filePath }, "Failed to serve file from volume");
+        return new Response("Internal Server Error", { status: 500 });
+      }
+    },
+    {
+      detail: {
+        tags: ["Media Assets"],
+        summary: "Serve media file from volume",
+        description:
+          "Serves media files from /gdd-assets volume. Public endpoint.",
+      },
+    },
+  )
+
   .use(requireAuthGuard)
 
   // POST /api/content/generate-npc-portrait
