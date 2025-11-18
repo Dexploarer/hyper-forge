@@ -180,7 +180,7 @@ export async function optionalAuth({
           // Extract email from linked accounts
           const emailAccount = privyUser.linkedAccounts?.find(
             (acc) => acc.type === "email",
-      );
+          );
           privyUserEmail = emailAccount?.address;
 
           // Extract wallet address from linked accounts
@@ -257,23 +257,23 @@ export async function optionalAuth({
         }
       } else {
         // No existing user found, create new user
-      try {
-        user = await userService.createUser({
-          privyUserId,
+        try {
+          user = await userService.createUser({
+            privyUserId,
             email: privyUserEmail,
             walletAddress: privyUserWallet,
-          role: "member", // Default role - admins must be promoted manually
-        });
-        logger.info(
-          { userId: user.id, privyUserId, context: "auth" },
-          "Created new user for Privy userId",
-        );
-      } catch (error) {
-        logger.error(
-          { err: error, privyUserId, context: "auth" },
-          "Failed to create user for Privy userId",
-        );
-        throw error;
+            role: "member", // Default role - admins must be promoted manually
+          });
+          logger.info(
+            { userId: user.id, privyUserId, context: "auth" },
+            "Created new user for Privy userId",
+          );
+        } catch (error) {
+          logger.error(
+            { err: error, privyUserId, context: "auth" },
+            "Failed to create user for Privy userId",
+          );
+          throw error;
         }
       }
     } else {
@@ -364,6 +364,10 @@ export const authPlugin = new Elysia({ name: "auth" }).derive(
  * Use this for routes that require authentication but not admin access.
  *
  * Injects: { user: AuthUser } (guaranteed to exist)
+ *
+ * NOTE: Errors thrown in .derive() are caught by the global error handler
+ * (errorHandlerPlugin with `{ as: 'global' }`), which converts UnauthorizedError
+ * to a proper 401 JSON response.
  */
 export const requireAuthGuard = new Elysia({
   name: "require-auth-guard",
@@ -385,6 +389,10 @@ export const requireAuthGuard = new Elysia({
  * Use this for admin-only routes.
  *
  * Injects: { user: AuthUser } (guaranteed to exist and be admin)
+ *
+ * NOTE: Errors thrown in .derive() are caught by the global error handler
+ * (errorHandlerPlugin with `{ as: 'global' }`), which converts UnauthorizedError
+ * and ForbiddenError to proper 401/403 JSON responses.
  */
 export const requireAdminGuard = new Elysia({
   name: "require-admin-guard",

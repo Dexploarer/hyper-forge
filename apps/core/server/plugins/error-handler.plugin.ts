@@ -65,7 +65,9 @@ export const errorHandlerPlugin = new Elysia({
   })
 
   // ==================== CENTRALIZED ERROR HANDLER ====================
-  .onError(({ code, error, set, request }) => {
+  // IMPORTANT: { as: 'global' } ensures this handler catches errors from ALL routes and plugins,
+  // including errors thrown in .derive() functions from auth guards
+  .onError({ as: "global" }, ({ code, error, set, request }) => {
     // Get request ID for correlation (added by request-id plugin)
     const requestId = request.headers.get("x-request-id") || "unknown";
     const url = new URL(request.url);
