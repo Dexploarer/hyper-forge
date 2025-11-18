@@ -525,10 +525,10 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
                       const isEditable = isEditingMetadata;
 
                       return (
-                        <div key={key} className="space-y-1.5">
-                          <label className="block text-xs font-semibold text-text-muted uppercase">
-                            {key.replace(/([A-Z])/g, " $1").trim()}
-                          </label>
+                      <div key={key} className="space-y-1.5">
+                        <label className="block text-xs font-semibold text-text-muted uppercase">
+                          {key.replace(/([A-Z])/g, " $1").trim()}
+                        </label>
                           {isEditable ? (
                             <div>
                               {typeof displayValue === "boolean" ? (
@@ -576,16 +576,16 @@ const AssetDetailsPanel: React.FC<AssetDetailsPanelProps> = ({
                               )}
                             </div>
                           ) : (
-                            <div className="px-3 py-2 bg-bg-secondary border border-border-primary rounded">
-                              <p className="text-sm text-text-primary font-medium break-all">
+                        <div className="px-3 py-2 bg-bg-secondary border border-border-primary rounded">
+                          <p className="text-sm text-text-primary font-medium break-all">
                                 {typeof displayValue === "boolean"
                                   ? displayValue
-                                    ? "Yes"
-                                    : "No"
+                                ? "Yes"
+                                : "No"
                                   : typeof displayValue === "object"
                                     ? JSON.stringify(displayValue, null, 2)
                                     : String(displayValue ?? "")}
-                              </p>
+                          </p>
                             </div>
                           )}
                         </div>

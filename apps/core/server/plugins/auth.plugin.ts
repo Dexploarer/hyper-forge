@@ -180,7 +180,7 @@ export async function optionalAuth({
           // Extract email from linked accounts
           const emailAccount = privyUser.linkedAccounts?.find(
             (acc) => acc.type === "email",
-          );
+      );
           privyUserEmail = emailAccount?.address;
 
           // Extract wallet address from linked accounts
@@ -257,23 +257,23 @@ export async function optionalAuth({
         }
       } else {
         // No existing user found, create new user
-        try {
-          user = await userService.createUser({
-            privyUserId,
+      try {
+        user = await userService.createUser({
+          privyUserId,
             email: privyUserEmail,
             walletAddress: privyUserWallet,
-            role: "member", // Default role - admins must be promoted manually
-          });
-          logger.info(
-            { userId: user.id, privyUserId, context: "auth" },
-            "Created new user for Privy userId",
-          );
-        } catch (error) {
-          logger.error(
-            { err: error, privyUserId, context: "auth" },
-            "Failed to create user for Privy userId",
-          );
-          throw error;
+          role: "member", // Default role - admins must be promoted manually
+        });
+        logger.info(
+          { userId: user.id, privyUserId, context: "auth" },
+          "Created new user for Privy userId",
+        );
+      } catch (error) {
+        logger.error(
+          { err: error, privyUserId, context: "auth" },
+          "Failed to create user for Privy userId",
+        );
+        throw error;
         }
       }
     } else {

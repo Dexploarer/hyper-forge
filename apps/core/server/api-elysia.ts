@@ -254,76 +254,36 @@ const app = new Elysia()
   .use(securityHeaders)
   .use(
     cors({
-      origin: (requestOrigin) => {
-        // Build list of allowed origins
-        const allowedOrigins: string[] = [];
-
-        // Add explicitly configured origins from CORS_ALLOWED_ORIGINS
-        if (env.CORS_ALLOWED_ORIGINS && env.CORS_ALLOWED_ORIGINS.length > 0) {
-          allowedOrigins.push(...env.CORS_ALLOWED_ORIGINS);
-        }
-
-        // Add FRONTEND_URL if set
-        if (env.FRONTEND_URL) {
-          allowedOrigins.push(env.FRONTEND_URL);
-        }
-
-        // In development, allow localhost origins
-        if (env.NODE_ENV === "development") {
-          allowedOrigins.push(
-            "http://localhost:3000",
-            "http://localhost:3003",
-            "http://localhost:5173",
-            "http://127.0.0.1:3000",
-            "http://127.0.0.1:3003",
-            "http://127.0.0.1:5173",
-          );
-        }
-
-        // If no origins configured and in production, log warning
-        if (allowedOrigins.length === 0 && env.NODE_ENV === "production") {
-          logger.warn(
-            {},
-            "[CORS] No allowed origins configured. Set CORS_ALLOWED_ORIGINS or FRONTEND_URL",
-          );
-        }
-
-        // Check if request origin is allowed
-        // Handle cases where requestOrigin might be undefined, null, or non-string
-        if (!requestOrigin) {
-          // No origin header (e.g., same-origin request, Postman)
-          return true;
-        }
-
-        // Ensure requestOrigin is a string before using string methods
-        const originString = String(requestOrigin).trim();
-        if (!originString || originString.length === 0) {
-          return true;
-        }
-
-        const isAllowed = allowedOrigins.some(
-          (allowed) => {
-            const allowedBase = String(allowed).replace(/\/$/, "");
-            return originString === allowed || originString.startsWith(allowedBase);
-          },
-        );
-
-        if (isAllowed) {
-          logger.debug(
-            { origin: originString },
-            "[CORS] Allowed origin",
-          );
-          return originString;
-        }
-
-        logger.warn(
-          { origin: originString, allowedOrigins },
-          "[CORS] Blocked origin",
-        );
-        return false;
-      },
+      // In development, allow all origins. In production, use configured origins
+      origin:
+        env.NODE_ENV === "development"
+          ? true
+          : (() => {
+              const allowedOrigins: string[] = [];
+              if (
+                env.CORS_ALLOWED_ORIGINS &&
+                env.CORS_ALLOWED_ORIGINS.length > 0
+              ) {
+                allowedOrigins.push(...env.CORS_ALLOWED_ORIGINS);
+              }
+              if (env.FRONTEND_URL) {
+                allowedOrigins.push(env.FRONTEND_URL);
+              }
+              if (allowedOrigins.length === 0) {
+                logger.warn(
+                  {},
+                  "[CORS] No allowed origins configured. Set CORS_ALLOWED_ORIGINS or FRONTEND_URL",
+                );
+                return false;
+              }
+              return allowedOrigins;
+            })(),
       credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+      methods: true, // Mirror request method
+      allowedHeaders: true, // Mirror requested headers
+      exposeHeaders: true, // Expose all response headers
+      maxAge: 5,
+      preflight: true,
     }),
   )
 

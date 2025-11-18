@@ -475,20 +475,20 @@ export class AssetDatabaseService {
           } as AssetMetadataType;
 
           return {
-            id: asset.id,
-            name: asset.name,
-            description: asset.description || "",
-            type: asset.type,
+        id: asset.id,
+        name: asset.name,
+        description: asset.description || "",
+        type: asset.type,
             metadata: metadata as AssetMetadataType,
-            hasModel: !!asset.cdnUrl,
-            modelFile: asset.cdnUrl ? path.basename(asset.cdnUrl) : undefined,
-            generatedAt: asset.createdAt.toISOString(),
-            cdnUrl: asset.cdnUrl || null,
-            cdnThumbnailUrl: asset.cdnThumbnailUrl,
-            cdnConceptArtUrl: asset.cdnConceptArtUrl,
-            // Access control fields for route-level filtering
-            visibility: asset.visibility,
-            ownerId: asset.ownerId,
+        hasModel: !!asset.cdnUrl,
+        modelFile: asset.cdnUrl ? path.basename(asset.cdnUrl) : undefined,
+        generatedAt: asset.createdAt.toISOString(),
+        cdnUrl: asset.cdnUrl || null,
+        cdnThumbnailUrl: asset.cdnThumbnailUrl,
+        cdnConceptArtUrl: asset.cdnConceptArtUrl,
+        // Access control fields for route-level filtering
+        visibility: asset.visibility,
+        ownerId: asset.ownerId,
           };
         }),
       );

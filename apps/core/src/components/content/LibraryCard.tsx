@@ -36,6 +36,7 @@ import { ContentItem, ContentType } from "@/hooks/useContent";
 import { LoadingSpinner } from "@/components/common";
 import { api } from "@/lib/api-client";
 import { notify, formatDate } from "@/utils";
+import { getAuthToken } from "@/utils/auth-token-store";
 import type {
   NPCData,
   QuestData,
@@ -177,10 +178,21 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     }
   }, [item.id, item.type, refreshKey]);
 
-  const fetchPortrait = async () => {
+  const fetchPortrait = async (retryCount = 0): Promise<void> => {
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
+
     try {
+      // Use authenticated fetch
+      const token = getAuthToken();
+      const headers: HeadersInit = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(
         `/api/content/media/${item.type}/${item.id}`,
+        { headers }
       );
       if (response.ok) {
         const data = await response.json();
@@ -192,19 +204,57 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         );
         if (portrait) {
           // Standardized field access: prefer fileUrl, fallback to cdnUrl
-          setPortraitUrl(portrait.fileUrl || portrait.cdnUrl);
+          const url = portrait.fileUrl || portrait.cdnUrl;
+          if (url) {
+            setPortraitUrl(url);
+            console.log(`[LibraryCard] Loaded portrait for ${item.name}:`, url);
+            return; // Success, exit early
+          } else {
+            console.warn(`[LibraryCard] Portrait found but no URL for ${item.name}:`, portrait);
+          }
         } else {
-          // Clear portrait URL if not found (so UI shows generate button)
+          // Only clear if we don't already have a portrait URL (might be from previous fetch)
+          // This prevents clearing the URL during a race condition
+          if (!portraitUrl) {
+            console.debug(`[LibraryCard] No portrait found for ${item.name}`);
+            setPortraitUrl(null);
+          } else {
+            console.debug(`[LibraryCard] No portrait found for ${item.name}, keeping existing URL`);
+          }
+        }
+      } else if (response.status === 401 || response.status === 403) {
+        // Auth error - don't retry, but don't clear existing URL
+        console.warn(`[LibraryCard] Auth error fetching portrait for ${item.name}:`, response.status);
+        // Don't clear portraitUrl on auth errors - might be temporary
+      } else if (response.status === 404) {
+        // 404 means no media exists - only clear if we don't have a URL already
+        if (!portraitUrl) {
+          console.debug(`[LibraryCard] No media found (404) for ${item.name}`);
           setPortraitUrl(null);
         }
       } else {
-        // Clear portrait URL on error
-        setPortraitUrl(null);
+        // Other errors - retry if we haven't exceeded max retries
+        if (retryCount < maxRetries) {
+          console.log(`[LibraryCard] Retrying portrait fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`);
+          setTimeout(() => {
+            fetchPortrait(retryCount + 1);
+          }, retryDelay * (retryCount + 1)); // Exponential backoff
+        } else {
+          console.warn(`[LibraryCard] Failed to fetch portrait for ${item.name} after ${maxRetries} retries:`, response.status);
+          // Don't clear existing URL on final failure - preserve what we have
+        }
       }
     } catch (error) {
-      // Silently fail - portrait is optional, but clear URL
-      console.debug("No portrait available for this item", error);
-      setPortraitUrl(null);
+      // Network errors - retry if we haven't exceeded max retries
+      if (retryCount < maxRetries) {
+        console.log(`[LibraryCard] Network error, retrying portrait fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`);
+        setTimeout(() => {
+          fetchPortrait(retryCount + 1);
+        }, retryDelay * (retryCount + 1)); // Exponential backoff
+      } else {
+        console.error(`[LibraryCard] Error fetching portrait for ${item.name} after ${maxRetries} retries:`, error);
+        // Don't clear existing URL on final failure - preserve what we have
+      }
     }
   };
 
@@ -249,10 +299,21 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     }
   };
 
-  const fetchBanner = async () => {
+  const fetchBanner = async (retryCount = 0): Promise<void> => {
+    const maxRetries = 3;
+    const retryDelay = 1000; // 1 second
+
     try {
+      // Use authenticated fetch
+      const token = getAuthToken();
+      const headers: HeadersInit = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(
         `/api/content/media/${item.type}/${item.id}`,
+        { headers }
       );
       if (response.ok) {
         const data = await response.json();
@@ -264,19 +325,57 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         );
         if (banner) {
           // Standardized field access: prefer fileUrl, fallback to cdnUrl
-          setBannerUrl(banner.fileUrl || banner.cdnUrl);
+          const url = banner.fileUrl || banner.cdnUrl;
+          if (url) {
+            setBannerUrl(url);
+            console.log(`[LibraryCard] Loaded banner for ${item.name}:`, url);
+            return; // Success, exit early
+          } else {
+            console.warn(`[LibraryCard] Banner found but no URL for ${item.name}:`, banner);
+          }
         } else {
-          // Clear banner URL if not found (so UI shows generate button)
+          // Only clear if we don't already have a banner URL (might be from previous fetch)
+          // This prevents clearing the URL during a race condition
+          if (!bannerUrl) {
+            console.debug(`[LibraryCard] No banner found for ${item.name}`);
+            setBannerUrl(null);
+          } else {
+            console.debug(`[LibraryCard] No banner found for ${item.name}, keeping existing URL`);
+          }
+        }
+      } else if (response.status === 401 || response.status === 403) {
+        // Auth error - don't retry, but don't clear existing URL
+        console.warn(`[LibraryCard] Auth error fetching banner for ${item.name}:`, response.status);
+        // Don't clear bannerUrl on auth errors - might be temporary
+      } else if (response.status === 404) {
+        // 404 means no media exists - only clear if we don't have a URL already
+        if (!bannerUrl) {
+          console.debug(`[LibraryCard] No media found (404) for ${item.name}`);
           setBannerUrl(null);
         }
       } else {
-        // Clear banner URL on error
-        setBannerUrl(null);
+        // Other errors - retry if we haven't exceeded max retries
+        if (retryCount < maxRetries) {
+          console.log(`[LibraryCard] Retrying banner fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`);
+          setTimeout(() => {
+            fetchBanner(retryCount + 1);
+          }, retryDelay * (retryCount + 1)); // Exponential backoff
+        } else {
+          console.warn(`[LibraryCard] Failed to fetch banner for ${item.name} after ${maxRetries} retries:`, response.status);
+          // Don't clear existing URL on final failure - preserve what we have
+        }
       }
     } catch (error) {
-      // Silently fail - banner is optional, but clear URL
-      console.debug("No banner available for this item", error);
-      setBannerUrl(null);
+      // Network errors - retry if we haven't exceeded max retries
+      if (retryCount < maxRetries) {
+        console.log(`[LibraryCard] Network error, retrying banner fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`);
+        setTimeout(() => {
+          fetchBanner(retryCount + 1);
+        }, retryDelay * (retryCount + 1)); // Exponential backoff
+      } else {
+        console.error(`[LibraryCard] Error fetching banner for ${item.name} after ${maxRetries} retries:`, error);
+        // Don't clear existing URL on final failure - preserve what we have
+      }
     }
   };
 

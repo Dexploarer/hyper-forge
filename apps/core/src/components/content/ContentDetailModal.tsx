@@ -38,6 +38,7 @@ import { cn } from "@/styles";
 import { ContentItem, type ContentType } from "@/hooks/useContent";
 import { api } from "@/lib/api-client";
 import { notify } from "@/utils/notify";
+import { getAuthToken } from "@/utils/auth-token-store";
 import type {
   NPCData,
   QuestData,
@@ -137,8 +138,16 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
   const fetchPortrait = async () => {
     try {
+      // Use authenticated fetch
+      const token = getAuthToken();
+      const headers: HeadersInit = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(
         `/api/content/media/${item.type}/${item.id}`,
+        { headers }
       );
       if (response.ok) {
         const data = await response.json();
@@ -167,8 +176,16 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
   const fetchBanner = async () => {
     try {
+      // Use authenticated fetch
+      const token = getAuthToken();
+      const headers: HeadersInit = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
       const response = await fetch(
         `/api/content/media/${item.type}/${item.id}`,
+        { headers }
       );
       if (response.ok) {
         const data = await response.json();
@@ -224,10 +241,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       notify.success("Portrait generated successfully!");
       await handleSavePortrait(result.data!.imageUrl);
       // Notify parent to refresh library cards AFTER save completes
-      // Add small delay to ensure backend has processed everything
+      // Increased delay to ensure backend has fully processed and saved the media
       setTimeout(() => {
         onImageGenerated?.();
-      }, 500);
+      }, 2000); // 2 seconds to ensure backend processing is complete
     } catch (error) {
       console.error("Failed to generate portrait:", error);
       notify.error("Failed to generate portrait");
@@ -262,10 +279,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
       notify.success("Banner generated successfully!");
       await handleSaveBanner(result.data!.imageUrl);
       // Notify parent to refresh library cards AFTER save completes
-      // Add small delay to ensure backend has processed everything
+      // Increased delay to ensure backend has fully processed and saved the media
       setTimeout(() => {
         onImageGenerated?.();
-      }, 500);
+      }, 2000); // 2 seconds to ensure backend processing is complete
     } catch (error) {
       console.error("Failed to generate banner:", error);
       notify.error("Failed to generate banner");
@@ -307,9 +324,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         notify.success("Portrait saved successfully!");
         await fetchPortrait();
         // Notify parent to refresh library cards after save completes
+        // Increased delay to ensure backend has fully processed and saved the media
         setTimeout(() => {
           onImageGenerated?.();
-        }, 300);
+        }, 1500); // 1.5 seconds to ensure backend processing is complete
       };
 
       reader.readAsDataURL(blob);
@@ -355,9 +373,10 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
         notify.success("Banner saved successfully!");
         await fetchBanner();
         // Notify parent to refresh library cards after save completes
+        // Increased delay to ensure backend has fully processed and saved the media
         setTimeout(() => {
           onImageGenerated?.();
-        }, 300);
+        }, 1500); // 1.5 seconds to ensure backend processing is complete
       };
 
       reader.readAsDataURL(blob);
@@ -405,6 +424,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
         notify.success("Portrait uploaded successfully!");
         await fetchPortrait();
+        // Notify parent to refresh library cards after upload completes
+        // Increased delay to ensure backend has fully processed and saved the media
+        setTimeout(() => {
+          onImageGenerated?.();
+        }, 1500); // 1.5 seconds to ensure backend processing is complete
       };
 
       reader.readAsDataURL(file);
@@ -454,6 +478,11 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
 
         notify.success("Banner uploaded successfully!");
         await fetchBanner();
+        // Notify parent to refresh library cards after upload completes
+        // Increased delay to ensure backend has fully processed and saved the media
+        setTimeout(() => {
+          onImageGenerated?.();
+        }, 1500); // 1.5 seconds to ensure backend processing is complete
       };
 
       reader.readAsDataURL(file);
