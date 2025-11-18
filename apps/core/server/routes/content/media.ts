@@ -203,8 +203,52 @@ export const mediaRoutes = new Elysia()
     "/media/save-portrait",
     async ({ body, user }) => {
       try {
-        // Use Elysia's File handling - proper way to receive images
-        const imageData = Buffer.from(await body.image.arrayBuffer());
+        let imageData: Buffer;
+        let mimeType: string;
+        let size: number;
+
+        // Support two patterns:
+        // 1. File upload (multipart/form-data) - for user uploads
+        // 2. URL (JSON) - for AI-generated images, fetched server-side to avoid CORS
+        if (body.image) {
+          // Pattern 1: File upload via FormData
+          imageData = Buffer.from(await body.image.arrayBuffer());
+          mimeType = body.image.type;
+          size = body.image.size;
+        } else if (body.imageUrl) {
+          // Pattern 2: URL - fetch server-side (no CORS issues)
+          logger.info(
+            { imageUrl: body.imageUrl, context: "media" },
+            "Fetching image from URL server-side",
+          );
+
+          if (body.imageUrl.startsWith("data:")) {
+            // Data URL - extract base64 data
+            const matches = body.imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+            if (!matches) {
+              throw new InternalServerError("Invalid data URL format");
+            }
+            mimeType = matches[1];
+            imageData = Buffer.from(matches[2], "base64");
+            size = imageData.length;
+          } else {
+            // HTTP/HTTPS URL - fetch from remote server (server-side, no CORS)
+            const response = await fetch(body.imageUrl);
+            if (!response.ok) {
+              throw new InternalServerError(
+                `Failed to fetch image from URL: ${response.status}`,
+              );
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            imageData = Buffer.from(arrayBuffer);
+            mimeType = response.headers.get("content-type") || "image/png";
+            size = imageData.length;
+          }
+        } else {
+          throw new InternalServerError(
+            "Either image file or imageUrl must be provided",
+          );
+        }
 
         const mediaType = body.type || "portrait";
         const fileName = `${mediaType}_${Date.now()}.png`;
@@ -228,8 +272,8 @@ export const mediaRoutes = new Elysia()
           fileName,
           data: imageData,
           metadata: {
-            mimeType: body.image.type,
-            size: body.image.size,
+            mimeType,
+            size,
           },
           createdBy: user.id,
         });
@@ -255,27 +299,48 @@ export const mediaRoutes = new Elysia()
       }
     },
     {
-      body: t.Object({
-        image: t.File({
-          type: "image/*",
-          maxSize: "10m",
+      body: t.Union([
+        // Pattern 1: File upload via FormData
+        t.Object({
+          image: t.File({
+            type: "image/*",
+            maxSize: "10m",
+          }),
+          entityType: t.Union([
+            t.Literal("npc"),
+            t.Literal("quest"),
+            t.Literal("lore"),
+            t.Literal("location"),
+            t.Literal("world"),
+            t.Literal("dialogue"),
+          ]),
+          entityId: t.String({ minLength: 1, maxLength: 255 }),
+          type: t.Optional(
+            t.Union([t.Literal("portrait"), t.Literal("banner")]),
+          ),
         }),
-        entityType: t.Union([
-          t.Literal("npc"),
-          t.Literal("quest"),
-          t.Literal("lore"),
-          t.Literal("location"),
-          t.Literal("world"),
-          t.Literal("dialogue"),
-        ]),
-        entityId: t.String({ minLength: 1, maxLength: 255 }),
-        type: t.Optional(t.Union([t.Literal("portrait"), t.Literal("banner")])),
-      }),
+        // Pattern 2: URL via JSON (for AI-generated images)
+        t.Object({
+          imageUrl: t.String({ minLength: 1, maxLength: 5000 }),
+          entityType: t.Union([
+            t.Literal("npc"),
+            t.Literal("quest"),
+            t.Literal("lore"),
+            t.Literal("location"),
+            t.Literal("world"),
+            t.Literal("dialogue"),
+          ]),
+          entityId: t.String({ minLength: 1, maxLength: 255 }),
+          type: t.Optional(
+            t.Union([t.Literal("portrait"), t.Literal("banner")]),
+          ),
+        }),
+      ]),
       detail: {
         tags: ["Media Assets"],
         summary: "Save portrait image",
         description:
-          "Save image file using multipart/form-data upload. Requires authentication.",
+          "Save image file via multipart/form-data upload OR provide imageUrl to fetch server-side. Requires authentication.",
         security: [{ BearerAuth: [] }],
       },
     },

@@ -276,37 +276,18 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     try {
       setIsSavingPortrait(true);
 
-      // Convert URL/base64 to Blob for proper file upload
-      let blob: Blob;
-      if (urlToSave.startsWith("data:")) {
-        // Convert data URL to blob
-        const response = await fetch(urlToSave);
-        blob = await response.blob();
-      } else {
-        // Fetch from HTTP URL
-        const response = await fetch(urlToSave);
-        blob = await response.blob();
-      }
-
-      // Use FormData for file upload (Elysia best practice)
-      const formData = new FormData();
-      formData.append("image", blob, "portrait.png");
-      formData.append("entityType", "npc");
-      formData.append("entityId", item.id);
-      formData.append("type", "portrait");
-
-      // Send as multipart/form-data
-      const token = getAuthToken();
-      const response = await fetch("/api/content/media/save-portrait", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
+      // Send URL to backend - server fetches it (no CORS issues)
+      const result = await api.api.content.media["save-portrait"].post({
+        imageUrl: urlToSave,
+        entityType: "npc",
+        entityId: item.id,
+        type: "portrait",
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to save portrait");
+      if (result.error) {
+        throw new Error(
+          result.error.value?.message || "Failed to save portrait",
+        );
       }
 
       notify.success("Portrait saved successfully!");
@@ -330,37 +311,16 @@ export const ContentDetailModal: React.FC<ContentDetailModalProps> = ({
     try {
       setIsSavingBanner(true);
 
-      // Convert URL/base64 to Blob for proper file upload
-      let blob: Blob;
-      if (urlToSave.startsWith("data:")) {
-        // Convert data URL to blob
-        const response = await fetch(urlToSave);
-        blob = await response.blob();
-      } else {
-        // Fetch from HTTP URL
-        const response = await fetch(urlToSave);
-        blob = await response.blob();
-      }
-
-      // Use FormData for file upload (Elysia best practice)
-      const formData = new FormData();
-      formData.append("image", blob, "banner.png");
-      formData.append("entityType", "quest");
-      formData.append("entityId", item.id);
-      formData.append("type", "banner");
-
-      // Send as multipart/form-data
-      const token = getAuthToken();
-      const response = await fetch("/api/content/media/save-portrait", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
+      // Send URL to backend - server fetches it (no CORS issues)
+      const result = await api.api.content.media["save-portrait"].post({
+        imageUrl: urlToSave,
+        entityType: "quest",
+        entityId: item.id,
+        type: "banner",
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to save banner");
+      if (result.error) {
+        throw new Error(result.error.value?.message || "Failed to save banner");
       }
 
       notify.success("Banner saved successfully!");
