@@ -6,7 +6,33 @@
 import { db } from "../db/db";
 import { logger } from "../utils/logger";
 import { users, type User, type NewUser } from "../db/schema";
-import { eq, desc, and, count } from "drizzle-orm";
+import {
+  eq,
+  desc,
+  and,
+  count,
+  isNull,
+  isNotNull,
+  ilike,
+  or,
+} from "drizzle-orm";
+
+/**
+ * User settings interface
+ * Defines the structure of user preferences stored in JSONB
+ */
+export interface UserSettings {
+  theme?: "light" | "dark" | "system";
+  notifications?: {
+    email?: boolean;
+    discord?: boolean;
+  };
+  preferences?: {
+    defaultProjectVisibility?: "public" | "private";
+    autoSaveInterval?: number;
+  };
+  [key: string]: unknown; // Allow additional settings
+}
 
 export interface UserProfileUpdate {
   displayName?: string;
@@ -59,7 +85,7 @@ export class UserService {
     privyUserId: string;
     email?: string;
     walletAddress?: string;
-    role?: string;
+    role?: "admin" | "member";
   }): Promise<User> {
     try {
       const user = await db.transaction(async (tx) => {
@@ -119,7 +145,8 @@ export class UserService {
     markCompleted: boolean = false,
   ): Promise<User> {
     try {
-      const updateData: any = {
+      // Build type-safe update data
+      const updateData: Partial<NewUser> = {
         ...updates,
         updatedAt: new Date(),
       };
@@ -172,6 +199,7 @@ export class UserService {
 
   /**
    * Get all users (admin only)
+   * Optimized to use SQL WHERE clauses instead of post-query filtering
    */
   async getAllUsers(filters?: {
     role?: "admin" | "member";
@@ -179,52 +207,47 @@ export class UserService {
     search?: string;
   }): Promise<User[]> {
     try {
-      // Build where conditions
-      const whereConditions: any[] = [];
+      // Build where conditions with proper types from drizzle-orm
+      const whereConditions: ReturnType<
+        typeof eq | typeof isNull | typeof isNotNull | typeof ilike | typeof or
+      >[] = [];
 
+      // Role filter
       if (filters?.role) {
         whereConditions.push(eq(users.role, filters.role));
       }
 
-      // Note: profileCompleted filter is applied post-query due to IS NULL / IS NOT NULL complexity
-      // We'll filter after fetching results
+      // Profile completed filter using isNull/isNotNull
+      if (filters?.profileCompleted !== undefined) {
+        if (filters.profileCompleted) {
+          whereConditions.push(isNotNull(users.profileCompleted));
+        } else {
+          whereConditions.push(isNull(users.profileCompleted));
+        }
+      }
 
-      // Execute query
-      let query = db.query.users.findMany({
+      // Search filter using ilike for case-insensitive search
+      if (filters?.search) {
+        const searchPattern = `%${filters.search}%`;
+        whereConditions.push(
+          or(
+            ilike(users.displayName, searchPattern),
+            ilike(users.email, searchPattern),
+            ilike(users.privyUserId, searchPattern),
+          )!,
+        );
+      }
+
+      // Execute optimized query with all filters in SQL
+      const allUsers = await db.query.users.findMany({
+        where:
+          whereConditions.length > 0
+            ? whereConditions.length > 1
+              ? and(...whereConditions)
+              : whereConditions[0]
+            : undefined,
         orderBy: [desc(users.createdAt)],
       });
-
-      if (whereConditions.length > 0) {
-        query = db.query.users.findMany({
-          where:
-            whereConditions.length > 1
-              ? and(...whereConditions)
-              : whereConditions[0],
-          orderBy: [desc(users.createdAt)],
-        });
-      }
-
-      let allUsers = await query;
-
-      // Apply profileCompleted filter post-query
-      if (filters?.profileCompleted !== undefined) {
-        allUsers = allUsers.filter((user) => {
-          const hasCompletedProfile = user.profileCompleted !== null;
-          return hasCompletedProfile === filters.profileCompleted;
-        });
-      }
-
-      // Apply search filter (case-insensitive search in name, email, privyId)
-      if (filters?.search) {
-        const searchLower = filters.search.toLowerCase();
-        allUsers = allUsers.filter((user) => {
-          return (
-            user.displayName?.toLowerCase().includes(searchLower) ||
-            user.email?.toLowerCase().includes(searchLower) ||
-            user.privyUserId.toLowerCase().includes(searchLower)
-          );
-        });
-      }
 
       return allUsers;
     } catch (error) {
@@ -235,10 +258,11 @@ export class UserService {
 
   /**
    * Update user settings
+   * Type-safe settings management with proper JSONB handling
    */
   async updateSettings(
     userId: string,
-    settings: Record<string, any>,
+    settings: Partial<UserSettings>,
   ): Promise<User> {
     try {
       // Get current user to merge settings
@@ -247,10 +271,12 @@ export class UserService {
         throw new Error(`User not found: ${userId}`);
       }
 
-      // Merge new settings with existing ones
-      const currentSettings =
-        (currentUser.settings as Record<string, any>) || {};
-      const mergedSettings = { ...currentSettings, ...settings };
+      // Merge new settings with existing ones (type-safe)
+      const currentSettings = (currentUser.settings as UserSettings) || {};
+      const mergedSettings: UserSettings = {
+        ...currentSettings,
+        ...settings,
+      };
 
       const [updatedUser] = await db
         .update(users)

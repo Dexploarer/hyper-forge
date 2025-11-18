@@ -5,6 +5,7 @@
  */
 
 import crypto from "crypto";
+import { timingSafeEqual } from "node:crypto";
 import { db } from "../db/db";
 import { apiKeys, users } from "../db/schema";
 import { logger } from "../utils/logger";
@@ -21,6 +22,19 @@ import {
   inArray,
 } from "drizzle-orm";
 import type { ApiKey } from "../db/schema";
+
+/**
+ * Metadata structure for API keys
+ * Provides type safety for the JSONB metadata field
+ */
+interface ApiKeyMetadata {
+  rateLimits?: {
+    requestsPerMinute?: number;
+    requestsPerDay?: number;
+  };
+  allowedOrigins?: string[];
+  customFields?: Record<string, unknown>;
+}
 
 export class ApiKeyService {
   /**
@@ -72,53 +86,79 @@ export class ApiKeyService {
   }
 
   /**
-   * Validate an API key
+   * Validate an API key with constant-time comparison to prevent timing attacks
    * Checks hash, expiration, and revocation status
    * Updates lastUsedAt timestamp
    *
    * @param keyString - The API key to validate
-   * @returns User ID if valid, null if invalid
+   * @returns User ID and permissions if valid, null if invalid
    */
   async validateApiKey(
     keyString: string,
   ): Promise<{ userId: string; permissions: string[] } | null> {
     // Hash the provided key
-    const keyHash = crypto.createHash("sha256").update(keyString).digest("hex");
+    const hashedInput = crypto
+      .createHash("sha256")
+      .update(keyString)
+      .digest("hex");
 
-    // Find matching key
-    const [apiKey] = await db
+    // Extract prefix for faster lookup (optional optimization)
+    const keyPrefix = keyString.substring(0, 16);
+
+    // Find all non-revoked, non-expired keys with matching prefix
+    // We fetch all candidates to prevent timing attacks based on DB query time
+    const candidates = await db
       .select()
       .from(apiKeys)
       .where(
         and(
-          eq(apiKeys.keyHash, keyHash),
+          eq(apiKeys.keyPrefix, keyPrefix),
           isNull(apiKeys.revokedAt), // Not revoked
           or(
             isNull(apiKeys.expiresAt), // No expiration
             gt(apiKeys.expiresAt, new Date()), // Or not yet expired
           ),
         ),
-      )
-      .limit(1);
+      );
 
-    if (!apiKey) {
+    // Use constant-time comparison to prevent timing attacks
+    // This ensures that comparison time doesn't leak information about the key
+    let matchedKey: (typeof candidates)[0] | null = null;
+
+    for (const candidate of candidates) {
+      const inputBuffer = Buffer.from(hashedInput, "utf-8");
+      const storedBuffer = Buffer.from(candidate.keyHash, "utf-8");
+
+      // Constant-time comparison prevents timing-based side-channel attacks
+      if (
+        inputBuffer.length === storedBuffer.length &&
+        timingSafeEqual(inputBuffer, storedBuffer)
+      ) {
+        matchedKey = candidate;
+        // Don't break early - continue to prevent timing analysis
+      }
+    }
+
+    if (!matchedKey) {
       return null; // Invalid key
     }
 
     // Update last used timestamp (async, don't wait)
     db.update(apiKeys)
       .set({ lastUsedAt: new Date() })
-      .where(eq(apiKeys.id, apiKey.id))
+      .where(eq(apiKeys.id, matchedKey.id))
       .catch((err) => {
         logger.error(
-          { err, keyId: apiKey.id, userId: apiKey.userId },
+          { err, keyId: matchedKey!.id, userId: matchedKey!.userId },
           "Failed to update API key lastUsedAt",
         );
       });
 
     return {
-      userId: apiKey.userId,
-      permissions: (apiKey.permissions as string[]) || [],
+      userId: matchedKey.userId,
+      permissions: Array.isArray(matchedKey.permissions)
+        ? (matchedKey.permissions as string[])
+        : [],
     };
   }
 
@@ -162,7 +202,9 @@ export class ApiKeyService {
       id: key.id,
       name: key.name,
       prefix: key.prefix,
-      permissions: (key.permissions as string[]) || [],
+      permissions: Array.isArray(key.permissions)
+        ? (key.permissions as string[])
+        : [],
       rateLimit: key.rateLimit,
       expiresAt: key.expiresAt,
       lastUsedAt: key.lastUsedAt,
@@ -172,40 +214,44 @@ export class ApiKeyService {
   }
 
   /**
-   * Revoke an API key (soft delete)
+   * Revoke an API key (soft delete) with transaction safety
    *
    * @param userId - UUID of the user (for authorization)
    * @param keyId - UUID of the key to revoke
    * @throws Error if key not found or not owned by user
    */
   async revokeApiKey(userId: string, keyId: string): Promise<void> {
-    const result = await db
-      .update(apiKeys)
-      .set({ revokedAt: new Date() })
-      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
-      .returning();
+    await db.transaction(async (tx) => {
+      const result = await tx
+        .update(apiKeys)
+        .set({ revokedAt: new Date() })
+        .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
+        .returning();
 
-    if (result.length === 0) {
-      throw new Error("API key not found or unauthorized");
-    }
+      if (result.length === 0) {
+        throw new Error("API key not found or unauthorized");
+      }
+    });
   }
 
   /**
-   * Delete an API key permanently
+   * Delete an API key permanently with transaction safety
    *
    * @param userId - UUID of the user (for authorization)
    * @param keyId - UUID of the key to delete
    * @throws Error if key not found or not owned by user
    */
   async deleteApiKey(userId: string, keyId: string): Promise<void> {
-    const result = await db
-      .delete(apiKeys)
-      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
-      .returning();
+    await db.transaction(async (tx) => {
+      const result = await tx
+        .delete(apiKeys)
+        .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
+        .returning();
 
-    if (result.length === 0) {
-      throw new Error("API key not found or unauthorized");
-    }
+      if (result.length === 0) {
+        throw new Error("API key not found or unauthorized");
+      }
+    });
   }
 
   /**
@@ -244,7 +290,9 @@ export class ApiKeyService {
       id: key.id,
       name: key.name,
       prefix: key.keyPrefix,
-      permissions: (key.permissions as string[]) || [],
+      permissions: Array.isArray(key.permissions)
+        ? (key.permissions as string[])
+        : [],
       rateLimit: key.rateLimit,
       expiresAt: key.expiresAt,
       lastUsedAt: key.lastUsedAt,
@@ -327,7 +375,8 @@ export class ApiKeyService {
       );
     }
 
-    let query = db
+    // Build query - apply where() conditionally to avoid type errors
+    const baseQuery = db
       .select({
         id: apiKeys.id,
         userId: apiKeys.userId,
@@ -346,10 +395,12 @@ export class ApiKeyService {
       .from(apiKeys)
       .leftJoin(users, eq(apiKeys.userId, users.id));
 
-    // Apply all conditions in single where() call
-    if (allConditions.length > 0) {
-      query = query.where(and(...allConditions)) as any;
-    }
+
+    // Apply conditions if any exist
+    const queryWithFilters =
+      allConditions.length > 0
+        ? baseQuery.where(and(...allConditions))
+        : baseQuery;
 
     // Get total count
     const [totalResult] = await db
@@ -360,7 +411,7 @@ export class ApiKeyService {
     const total = totalResult?.count || 0;
 
     // Get paginated results
-    const results = await query
+    const results = await queryWithFilters
       .orderBy(desc(apiKeys.createdAt))
       .limit(limit)
       .offset(offset);
@@ -368,7 +419,9 @@ export class ApiKeyService {
     return {
       keys: results.map((row) => ({
         ...row,
-        permissions: (row.permissions as string[]) || [],
+        permissions: Array.isArray(row.permissions)
+          ? (row.permissions as string[])
+          : [],
         revoked: row.revokedAt !== null,
       })),
       total,
@@ -377,6 +430,7 @@ export class ApiKeyService {
 
   /**
    * Get system-wide API key statistics (admin only)
+   * Optimized to use SQL aggregation instead of loading all keys into memory
    *
    * @returns System-wide statistics
    */
@@ -395,59 +449,35 @@ export class ApiKeyService {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // Get all keys
-    const allKeys = await db
+    // Use SQL aggregation for efficient counting (P2-MEDIUM fix)
+    const [stats] = await db
       .select({
-        id: apiKeys.id,
-        userId: apiKeys.userId,
-        revokedAt: apiKeys.revokedAt,
-        expiresAt: apiKeys.expiresAt,
-        lastUsedAt: apiKeys.lastUsedAt,
+        totalKeys: sql<number>`count(*)::int`,
+        activeKeys: sql<number>`count(*) filter (where ${apiKeys.revokedAt} is null and (${apiKeys.expiresAt} is null or ${apiKeys.expiresAt} > now()))::int`,
+        revokedKeys: sql<number>`count(*) filter (where ${apiKeys.revokedAt} is not null)::int`,
+        expiredKeys: sql<number>`count(*) filter (where ${apiKeys.revokedAt} is null and ${apiKeys.expiresAt} is not null and ${apiKeys.expiresAt} <= now())::int`,
+        keysUsedLast24h: sql<number>`count(*) filter (where ${apiKeys.lastUsedAt} >= ${yesterday})::int`,
       })
       .from(apiKeys);
 
-    const totalKeys = allKeys.length;
-    const activeKeys = allKeys.filter(
-      (k) => !k.revokedAt && (!k.expiresAt || k.expiresAt > now),
-    ).length;
-    const revokedKeys = allKeys.filter((k) => k.revokedAt).length;
-    const expiredKeys = allKeys.filter(
-      (k) => !k.revokedAt && k.expiresAt && k.expiresAt <= now,
-    ).length;
-    const keysUsedLast24h = allKeys.filter(
-      (k) => k.lastUsedAt && k.lastUsedAt >= yesterday,
-    ).length;
-
-    // Get keys by user
-    const keysByUserMap = new Map<string, number>();
-    allKeys.forEach((k) => {
-      const current = keysByUserMap.get(k.userId) || 0;
-      keysByUserMap.set(k.userId, current + 1);
-    });
-
-    // Get user details
-    const userIds = Array.from(keysByUserMap.keys());
-    const userDetails = await db
+    // Get keys per user with aggregation
+    const keysByUserResults = await db
       .select({
-        id: users.id,
-        displayName: users.displayName,
+        userId: apiKeys.userId,
+        userName: users.displayName,
+        keyCount: sql<number>`count(*)::int`,
       })
-      .from(users)
-      .where(inArray(users.id, userIds));
-
-    const keysByUser = userDetails.map((user) => ({
-      userId: user.id,
-      userName: user.displayName,
-      keyCount: keysByUserMap.get(user.id) || 0,
-    }));
+      .from(apiKeys)
+      .leftJoin(users, eq(apiKeys.userId, users.id))
+      .groupBy(apiKeys.userId, users.displayName);
 
     return {
-      totalKeys,
-      activeKeys,
-      revokedKeys,
-      expiredKeys,
-      keysUsedLast24h,
-      keysByUser,
+      totalKeys: stats.totalKeys,
+      activeKeys: stats.activeKeys,
+      revokedKeys: stats.revokedKeys,
+      expiredKeys: stats.expiredKeys,
+      keysUsedLast24h: stats.keysUsedLast24h,
+      keysByUser: keysByUserResults,
     };
   }
 
@@ -548,7 +578,9 @@ export class ApiKeyService {
 
     return {
       ...result,
-      permissions: (result.permissions as string[]) || [],
+      permissions: Array.isArray(result.permissions)
+        ? (result.permissions as string[])
+        : [],
       revoked: result.revokedAt !== null,
     };
   }

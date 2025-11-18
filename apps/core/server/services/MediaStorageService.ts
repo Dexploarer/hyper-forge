@@ -6,9 +6,15 @@
 
 import { db } from "../db";
 import { logger } from "../utils/logger";
-import { mediaAssets, type NewMediaAsset } from "../db/schema";
+import {
+  mediaAssets,
+  type NewMediaAsset,
+  type VoiceSettings,
+  type ImageSettings,
+} from "../db/schema";
 import { eq, and } from "drizzle-orm";
 import { fileUploadsCounter, getFileExtension } from "../metrics/business";
+import { cdnUploadService } from "../utils/CDNUploadService";
 
 // File size limits (in bytes)
 const FILE_SIZE_LIMITS = {
@@ -38,11 +44,11 @@ export interface SaveMediaParams {
     prompt?: string;
     model?: string;
     voiceId?: string;
-    voiceSettings?: Record<string, unknown>;
-    imageSettings?: Record<string, unknown>;
+    voiceSettings?: VoiceSettings;
+    imageSettings?: ImageSettings;
     duration?: number;
     mimeType?: string;
-    [key: string]: unknown;
+    fileSize?: number;
   };
   createdBy?: string;
 }
@@ -71,8 +77,8 @@ export class MediaStorageService {
   }
 
   /**
-   * Upload media file to CDN
-   * CDN webhook will automatically create database record with CDN URLs
+   * Upload media file to CDN and create database record
+   * Creates database record directly for data consistency
    */
   async saveMedia(params: SaveMediaParams): Promise<{
     id: string;
@@ -128,20 +134,7 @@ export class MediaStorageService {
       const directory = directoryParts.join("/");
       const fullPath = `${directory}/${sanitizedFileName}`;
 
-      // Create FormData for CDN upload
-      const formData = new FormData();
-
-      // Convert Buffer/Uint8Array to Blob
-      const buffer =
-        data instanceof Buffer ? new Uint8Array(data) : new Uint8Array(data);
-      const blob = new Blob([buffer], {
-        type: metadata.mimeType || this.getMimeType(fileName),
-      });
-
-      formData.append("files", blob, fullPath);
-      formData.append("directory", "media");
-
-      // Add metadata as JSON (CDN webhook will parse this)
+      // Prepare metadata for CDN upload
       const uploadMetadata = {
         type,
         entityType,
@@ -153,57 +146,73 @@ export class MediaStorageService {
         },
         createdBy,
       };
-      formData.append("metadata", JSON.stringify(uploadMetadata));
 
       logger.info(
         { context: "MediaStorage" },
         `Uploading ${type} to CDN: ${fullPath}`,
       );
 
-      // Upload to CDN
-      const response = await fetch(`${this.cdnUrl}/api/upload`, {
-        method: "POST",
-        headers: {
-          "X-API-Key": this.cdnApiKey,
+      // Convert Uint8Array to Buffer if needed (CDNUploadService expects Buffer | ArrayBuffer)
+      const buffer = data instanceof Buffer ? data : Buffer.from(data);
+
+      // Upload to CDN using shared service
+      const result = await cdnUploadService.uploadSingle(
+        {
+          buffer,
+          fileName: sanitizedFileName,
+          mimeType: metadata.mimeType || this.getMimeType(fileName),
         },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`CDN upload failed (${response.status}): ${errorText}`);
-      }
-
-      const result = (await response.json()) as {
-        success: boolean;
-        files: Array<{ path: string; url: string; size: number }>;
-      };
+        {
+          assetId: directory,
+          directory: "media",
+          userId: createdBy,
+          metadata: uploadMetadata,
+        },
+      );
 
       if (!result.success || !result.files || result.files.length === 0) {
         throw new Error("CDN upload succeeded but no files were returned");
       }
 
-      const uploadedFile = result.files[0];
-      const cdnUrl = `${this.cdnUrl}/media/${fullPath}`;
+      const cdnUrl = result.files[0].url;
 
       logger.info({ context: "MediaStorage" }, `✅ Uploaded to CDN: ${cdnUrl}`);
-      logger.info(
-        { context: "MediaStorage" },
-        "   CDN webhook will create database record automatically",
-      );
 
       fileUploadsCounter.inc({
         file_type: getFileExtension(fileName) || "unknown",
       });
 
-      // Note: We generate a temporary ID here since the webhook will create the actual record
-      // In a real implementation, you might want to poll the database or use a different approach
-      const tempId = `temp-${Date.now()}`;
+      // Create database record directly for data consistency
+      // This ensures we have a reliable record even if webhooks fail
+      const [dbRecord] = await db
+        .insert(mediaAssets)
+        .values({
+          type,
+          entityType: entityType || null,
+          entityId: entityId || null,
+          fileName: sanitizedFileName,
+          cdnUrl,
+          metadata: {
+            ...metadata,
+            fileSize,
+          },
+          createdBy: createdBy || null,
+        })
+        .returning();
+
+      if (!dbRecord) {
+        throw new Error("Failed to create database record after CDN upload");
+      }
+
+      logger.info(
+        { context: "MediaStorage", id: dbRecord.id },
+        `✅ Created database record for media asset`,
+      );
 
       return {
-        id: tempId,
+        id: dbRecord.id,
         cdnUrl,
-        fileName,
+        fileName: sanitizedFileName,
       };
     } catch (error) {
       logger.error({ err: error }, "[MediaStorage] Failed to upload media:");

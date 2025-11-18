@@ -5,6 +5,7 @@
 
 import { getGenerationPrompts } from "../utils/promptLoader";
 import { logger } from "../utils/logger";
+import { env } from "../config/env";
 import {
   aiApiCallsCounter,
   aiApiLatency,
@@ -93,20 +94,82 @@ interface RiggingOptions {
   heightMeters?: number;
 }
 
+// ==================== Meshy Task Creation Response ====================
+
+/**
+ * Response from Meshy task creation endpoints
+ * (image-to-3d, retexture, rigging)
+ */
 interface MeshyTaskResponse {
   task_id?: string;
   id?: string;
   result?: {
     task_id?: string;
     id?: string;
-    [key: string]: unknown;
   };
-  [key: string]: unknown;
 }
 
-interface MeshyStatusResponse {
-  result?: unknown;
-  [key: string]: unknown;
+// ==================== Meshy Task Status Response ====================
+
+/**
+ * Base interface for all Meshy task status responses
+ */
+interface MeshyBaseStatusResponse {
+  status: "PENDING" | "IN_PROGRESS" | "SUCCEEDED" | "FAILED" | "EXPIRED";
+  progress?: number;
+  error?: string;
+}
+
+/**
+ * Image-to-3D task status response
+ */
+interface MeshyImageTo3DStatusResponse extends MeshyBaseStatusResponse {
+  model_urls?: {
+    glb?: string;
+    fbx?: string;
+    usdz?: string;
+    obj?: string;
+    mtl?: string;
+  };
+  thumbnail_url?: string;
+  video_url?: string;
+  polycount?: number;
+  texture_urls?: Array<{
+    base_color?: string;
+    metallic?: string;
+    normal?: string;
+    roughness?: string;
+  }>;
+}
+
+/**
+ * Retexture task status response
+ */
+interface MeshyRetextureStatusResponse extends MeshyBaseStatusResponse {
+  model_urls?: {
+    glb?: string;
+    fbx?: string;
+    usdz?: string;
+    obj?: string;
+    mtl?: string;
+  };
+  thumbnail_url?: string;
+  video_url?: string;
+}
+
+/**
+ * Rigging task status response
+ */
+interface MeshyRiggingStatusResponse extends MeshyBaseStatusResponse {
+  task_error?: {
+    message: string;
+  };
+  result?: {
+    basic_animations?: {
+      walking_glb_url?: string;
+      running_glb_url?: string;
+    };
+  };
 }
 
 // ==================== Generation Prompts Interface ====================
@@ -150,11 +213,50 @@ class ImageGenerationService {
   private fetchFn: FetchFunction;
 
   constructor(config: OpenAIConfig) {
+    // Validate API keys
+    if (!config.apiKey && !config.aiGatewayApiKey) {
+      throw new Error(
+        "ImageGenerationService requires either apiKey or aiGatewayApiKey",
+      );
+    }
+
+    // Validate API keys are non-empty strings if provided
+    if (config.apiKey && typeof config.apiKey !== "string") {
+      throw new Error("OpenAI API key must be a string");
+    }
+    if (config.aiGatewayApiKey && typeof config.aiGatewayApiKey !== "string") {
+      throw new Error("AI Gateway API key must be a string");
+    }
+
+    // Validate model name if provided
+    if (config.model && typeof config.model !== "string") {
+      throw new Error("Model name must be a string");
+    }
+
+    // Validate image server URL if provided
+    if (config.imageServerBaseUrl) {
+      try {
+        new URL(config.imageServerBaseUrl);
+      } catch {
+        throw new Error("Image server base URL must be a valid URL");
+      }
+    }
+
     this.apiKey = config.apiKey;
     this.aiGatewayApiKey = config.aiGatewayApiKey;
     this.model = config.model || "gpt-image-1";
     this.imageServerBaseUrl = config.imageServerBaseUrl;
     this.fetchFn = config.fetchFn || fetch;
+
+    logger.info(
+      {
+        context: "ImageGenerationService",
+        hasOpenAIKey: !!this.apiKey,
+        hasAIGatewayKey: !!this.aiGatewayApiKey,
+        model: this.model,
+      },
+      "Image generation service initialized",
+    );
   }
 
   async generateImage(
@@ -163,11 +265,9 @@ class ImageGenerationService {
     style?: string,
   ): Promise<ImageGenerationResult> {
     // Check for Vercel AI Gateway or direct OpenAI API
-    // Use instance variable if available, otherwise fall back to environment variable
-    const useAIGateway = !!(
-      this.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY
-    );
-    const useDirectOpenAI = !!(this.apiKey || process.env.OPENAI_API_KEY);
+    // Use instance variable if available, otherwise fall back to validated environment variable
+    const useAIGateway = !!(this.aiGatewayApiKey || env.AI_GATEWAY_API_KEY);
+    const useDirectOpenAI = !!(this.apiKey || env.OPENAI_API_KEY);
 
     if (!useAIGateway && !useDirectOpenAI) {
       throw new Error(
@@ -201,9 +301,18 @@ class ImageGenerationService {
       ? "https://ai-gateway.vercel.sh/v1/chat/completions"
       : "https://api.openai.com/v1/images/generations";
 
+    // Get API key from instance or validated environment
     const apiKey = useAIGateway
-      ? this.aiGatewayApiKey || process.env.AI_GATEWAY_API_KEY!
-      : this.apiKey || process.env.OPENAI_API_KEY!;
+      ? this.aiGatewayApiKey || env.AI_GATEWAY_API_KEY || ""
+      : this.apiKey || env.OPENAI_API_KEY || "";
+
+    if (!apiKey) {
+      throw new Error(
+        useAIGateway
+          ? "AI_GATEWAY_API_KEY is required but not configured"
+          : "OPENAI_API_KEY is required but not configured",
+      );
+    }
 
     // Use google/gemini-2.5-flash-image for AI Gateway, gpt-image-1 for direct OpenAI
     const modelName = useAIGateway
@@ -256,9 +365,19 @@ class ImageGenerationService {
       });
 
       if (!response.ok) {
-        const error = await response.text();
+        const errorText = await response.text();
+        logger.error(
+          {
+            context: "ImageGenerationService",
+            provider: providerLabel,
+            model: modelName,
+            statusCode: response.status,
+            errorPreview: errorText.substring(0, 200),
+          },
+          "Image generation API request failed",
+        );
         throw new Error(
-          `Image generation API error: ${response.status} - ${error}`,
+          `Image generation failed with status ${response.status}`,
         );
       }
 
@@ -346,9 +465,35 @@ class MeshyService {
   private fetchFn: FetchFunction;
 
   constructor(config: MeshyConfig) {
+    // Validate API key
+    if (!config.apiKey) {
+      throw new Error("MeshyService requires an API key");
+    }
+    if (typeof config.apiKey !== "string" || config.apiKey.trim() === "") {
+      throw new Error("Meshy API key must be a non-empty string");
+    }
+
+    // Validate base URL if provided
+    if (config.baseUrl) {
+      try {
+        new URL(config.baseUrl);
+      } catch {
+        throw new Error("Meshy base URL must be a valid URL");
+      }
+    }
+
     this.apiKey = config.apiKey;
     this.baseUrl = config.baseUrl || "https://api.meshy.ai";
     this.fetchFn = config.fetchFn || fetch;
+
+    logger.info(
+      {
+        context: "MeshyService",
+        baseUrl: this.baseUrl,
+        hasApiKey: !!this.apiKey,
+      },
+      "Meshy service initialized",
+    );
   }
 
   async startImageTo3D(
@@ -390,8 +535,19 @@ class MeshyService {
       );
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Meshy API error: ${response.status} - ${error}`);
+        const errorText = await response.text();
+        logger.error(
+          {
+            context: "MeshyService",
+            method: "startImageTo3D",
+            statusCode: response.status,
+            errorPreview: errorText.substring(0, 200),
+          },
+          "Meshy image-to-3D API request failed",
+        );
+        throw new Error(
+          `Meshy image-to-3D failed with status ${response.status}`,
+        );
       }
 
       const data = (await response.json()) as MeshyTaskResponse;
@@ -423,7 +579,7 @@ class MeshyService {
     }
   }
 
-  async getTaskStatus(taskId: string): Promise<unknown> {
+  async getTaskStatus(taskId: string): Promise<MeshyImageTo3DStatusResponse> {
     const response = await this.fetchFn(
       `${this.baseUrl}/openapi/v1/image-to-3d/${taskId}`,
       {
@@ -434,12 +590,19 @@ class MeshyService {
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Meshy API error: ${response.status} - ${error}`);
+      const errorText = await response.text();
+      logger.error(
+        {
+          context: "MeshyService",
+          taskId,
+          statusCode: response.status,
+        },
+        "Failed to get Meshy task status",
+      );
+      throw new Error(`Meshy API returned status ${response.status}`);
     }
 
-    const data = (await response.json()) as MeshyStatusResponse;
-    return data.result || data;
+    return (await response.json()) as MeshyImageTo3DStatusResponse;
   }
 
   async startRetextureTask(
@@ -493,9 +656,18 @@ class MeshyService {
       );
 
       if (!response.ok) {
-        const error = await response.text();
+        const errorText = await response.text();
+        logger.error(
+          {
+            context: "MeshyService",
+            method: "startRetextureTask",
+            statusCode: response.status,
+            errorPreview: errorText.substring(0, 200),
+          },
+          "Meshy retexture API request failed",
+        );
         throw new Error(
-          `Meshy Retexture API error: ${response.status} - ${error}`,
+          `Meshy retexture failed with status ${response.status}`,
         );
       }
 
@@ -527,7 +699,9 @@ class MeshyService {
     }
   }
 
-  async getRetextureTaskStatus(taskId: string): Promise<unknown> {
+  async getRetextureTaskStatus(
+    taskId: string,
+  ): Promise<MeshyRetextureStatusResponse> {
     const response = await this.fetchFn(
       `${this.baseUrl}/openapi/v1/retexture/${taskId}`,
       {
@@ -538,12 +712,19 @@ class MeshyService {
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Meshy API error: ${response.status} - ${error}`);
+      const errorText = await response.text();
+      logger.error(
+        {
+          context: "MeshyService",
+          taskId,
+          statusCode: response.status,
+        },
+        "Failed to get Meshy retexture task status",
+      );
+      throw new Error(`Meshy API returned status ${response.status}`);
     }
 
-    const data = (await response.json()) as MeshyStatusResponse;
-    return data.result || data;
+    return (await response.json()) as MeshyRetextureStatusResponse;
   }
 
   // Rigging methods for auto-rigging avatars
@@ -578,20 +759,30 @@ class MeshyService {
     }
 
     try {
-      const response = await this.fetchFn(`${this.baseUrl}/openapi/v1/rigging`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
+      const response = await this.fetchFn(
+        `${this.baseUrl}/openapi/v1/rigging`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
         },
-        body: JSON.stringify(body),
-      });
+      );
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(
-          `Meshy rigging API error: ${response.status} - ${error}`,
+        const errorText = await response.text();
+        logger.error(
+          {
+            context: "MeshyService",
+            method: "startRiggingTask",
+            statusCode: response.status,
+            errorPreview: errorText.substring(0, 200),
+          },
+          "Meshy rigging API request failed",
         );
+        throw new Error(`Meshy rigging failed with status ${response.status}`);
       }
 
       const data = (await response.json()) as MeshyTaskResponse;
@@ -622,7 +813,9 @@ class MeshyService {
     }
   }
 
-  async getRiggingTaskStatus(taskId: string): Promise<unknown> {
+  async getRiggingTaskStatus(
+    taskId: string,
+  ): Promise<MeshyRiggingStatusResponse> {
     const response = await this.fetchFn(
       `${this.baseUrl}/openapi/v1/rigging/${taskId}`,
       {
@@ -633,13 +826,19 @@ class MeshyService {
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(
-        `Meshy rigging status error: ${response.status} - ${error}`,
+      const errorText = await response.text();
+      logger.error(
+        {
+          context: "MeshyService",
+          taskId,
+          statusCode: response.status,
+        },
+        "Failed to get Meshy rigging task status",
       );
+      throw new Error(`Meshy API returned status ${response.status}`);
     }
 
-    return await response.json();
+    return (await response.json()) as MeshyRiggingStatusResponse;
   }
 }
 

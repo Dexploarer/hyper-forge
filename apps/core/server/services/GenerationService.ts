@@ -25,8 +25,46 @@ import {
   assetGenerationErrors,
   MetricsTimer,
 } from "../metrics/business";
+import { cdnUploadService } from "../utils/CDNUploadService";
 
 // ==================== Type Definitions ====================
+
+// Database types from repository layer
+interface DbPipeline {
+  id: string;
+  userId: string;
+  assetId: string | null;
+  config: unknown; // JSONB field - will be cast to PipelineConfig
+  status: "initializing" | "processing" | "completed" | "failed" | "cancelled";
+  progress: number;
+  currentStage: string | null;
+  error: string | null;
+  errorStage: string | null;
+  errorDetails: unknown;
+  results: unknown; // JSONB field
+  meshyTaskId: string | null;
+  riggingTaskId: string | null;
+  createdAt: Date;
+  startedAt: Date | null;
+  completedAt: Date | null;
+  updatedAt: Date;
+  expiresAt: Date | null;
+}
+
+// Repository update payload types
+interface DbPipelineUpdate {
+  status?: "initializing" | "processing" | "completed" | "failed" | "cancelled";
+  progress?: number;
+  currentStage?: string;
+  error?: string;
+  errorStage?: string;
+  errorDetails?: unknown;
+  results?: unknown;
+  meshyTaskId?: string;
+  riggingTaskId?: string;
+  completedAt?: Date;
+  startedAt?: Date;
+}
 
 // Use a compatible fetch function type (node-fetch doesn't have preconnect method)
 interface FetchResponse {
@@ -237,6 +275,15 @@ export class GenerationService extends EventEmitter {
   }) {
     super();
 
+    // CRITICAL: Add error handler to prevent process crashes from unhandled error events
+    // EventEmitter will crash Node.js process if error event emitted without listener
+    this.on("error", (error: Error) => {
+      logger.error(
+        { err: error },
+        "[GenerationService] EventEmitter error caught",
+      );
+    });
+
     this.fetchFn = (config?.fetchFn || fetch) as FetchFunction;
 
     // Determine which API keys to use (user-provided or validated environment variables)
@@ -349,10 +396,10 @@ export class GenerationService extends EventEmitter {
     await this.pipelineRepo.create({
       id: pipelineId,
       userId: config.user?.userId || "anonymous",
-      config: config as any,
+      config: config as unknown, // JSONB field accepts unknown
       status: "initializing",
       progress: 0,
-      results: {},
+      results: {} as unknown, // JSONB field accepts unknown
       createdAt: new Date(),
     });
     logger.info({ pipelineId }, "Pipeline stored in database");
@@ -362,10 +409,11 @@ export class GenerationService extends EventEmitter {
     this.processPipeline(pipelineId).catch(async (error) => {
       logger.error({ err: error, pipelineId }, "Pipeline failed");
       try {
-        await this.pipelineRepo.update(pipelineId, {
+        const updatePayload: DbPipelineUpdate = {
           status: "failed",
           error: error.message,
-        } as any);
+        };
+        await this.pipelineRepo.update(pipelineId, updatePayload);
       } catch (updateError) {
         logger.error(
           { err: updateError, pipelineId },
@@ -396,7 +444,7 @@ export class GenerationService extends EventEmitter {
     );
 
     const pipelineId = job.pipelineId;
-    const config = job.config as any as PipelineConfig;
+    const config = job.config as PipelineConfig; // Type assertion for JSONB field
 
     logger.info({ pipelineId }, "processPipelineFromJob() called");
 
@@ -412,10 +460,10 @@ export class GenerationService extends EventEmitter {
       await this.pipelineRepo.create({
         id: pipelineId,
         userId: config.user?.userId || "anonymous",
-        config: config as any,
+        config: config as unknown, // JSONB field accepts unknown
         status: "processing",
         progress: 0,
-        results: {},
+        results: {} as unknown, // JSONB field accepts unknown
         createdAt: new Date(),
       });
 
@@ -429,7 +477,7 @@ export class GenerationService extends EventEmitter {
       await generationJobService.updateJob(pipelineId, {
         status: "completed",
         progress: 100,
-        results: dbPipeline?.results as any,
+        results: (dbPipeline?.results as Record<string, unknown>) || {},
         completedAt: new Date(),
       });
 
@@ -476,12 +524,16 @@ export class GenerationService extends EventEmitter {
     }
 
     // Parse config and results from database
-    const config = dbPipeline.config as any;
-    const results = (dbPipeline.results as any) || {};
+    const config = dbPipeline.config as PipelineConfig; // Type assertion for JSONB field
+    const results = (dbPipeline.results as Record<string, unknown>) || {};
 
     // Reconstruct stages from database state
     // Note: The database stores simplified state, we reconstruct the full stages object here
-    const stages = config.stages || {
+    // Stages may be stored in config JSONB, type it carefully
+    const configWithStages = config as PipelineConfig & {
+      stages?: Record<string, StageResult>;
+    };
+    const stages = configWithStages.stages || {
       textInput: { status: "completed", progress: 100 },
       promptOptimization: { status: "pending", progress: 0 },
       imageGeneration: { status: "pending", progress: 0 },
@@ -531,19 +583,20 @@ export class GenerationService extends EventEmitter {
     }
 
     // Reconstruct pipeline state from database
+    const dbConfig = dbPipeline.config as PipelineConfig; // Type assertion for JSONB field
     const pipeline: Pipeline = {
       id: dbPipeline.id,
-      config: dbPipeline.config as any,
-      status: dbPipeline.status as any,
+      config: dbConfig,
+      status: dbPipeline.status as Pipeline["status"],
       progress: dbPipeline.progress,
-      stages: (dbPipeline.config as any).stages || {
+      stages: (dbConfig as { stages?: Pipeline["stages"] }).stages || {
         textInput: { status: "completed", progress: 100 },
         promptOptimization: { status: "pending", progress: 0 },
         imageGeneration: { status: "pending", progress: 0 },
         image3D: { status: "pending", progress: 0 },
         textureGeneration: { status: "pending", progress: 0 },
       },
-      results: (dbPipeline.results as any) || {},
+      results: (dbPipeline.results as Record<string, unknown>) || {},
       error: dbPipeline.error || undefined,
       createdAt: dbPipeline.createdAt.toISOString(),
       completedAt: dbPipeline.completedAt?.toISOString(),
@@ -558,9 +611,10 @@ export class GenerationService extends EventEmitter {
     try {
       logger.info({ pipelineId }, "Setting status to processing");
       pipeline.status = "processing";
-      await this.pipelineRepo.update(pipelineId, {
+      const updatePayload: DbPipelineUpdate = {
         status: "processing",
-      } as any);
+      };
+      await this.pipelineRepo.update(pipelineId, updatePayload);
 
       let enhancedPrompt = config.description;
       let imageUrl: string | null = null;
@@ -1796,57 +1850,18 @@ Your task is to enhance the user's description to create better results with ima
     success: boolean;
     files: Array<{ path: string; url: string; size: number }>;
   }> {
-    const CDN_URL = env.CDN_URL;
-    const CDN_API_KEY = env.CDN_API_KEY;
-
-    if (!CDN_URL || !CDN_API_KEY) {
-      throw new Error("CDN_URL and CDN_API_KEY must be configured");
-    }
-
-    const formData = new FormData();
-
-    for (const file of files) {
-      // Convert Buffer to Uint8Array for Blob compatibility
-      const buffer =
-        file.buffer instanceof Buffer
-          ? new Uint8Array(file.buffer)
-          : new Uint8Array(file.buffer);
-      const blob = new Blob([buffer], {
-        type: file.type || "application/octet-stream",
-      });
-      formData.append("files", blob, `${assetId}/${file.name}`);
-    }
-
-    formData.append("directory", "models");
-
-    logger.info(
-      { assetId, fileCount: files.length },
-      "CDN Upload: Uploading files",
-    );
-
-    const response = await this.fetchFn(`${CDN_URL}/api/upload`, {
-      method: "POST",
-      headers: {
-        "X-API-Key": CDN_API_KEY,
+    // Use shared CDN upload service
+    return cdnUploadService.upload(
+      files.map((f) => ({
+        buffer: f.buffer,
+        fileName: f.name,
+        mimeType: f.type,
+      })),
+      {
+        assetId,
+        directory: "models",
       },
-      body: formData as any,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`CDN upload failed (${response.status}): ${errorText}`);
-    }
-
-    const result = (await response.json()) as {
-      success: boolean;
-      files: Array<{ path: string; url: string; size: number }>;
-    };
-    logger.info(
-      { uploadedFileCount: result.files?.length || 0 },
-      "CDN Upload: Successfully uploaded files",
     );
-
-    return result;
   }
 
   /**

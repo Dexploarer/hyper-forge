@@ -22,7 +22,7 @@ import {
   type NewLore,
   type Location,
 } from "../db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, isNull } from "drizzle-orm";
 import { embeddingService } from "./EmbeddingService";
 import { qdrantService, type CollectionName } from "./QdrantService";
 
@@ -76,7 +76,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(npcs)
-        .where(eq(npcs.id, id))
+        .where(and(eq(npcs.id, id), isNull(npcs.deletedAt)))
         .limit(1);
 
       return result[0] || null;
@@ -94,12 +94,17 @@ export class ContentDatabaseService {
    */
   async listNPCs(limit = 50, offset = 0): Promise<NPC[]> {
     try {
+      // P1: Cap limits to prevent resource exhaustion
+      const safeLimit = Math.min(limit || 20, 100);
+      const safeOffset = Math.max(offset || 0, 0);
+
       const result = await db
         .select()
         .from(npcs)
+        .where(isNull(npcs.deletedAt))
         .orderBy(desc(npcs.createdAt))
-        .limit(limit)
-        .offset(offset);
+        .limit(safeLimit)
+        .offset(safeOffset);
 
       return result;
     } catch (error) {
@@ -114,9 +119,31 @@ export class ContentDatabaseService {
   /**
    * Update NPC by ID
    */
-  async updateNPC(id: string, data: Partial<NewNPC>): Promise<NPC> {
+  async updateNPC(
+    id: string,
+    userId: string,
+    data: Partial<NewNPC>,
+  ): Promise<NPC> {
     try {
-      const [npc] = await db
+      // P0-CRITICAL: Ownership validation
+      const [existing] = await db
+        .select()
+        .from(npcs)
+        .where(
+          and(
+            eq(npcs.id, id),
+            eq(npcs.createdBy, userId),
+            isNull(npcs.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        throw new Error("NPC not found or access denied");
+      }
+
+      // P1: Check .returning() results for silent failures
+      const results = await db
         .update(npcs)
         .set({
           ...data,
@@ -124,6 +151,12 @@ export class ContentDatabaseService {
         })
         .where(eq(npcs.id, id))
         .returning();
+
+      if (results.length === 0) {
+        throw new Error("Update failed");
+      }
+
+      const npc = results[0];
 
       logger.info(
         { context: "ContentDatabaseService" },
@@ -151,8 +184,25 @@ export class ContentDatabaseService {
   /**
    * Delete NPC by ID
    */
-  async deleteNPC(id: string): Promise<void> {
+  async deleteNPC(id: string, userId: string): Promise<void> {
     try {
+      // P0-CRITICAL: Ownership validation
+      const [existing] = await db
+        .select()
+        .from(npcs)
+        .where(
+          and(
+            eq(npcs.id, id),
+            eq(npcs.createdBy, userId),
+            isNull(npcs.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        throw new Error("NPC not found or access denied");
+      }
+
       await db.delete(npcs).where(eq(npcs.id, id));
       logger.info({ context: "ContentDatabaseService" }, `Deleted NPC: ${id}`);
 
@@ -223,7 +273,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(quests)
-        .where(eq(quests.id, id))
+        .where(and(eq(quests.id, id), isNull(quests.deletedAt)))
         .limit(1);
 
       return result[0] || null;
@@ -241,12 +291,17 @@ export class ContentDatabaseService {
    */
   async listQuests(limit = 50, offset = 0): Promise<Quest[]> {
     try {
+      // P1: Cap limits to prevent resource exhaustion
+      const safeLimit = Math.min(limit || 20, 100);
+      const safeOffset = Math.max(offset || 0, 0);
+
       const result = await db
         .select()
         .from(quests)
+        .where(isNull(quests.deletedAt))
         .orderBy(desc(quests.createdAt))
-        .limit(limit)
-        .offset(offset);
+        .limit(safeLimit)
+        .offset(safeOffset);
 
       return result;
     } catch (error) {
@@ -261,9 +316,31 @@ export class ContentDatabaseService {
   /**
    * Update Quest by ID
    */
-  async updateQuest(id: string, data: Partial<NewQuest>): Promise<Quest> {
+  async updateQuest(
+    id: string,
+    userId: string,
+    data: Partial<NewQuest>,
+  ): Promise<Quest> {
     try {
-      const [quest] = await db
+      // P0-CRITICAL: Ownership validation
+      const [existing] = await db
+        .select()
+        .from(quests)
+        .where(
+          and(
+            eq(quests.id, id),
+            eq(quests.createdBy, userId),
+            isNull(quests.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        throw new Error("Quest not found or access denied");
+      }
+
+      // P1: Check .returning() results for silent failures
+      const results = await db
         .update(quests)
         .set({
           ...data,
@@ -271,6 +348,12 @@ export class ContentDatabaseService {
         })
         .where(eq(quests.id, id))
         .returning();
+
+      if (results.length === 0) {
+        throw new Error("Update failed");
+      }
+
+      const quest = results[0];
 
       logger.info(
         { context: "ContentDatabaseService" },
@@ -298,8 +381,25 @@ export class ContentDatabaseService {
   /**
    * Delete Quest by ID
    */
-  async deleteQuest(id: string): Promise<void> {
+  async deleteQuest(id: string, userId: string): Promise<void> {
     try {
+      // P0-CRITICAL: Ownership validation
+      const [existing] = await db
+        .select()
+        .from(quests)
+        .where(
+          and(
+            eq(quests.id, id),
+            eq(quests.createdBy, userId),
+            isNull(quests.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        throw new Error("Quest not found or access denied");
+      }
+
       await db.delete(quests).where(eq(quests.id, id));
       logger.info(
         { context: "ContentDatabaseService" },
@@ -372,7 +472,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(dialogues)
-        .where(eq(dialogues.id, id))
+        .where(and(eq(dialogues.id, id), isNull(dialogues.deletedAt)))
         .limit(1);
 
       return result[0] || null;
@@ -390,12 +490,17 @@ export class ContentDatabaseService {
    */
   async listDialogues(limit = 50, offset = 0): Promise<Dialogue[]> {
     try {
+      // P1: Cap limits to prevent resource exhaustion
+      const safeLimit = Math.min(limit || 20, 100);
+      const safeOffset = Math.max(offset || 0, 0);
+
       const result = await db
         .select()
         .from(dialogues)
+        .where(isNull(dialogues.deletedAt))
         .orderBy(desc(dialogues.createdAt))
-        .limit(limit)
-        .offset(offset);
+        .limit(safeLimit)
+        .offset(safeOffset);
 
       return result;
     } catch (error) {
@@ -412,10 +517,29 @@ export class ContentDatabaseService {
    */
   async updateDialogue(
     id: string,
+    userId: string,
     data: Partial<NewDialogue>,
   ): Promise<Dialogue> {
     try {
-      const [dialogue] = await db
+      // P0-CRITICAL: Ownership validation
+      const [existing] = await db
+        .select()
+        .from(dialogues)
+        .where(
+          and(
+            eq(dialogues.id, id),
+            eq(dialogues.createdBy, userId),
+            isNull(dialogues.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        throw new Error("Dialogue not found or access denied");
+      }
+
+      // P1: Check .returning() results for silent failures
+      const results = await db
         .update(dialogues)
         .set({
           ...data,
@@ -423,6 +547,12 @@ export class ContentDatabaseService {
         })
         .where(eq(dialogues.id, id))
         .returning();
+
+      if (results.length === 0) {
+        throw new Error("Update failed");
+      }
+
+      const dialogue = results[0];
 
       logger.info(
         `[ContentDatabaseService] Updated Dialogue for: ${dialogue.npcName}`,
@@ -449,8 +579,25 @@ export class ContentDatabaseService {
   /**
    * Delete Dialogue by ID
    */
-  async deleteDialogue(id: string): Promise<void> {
+  async deleteDialogue(id: string, userId: string): Promise<void> {
     try {
+      // P0-CRITICAL: Ownership validation
+      const [existing] = await db
+        .select()
+        .from(dialogues)
+        .where(
+          and(
+            eq(dialogues.id, id),
+            eq(dialogues.createdBy, userId),
+            isNull(dialogues.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        throw new Error("Dialogue not found or access denied");
+      }
+
       await db.delete(dialogues).where(eq(dialogues.id, id));
       logger.info(
         { context: "ContentDatabaseService" },
@@ -524,7 +671,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(lores)
-        .where(eq(lores.id, id))
+        .where(and(eq(lores.id, id), isNull(lores.deletedAt)))
         .limit(1);
 
       return result[0] || null;
@@ -542,12 +689,17 @@ export class ContentDatabaseService {
    */
   async listLores(limit = 50, offset = 0): Promise<Lore[]> {
     try {
+      // P1: Cap limits to prevent resource exhaustion
+      const safeLimit = Math.min(limit || 20, 100);
+      const safeOffset = Math.max(offset || 0, 0);
+
       const result = await db
         .select()
         .from(lores)
+        .where(isNull(lores.deletedAt))
         .orderBy(desc(lores.createdAt))
-        .limit(limit)
-        .offset(offset);
+        .limit(safeLimit)
+        .offset(safeOffset);
 
       return result;
     } catch (error) {
@@ -562,9 +714,31 @@ export class ContentDatabaseService {
   /**
    * Update Lore by ID
    */
-  async updateLore(id: string, data: Partial<NewLore>): Promise<Lore> {
+  async updateLore(
+    id: string,
+    userId: string,
+    data: Partial<NewLore>,
+  ): Promise<Lore> {
     try {
-      const [lore] = await db
+      // P0-CRITICAL: Ownership validation
+      const [existing] = await db
+        .select()
+        .from(lores)
+        .where(
+          and(
+            eq(lores.id, id),
+            eq(lores.createdBy, userId),
+            isNull(lores.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        throw new Error("Lore not found or access denied");
+      }
+
+      // P1: Check .returning() results for silent failures
+      const results = await db
         .update(lores)
         .set({
           ...data,
@@ -572,6 +746,12 @@ export class ContentDatabaseService {
         })
         .where(eq(lores.id, id))
         .returning();
+
+      if (results.length === 0) {
+        throw new Error("Update failed");
+      }
+
+      const lore = results[0];
 
       logger.info(
         { context: "ContentDatabaseService" },
@@ -599,8 +779,25 @@ export class ContentDatabaseService {
   /**
    * Delete Lore by ID
    */
-  async deleteLore(id: string): Promise<void> {
+  async deleteLore(id: string, userId: string): Promise<void> {
     try {
+      // P0-CRITICAL: Ownership validation
+      const [existing] = await db
+        .select()
+        .from(lores)
+        .where(
+          and(
+            eq(lores.id, id),
+            eq(lores.createdBy, userId),
+            isNull(lores.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!existing) {
+        throw new Error("Lore not found or access denied");
+      }
+
       await db.delete(lores).where(eq(lores.id, id));
       logger.info({ context: "ContentDatabaseService" }, `Deleted Lore: ${id}`);
 
@@ -631,12 +828,17 @@ export class ContentDatabaseService {
    */
   async listLocations(limit = 50, offset = 0): Promise<Location[]> {
     try {
+      // P1: Cap limits to prevent resource exhaustion
+      const safeLimit = Math.min(limit || 20, 100);
+      const safeOffset = Math.max(offset || 0, 0);
+
       const result = await db
         .select()
         .from(locations)
+        .where(isNull(locations.deletedAt))
         .orderBy(desc(locations.createdAt))
-        .limit(limit)
-        .offset(offset);
+        .limit(safeLimit)
+        .offset(safeOffset);
 
       return result;
     } catch (error) {

@@ -10,6 +10,7 @@ import fetch from "node-fetch";
 import type { UserContextType, AssetMetadataType } from "../models";
 import type { Static } from "elysia";
 import { MaterialPreset as MaterialPresetModel } from "../models";
+import { cdnUploadService } from "../utils/CDNUploadService";
 
 // Use the TypeBox model as the type
 type MaterialPreset = Static<typeof MaterialPresetModel>;
@@ -95,6 +96,25 @@ interface RegenerateBaseParams {
   assetsDir: string;
 }
 
+interface MaterialPresetInfo {
+  id: string;
+  displayName: string;
+  category: string;
+  tier: number;
+  color: string;
+  stylePrompt?: string;
+}
+
+/**
+ * Extended variant metadata with material preset information
+ * Includes all standard asset metadata plus variant-specific fields
+ */
+interface VariantMetadataExtended extends AssetMetadataType {
+  materialPreset: MaterialPresetInfo;
+  baseAssetId?: string;
+  variantType?: "retexture";
+}
+
 // Temporary MeshyClient implementation until build issues are resolved
 class MeshyClient {
   private apiKey: string;
@@ -121,7 +141,9 @@ class MeshyClient {
   ): Promise<{ modelUrl: string; taskId: string }> {
     // Minimal implementation for remeshing
     const formData = new FormData();
-    formData.append("file", (await fs.readFile(modelPath)) as any);
+    const fileBuffer = await fs.readFile(modelPath);
+    const blob = new Blob([fileBuffer], { type: "model/gltf-binary" });
+    formData.append("file", blob, "model.glb");
     formData.append("targetPolycount", String(options.targetPolycount || 3000));
 
     const response = await this.fetchFn(`${this.baseUrl}/v1/remesh`, {
@@ -129,7 +151,7 @@ class MeshyClient {
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
       },
-      body: formData as any,
+      body: formData as BodyInit,
     });
 
     if (!response.ok) {
@@ -300,7 +322,8 @@ export class RetextureService {
   }
 
   /**
-   * Upload files directly to CDN
+   * Upload files directly to CDN using shared CDNUploadService
+   *
    * @param assetId - Asset ID for directory structure
    * @param files - Array of files to upload
    * @returns CDN upload response
@@ -308,56 +331,22 @@ export class RetextureService {
   private async uploadToCDN(
     assetId: string,
     files: Array<{ buffer: ArrayBuffer | Buffer; name: string; type?: string }>,
-  ): Promise<{ success: boolean; files: any[] }> {
-    const CDN_URL = process.env.CDN_URL;
-    const CDN_API_KEY = process.env.CDN_API_KEY;
+  ): Promise<{
+    success: boolean;
+    files: Array<{ path: string; url: string; size: number }>;
+  }> {
+    // Map files to CDNUploadFile format
+    const cdnFiles = files.map((file) => ({
+      buffer: file.buffer,
+      fileName: file.name,
+      mimeType: file.type,
+    }));
 
-    if (!CDN_URL || !CDN_API_KEY) {
-      throw new Error("CDN_URL and CDN_API_KEY must be configured");
-    }
-
-    const formData = new FormData();
-
-    for (const file of files) {
-      // Convert Buffer to Uint8Array for Blob compatibility
-      const buffer =
-        file.buffer instanceof Buffer
-          ? new Uint8Array(file.buffer)
-          : new Uint8Array(file.buffer);
-      const blob = new Blob([buffer], {
-        type: file.type || "application/octet-stream",
-      });
-      formData.append("files", blob, `${assetId}/${file.name}`);
-    }
-
-    formData.append("directory", "models");
-
-    logger.info(
-      `[CDN Upload] Uploading ${files.length} files for asset ${assetId}`,
-    );
-
-    const response = await this.fetchFn(`${CDN_URL}/api/upload`, {
-      method: "POST",
-      headers: {
-        "X-API-Key": CDN_API_KEY,
-      },
-      body: formData as any,
+    // Use shared CDN upload service
+    return await cdnUploadService.upload(cdnFiles, {
+      assetId,
+      directory: "models",
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`CDN upload failed (${response.status}): ${errorText}`);
-    }
-
-    const result = (await response.json()) as {
-      success: boolean;
-      files: any[];
-    };
-    logger.info(
-      `[CDN Upload] Successfully uploaded ${result.files?.length || 0} files`,
-    );
-
-    return result;
   }
 
   async retexture({
@@ -528,10 +517,8 @@ export class RetextureService {
 
     // Note: Concept art is inherited from base asset, webhook handler can link it
 
-    // Create standardized metadata
-    // Note: Using 'any' type here because we're adding extra fields (like materialPreset)
-    // that aren't in the AssetMetadataType schema but are needed for the JSON file
-    const variantMetadata: any = {
+    // Create standardized metadata with proper typing
+    const variantMetadata: VariantMetadataExtended = {
       // Identity
       id: variantName,
       gameId: variantName,
@@ -543,14 +530,16 @@ export class RetextureService {
       isBaseModel: false,
       isVariant: true,
       parentBaseModel: baseAssetId,
+      baseAssetId: baseAssetId,
+      variantType: "retexture",
 
-      // Material information (extra field for JSON file)
+      // Material information
       materialPreset: {
         id: materialPreset.id,
         displayName: materialPreset.displayName,
-        category: materialPreset.category,
-        tier: materialPreset.tier,
-        color: materialPreset.color,
+        category: materialPreset.category || "custom",
+        tier: typeof materialPreset.tier === "number" ? materialPreset.tier : 1,
+        color: materialPreset.color || "#666666",
         stylePrompt: materialPreset.stylePrompt,
       },
 
@@ -561,7 +550,6 @@ export class RetextureService {
       retextureStatus: "completed",
 
       // Files
-      modelPath: `${variantName}.glb`,
       hasModel: true,
       hasConceptArt: baseMetadata.hasConceptArt || false,
 

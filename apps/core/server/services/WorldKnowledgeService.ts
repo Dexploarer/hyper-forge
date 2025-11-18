@@ -10,7 +10,80 @@ import { ContentDatabaseService } from "./ContentDatabaseService";
 import { RelationshipService } from "./RelationshipService";
 import { WorldConfigService } from "./WorldConfigService";
 import { logger } from "../utils/logger";
-import type { NPC, Quest, Lore, Dialogue } from "../db/schema/content.schema";
+import type {
+  NPC,
+  Quest,
+  Lore,
+  Dialogue,
+  Location,
+} from "../db/schema/content.schema";
+import type { WorldConfiguration } from "../db/schema/world-config.schema";
+import { db } from "../db";
+import { sql } from "drizzle-orm";
+import {
+  npcs,
+  quests,
+  lores,
+  dialogues,
+  locations,
+} from "../db/schema/content.schema";
+
+// JSONB data interfaces for type safety
+interface NPCData {
+  personality?: {
+    traits?: string[];
+  };
+  [key: string]: unknown;
+}
+
+interface QuestData {
+  description?: string;
+  [key: string]: unknown;
+}
+
+interface LoreData {
+  content?: string;
+  [key: string]: unknown;
+}
+
+interface LocationData {
+  description?: string;
+  [key: string]: unknown;
+}
+
+interface EntityRelationshipData {
+  sourceId: string;
+  targetId: string;
+  relationshipType: string;
+  strength: string | null;
+}
+
+interface RelationshipConnection {
+  relationship: string;
+  strength: string;
+  depth: number;
+  target: {
+    id: string;
+    type: string;
+    name: string;
+    summary?: string;
+    connections: RelationshipConnection[];
+  };
+}
+
+interface ConsistencyIssue {
+  id: string;
+  severity: "error" | "warning" | "info";
+  type: string;
+  message: string;
+  entityId?: string;
+  entityType?: string;
+  suggestions: Array<{
+    action: string;
+    description: string;
+    targetId?: string;
+  }>;
+}
 
 // Simple in-memory cache with TTL
 class SimpleCache<T> {
@@ -52,8 +125,8 @@ class SimpleCache<T> {
 }
 
 // Cache instances
-const worldContextCache = new SimpleCache<any>();
-const relationshipGraphCache = new SimpleCache<any>();
+const worldContextCache = new SimpleCache<WorldContext>();
+const relationshipGraphCache = new SimpleCache<RelationshipGraph>();
 
 export interface WorldStats {
   totalNPCs: number;
@@ -106,7 +179,7 @@ export interface WorldSuggestions {
 
 export interface WorldContext {
   stats: WorldStats;
-  worldConfig: any;
+  worldConfig: WorldConfiguration | null;
   entities: {
     npcs: EntitySummary[];
     quests: EntitySummary[];
@@ -223,31 +296,52 @@ export class WorldKnowledgeService {
    * Get world statistics
    */
   private async getWorldStats(userId: string): Promise<WorldStats> {
-    const [npcs, quests, lore, dialogues, locations] = await Promise.all([
-      this.contentDb.listNPCs(1, 0), // Just get count
-      this.contentDb.listQuests(1, 0),
-      this.contentDb.listLores(1, 0),
-      this.contentDb.listDialogues(1, 0),
-      this.contentDb.listLocations(1, 0),
-    ]);
+    try {
+      // Use SQL COUNT for performance instead of loading all records
+      const [npcCount, questCount, loreCount, dialogueCount, locationCount] =
+        await Promise.all([
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(npcs)
+            .then((result) => result[0]?.count ?? 0),
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(quests)
+            .then((result) => result[0]?.count ?? 0),
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(lores)
+            .then((result) => result[0]?.count ?? 0),
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(dialogues)
+            .then((result) => result[0]?.count ?? 0),
+          db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(locations)
+            .then((result) => result[0]?.count ?? 0),
+        ]);
 
-    // Get full counts (this is a simplification - should be optimized with COUNT queries)
-    const [allNpcs, allQuests, allLore, allDialogues, allLocations] =
-      await Promise.all([
-        this.contentDb.listNPCs(10000, 0),
-        this.contentDb.listQuests(10000, 0),
-        this.contentDb.listLores(10000, 0),
-        this.contentDb.listDialogues(10000, 0),
-        this.contentDb.listLocations(10000, 0),
-      ]);
-
-    return {
-      totalNPCs: allNpcs.length,
-      totalQuests: allQuests.length,
-      totalLore: allLore.length,
-      totalDialogues: allDialogues.length,
-      totalLocations: allLocations.length,
-    };
+      return {
+        totalNPCs: npcCount,
+        totalQuests: questCount,
+        totalLore: loreCount,
+        totalDialogues: dialogueCount,
+        totalLocations: locationCount,
+      };
+    } catch (error) {
+      logger.error(
+        { error, userId },
+        "Failed to get world stats, returning zeros",
+      );
+      return {
+        totalNPCs: 0,
+        totalQuests: 0,
+        totalLore: 0,
+        totalDialogues: 0,
+        totalLocations: 0,
+      };
+    }
   }
 
   /**
@@ -280,7 +374,7 @@ export class WorldKnowledgeService {
       lore: lore.map((l: Lore) =>
         this.summarizeLore(l, options.includeFullData),
       ),
-      locations: locations.map((loc: any) =>
+      locations: locations.map((loc: Location) =>
         this.summarizeLocation(loc, options.includeFullData),
       ),
     };
@@ -290,7 +384,7 @@ export class WorldKnowledgeService {
    * Summarize NPC for context
    */
   private summarizeNPC(npc: NPC, includeFull: boolean): EntitySummary {
-    const data = npc.data as any;
+    const data = npc.data as NPCData;
     return {
       id: npc.id,
       name: npc.name,
@@ -299,7 +393,7 @@ export class WorldKnowledgeService {
       summary: includeFull
         ? JSON.stringify(data)
         : data?.personality?.traits?.slice(0, 3).join(", ") || "No description",
-      tags: (npc.tags as string[]) || [],
+      tags: npc.tags || [],
       relationshipCount: 0, // Will be populated if relationships are included
     };
   }
@@ -308,7 +402,7 @@ export class WorldKnowledgeService {
    * Summarize Quest for context
    */
   private summarizeQuest(quest: Quest, includeFull: boolean): EntitySummary {
-    const data = quest.data as any;
+    const data = quest.data as QuestData;
     return {
       id: quest.id,
       name: quest.title,
@@ -316,7 +410,7 @@ export class WorldKnowledgeService {
       summary: includeFull
         ? JSON.stringify(data)
         : data?.description?.slice(0, 100) || "No description",
-      tags: (quest.tags as string[]) || [],
+      tags: quest.tags || [],
     };
   }
 
@@ -324,7 +418,7 @@ export class WorldKnowledgeService {
    * Summarize Lore for context
    */
   private summarizeLore(lore: Lore, includeFull: boolean): EntitySummary {
-    const data = lore.data as any;
+    const data = lore.data as LoreData;
     return {
       id: lore.id,
       name: lore.title,
@@ -332,7 +426,7 @@ export class WorldKnowledgeService {
       summary: includeFull
         ? JSON.stringify(data)
         : data?.content?.slice(0, 100) || "No description",
-      tags: (lore.tags as string[]) || [],
+      tags: lore.tags || [],
     };
   }
 
@@ -340,10 +434,10 @@ export class WorldKnowledgeService {
    * Summarize Location for context
    */
   private summarizeLocation(
-    location: any,
+    location: Location,
     includeFull: boolean,
   ): EntitySummary {
-    const data = location.data as any;
+    const data = location.data as LocationData;
     return {
       id: location.id,
       name: location.name,
@@ -351,7 +445,7 @@ export class WorldKnowledgeService {
       summary: includeFull
         ? JSON.stringify(data)
         : data?.description?.slice(0, 100) || "No description",
-      tags: (location.tags as string[]) || [],
+      tags: location.tags || [],
     };
   }
 
@@ -359,7 +453,12 @@ export class WorldKnowledgeService {
    * Build relationship graph from entities
    */
   private async buildRelationshipGraph(
-    entities: any,
+    entities: {
+      npcs: EntitySummary[];
+      quests: EntitySummary[];
+      lore: EntitySummary[];
+      locations: EntitySummary[];
+    },
     userId: string,
   ): Promise<RelationshipGraph> {
     // Get all entities with their types
@@ -396,7 +495,7 @@ export class WorldKnowledgeService {
 
     // Build edges
     const edges: RelationshipEdge[] = [];
-    allRelationships.flat().forEach((rel: any) => {
+    allRelationships.flat().forEach((rel: EntityRelationshipData) => {
       if (rel) {
         edges.push({
           source: rel.sourceId,
@@ -416,7 +515,15 @@ export class WorldKnowledgeService {
   /**
    * Extract style guide from existing content
    */
-  private extractStyleGuide(entities: any, worldConfig: any): StyleGuide {
+  private extractStyleGuide(
+    entities: {
+      npcs: EntitySummary[];
+      quests: EntitySummary[];
+      lore: EntitySummary[];
+      locations: EntitySummary[];
+    },
+    worldConfig: WorldConfiguration | null,
+  ): StyleGuide {
     // Extract common themes from tags
     const allTags = [
       ...entities.npcs.flatMap((e: EntitySummary) => e.tags || []),
@@ -439,10 +546,13 @@ export class WorldKnowledgeService {
 
     return {
       commonThemes,
-      namingConventions: worldConfig?.setting
-        ? [worldConfig.setting]
-        : ["Fantasy"],
-      tone: worldConfig?.tone || "Epic Adventure",
+      namingConventions: worldConfig?.genre ? [worldConfig.genre] : ["Fantasy"],
+      tone:
+        (
+          worldConfig?.aiPreferences as {
+            toneAndStyle?: { narrative?: string };
+          }
+        )?.toneAndStyle?.narrative || "Epic Adventure",
       avoidTopics: [],
     };
   }
@@ -451,7 +561,12 @@ export class WorldKnowledgeService {
    * Generate suggestions for world improvement
    */
   private generateSuggestions(
-    entities: any,
+    entities: {
+      npcs: EntitySummary[];
+      quests: EntitySummary[];
+      lore: EntitySummary[];
+      locations: EntitySummary[];
+    },
     relationshipGraph?: RelationshipGraph,
   ): WorldSuggestions {
     const suggestions: WorldSuggestions = {
@@ -747,7 +862,7 @@ export class WorldKnowledgeService {
     const { stats, worldConfig, styleGuide } = context;
 
     return `WORLD: ${worldConfig?.name || "Unnamed World"}
-THEME: ${worldConfig?.theme || "Generic Fantasy"}
+THEME: ${worldConfig?.genre || "Generic Fantasy"}
 TONE: ${styleGuide.tone}
 STATS: ${stats.totalNPCs} NPCs, ${stats.totalQuests} Quests, ${stats.totalLore} Lore entries
 COMMON THEMES: ${styleGuide.commonThemes.slice(0, 5).join(", ")}
@@ -792,9 +907,9 @@ NAMING STYLE: ${styleGuide.namingConventions.join(", ")}`.trim();
       constraints.fillGaps.push("World needs more lore entries for depth");
     }
 
-    if (context.worldConfig?.theme) {
+    if (context.worldConfig?.genre) {
       constraints.maintainConsistency.push(
-        `Maintain ${context.worldConfig.theme} theme`,
+        `Maintain ${context.worldConfig.genre} theme`,
       );
     }
 
@@ -1027,7 +1142,7 @@ Generate content that fits seamlessly into this world.`;
       name: string;
       summary?: string;
     };
-    connections: any[];
+    connections: RelationshipConnection[];
     stats: {
       totalNodes: number;
       maxDepth: number;
@@ -1067,7 +1182,7 @@ Generate content that fits seamlessly into this world.`;
     );
 
     const relationshipTypes = new Set<string>();
-    const countNodes = (conns: any[]): number => {
+    const countNodes = (conns: RelationshipConnection[]): number => {
       let count = conns.length;
       conns.forEach((conn) => {
         if (conn.relationship) relationshipTypes.add(conn.relationship);
@@ -1104,7 +1219,7 @@ Generate content that fits seamlessly into this world.`;
     visited: Set<string>,
     filterTypes?: string[],
     allEntities: EntitySummary[] = [],
-  ): Promise<any[]> {
+  ): Promise<RelationshipConnection[]> {
     if (currentDepth > maxDepth || visited.has(entityId)) {
       return [];
     }
@@ -1169,7 +1284,21 @@ Generate content that fits seamlessly into this world.`;
   async exportWorldSnapshot(options: {
     userId: string;
     includeAssets?: boolean;
-  }): Promise<any> {
+  }): Promise<{
+    version: string;
+    worldId: string;
+    worldName: string;
+    exportedAt: string;
+    worldConfig: WorldConfiguration | null;
+    entities: {
+      npcs: EntitySummary[];
+      quests: EntitySummary[];
+      lore: EntitySummary[];
+      locations: EntitySummary[];
+    };
+    relationships: EntityRelationshipData[];
+    stats: WorldStats;
+  }> {
     logger.info({ userId: options.userId }, "Exporting world snapshot");
 
     const context = await this.getWorldContext({
@@ -1226,19 +1355,7 @@ Generate content that fits seamlessly into this world.`;
    * Check world consistency and identify issues
    */
   async checkConsistency(userId: string): Promise<{
-    issues: Array<{
-      id: string;
-      severity: "error" | "warning" | "info";
-      type: string;
-      message: string;
-      entityId?: string;
-      entityType?: string;
-      suggestions: Array<{
-        action: string;
-        description: string;
-        targetId?: string;
-      }>;
-    }>;
+    issues: ConsistencyIssue[];
     stats: {
       totalIssues: number;
       errors: number;
@@ -1256,7 +1373,7 @@ Generate content that fits seamlessly into this world.`;
       format: "summary",
     });
 
-    const issues: any[] = [];
+    const issues: ConsistencyIssue[] = [];
 
     if (context.relationshipGraph) {
       const entitiesWithNoConnections = context.relationshipGraph.nodes.filter(

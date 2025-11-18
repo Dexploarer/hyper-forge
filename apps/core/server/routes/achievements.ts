@@ -6,6 +6,8 @@
 import { Elysia, t } from "elysia";
 import { requireAuthGuard } from "../plugins/auth.plugin";
 import { achievementService } from "../services/AchievementService";
+import { ForbiddenError } from "../errors";
+import { logger } from "../utils/logger";
 import type { AuthUser } from "../types/auth";
 
 export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
@@ -62,10 +64,23 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
 
           // Users can only view their own achievements unless they're admin
           if (user.id !== userId && user.role !== "admin") {
-            return new Response(JSON.stringify({ error: "Forbidden" }), {
-              status: 403,
-            });
+            logger.warn(
+              { requestedUserId: userId, authenticatedUserId: user.id },
+              "Forbidden: User attempted to view another user's achievements",
+            );
+            throw new ForbiddenError(
+              "Cannot view another user's achievements",
+              {
+                requestedUserId: userId,
+                authenticatedUserId: user.id,
+              },
+            );
           }
+
+          logger.info(
+            { userId, requestedBy: user.id },
+            "Fetching user achievements",
+          );
 
           const summary =
             await achievementService.getUserAchievementSummary(userId);
@@ -96,10 +111,23 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
           // Users can only award achievements to themselves unless they're admin
           const targetUserId = userId || user.id;
           if (targetUserId !== user.id && user.role !== "admin") {
-            return new Response(JSON.stringify({ error: "Forbidden" }), {
-              status: 403,
-            });
+            logger.warn(
+              { targetUserId, authenticatedUserId: user.id, achievementCode },
+              "Forbidden: User attempted to award achievement to another user",
+            );
+            throw new ForbiddenError(
+              "Cannot award achievements to another user",
+              {
+                targetUserId,
+                authenticatedUserId: user.id,
+              },
+            );
           }
+
+          logger.info(
+            { targetUserId, achievementCode, awardedBy: user.id },
+            "Awarding achievement",
+          );
 
           const result = await achievementService.awardAchievement(
             targetUserId,
@@ -107,6 +135,18 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
             progress,
             metadata,
           );
+
+          if (result.success) {
+            logger.info(
+              { targetUserId, achievementCode, awardedBy: user.id },
+              "Achievement awarded successfully",
+            );
+          } else {
+            logger.warn(
+              { targetUserId, achievementCode, reason: result.message },
+              "Achievement award failed",
+            );
+          }
 
           return result;
         },

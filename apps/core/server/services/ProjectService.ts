@@ -6,7 +6,8 @@
 import { db } from "../db/db";
 import { logger } from "../utils/logger";
 import { projects, type Project, type NewProject } from "../db/schema";
-import { eq, and, desc, count, sum, sql } from "drizzle-orm";
+import type { Asset } from "../db/schema/assets.schema";
+import { eq, and, desc, count, sum, sql, type SQL } from "drizzle-orm";
 
 export interface ProjectCreateData {
   name: string;
@@ -136,7 +137,7 @@ export class ProjectService {
     updates: ProjectUpdateData,
   ): Promise<Project> {
     try {
-      const [updatedProject] = await db
+      const results = await db
         .update(projects)
         .set({
           ...updates,
@@ -145,12 +146,12 @@ export class ProjectService {
         .where(eq(projects.id, id))
         .returning();
 
-      if (!updatedProject) {
+      if (results.length === 0) {
         throw new Error(`Project not found: ${id}`);
       }
 
       logger.info({ projectId: id }, "Updated project");
-      return updatedProject;
+      return results[0];
     } catch (error) {
       logger.error(
         { err: error },
@@ -165,7 +166,7 @@ export class ProjectService {
    */
   async archiveProject(id: string): Promise<Project> {
     try {
-      const [archivedProject] = await db
+      const results = await db
         .update(projects)
         .set({
           status: "archived",
@@ -175,12 +176,12 @@ export class ProjectService {
         .where(eq(projects.id, id))
         .returning();
 
-      if (!archivedProject) {
+      if (results.length === 0) {
         throw new Error(`Project not found: ${id}`);
       }
 
       logger.info({ projectId: id }, "Archived project");
-      return archivedProject;
+      return results[0];
     } catch (error) {
       logger.error(
         { err: error },
@@ -195,7 +196,7 @@ export class ProjectService {
    */
   async restoreProject(id: string): Promise<Project> {
     try {
-      const [restoredProject] = await db
+      const results = await db
         .update(projects)
         .set({
           status: "active",
@@ -205,12 +206,12 @@ export class ProjectService {
         .where(eq(projects.id, id))
         .returning();
 
-      if (!restoredProject) {
+      if (results.length === 0) {
         throw new Error(`Project not found: ${id}`);
       }
 
       logger.info({ projectId: id }, "Restored project");
-      return restoredProject;
+      return results[0];
     } catch (error) {
       logger.error(
         { err: error },
@@ -238,34 +239,18 @@ export class ProjectService {
   }
 
   /**
-   * Check if user owns project
-   */
-  async isOwner(projectId: string, userId: string): Promise<boolean> {
-    try {
-      const project = await this.getProjectById(projectId);
-      return project?.ownerId === userId;
-    } catch (error) {
-      logger.error(
-        { err: error },
-        "[ProjectService] Failed to check ownership:",
-      );
-      return false;
-    }
-  }
-
-  /**
    * Get all assets for a project
    */
   async getProjectAssets(
     projectId: string,
     filters?: { type?: string; status?: string },
-  ): Promise<any[]> {
+  ): Promise<Asset[]> {
     try {
       // Import assets schema
       const { assets } = await import("../db/schema");
 
       // Build where conditions
-      const whereConditions: any[] = [eq(assets.projectId, projectId)];
+      const whereConditions: SQL<unknown>[] = [eq(assets.projectId, projectId)];
 
       if (filters?.type) {
         whereConditions.push(eq(assets.type, filters.type));
@@ -399,7 +384,7 @@ export class ProjectService {
     isPublic: boolean,
   ): Promise<Project> {
     try {
-      const [updatedProject] = await db
+      const results = await db
         .update(projects)
         .set({
           isPublic,
@@ -408,14 +393,14 @@ export class ProjectService {
         .where(eq(projects.id, projectId))
         .returning();
 
-      if (!updatedProject) {
+      if (results.length === 0) {
         throw new Error(`Project not found: ${projectId}`);
       }
 
       logger.info(
         `[ProjectService] Updated visibility for project ${projectId}: isPublic=${isPublic}`,
       );
-      return updatedProject;
+      return results[0];
     } catch (error) {
       logger.error(
         { err: error },

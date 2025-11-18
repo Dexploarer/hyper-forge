@@ -52,7 +52,7 @@ class PromptServiceClass {
   async getGameStylePrompts(): Promise<
     PromptsResponse<Record<string, GameStylePrompt>>
   > {
-    const { data, error } = await api.api.prompts["game-styles"].get();
+    const { data, error } = await api.api.prompts({ type: "game-style" }).get();
     if (error) {
       console.error("Failed to load game style prompts:", error);
       throw new Error("Failed to load game style prompts");
@@ -85,7 +85,7 @@ class PromptServiceClass {
   }
 
   async getAssetTypePrompts(): Promise<AssetTypePromptsByCategory> {
-    const { data, error } = await api.api.prompts["asset-types"].get();
+    const { data, error } = await api.api.prompts({ type: "asset-type" }).get();
     if (error) {
       console.error("Failed to load asset type prompts:", error);
       throw new Error("Failed to load asset type prompts");
@@ -121,7 +121,7 @@ class PromptServiceClass {
   }
 
   async getMaterialPrompts(): Promise<MaterialPromptTemplate> {
-    const { data, error } = await api.api.prompts.materials.get();
+    const { data, error } = await api.api.prompts({ type: "material" }).get();
     if (error) {
       console.error("Failed to load material prompts:", error);
       throw new Error("Failed to load material prompts");

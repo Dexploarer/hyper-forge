@@ -94,13 +94,20 @@ export class AssetDatabaseService {
         return newAsset;
       });
 
-      // Log asset creation
-      await ActivityLogService.logAssetCreated({
-        userId: ownerId,
-        assetId: asset.id,
-        assetName: metadata.name || assetId,
-        assetType: metadata.type || "unknown",
-      });
+      // Log asset creation (non-blocking, errors are not critical)
+      try {
+        await ActivityLogService.logAssetCreated({
+          userId: ownerId,
+          assetId: asset.id,
+          assetName: metadata.name || assetId,
+          assetType: metadata.type || "unknown",
+        });
+      } catch (error) {
+        logger.warn(
+          { err: error, assetId, ownerId },
+          "[AssetDatabaseService] Failed to log asset creation",
+        );
+      }
 
       // Generate and index embedding (async, don't block)
       this.indexAssetEmbedding(asset).catch((error) => {
@@ -234,30 +241,48 @@ export class AssetDatabaseService {
       // If it's a base asset and includeVariants is true, delete all variants
       const metadata = asset.metadata as AssetMetadataType;
       if (includeVariants && metadata?.isBaseModel) {
-        // Query all assets and filter variants in application code
-        const allAssets = await db.select().from(assets);
-        const variants = allAssets.filter((a) => {
-          const assetMetadata = a.metadata as AssetMetadataType;
-          return assetMetadata?.parentBaseModel === assetId;
-        });
+        // Query variants using the dedicated parentBaseModel column with ownership validation
+        // This is much more efficient than loading all assets into memory
+        const variants = await db
+          .select()
+          .from(assets)
+          .where(
+            and(
+              eq(assets.parentBaseModel, assetId),
+              eq(assets.ownerId, userId), // Only delete variants owned by this user
+            ),
+          );
 
-        for (const variant of variants) {
-          await db.delete(assets).where(eq(assets.id, variant.id));
+        // Batch delete all variants in a single query for better performance
+        if (variants.length > 0) {
+          const variantIds = variants.map((v) => v.id);
 
-          // Delete variant embedding from Qdrant (async, don't block)
+          // Delete all variants in one query
+          await db
+            .delete(assets)
+            .where(
+              and(
+                eq(assets.parentBaseModel, assetId),
+                eq(assets.ownerId, userId),
+              ),
+            );
+
+          // Delete variant embeddings from Qdrant (async, don't block)
           if (process.env.QDRANT_URL) {
-            qdrantService.delete("assets", variant.id).catch((error) => {
-              logger.warn(
-                `[AssetDatabaseService] Failed to delete embedding for variant ${variant.id}:`,
-                error,
-              );
-            });
+            for (const variantId of variantIds) {
+              qdrantService.delete("assets", variantId).catch((error) => {
+                logger.warn(
+                  `[AssetDatabaseService] Failed to delete embedding for variant ${variantId}:`,
+                  error,
+                );
+              });
+            }
           }
-        }
 
-        logger.info(
-          `[AssetDatabaseService] Deleted ${variants.length} variants for base asset: ${assetId}`,
-        );
+          logger.info(
+            `[AssetDatabaseService] Deleted ${variants.length} variants for base asset: ${assetId}`,
+          );
+        }
       }
 
       // Delete the main asset from database with ownership validation

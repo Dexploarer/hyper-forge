@@ -71,6 +71,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Asset filtering when no project is selected
 - User deletion cascade behavior with assets and projects
 
+### Removed
+
+- **Database Migration**: Removed redundant `check-and-migrate.ts` script
+  - This was a specialized script for checking `world_configurations` table existence
+  - Had multiple critical issues:
+    - P0: Used shared connection pool (max: 20) instead of dedicated migration client (max: 1)
+    - P1: Missing dotenv import, hardcoded table name, no connection cleanup
+    - P2: Mixed console.log/logger usage, unsafe optional chaining
+  - Functionality fully covered by the official `db:migrate` command using `migrate.ts`
+  - The official migrate.ts has proper error handling, dedicated client, and connection cleanup
+
 ## [1.4.0] - 2025-11-11
 
 ### Added

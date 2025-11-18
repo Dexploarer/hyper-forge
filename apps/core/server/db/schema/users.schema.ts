@@ -64,7 +64,8 @@ export const users = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   },
   (table) => ({
@@ -108,7 +109,8 @@ export const projects = pgTable(
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
-      .defaultNow(),
+      .defaultNow()
+      .$onUpdate(() => new Date()),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
   },
   (table) => ({

@@ -78,8 +78,8 @@ export async function optionalAuth({
       if (!result) {
         // Invalid API key - continue without user
         logger.warn(
-          { keyPrefix: token.substring(0, 16) },
-          "[Auth Plugin] Invalid API key provided",
+          { keyPrefix: token.substring(0, 16), context: "auth" },
+          "Invalid API key provided",
         );
         return {};
       }
@@ -89,15 +89,24 @@ export async function optionalAuth({
 
       if (!user) {
         logger.error(
-          { userId: result.userId, keyPrefix: token.substring(0, 16) },
-          "[Auth Plugin] API key references non-existent user",
+          {
+            userId: result.userId,
+            keyPrefix: token.substring(0, 16),
+            context: "auth",
+          },
+          "API key references non-existent user",
         );
         return {};
       }
 
       logger.info(
-        { userId: user.id, keyPrefix: token.substring(0, 16) },
-        "[Auth Plugin] Authenticated via API key",
+        {
+          userId: user.id,
+          keyPrefix: token.substring(0, 16),
+          context: "auth",
+          authMethod: "api_key",
+        },
+        "Authenticated via API key",
       );
 
       return {
@@ -202,7 +211,7 @@ export async function optionalAuth({
     };
   } catch (error) {
     // Invalid token or verification failed - continue without user
-    logger.error({ err: error }, "Auth plugin error:");
+    logger.error({ err: error, context: "auth" }, "Auth plugin error");
     return {};
   }
 }

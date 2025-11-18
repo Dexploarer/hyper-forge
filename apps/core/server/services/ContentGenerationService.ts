@@ -75,6 +75,59 @@ export interface LoreData {
   characters?: string[];
 }
 
+// Metadata interfaces for AI-generated content
+export interface BaseGenerationMetadata {
+  generatedBy: "AI";
+  model: "quality" | "speed" | "balanced";
+  timestamp: string;
+  worldConfigId?: string;
+}
+
+export interface NPCMetadata extends BaseGenerationMetadata {
+  archetype: string;
+}
+
+export interface QuestMetadata extends BaseGenerationMetadata {}
+
+export interface LoreMetadata extends BaseGenerationMetadata {}
+
+export interface WorldMetadata extends BaseGenerationMetadata {}
+
+// World data structure from AI generation
+export interface WorldData {
+  worldName: string;
+  narrative: string;
+  keyFeatures: string[];
+  suggestedAssets: {
+    items: Array<{
+      name: string;
+      description: string;
+      category: string;
+    }>;
+    environments: Array<{
+      name: string;
+      description: string;
+      category: string;
+    }>;
+    buildings: Array<{
+      name: string;
+      description: string;
+      category: string;
+    }>;
+  };
+  suggestedNPCs: Array<{
+    name: string;
+    role: string;
+    archetype: string;
+  }>;
+  suggestedLocations: Array<{
+    name: string;
+    type: string;
+    description: string;
+  }>;
+  loreHooks: string[];
+}
+
 export class ContentGenerationService {
   constructor() {
     // Verify AI Gateway API key is configured
@@ -213,7 +266,7 @@ export class ContentGenerationService {
     worldConfigId?: string;
     useActiveWorldConfig?: boolean;
   }): Promise<{
-    npc: NPCData & { id: string; metadata: any };
+    npc: NPCData & { id: string; metadata: NPCMetadata };
     rawResponse: string;
   }> {
     const {
@@ -248,10 +301,10 @@ export class ContentGenerationService {
     const npcData = this.parseNPCResponse(result.text);
 
     const completeNPC = {
-      id: `npc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `npc_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       ...npcData,
       metadata: {
-        generatedBy: "AI",
+        generatedBy: "AI" as const,
         model: quality,
         timestamp: new Date().toISOString(),
         archetype: archetype || npcData.archetype,
@@ -287,7 +340,7 @@ export class ContentGenerationService {
       id: string;
       difficulty: string;
       questType: string;
-      metadata: any;
+      metadata: QuestMetadata;
     };
     rawResponse: string;
   }> {
@@ -332,12 +385,12 @@ export class ContentGenerationService {
     const questData = this.parseQuestResponse(result.text);
 
     const completeQuest = {
-      id: `quest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `quest_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       ...questData,
       difficulty: difficulty || "medium",
       questType: questType || "general",
       metadata: {
-        generatedBy: "AI",
+        generatedBy: "AI" as const,
         model: quality,
         timestamp: new Date().toISOString(),
         worldConfigId,
@@ -367,7 +420,7 @@ export class ContentGenerationService {
     worldConfigId?: string;
     useActiveWorldConfig?: boolean;
   }): Promise<{
-    lore: LoreData & { id: string; metadata: any };
+    lore: LoreData & { id: string; metadata: LoreMetadata };
     rawResponse: string;
   }> {
     const {
@@ -408,10 +461,10 @@ export class ContentGenerationService {
     const loreData = this.parseLoreResponse(result.text);
 
     const completeLore = {
-      id: `lore_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `lore_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       ...loreData,
       metadata: {
-        generatedBy: "AI",
+        generatedBy: "AI" as const,
         model: quality,
         timestamp: new Date().toISOString(),
         worldConfigId,
@@ -440,7 +493,12 @@ export class ContentGenerationService {
     worldConfigId?: string;
     useActiveWorldConfig?: boolean;
   }): Promise<{
-    world: any;
+    world: WorldData & {
+      id: string;
+      theme: string;
+      complexity: string;
+      metadata: WorldMetadata;
+    };
     rawResponse: string;
   }> {
     const {
@@ -471,12 +529,12 @@ export class ContentGenerationService {
     const worldData = this.parseWorldResponse(result.text);
 
     const completeWorld = {
-      id: `world_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `world_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       ...worldData,
       theme,
       complexity,
       metadata: {
-        generatedBy: "AI",
+        generatedBy: "AI" as const,
         model: quality,
         timestamp: new Date().toISOString(),
       },
@@ -741,7 +799,7 @@ Return ONLY the JSON object, no explanation.`;
     }
   }
 
-  private parseWorldResponse(text: string): any {
+  private parseWorldResponse(text: string): WorldData {
     try {
       let cleaned = this.cleanJSONResponse(text);
       return JSON.parse(cleaned);

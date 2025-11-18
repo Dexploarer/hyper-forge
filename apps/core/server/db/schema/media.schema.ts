@@ -15,6 +15,28 @@ import {
 } from "drizzle-orm/pg-core";
 
 /**
+ * Voice Settings for ElevenLabs TTS
+ * Based on ElevenLabs API voice configuration
+ */
+export interface VoiceSettings {
+  stability?: number;
+  similarityBoost?: number;
+  style?: number;
+  useSpeakerBoost?: boolean;
+}
+
+/**
+ * Image Generation Settings
+ * Based on AI image generation metadata
+ */
+export interface ImageSettings {
+  model?: string;
+  resolution?: string;
+  quality?: string;
+  timestamp?: string;
+}
+
+/**
  * Media Assets Table
  * Stores references to generated media files (portraits, voices, music)
  * Links media to entities (NPCs, quests, locations, etc.)
@@ -43,12 +65,11 @@ export const mediaAssets = pgTable(
         prompt?: string;
         model?: string;
         voiceId?: string;
-        voiceSettings?: Record<string, any>;
-        imageSettings?: Record<string, any>;
+        voiceSettings?: VoiceSettings;
+        imageSettings?: ImageSettings;
         duration?: number; // for audio files
         mimeType?: string;
         fileSize?: number;
-        [key: string]: any;
       }>()
       .default({}),
 

@@ -16,9 +16,9 @@ export const colors = {
     rgb: "139, 92, 246",
   },
 
-  // Hex accent color
+  // Accent color - Asset-Forge signature soft pink/rose
   accent: {
-    DEFAULT: "#F5C0C0", // Hex's signature soft pink/rose
+    DEFAULT: "#F5C0C0", // Asset-Forge signature soft pink/rose
     light: "#f9d5d5",
     dark: "#e6a8a8",
     rgb: "245, 192, 192",
@@ -32,15 +32,24 @@ export const colors = {
     "bg-card": "#1f1f29", // Card backgrounds
     "bg-hover": "#292936", // Hover states
     "bg-elevated": "#2a2a38", // Elevated surfaces
+    "bg-disabled": "#1a1a24", // Disabled state backgrounds
 
     "text-primary": "#ffffff", // Pure white for maximum contrast
     "text-secondary": "#b4b4c0", // Soft gray with blue undertone
     "text-tertiary": "#8484a0", // Medium gray-blue
-    "text-muted": "#64647a", // Muted text
+    "text-muted": "#787890", // Muted text - improved contrast (was #64647a, now ~4.2:1)
+    "text-disabled": "#4a4a5a", // Disabled text
+    "text-link": "#818cf8", // Link color (primary light)
+    "text-link-hover": "#a5b4fc", // Link hover
 
-    "border-primary": "#2a2a36", // Subtle borders
-    "border-secondary": "#3a3a48", // Slightly more visible
-    "border-hover": "#4a4a5a", // Hover state borders
+    "border-primary": "#3a3a48", // Borders - improved contrast (was #2a2a36)
+    "border-secondary": "#4a4a5a", // Slightly more visible (was #3a3a48)
+    "border-hover": "#5a5a6a", // Hover state borders (was #4a4a5a)
+    "border-disabled": "#2a2a36", // Disabled borders
+    "border-focus": "#6366f1", // Focus ring color
+
+    "focus-ring": "rgba(99, 102, 241, 0.5)", // Focus ring with opacity
+    "focus-outline": "#6366f1", // Focus outline color
   },
 
   // Light Theme Colors - Clean, bright Hex-inspired
@@ -48,41 +57,66 @@ export const colors = {
     "bg-primary": "#ffffff", // Pure white background
     "bg-secondary": "#fafafa", // Very subtle off-white
     "bg-tertiary": "#f5f5f5", // Light gray
-    "bg-card": "#ffffff", // Card backgrounds (white)
-    "bg-hover": "#f8f8f8", // Hover states
-    "bg-elevated": "#ffffff", // Elevated surfaces
+    "bg-card": "#fafafa", // Card backgrounds - subtle elevation (was #ffffff)
+    "bg-hover": "#f5f5f5", // Hover states
+    "bg-elevated": "#f0f0f0", // Elevated surfaces - visible depth (was #ffffff)
+    "bg-disabled": "#f5f5f5", // Disabled state backgrounds
 
     "text-primary": "#0a0a0a", // Near-black for excellent contrast
     "text-secondary": "#52525b", // Dark gray
     "text-tertiary": "#71717a", // Medium gray
-    "text-muted": "#a1a1aa", // Lighter gray for muted text
+    "text-muted": "#71717a", // Muted text - improved contrast (was #a1a1aa, now ~4.8:1)
+    "text-disabled": "#d4d4d8", // Disabled text
+    "text-link": "#4f46e5", // Link color (primary dark for better contrast on white)
+    "text-link-hover": "#6366f1", // Link hover
 
     "border-primary": "#e5e5e5", // Light borders
     "border-secondary": "#d4d4d8", // Slightly darker
     "border-hover": "#a1a1aa", // Hover state borders
+    "border-disabled": "#f0f0f0", // Disabled borders
+    "border-focus": "#6366f1", // Focus ring color
+
+    "focus-ring": "rgba(99, 102, 241, 0.3)", // Focus ring with opacity (lighter for light theme)
+    "focus-outline": "#6366f1", // Focus outline color
   },
 
-  // Semantic Colors
+  // Semantic Colors - Theme-aware for accessibility
   semantic: {
-    success: "#10b981",
-    "success-light": "#34d399",
-    "success-dark": "#059669",
-    "success-bg": "rgba(16, 185, 129, 0.1)",
+    // Success
+    // base: main text/icon color (auto-adjusts by theme via CSS variable)
+    "success-base-dark": "#10b981", // Dark theme text/icon
+    "success-base-light": "#059669", // Light theme text/icon (darker for contrast)
+    // strong: darker variant, always safe on light backgrounds
+    "success-strong": "#059669",
+    // soft: lighter variant, used for chips/badges on dark theme
+    "success-soft": "#34d399",
+    // backgrounds: theme-aware opacity
+    "success-bg-dark": "rgba(16, 185, 129, 0.16)", // Higher opacity for dark theme visibility
+    "success-bg-light": "rgba(16, 185, 129, 0.1)", // Standard opacity for light theme
 
-    warning: "#f59e0b",
-    "warning-light": "#fbbf24",
-    "warning-dark": "#d97706",
-    "warning-bg": "rgba(245, 158, 11, 0.1)",
+    // Warning
+    "warning-base-dark": "#f59e0b",
+    "warning-base-light": "#d97706",
+    "warning-strong": "#d97706",
+    "warning-soft": "#fbbf24",
+    "warning-bg-dark": "rgba(245, 158, 11, 0.16)",
+    "warning-bg-light": "rgba(245, 158, 11, 0.1)",
 
-    error: "#ef4444",
-    "error-light": "#f87171",
-    "error-dark": "#dc2626",
-    "error-bg": "rgba(239, 68, 68, 0.1)",
+    // Error
+    "error-base-dark": "#ef4444",
+    "error-base-light": "#dc2626",
+    "error-strong": "#dc2626",
+    "error-soft": "#f87171",
+    "error-bg-dark": "rgba(239, 68, 68, 0.16)",
+    "error-bg-light": "rgba(239, 68, 68, 0.1)",
 
-    info: "#3b82f6",
-    "info-light": "#60a5fa",
-    "info-dark": "#2563eb",
-    "info-bg": "rgba(59, 130, 246, 0.1)",
+    // Info
+    "info-base-dark": "#3b82f6",
+    "info-base-light": "#2563eb",
+    "info-strong": "#2563eb",
+    "info-soft": "#60a5fa",
+    "info-bg-dark": "rgba(59, 130, 246, 0.16)",
+    "info-bg-light": "rgba(59, 130, 246, 0.1)",
   },
 
   // Utility Colors
@@ -324,6 +358,32 @@ export const theme = {
 // Helper function to generate CSS variables from tokens
 export function generateCSSVariables(darkMode = true) {
   const themeColors = darkMode ? colors.dark : colors.light;
+  const semanticBase = darkMode
+    ? {
+        success: colors.semantic["success-base-dark"],
+        warning: colors.semantic["warning-base-dark"],
+        error: colors.semantic["error-base-dark"],
+        info: colors.semantic["info-base-dark"],
+      }
+    : {
+        success: colors.semantic["success-base-light"],
+        warning: colors.semantic["warning-base-light"],
+        error: colors.semantic["error-base-light"],
+        info: colors.semantic["info-base-light"],
+      };
+  const semanticBg = darkMode
+    ? {
+        success: colors.semantic["success-bg-dark"],
+        warning: colors.semantic["warning-bg-dark"],
+        error: colors.semantic["error-bg-dark"],
+        info: colors.semantic["info-bg-dark"],
+      }
+    : {
+        success: colors.semantic["success-bg-light"],
+        warning: colors.semantic["warning-bg-light"],
+        error: colors.semantic["error-bg-light"],
+        info: colors.semantic["info-bg-light"],
+      };
 
   return {
     // Brand colors
@@ -335,6 +395,10 @@ export function generateCSSVariables(darkMode = true) {
     "--color-secondary-dark": colors.secondary.dark,
     "--color-secondary-light": colors.secondary.light,
     "--color-secondary-rgb": colors.secondary.rgb,
+    "--color-accent": colors.accent.DEFAULT,
+    "--color-accent-dark": colors.accent.dark,
+    "--color-accent-light": colors.accent.light,
+    "--color-accent-rgb": colors.accent.rgb,
 
     // Theme colors
     "--bg-primary": themeColors["bg-primary"],
@@ -343,27 +407,55 @@ export function generateCSSVariables(darkMode = true) {
     "--bg-card": themeColors["bg-card"],
     "--bg-hover": themeColors["bg-hover"],
     "--bg-elevated": themeColors["bg-elevated"],
+    "--bg-disabled": themeColors["bg-disabled"],
 
     "--text-primary": themeColors["text-primary"],
     "--text-secondary": themeColors["text-secondary"],
     "--text-tertiary": themeColors["text-tertiary"],
     "--text-muted": themeColors["text-muted"],
+    "--text-disabled": themeColors["text-disabled"],
+    "--text-link": themeColors["text-link"],
+    "--text-link-hover": themeColors["text-link-hover"],
 
     "--border-primary": themeColors["border-primary"],
     "--border-secondary": themeColors["border-secondary"],
     "--border-hover": themeColors["border-hover"],
+    "--border-disabled": themeColors["border-disabled"],
+    "--border-focus": themeColors["border-focus"], // For input borders on focus state
 
-    // Semantic colors
-    "--color-success": colors.semantic.success,
-    "--color-warning": colors.semantic.warning,
-    "--color-error": colors.semantic.error,
-    "--color-info": colors.semantic.info,
+    "--focus-ring": themeColors["focus-ring"], // For focus-visible ring shadow
+    "--focus-outline": themeColors["focus-outline"], // For focus-visible outline
+
+    // Semantic colors - theme-aware base (main text/icon color)
+    "--color-success": semanticBase.success,
+    "--color-success-strong": colors.semantic["success-strong"], // Darker, safe on light bg
+    "--color-success-soft": colors.semantic["success-soft"], // Lighter, for dark theme badges
+    "--color-success-bg": semanticBg.success, // Theme-aware background opacity
+
+    "--color-warning": semanticBase.warning,
+    "--color-warning-strong": colors.semantic["warning-strong"],
+    "--color-warning-soft": colors.semantic["warning-soft"],
+    "--color-warning-bg": semanticBg.warning,
+
+    "--color-error": semanticBase.error,
+    "--color-error-strong": colors.semantic["error-strong"],
+    "--color-error-soft": colors.semantic["error-soft"],
+    "--color-error-bg": semanticBg.error,
+
+    "--color-info": semanticBase.info,
+    "--color-info-strong": colors.semantic["info-strong"],
+    "--color-info-soft": colors.semantic["info-soft"],
+    "--color-info-bg": semanticBg.info,
 
     // UI colors (for compatibility)
     "--color-ui-success": colors.ui.success,
     "--color-ui-warning": colors.ui.warning,
     "--color-ui-error": colors.ui.error,
     "--color-ui-info": colors.ui.info,
+
+    // Utility colors
+    "--overlay-dark": colors.utility["overlay-dark"], // For dimming modals/dialogs
+    "--overlay-light": colors.utility["overlay-light"], // For frosted/glassy highlight effects
 
     // Typography
     "--font-sans": typography.fontFamily.sans,
