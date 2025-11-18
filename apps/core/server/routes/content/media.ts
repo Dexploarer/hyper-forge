@@ -241,17 +241,21 @@ export const mediaRoutes = new Elysia()
 
         // Support two patterns:
         // 1. File upload (multipart/form-data) - for user uploads
-        // 2. URL (JSON) - for AI-generated images, fetched server-side to avoid CORS
+        // 2. URL (JSON) - for AI-generated images, DOWNLOAD IMMEDIATELY before URL expires
         if (body.image) {
           // Pattern 1: File upload via FormData
           imageData = Buffer.from(await body.image.arrayBuffer());
           mimeType = body.image.type;
           size = body.image.size;
+          logger.info(
+            { size, mimeType, context: "media" },
+            "Received file upload",
+          );
         } else if (body.imageUrl) {
-          // Pattern 2: URL - fetch server-side (no CORS issues)
+          // Pattern 2: URL - CRITICAL: Download immediately before it expires
           logger.info(
             { imageUrl: body.imageUrl, context: "media" },
-            "Fetching image from URL server-side",
+            "Downloading image from temporary URL before it expires",
           );
 
           if (body.imageUrl.startsWith("data:")) {
@@ -264,17 +268,25 @@ export const mediaRoutes = new Elysia()
             imageData = Buffer.from(matches[2], "base64");
             size = imageData.length;
           } else {
-            // HTTP/HTTPS URL - fetch from remote server (server-side, no CORS)
+            // HTTP/HTTPS URL - Download NOW (OpenAI URLs expire quickly!)
+            logger.info(
+              { context: "media" },
+              "Fetching image from remote URL...",
+            );
             const response = await fetch(body.imageUrl);
             if (!response.ok) {
               throw new InternalServerError(
-                `Failed to fetch image from URL: ${response.status}`,
+                `Failed to download image from URL: ${response.status} ${response.statusText}`,
               );
             }
             const arrayBuffer = await response.arrayBuffer();
             imageData = Buffer.from(arrayBuffer);
             mimeType = response.headers.get("content-type") || "image/png";
             size = imageData.length;
+            logger.info(
+              { size, mimeType, context: "media" },
+              "Successfully downloaded image from URL",
+            );
           }
         } else {
           throw new InternalServerError(
@@ -285,7 +297,18 @@ export const mediaRoutes = new Elysia()
         const mediaType = body.type || "portrait";
         const fileName = `${mediaType}_${Date.now()}.png`;
 
-        // Save to CDN with error handling
+        logger.info(
+          {
+            fileName,
+            mediaType,
+            entityType: body.entityType,
+            entityId: body.entityId,
+            context: "media",
+          },
+          "Saving image to volume storage...",
+        );
+
+        // Save to /gdd-assets volume with error handling
         const result = await mediaStorageService.saveMedia({
           type: mediaType as
             | "portrait"
@@ -310,6 +333,15 @@ export const mediaRoutes = new Elysia()
           createdBy: user.id,
         });
 
+        logger.info(
+          {
+            mediaId: result.id,
+            fileUrl: result.cdnUrl,
+            context: "media",
+          },
+          "Successfully saved image to volume and database",
+        );
+
         return {
           success: true,
           mediaId: result.id,
@@ -326,7 +358,7 @@ export const mediaRoutes = new Elysia()
         );
 
         throw new InternalServerError(
-          "Failed to save portrait. Please try again.",
+          `Failed to save portrait: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
       }
     },
