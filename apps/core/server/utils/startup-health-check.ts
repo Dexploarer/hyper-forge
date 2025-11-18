@@ -26,7 +26,7 @@ export async function runStartupHealthCheck(
   // Define all endpoints to test
   const endpoints = [
     // Public endpoints (no auth required)
-    { path: "/api/health", method: "GET", requiresAuth: false },
+    { path: "/api/health/live", method: "GET", requiresAuth: false },
     { path: "/swagger", method: "GET", requiresAuth: false },
     { path: "/metrics", method: "GET", requiresAuth: false },
 
@@ -131,7 +131,7 @@ export async function runStartupHealthCheck(
 
   // Warn if any critical endpoints failed
   const criticalFailed = results.filter(
-    (r) => r.status === "FAIL" && r.endpoint === "/api/health",
+    (r) => r.status === "FAIL" && r.endpoint === "/api/health/live",
   );
 
   if (criticalFailed.length > 0) {
@@ -181,7 +181,7 @@ export async function testFrontendConnectivity(
     logger.info({}, "✅ Frontend HTML served correctly");
 
     // Test 2: Check if API is accessible from "browser" perspective
-    const apiResponse = await fetch(`${baseUrl}/api/health`, {
+    const apiResponse = await fetch(`${baseUrl}/api/health/live`, {
       headers: {
         Accept: "application/json",
         "User-Agent": "Mozilla/5.0 (Startup Health Check)",
