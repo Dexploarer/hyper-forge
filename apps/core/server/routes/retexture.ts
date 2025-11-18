@@ -4,18 +4,13 @@
  */
 
 import { Elysia, t } from "elysia";
-import path from "path";
 import { RetextureService } from "../services/RetextureService";
 import * as Models from "../models";
 import { optionalAuth } from "../plugins/auth.plugin";
 import { getUserApiKeysWithFallback } from "../utils/getUserApiKeys";
 import { InternalServerError } from "../errors";
 
-export const createRetextureRoutes = (
-  rootDir: string,
-  _retextureService: RetextureService, // Keep param for backward compatibility but don't use
-  assetsDir: string,
-) => {
+export const createRetextureRoutes = (assetsDir: string) => {
   return (
     new Elysia({ prefix: "/api", name: "retexture" })
       .derive(() => ({ assetsDir }))
@@ -43,21 +38,9 @@ export const createRetextureRoutes = (
             );
           }
 
-          // Create RetextureService instance with user's API key
-          const imageServerBaseUrl =
-            process.env.IMAGE_SERVER_URL ||
-            (() => {
-              if (process.env.NODE_ENV === "production") {
-                throw new Error(
-                  "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
-                );
-              }
-              return "http://localhost:8080";
-            })();
-
           const retextureService = new RetextureService({
             meshyApiKey: userApiKeys.meshyApiKey,
-            imageServerBaseUrl,
+            imageServerBaseUrl: process.env.IMAGE_SERVER_URL!,
           });
 
           const result = await retextureService.retexture({
@@ -101,21 +84,9 @@ export const createRetextureRoutes = (
             );
           }
 
-          // Create RetextureService instance with user's API key
-          const imageServerBaseUrl =
-            process.env.IMAGE_SERVER_URL ||
-            (() => {
-              if (process.env.NODE_ENV === "production") {
-                throw new Error(
-                  "IMAGE_SERVER_URL must be set in production for Meshy AI callbacks",
-                );
-              }
-              return "http://localhost:8080";
-            })();
-
           const retextureService = new RetextureService({
             meshyApiKey: userApiKeys.meshyApiKey,
-            imageServerBaseUrl,
+            imageServerBaseUrl: process.env.IMAGE_SERVER_URL!,
           });
 
           const result = await retextureService.regenerateBase({

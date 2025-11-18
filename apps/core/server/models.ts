@@ -428,10 +428,9 @@ export const SpriteSaveRequest = t.Object({
 export const SpriteSaveResponse = t.Object({
   success: t.Boolean(),
   message: t.String(),
-  spritesDir: t.Optional(t.String()), // Deprecated - kept for backward compatibility
-  cdnSpritesDir: t.Optional(t.String()), // CDN directory path
+  cdnSpritesDir: t.String(), // CDN directory path
   spriteFiles: t.Array(t.String()),
-  cdnUrls: t.Optional(t.Array(t.String())), // Full CDN URLs for each sprite
+  cdnUrls: t.Array(t.String()), // Full CDN URLs for each sprite
 });
 
 // ==================== VRM Upload Models ====================

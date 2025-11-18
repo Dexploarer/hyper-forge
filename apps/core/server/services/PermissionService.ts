@@ -224,7 +224,6 @@ export class PermissionService {
   /**
    * Check if user can edit content (NPC, Quest, Lore, etc.)
    * - Only creator or admin
-   * - Content without creator can be edited by anyone (backward compatibility)
    */
   canEditContent(user: PermissionUser | null, content: ContentEntity): boolean {
     if (!user) {
@@ -233,11 +232,6 @@ export class PermissionService {
 
     // Admin can edit all content
     if (user.role === "admin") {
-      return true;
-    }
-
-    // If no creator is set, allow editing (backward compatibility)
-    if (!content.createdBy) {
       return true;
     }
 
@@ -313,10 +307,7 @@ export class PermissionService {
     }
 
     // Creator can only bulk operate their own content
-    // Allow operations on content without creators (backward compatibility)
-    return content.every(
-      (item) => !item.createdBy || item.createdBy === user.id,
-    );
+    return content.every((item) => item.createdBy === user.id);
   }
 
   /**

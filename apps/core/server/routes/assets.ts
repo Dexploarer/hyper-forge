@@ -540,7 +540,6 @@ export const createAssetRoutes = (rootDir: string) => {
           return {
             success: true,
             message: `${sprites.length} sprites uploaded to CDN successfully`,
-            spritesDir: `${CDN_URL}/sprites/${id}/sprites`, // Deprecated but keep for backward compatibility
             cdnSpritesDir: `${CDN_URL}/sprites/${id}/sprites`,
             spriteFiles: sprites.map((s) => `${s.angle}deg.png`),
             cdnUrls,
