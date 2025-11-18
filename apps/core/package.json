@@ -49,6 +49,8 @@
     "db:migrate": "bun run server/db/migrate.ts",
     "db:push": "bunx drizzle-kit push",
     "db:studio": "bunx drizzle-kit studio",
+    "db:fix-uuids": "bun scripts/fix-uuid-defaults.ts",
+    "db:check-uuids": "bun scripts/check-uuid-defaults.ts",
     "cleanup:disk": "bun scripts/cleanup-disk.ts",
     "monitor:disk": "bun scripts/monitor-disk.ts"
   },
