@@ -17,7 +17,7 @@ import {
 } from "./shared";
 
 export const managementRoutes = new Elysia()
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // ==================== NPC Management ====================
   .put(

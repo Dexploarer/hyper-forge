@@ -14,7 +14,7 @@ import {
 } from "./shared";
 
 export const worldRoutes = new Elysia()
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // POST /api/content/generate-world
   .post(

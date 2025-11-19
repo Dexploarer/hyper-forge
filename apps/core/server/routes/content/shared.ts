@@ -9,7 +9,7 @@ import { AICreationService } from "../../services/AICreationService";
 import { contentDatabaseService } from "../../services/ContentDatabaseService";
 import { MediaStorageService } from "../../services/MediaStorageService";
 import { RelationshipService } from "../../services/RelationshipService";
-import { requireAuthGuard } from "../../plugins/auth.plugin";
+import { authPlugin } from "../../plugins/auth.plugin";
 import {
   NotFoundError,
   InternalServerError,

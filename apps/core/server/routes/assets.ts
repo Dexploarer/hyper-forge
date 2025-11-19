@@ -6,7 +6,7 @@
 import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
 import * as Models from "../models";
-import { requireAuthGuard } from "../plugins/auth.plugin";
+import { authPlugin } from "../plugins/auth.plugin";
 import { ActivityLogService } from "../services/ActivityLogService";
 import { assetDatabaseService } from "../services/AssetDatabaseService";
 import type { AuthUser } from "../types/auth";
@@ -27,15 +27,15 @@ export const createAssetRoutes = (rootDir: string) => {
         (app) => app,
       )
 
-      // ==================== AUTHENTICATED ROUTES ====================
-      .use(requireAuthGuard)
+      // ==================== OPEN ACCESS (Auth Optional) ====================
+      .use(authPlugin)
 
       // Asset listing endpoint
       .get(
         "",
         async (context) => {
           const { query, user } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
 
           // Get all assets from database (includes CDN URLs)
@@ -44,7 +44,7 @@ export const createAssetRoutes = (rootDir: string) => {
 
           logger.info(
             {
-              userId: user.id,
+              userId: user?.id || "anonymous",
               totalAssets: allAssets.length,
             },
             "[Assets] Listing assets",
@@ -73,13 +73,12 @@ export const createAssetRoutes = (rootDir: string) => {
           }),
           response: {
             200: Models.AssetListResponse,
-            401: Models.ErrorResponse,
           },
           detail: {
             tags: ["Assets"],
-            summary: "List user's assets",
+            summary: "List all assets",
             description:
-              "Returns a list of assets owned by the authenticated user with optional filtering by project. Requires authentication.",
+              "Returns a list of all assets with optional filtering by project. Auth optional - everyone can see everything.",
           },
         },
       )
@@ -89,7 +88,7 @@ export const createAssetRoutes = (rootDir: string) => {
         "/:id",
         async (context) => {
           const { params, query, user } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
           const id = params.id;
 
@@ -100,12 +99,12 @@ export const createAssetRoutes = (rootDir: string) => {
           const includeVariants = query.includeVariants === "true";
           await assetDatabaseService.deleteAssetRecord(
             id,
-            user.id,
+            user?.id || "anonymous",
             includeVariants,
           );
 
           // Log asset deletion
-          if (asset) {
+          if (asset && user) {
             await ActivityLogService.logAssetDeleted({
               userId: user.id,
               assetId: id,
@@ -127,15 +126,13 @@ export const createAssetRoutes = (rootDir: string) => {
           query: Models.DeleteAssetQuery,
           response: {
             200: Models.DeleteAssetResponse,
-            401: Models.ErrorResponse,
-            403: Models.ErrorResponse,
             404: Models.ErrorResponse,
           },
           detail: {
             tags: ["Assets"],
             summary: "Delete an asset",
             description:
-              "Deletes an asset and optionally its variants. (Auth required - all authenticated users can delete any asset)",
+              "Deletes an asset and optionally its variants. Auth optional - anyone can delete anything.",
           },
         },
       )

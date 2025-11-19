@@ -15,7 +15,7 @@ import {
 } from "./shared";
 
 export const retrievalRoutes = new Elysia()
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // ==================== NPCs ====================
   .get(

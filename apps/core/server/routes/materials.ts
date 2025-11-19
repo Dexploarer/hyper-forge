@@ -10,7 +10,7 @@ import { materialPresets } from "../db/schema/material-presets.schema";
 import { eq, and, or, desc, asc, sql } from "drizzle-orm";
 import { logger } from "../utils/logger";
 import * as Models from "../models";
-import { requireAuthGuard } from "../plugins/auth.plugin";
+import { authPlugin } from "../plugins/auth.plugin";
 import {
   NotFoundError,
   ForbiddenError,
@@ -261,7 +261,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
   )
 
   // Authenticated routes for material preset management
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // Update material preset
   .put(

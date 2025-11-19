@@ -34,17 +34,10 @@ export const npcs = pgTable(
     walletAddress: varchar("wallet_address", { length: 255 }),
 
     // Soft deletes (enables undo)
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    deletedBy: varchar("deleted_by", { length: 255 }),
 
     // Usage analytics
-    viewCount: integer("view_count").notNull().default(0),
-    favoriteCount: integer("favorite_count").notNull().default(0),
-    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
 
     // Visibility & discovery
-    isPublic: boolean("is_public").notNull().default(false),
-    isFeatured: boolean("is_featured").notNull().default(false),
 
     // Project organization
     projectId: uuid("project_id").references(() => projects.id, {
@@ -52,16 +45,11 @@ export const npcs = pgTable(
     }),
 
     // Versioning
-    version: integer("version").notNull().default(1),
-    parentId: uuid("parent_id"), // Self-reference for version history
-    isTemplate: boolean("is_template").notNull().default(false),
 
     // AI cost tracking
     aiMetrics: jsonb("ai_metrics").default({}),
 
     // Quality & curation
-    qualityScore: integer("quality_score"),
-    isVerified: boolean("is_verified").notNull().default(false),
 
     // Complete NPC data as JSON
     data: jsonb("data").notNull(),
@@ -86,15 +74,8 @@ export const npcs = pgTable(
     archetypeIdx: index("idx_npcs_archetype").on(table.archetype),
     createdByIdx: index("idx_npcs_created_by").on(table.createdBy),
     tagsIdx: index("idx_npcs_tags").using("gin", table.tags),
-    deletedAtIdx: index("idx_npcs_deleted_at").on(table.deletedAt),
     projectIdIdx: index("idx_npcs_project_id").on(table.projectId),
-    isPublicIdx: index("idx_npcs_is_public").on(table.isPublic),
-    viewCountIdx: index("idx_npcs_view_count").on(table.viewCount),
     // Composite indexes for query optimization
-    createdByDateIdx: index("idx_npcs_created_by_date").on(
-      table.createdBy,
-      table.createdAt.desc(),
-    ),
     archetypeNameIdx: index("idx_npcs_archetype_name").on(
       table.archetype,
       table.name,
@@ -121,17 +102,10 @@ export const quests = pgTable(
     walletAddress: varchar("wallet_address", { length: 255 }),
 
     // Soft deletes (enables undo)
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    deletedBy: varchar("deleted_by", { length: 255 }),
 
     // Usage analytics
-    viewCount: integer("view_count").notNull().default(0),
-    favoriteCount: integer("favorite_count").notNull().default(0),
-    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
 
     // Visibility & discovery
-    isPublic: boolean("is_public").notNull().default(false),
-    isFeatured: boolean("is_featured").notNull().default(false),
 
     // Project organization
     projectId: uuid("project_id").references(() => projects.id, {
@@ -139,16 +113,11 @@ export const quests = pgTable(
     }),
 
     // Versioning
-    version: integer("version").notNull().default(1),
-    parentId: uuid("parent_id"), // Self-reference for version history
-    isTemplate: boolean("is_template").notNull().default(false),
 
     // AI cost tracking
     aiMetrics: jsonb("ai_metrics").default({}),
 
     // Quality & curation
-    qualityScore: integer("quality_score"),
-    isVerified: boolean("is_verified").notNull().default(false),
 
     // Complete quest data as JSON
     data: jsonb("data").notNull(),
@@ -174,15 +143,8 @@ export const quests = pgTable(
     difficultyIdx: index("idx_quests_difficulty").on(table.difficulty),
     createdByIdx: index("idx_quests_created_by").on(table.createdBy),
     tagsIdx: index("idx_quests_tags").using("gin", table.tags),
-    deletedAtIdx: index("idx_quests_deleted_at").on(table.deletedAt),
     projectIdIdx: index("idx_quests_project_id").on(table.projectId),
-    isPublicIdx: index("idx_quests_is_public").on(table.isPublic),
-    viewCountIdx: index("idx_quests_view_count").on(table.viewCount),
     // Composite indexes for query optimization
-    createdByDateIdx: index("idx_quests_created_by_date").on(
-      table.createdBy,
-      table.createdAt.desc(),
-    ),
     difficultyTypeIdx: index("idx_quests_difficulty_type").on(
       table.difficulty,
       table.questType,
@@ -208,17 +170,10 @@ export const dialogues = pgTable(
     walletAddress: varchar("wallet_address", { length: 255 }),
 
     // Soft deletes (enables undo)
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    deletedBy: varchar("deleted_by", { length: 255 }),
 
     // Usage analytics
-    viewCount: integer("view_count").notNull().default(0),
-    favoriteCount: integer("favorite_count").notNull().default(0),
-    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
 
     // Visibility & discovery
-    isPublic: boolean("is_public").notNull().default(false),
-    isFeatured: boolean("is_featured").notNull().default(false),
 
     // Project organization
     projectId: uuid("project_id").references(() => projects.id, {
@@ -226,16 +181,11 @@ export const dialogues = pgTable(
     }),
 
     // Versioning
-    version: integer("version").notNull().default(1),
-    parentId: uuid("parent_id"), // Self-reference for version history
-    isTemplate: boolean("is_template").notNull().default(false),
 
     // AI cost tracking
     aiMetrics: jsonb("ai_metrics").default({}),
 
     // Quality & curation
-    qualityScore: integer("quality_score"),
-    isVerified: boolean("is_verified").notNull().default(false),
 
     // Dialogue nodes as JSON array
     nodes: jsonb("nodes").notNull(),
@@ -255,15 +205,8 @@ export const dialogues = pgTable(
   (table) => ({
     npcNameIdx: index("idx_dialogues_npc_name").on(table.npcName),
     createdByIdx: index("idx_dialogues_created_by").on(table.createdBy),
-    deletedAtIdx: index("idx_dialogues_deleted_at").on(table.deletedAt),
     projectIdIdx: index("idx_dialogues_project_id").on(table.projectId),
-    isPublicIdx: index("idx_dialogues_is_public").on(table.isPublic),
-    viewCountIdx: index("idx_dialogues_view_count").on(table.viewCount),
     // Composite indexes for query optimization
-    createdByDateIdx: index("idx_dialogues_created_by_date").on(
-      table.createdBy,
-      table.createdAt.desc(),
-    ),
   }),
 );
 
@@ -286,17 +229,10 @@ export const lores = pgTable(
     walletAddress: varchar("wallet_address", { length: 255 }),
 
     // Soft deletes (enables undo)
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    deletedBy: varchar("deleted_by", { length: 255 }),
 
     // Usage analytics
-    viewCount: integer("view_count").notNull().default(0),
-    favoriteCount: integer("favorite_count").notNull().default(0),
-    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
 
     // Visibility & discovery
-    isPublic: boolean("is_public").notNull().default(false),
-    isFeatured: boolean("is_featured").notNull().default(false),
 
     // Project organization
     projectId: uuid("project_id").references(() => projects.id, {
@@ -304,16 +240,11 @@ export const lores = pgTable(
     }),
 
     // Versioning
-    version: integer("version").notNull().default(1),
-    parentId: uuid("parent_id"), // Self-reference for version history
-    isTemplate: boolean("is_template").notNull().default(false),
 
     // AI cost tracking
     aiMetrics: jsonb("ai_metrics").default({}),
 
     // Quality & curation
-    qualityScore: integer("quality_score"),
-    isVerified: boolean("is_verified").notNull().default(false),
 
     // Complete lore data as JSON
     data: jsonb("data").notNull(),
@@ -338,15 +269,8 @@ export const lores = pgTable(
     categoryIdx: index("idx_lores_category").on(table.category),
     createdByIdx: index("idx_lores_created_by").on(table.createdBy),
     tagsIdx: index("idx_lores_tags").using("gin", table.tags),
-    deletedAtIdx: index("idx_lores_deleted_at").on(table.deletedAt),
     projectIdIdx: index("idx_lores_project_id").on(table.projectId),
-    isPublicIdx: index("idx_lores_is_public").on(table.isPublic),
-    viewCountIdx: index("idx_lores_view_count").on(table.viewCount),
     // Composite indexes for query optimization
-    createdByDateIdx: index("idx_lores_created_by_date").on(
-      table.createdBy,
-      table.createdAt.desc(),
-    ),
   }),
 );
 
@@ -369,17 +293,10 @@ export const worlds = pgTable(
     walletAddress: varchar("wallet_address", { length: 255 }),
 
     // Soft deletes (enables undo)
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    deletedBy: varchar("deleted_by", { length: 255 }),
 
     // Usage analytics
-    viewCount: integer("view_count").notNull().default(0),
-    favoriteCount: integer("favorite_count").notNull().default(0),
-    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
 
     // Visibility & discovery
-    isPublic: boolean("is_public").notNull().default(false),
-    isFeatured: boolean("is_featured").notNull().default(false),
 
     // Project organization
     projectId: uuid("project_id").references(() => projects.id, {
@@ -387,16 +304,11 @@ export const worlds = pgTable(
     }),
 
     // Versioning
-    version: integer("version").notNull().default(1),
-    parentId: uuid("parent_id"), // Self-reference for version history
-    isTemplate: boolean("is_template").notNull().default(false),
 
     // AI cost tracking
     aiMetrics: jsonb("ai_metrics").default({}),
 
     // Quality & curation
-    qualityScore: integer("quality_score"),
-    isVerified: boolean("is_verified").notNull().default(false),
 
     // World data (geography, culture, history, magic system, etc.)
     data: jsonb("data").notNull(),
@@ -417,15 +329,8 @@ export const worlds = pgTable(
     nameIdx: index("idx_worlds_name").on(table.name),
     genreIdx: index("idx_worlds_genre").on(table.genre),
     createdByIdx: index("idx_worlds_created_by").on(table.createdBy),
-    deletedAtIdx: index("idx_worlds_deleted_at").on(table.deletedAt),
     projectIdIdx: index("idx_worlds_project_id").on(table.projectId),
-    isPublicIdx: index("idx_worlds_is_public").on(table.isPublic),
-    viewCountIdx: index("idx_worlds_view_count").on(table.viewCount),
     // Composite indexes for query optimization
-    createdByDateIdx: index("idx_worlds_created_by_date").on(
-      table.createdBy,
-      table.createdAt.desc(),
-    ),
   }),
 );
 
@@ -450,17 +355,10 @@ export const locations = pgTable(
     walletAddress: varchar("wallet_address", { length: 255 }),
 
     // Soft deletes (enables undo)
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    deletedBy: varchar("deleted_by", { length: 255 }),
 
     // Usage analytics
-    viewCount: integer("view_count").notNull().default(0),
-    favoriteCount: integer("favorite_count").notNull().default(0),
-    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
 
     // Visibility & discovery
-    isPublic: boolean("is_public").notNull().default(false),
-    isFeatured: boolean("is_featured").notNull().default(false),
 
     // Project organization
     projectId: uuid("project_id").references(() => projects.id, {
@@ -468,16 +366,11 @@ export const locations = pgTable(
     }),
 
     // Versioning
-    version: integer("version").notNull().default(1),
-    parentId: uuid("parent_id"), // Self-reference for version history
-    isTemplate: boolean("is_template").notNull().default(false),
 
     // AI cost tracking
     aiMetrics: jsonb("ai_metrics").default({}),
 
     // Quality & curation
-    qualityScore: integer("quality_score"),
-    isVerified: boolean("is_verified").notNull().default(false),
 
     // Location data (description, climate, inhabitants, resources, etc.)
     data: jsonb("data").notNull(),
@@ -498,10 +391,7 @@ export const locations = pgTable(
     nameIdx: index("idx_locations_name").on(table.name),
     typeIdx: index("idx_locations_type").on(table.type),
     worldIdIdx: index("idx_locations_world_id").on(table.worldId),
-    deletedAtIdx: index("idx_locations_deleted_at").on(table.deletedAt),
     projectIdIdx: index("idx_locations_project_id").on(table.projectId),
-    isPublicIdx: index("idx_locations_is_public").on(table.isPublic),
-    viewCountIdx: index("idx_locations_view_count").on(table.viewCount),
     // Composite indexes for query optimization
     worldIdTypeIdx: index("idx_locations_world_type").on(
       table.worldId,
@@ -572,17 +462,10 @@ export const musicTracks = pgTable(
     walletAddress: varchar("wallet_address", { length: 255 }),
 
     // Soft deletes (enables undo)
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
-    deletedBy: varchar("deleted_by", { length: 255 }),
 
     // Usage analytics
-    viewCount: integer("view_count").notNull().default(0),
-    favoriteCount: integer("favorite_count").notNull().default(0),
-    lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
 
     // Visibility & discovery
-    isPublic: boolean("is_public").notNull().default(false),
-    isFeatured: boolean("is_featured").notNull().default(false),
 
     // Project organization
     projectId: uuid("project_id").references(() => projects.id, {
@@ -590,16 +473,11 @@ export const musicTracks = pgTable(
     }),
 
     // Versioning
-    version: integer("version").notNull().default(1),
-    parentId: uuid("parent_id"), // Self-reference for version history
-    isTemplate: boolean("is_template").notNull().default(false),
 
     // AI cost tracking
     aiMetrics: jsonb("ai_metrics").default({}),
 
     // Quality & curation
-    qualityScore: integer("quality_score"),
-    isVerified: boolean("is_verified").notNull().default(false),
 
     // CDN storage (CDN-first architecture)
     cdnUrl: varchar("cdn_url", { length: 1024 }), // Full CDN URL for the music file
@@ -618,15 +496,8 @@ export const musicTracks = pgTable(
   (table) => ({
     titleIdx: index("idx_music_title").on(table.title),
     moodIdx: index("idx_music_mood").on(table.mood),
-    deletedAtIdx: index("idx_music_deleted_at").on(table.deletedAt),
     projectIdIdx: index("idx_music_project_id").on(table.projectId),
-    isPublicIdx: index("idx_music_is_public").on(table.isPublic),
-    viewCountIdx: index("idx_music_view_count").on(table.viewCount),
     // Composite indexes for query optimization
-    moodPublicIdx: index("idx_music_mood_public").on(
-      table.mood,
-      table.isPublic,
-    ),
   }),
 );
 

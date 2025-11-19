@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { requireAuthGuard, requireAdminGuard } from "../plugins/auth.plugin";
+import { authPlugin } from "../plugins/auth.plugin";
 import { userService } from "../services/UserService";
 import { ActivityLogService } from "../services/ActivityLogService";
 import { ApiKeyService } from "../services/ApiKeyService";
@@ -14,7 +14,7 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
   // Regular authenticated user routes
   .group("", (app) =>
     app
-      .use(requireAuthGuard)
+      .use(authPlugin)
       // Get current user profile (requires authentication)
       .get(
         "/me",

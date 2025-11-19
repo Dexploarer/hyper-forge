@@ -18,7 +18,7 @@ import {
 } from "./shared";
 
 export const mediaRoutes = new Elysia()
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // POST /api/content/generate-npc-portrait
   .post(

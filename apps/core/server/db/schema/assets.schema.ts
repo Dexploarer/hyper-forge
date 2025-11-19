@@ -85,10 +85,10 @@ export const assets = pgTable(
     // Status: 'draft' | 'processing' | 'completed' | 'failed' | 'approved' | 'published' | 'archived'
     status: varchar("status", { length: 50 }).notNull().default("draft"),
 
-    // Visibility: 'private' | 'public'
+    // Visibility: 'private' | 'public' (default public for single-team)
     visibility: varchar("visibility", { length: 50 })
       .notNull()
-      .default("private"),
+      .default("public"),
 
     // Export tracking
     exportedToRepo: timestamp("exported_to_repo", { withTimezone: true }),

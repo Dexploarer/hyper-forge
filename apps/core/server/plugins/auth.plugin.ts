@@ -37,11 +37,11 @@ import { ApiKeyService } from "../services/ApiKeyService";
 import { logger } from "../utils/logger";
 import { env } from "../config/env";
 
-// Initialize Privy client
-const privy = new PrivyClient(
-  env.PRIVY_APP_ID || "",
-  env.PRIVY_APP_SECRET || "",
-);
+// Initialize Privy client (only if credentials provided)
+const privy =
+  env.PRIVY_APP_ID && env.PRIVY_APP_SECRET
+    ? new PrivyClient(env.PRIVY_APP_ID, env.PRIVY_APP_SECRET)
+    : null;
 
 /**
  * Optional auth helper - attaches user if valid token present
@@ -125,7 +125,15 @@ export async function optionalAuth({
       };
     }
 
-    // EXISTING: Privy JWT authentication (unchanged)
+    // EXISTING: Privy JWT authentication (skip if Privy not configured)
+
+    if (!privy) {
+      logger.warn(
+        { context: "auth" },
+        "Privy client not initialized - authentication disabled",
+      );
+      return {};
+    }
 
     let privyUserId: string;
 
@@ -175,7 +183,7 @@ export async function optionalAuth({
 
       try {
         // Only fetch Privy user in production (test mode doesn't have real Privy)
-        if (env.NODE_ENV !== "test") {
+        if (env.NODE_ENV !== "test" && privy) {
           const privyUser = await privy.getUser(privyUserId);
           // Extract email from linked accounts
           const emailAccount = privyUser.linkedAccounts?.find(

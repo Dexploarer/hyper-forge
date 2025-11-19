@@ -9,7 +9,7 @@ import { db } from "../db";
 import { prompts } from "../db/schema/prompts.schema";
 import { eq, and, or, desc } from "drizzle-orm";
 import { logger } from "../utils/logger";
-import { requireAuthGuard } from "../plugins/auth.plugin";
+import { authPlugin } from "../plugins/auth.plugin";
 import { NotFoundError, ForbiddenError } from "../errors";
 import { randomUUID } from "crypto";
 
@@ -99,7 +99,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
   )
 
   // Authenticated routes for custom prompt management
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // Create custom prompt (user-created)
   .post(

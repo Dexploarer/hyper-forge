@@ -1,7 +1,7 @@
 /**
  * Users & Projects Schema
- * Simple user and project management - no restrictive auth
- * If you have dashboard access, you're an admin
+ * SIMPLIFIED for single-team use - no auth restrictions
+ * All users are admins, auth is optional, ownership is for organization only
  */
 
 import {
@@ -18,35 +18,35 @@ import {
 import { relations } from "drizzle-orm";
 
 /**
- * User role enum
- * Provides type-safe role values with database-level validation
+ * User role enum (kept for backward compatibility)
+ * Everyone defaults to admin now
  */
 export const userRoleEnum = pgEnum("user_role", ["admin", "member"]);
 
 /**
- * Users table
- * Tracks users for organization purposes - not for access control
+ * Users table (SIMPLIFIED)
+ * All authentication fields optional - tracks users for organization only
  */
 export const users = pgTable(
   "users",
   {
     id: uuid("id").defaultRandom().primaryKey(),
 
-    // Privy authentication (optional)
-    privyUserId: varchar("privy_user_id", { length: 255 }).notNull().unique(),
+    // Privy authentication (OPTIONAL - nullable for single-team use)
+    privyUserId: varchar("privy_user_id", { length: 255 }).unique(),
     email: varchar("email", { length: 255 }).unique(),
     walletAddress: varchar("wallet_address", { length: 255 }).unique(),
 
-    // Profile
+    // Profile (optional)
     displayName: varchar("display_name", { length: 255 }),
     avatarUrl: varchar("avatar_url", { length: 512 }),
     discordUsername: varchar("discord_username", { length: 255 }),
 
-    // Profile completion tracking
+    // Profile completion tracking (optional)
     profileCompleted: timestamp("profile_completed", { withTimezone: true }),
 
-    // Role (always admin if they have dashboard access)
-    role: userRoleEnum("role").notNull().default("member"),
+    // Role (default to admin for single-team use)
+    role: userRoleEnum("role").notNull().default("admin"),
 
     // User preferences
     settings: jsonb("settings").notNull().default({}),
@@ -76,8 +76,8 @@ export const users = pgTable(
 );
 
 /**
- * Projects table
- * Organize assets into projects for better management
+ * Projects table (SIMPLIFIED)
+ * Organize assets into projects - no ownership restrictions
  */
 export const projects = pgTable(
   "projects",
@@ -88,16 +88,16 @@ export const projects = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
 
-    // Owner (no restrictions, just for organization)
-    ownerId: uuid("owner_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
+    // Owner (OPTIONAL - just for organization, no restrictions)
+    ownerId: uuid("owner_id").references(() => users.id, {
+      onDelete: "cascade",
+    }),
 
     // Status
     status: varchar("status", { length: 50 }).notNull().default("active"),
 
-    // Visibility
-    isPublic: boolean("is_public").notNull().default(false),
+    // Visibility (REMOVED - everything is shared in single-team)
+    isPublic: boolean("is_public").notNull().default(true),
 
     // Project settings and metadata
     settings: jsonb("settings").notNull().default({}),

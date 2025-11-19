@@ -218,6 +218,13 @@
       "when": 1763470212240,
       "tag": "0030_far_silver_fox",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1763534616494,
+      "tag": "0031_stormy_black_panther",
+      "breakpoints": true
     }
   ]
 }

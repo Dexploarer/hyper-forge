@@ -16,7 +16,7 @@ import {
 } from "./shared";
 
 export const relationshipRoutes = new Elysia()
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // POST /api/content/generate-quest-for-npc
   .post(

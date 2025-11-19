@@ -17,7 +17,7 @@ import {
 } from "./shared";
 
 export const generationRoutes = new Elysia()
-  .use(requireAuthGuard)
+  .use(authPlugin)
   .onBeforeHandle(({ request }) => {
     const url = new URL(request.url);
     logger.debug(
