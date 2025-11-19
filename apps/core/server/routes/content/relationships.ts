@@ -7,7 +7,7 @@
 import {
   Elysia,
   t,
-  requireAuthGuard,
+  authPlugin,
   logger,
   contentGenService,
   contentDatabaseService,
@@ -49,8 +49,8 @@ export const relationshipRoutes = new Elysia()
           quality: body.quality,
         },
         tags: [body.questType, body.difficulty, body.npcName],
-        createdBy: user.id,
-        walletAddress: user.walletAddress || undefined,
+        createdBy: user?.id || "anonymous",
+        walletAddress: user?.walletAddress || null || undefined,
       });
 
       const relationship = await relationshipService.createRelationship({
@@ -61,7 +61,7 @@ export const relationshipRoutes = new Elysia()
         relationshipType: "gives_quest",
         strength: "strong",
         metadata: { questGiver: body.npcName },
-        createdBy: user.id,
+        createdBy: user?.id || "anonymous",
       });
 
       return {
@@ -150,8 +150,8 @@ export const relationshipRoutes = new Elysia()
           body.npcName,
           ...(result.lore.relatedTopics || []),
         ],
-        createdBy: user.id,
-        walletAddress: user.walletAddress || undefined,
+        createdBy: user?.id || "anonymous",
+        walletAddress: user?.walletAddress || null || undefined,
       });
 
       const relationship = await relationshipService.createRelationship({
@@ -162,7 +162,7 @@ export const relationshipRoutes = new Elysia()
         relationshipType: "mentions",
         strength: "medium",
         metadata: { character: body.npcName },
-        createdBy: user.id,
+        createdBy: user?.id || "anonymous",
       });
 
       return {

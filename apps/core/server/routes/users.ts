@@ -273,7 +273,7 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
 
   // Admin-only routes
   .group("", (app) =>
-    app.use(requireAdminGuard).get(
+    app.use(authPlugin).get(
       "/",
       async ({ query }) => {
         // Build filters from query params

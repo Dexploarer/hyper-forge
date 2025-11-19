@@ -119,14 +119,14 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
           isSystem: false,
           isActive: true,
           isPublic: body.isPublic || false,
-          createdBy: user.id, // Use authenticated user's ID
+          createdBy: user?.id || "anonymous", // Use authenticated user's ID
           metadata: body.metadata || {},
         })
         .returning();
 
       set.status = 201;
       logger.info(
-        { promptId: newPrompt.id, userId: user.id, type: body.type },
+        { promptId: newPrompt.id, userId: user?.id || "anonymous", type: body.type },
         "Custom prompt created",
       );
       return newPrompt;
@@ -167,7 +167,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
       // Check if it's a system prompt (cannot be updated)
       if (existingPrompt.isSystem) {
         logger.warn(
-          { promptId: params.id, userId: user.id },
+          { promptId: params.id, userId: user?.id || "anonymous" },
           "Attempted to update system prompt",
         );
         throw new ForbiddenError("System prompts cannot be updated");
@@ -178,7 +178,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
         logger.warn(
           {
             promptId: params.id,
-            userId: user.id,
+            userId: user?.id || "anonymous",
             ownerId: existingPrompt.createdBy,
           },
           "Unauthorized prompt update attempt",
@@ -201,7 +201,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
         .returning();
 
       logger.info(
-        { promptId: params.id, userId: user.id, name: body.name },
+        { promptId: params.id, userId: user?.id || "anonymous", name: body.name },
         "Custom prompt updated",
       );
       return updatedPrompt;
@@ -245,7 +245,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
       // Check if it's a system prompt (cannot be deleted)
       if (existingPrompt.isSystem) {
         logger.warn(
-          { promptId: params.id, userId: user.id },
+          { promptId: params.id, userId: user?.id || "anonymous" },
           "Attempted to delete system prompt",
         );
         throw new ForbiddenError("System prompts cannot be deleted");
@@ -256,7 +256,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
         logger.warn(
           {
             promptId: params.id,
-            userId: user.id,
+            userId: user?.id || "anonymous",
             ownerId: existingPrompt.createdBy,
           },
           "Unauthorized prompt deletion attempt",
@@ -268,7 +268,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
       await db.delete(prompts).where(eq(prompts.id, params.id)).returning();
 
       logger.info(
-        { promptId: params.id, userId: user.id, type: existingPrompt.type },
+        { promptId: params.id, userId: user?.id || "anonymous", type: existingPrompt.type },
         "Custom prompt deleted",
       );
       return { success: true, id: params.id };

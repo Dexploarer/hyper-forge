@@ -282,12 +282,12 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
         // Check if it's a system preset (cannot be updated)
         if (existingPreset.isSystem) {
           logger.warn(
-            { presetId: params.id, userId: user.id },
+            { presetId: params.id, userId: user?.id || "anonymous" },
             "Attempted to update system material preset",
           );
           throw new ForbiddenError("System presets cannot be updated", {
             presetId: params.id,
-            userId: user.id,
+            userId: user?.id || "anonymous",
           });
         }
 
@@ -296,14 +296,14 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           logger.warn(
             {
               presetId: params.id,
-              userId: user.id,
+              userId: user?.id || "anonymous",
               ownerId: existingPreset.createdBy,
             },
             "Unauthorized material preset update attempt",
           );
           throw new ForbiddenError("You can only update your own presets", {
             presetId: params.id,
-            userId: user.id,
+            userId: user?.id || "anonymous",
             ownerId: existingPreset.createdBy,
           });
         }
@@ -326,7 +326,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           .returning();
 
         logger.info(
-          { presetId: params.id, userId: user.id },
+          { presetId: params.id, userId: user?.id || "anonymous" },
           "Material preset updated",
         );
         return updatedPreset;
@@ -345,14 +345,14 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
             context: "Material Presets",
             err: error,
             presetId: params.id,
-            userId: user.id,
+            userId: user?.id || "anonymous",
           },
           `Error updating material preset: ${params.id}`,
         );
         throw new InternalServerError("Failed to update material preset", {
           originalError: error,
           presetId: params.id,
-          userId: user.id,
+          userId: user?.id || "anonymous",
         });
       }
     },
@@ -400,12 +400,12 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
         // Check if it's a system preset (cannot be deleted)
         if (existingPreset.isSystem) {
           logger.warn(
-            { presetId: params.id, userId: user.id },
+            { presetId: params.id, userId: user?.id || "anonymous" },
             "Attempted to delete system material preset",
           );
           throw new ForbiddenError("System presets cannot be deleted", {
             presetId: params.id,
-            userId: user.id,
+            userId: user?.id || "anonymous",
           });
         }
 
@@ -414,14 +414,14 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           logger.warn(
             {
               presetId: params.id,
-              userId: user.id,
+              userId: user?.id || "anonymous",
               ownerId: existingPreset.createdBy,
             },
             "Unauthorized material preset deletion attempt",
           );
           throw new ForbiddenError("You can only delete your own presets", {
             presetId: params.id,
-            userId: user.id,
+            userId: user?.id || "anonymous",
             ownerId: existingPreset.createdBy,
           });
         }
@@ -433,7 +433,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           .returning();
 
         logger.info(
-          { presetId: params.id, userId: user.id },
+          { presetId: params.id, userId: user?.id || "anonymous" },
           "Material preset deleted",
         );
         return { success: true, id: params.id };
@@ -452,14 +452,14 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
             context: "Material Presets",
             err: error,
             presetId: params.id,
-            userId: user.id,
+            userId: user?.id || "anonymous",
           },
           `Error deleting material preset: ${params.id}`,
         );
         throw new InternalServerError("Failed to delete material preset", {
           originalError: error,
           presetId: params.id,
-          userId: user.id,
+          userId: user?.id || "anonymous",
         });
       }
     },

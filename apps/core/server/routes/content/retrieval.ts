@@ -7,7 +7,7 @@
 import {
   Elysia,
   t,
-  requireAuthGuard,
+  authPlugin,
   logger,
   contentDatabaseService,
   NotFoundError,

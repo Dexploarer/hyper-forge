@@ -233,7 +233,7 @@ export const vrmConversionRoutes = new Elysia({
 
       logger.info(
         {
-          userId: user.id,
+          userId: user?.id || "anonymous",
           assetId,
           hasFile: !!file,
           hasUrl: !!glbUrl,

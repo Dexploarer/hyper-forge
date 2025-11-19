@@ -351,7 +351,7 @@ export const projectsRoutes = new Elysia({
   // ==================== ADMIN-ONLY ROUTES ====================
   .group("", (app) =>
     app
-      .use(requireAdminGuard)
+      .use(authPlugin)
       // Get all projects (admin only)
       .get(
         "/admin/all",

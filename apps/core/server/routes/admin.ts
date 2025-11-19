@@ -7,7 +7,7 @@ import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
 import { eq, desc, and } from "drizzle-orm";
 import { db, activityLog } from "../db";
-import { requireAuth } from "../plugins/auth.plugin";
+import { requireAuth, authPlugin } from "../plugins/auth.plugin";
 import { userService } from "../services/UserService";
 import { ApiKeyService } from "../services/ApiKeyService";
 import { MediaStorageService } from "../services/MediaStorageService";
@@ -293,47 +293,49 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
    * Special case: Accepts either JWT admin auth OR API key auth
    */
   .group("", (app) =>
-    app.use(importCdnAssetsGuard).post(
-      "/import-cdn-assets",
-      async (context) => {
-        const { isSystemKey } = context as typeof context & {
-          isSystemKey: boolean;
-        };
-        try {
-          logger.info(
-            { context: "Admin", authMethod: isSystemKey ? "API Key" : "JWT" },
-            "Starting CDN asset import via API",
-          );
-
-          const result = await importCDNAssets();
-
-          logger.info(
-            { context: "Admin", result },
-            "CDN asset import completed via API",
-          );
-
-          return {
-            success: true,
-            ...result,
-            message: `Imported ${result.imported} assets, skipped ${result.skipped}, failed ${result.failed}`,
+    app
+      .use(importCdnAssetsGuard)
+      .post(
+        "/import-cdn-assets",
+        async (context) => {
+          const { isSystemKey } = context as typeof context & {
+            isSystemKey: boolean;
           };
-        } catch (error) {
-          logger.error({ context: "Admin", err: error }, "CDN import failed");
-          throw new InternalServerError(
-            error instanceof Error ? error.message : "Import failed",
-          );
-        }
-      },
-      {
-        detail: {
-          tags: ["Admin"],
-          summary: "Import CDN assets to database (Admin only)",
-          description:
-            "Scans CDN for assets and creates database records for any missing assets. This fixes the issue where assets exist on CDN but not in database. Can be called with admin auth OR X-API-Key header.",
-          security: [{ BearerAuth: [] }],
+          try {
+            logger.info(
+              { context: "Admin", authMethod: isSystemKey ? "API Key" : "JWT" },
+              "Starting CDN asset import via API",
+            );
+
+            const result = await importCDNAssets();
+
+            logger.info(
+              { context: "Admin", result },
+              "CDN asset import completed via API",
+            );
+
+            return {
+              success: true,
+              ...result,
+              message: `Imported ${result.imported} assets, skipped ${result.skipped}, failed ${result.failed}`,
+            };
+          } catch (error) {
+            logger.error({ context: "Admin", err: error }, "CDN import failed");
+            throw new InternalServerError(
+              error instanceof Error ? error.message : "Import failed",
+            );
+          }
         },
-      },
-    )
+        {
+          detail: {
+            tags: ["Admin"],
+            summary: "Import CDN assets to database (Admin only)",
+            description:
+              "Scans CDN for assets and creates database records for any missing assets. This fixes the issue where assets exist on CDN but not in database. Can be called with admin auth OR X-API-Key header.",
+            security: [{ BearerAuth: [] }],
+          },
+        },
+      )
 
       // ============================================
       // API KEY MANAGEMENT ROUTES (Admin Only)
@@ -513,8 +515,7 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
           detail: {
             tags: ["Admin", "API Keys"],
             summary: "Get user's API keys (Admin only)",
-            description:
-              "Get all API keys for a specific user. Admin only.",
+            description: "Get all API keys for a specific user. Admin only.",
             security: [{ BearerAuth: [] }],
           },
         },
@@ -583,7 +584,8 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
             entityId: params.keyId,
             details: {
               keyOwnerUserId: keyDetails.userId,
-              keyOwnerName: keyDetails.userName || keyDetails.userEmail || "Unknown",
+              keyOwnerName:
+                keyDetails.userName || keyDetails.userEmail || "Unknown",
               keyName: keyDetails.name,
             },
           });
@@ -643,7 +645,8 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
             entityId: params.keyId,
             details: {
               keyOwnerUserId: keyDetails.userId,
-              keyOwnerName: keyDetails.userName || keyDetails.userEmail || "Unknown",
+              keyOwnerName:
+                keyDetails.userName || keyDetails.userEmail || "Unknown",
               keyName: keyDetails.name,
             },
           });

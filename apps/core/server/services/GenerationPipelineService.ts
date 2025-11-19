@@ -232,22 +232,22 @@ export class GenerationPipelineService {
   ): Promise<GenerationPipeline | null> {
     // Map to actual database columns
     const updateData: Partial<NewGenerationPipeline> = {
-      ...(updates.status && { status: updates.status }),
-      ...(updates.progress !== undefined && { progress: updates.progress }),
-      ...(updates.currentStage && { currentStage: updates.currentStage }),
-      ...(updates.results && { results: updates.results as any }),
-      ...(updates.error && { error: updates.error }),
-      ...(updates.errorStage && { errorStage: updates.errorStage }),
-      ...(updates.errorDetails && {
-        errorDetails: updates.errorDetails as any,
-      }),
-      ...(updates.meshyTaskId && { meshyTaskId: updates.meshyTaskId }),
-      ...(updates.riggingTaskId && { riggingTaskId: updates.riggingTaskId }),
-      ...(updates.assetId && { assetId: updates.assetId }),
-      ...(updates.completedAt && { completedAt: updates.completedAt }),
-      ...(updates.startedAt && { startedAt: updates.startedAt }),
       updatedAt: new Date(),
     };
+
+    if (updates.status) updateData.status = updates.status;
+    if (updates.progress !== undefined) updateData.progress = updates.progress;
+    if (updates.currentStage) updateData.currentStage = updates.currentStage;
+    if (updates.results) updateData.results = updates.results as any;
+    if (updates.error) updateData.error = updates.error;
+    if (updates.errorStage) updateData.errorStage = updates.errorStage;
+    if (updates.errorDetails)
+      updateData.errorDetails = updates.errorDetails as any;
+    if (updates.meshyTaskId) updateData.meshyTaskId = updates.meshyTaskId;
+    if (updates.riggingTaskId) updateData.riggingTaskId = updates.riggingTaskId;
+    if (updates.assetId) updateData.assetId = updates.assetId;
+    if (updates.completedAt) updateData.completedAt = updates.completedAt;
+    if (updates.startedAt) updateData.startedAt = updates.startedAt;
 
     const [job] = await db
       .update(generationPipelines)

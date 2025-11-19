@@ -7,7 +7,7 @@
 import {
   Elysia,
   t,
-  requireAuthGuard,
+  authPlugin,
   logger,
   mediaStorageService,
   relationshipService,
@@ -29,7 +29,7 @@ export const mediaRoutes = new Elysia()
         "Generating portrait for NPC",
       );
 
-      const userApiKeys = await getUserApiKeysWithFallback(user.id);
+      const userApiKeys = await getUserApiKeysWithFallback(user?.id || "anonymous");
 
       if (!userApiKeys.aiGatewayApiKey && !process.env.OPENAI_API_KEY) {
         throw new InternalServerError(
@@ -104,9 +104,9 @@ export const mediaRoutes = new Elysia()
         metadata: {
           prompt: imageResult.prompt,
           mimeType: "image/png",
-          size: imageData.length,
+          fileSize: imageData.length,
         },
-        createdBy: user.id,
+        createdBy: user?.id || "anonymous",
       });
 
       logger.info(
@@ -158,7 +158,7 @@ export const mediaRoutes = new Elysia()
         "Generating banner for quest",
       );
 
-      const userApiKeys = await getUserApiKeysWithFallback(user.id);
+      const userApiKeys = await getUserApiKeysWithFallback(user?.id || "anonymous");
 
       if (!userApiKeys.aiGatewayApiKey && !process.env.OPENAI_API_KEY) {
         throw new InternalServerError(
@@ -232,9 +232,9 @@ export const mediaRoutes = new Elysia()
         metadata: {
           prompt: imageResult.prompt,
           mimeType: "image/png",
-          size: imageData.length,
+          fileSize: imageData.length,
         },
-        createdBy: user.id,
+        createdBy: user?.id || "anonymous",
       });
 
       logger.info(
@@ -291,7 +291,7 @@ export const mediaRoutes = new Elysia()
       try {
         let imageData: Buffer;
         let mimeType: string;
-        let size: number;
+        let fileSize: number;
 
         // Support two patterns:
         // 1. File upload (multipart/form-data) - for user uploads
@@ -384,7 +384,7 @@ export const mediaRoutes = new Elysia()
             mimeType,
             size,
           },
-          createdBy: user.id,
+          createdBy: user?.id || "anonymous",
         });
 
         logger.info(
@@ -481,7 +481,7 @@ export const mediaRoutes = new Elysia()
             duration: body.duration,
             mimeType: "audio/mpeg",
           },
-          createdBy: user.id,
+          createdBy: user?.id || "anonymous",
         });
 
         // Media assets are linked via entityType/entityId - no relationship needed
@@ -562,14 +562,14 @@ export const mediaRoutes = new Elysia()
           {
             context: "MediaFetch",
             type: query.type,
-            userId: user.id,
+            userId: user?.id || "anonymous",
             includeUnassigned,
           },
           "Fetching media by type",
         );
 
         const media = await mediaStorageService.getMediaByType(query.type, {
-          createdBy: includeUnassigned ? undefined : user.id,
+          createdBy: includeUnassigned ? undefined : user?.id || "anonymous",
           includeUnassigned,
         });
 

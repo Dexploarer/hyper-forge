@@ -7,7 +7,7 @@
 import * as Models from "../../models";
 import {
   Elysia,
-  requireAuthGuard,
+  authPlugin,
   logger,
   contentGenService,
   authHeaders,

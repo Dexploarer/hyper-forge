@@ -49,7 +49,7 @@ export const authHeaders = t.Object({
 export {
   Elysia,
   t,
-  requireAuthGuard,
+  authPlugin,
   NotFoundError,
   InternalServerError,
   ForbiddenError,

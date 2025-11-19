@@ -8,7 +8,7 @@ import * as Models from "../../models";
 import {
   Elysia,
   t,
-  requireAuthGuard,
+  authPlugin,
   logger,
   contentGenService,
   contentDatabaseService,
@@ -33,7 +33,7 @@ export const generationRoutes = new Elysia()
       logger.info(
         {
           npcName: body.npcName,
-          userId: user.id,
+          userId: user?.id || "anonymous",
           quality: body.quality,
         },
         "Generating dialogue",
@@ -61,8 +61,8 @@ export const generationRoutes = new Elysia()
           quality: body.quality,
           worldConfigId: body.worldConfigId,
         },
-        createdBy: user.id,
-        walletAddress: user.walletAddress || undefined,
+        createdBy: user?.id || "anonymous",
+        walletAddress: user?.walletAddress || null || undefined,
       });
 
       logger.info(
@@ -91,7 +91,7 @@ export const generationRoutes = new Elysia()
         logger.info(
           {
             archetype: body.archetype,
-            userId: user.id,
+            userId: user?.id || "anonymous",
             quality: body.quality,
           },
           "Generating NPC",
@@ -119,8 +119,8 @@ export const generationRoutes = new Elysia()
             worldConfigId: body.worldConfigId,
           },
           tags: [],
-          createdBy: user.id,
-          walletAddress: user.walletAddress || undefined,
+          createdBy: user?.id || "anonymous",
+          walletAddress: user?.walletAddress || null || undefined,
         });
 
         logger.info(
@@ -135,7 +135,7 @@ export const generationRoutes = new Elysia()
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
             archetype: body.archetype,
-            userId: user.id,
+            userId: user?.id || "anonymous",
           },
           "Failed to generate NPC",
         );
@@ -162,7 +162,7 @@ export const generationRoutes = new Elysia()
         {
           questType: body.questType,
           difficulty: body.difficulty,
-          userId: user.id,
+          userId: user?.id || "anonymous",
           quality: body.quality,
         },
         "Generating quest",
@@ -193,8 +193,8 @@ export const generationRoutes = new Elysia()
           worldConfigId: body.worldConfigId,
         },
         tags: [],
-        createdBy: user.id,
-        walletAddress: user.walletAddress || undefined,
+        createdBy: user?.id || "anonymous",
+        walletAddress: user?.walletAddress || null || undefined,
       });
 
       logger.info(
@@ -204,7 +204,7 @@ export const generationRoutes = new Elysia()
 
       // Log content creation
       await ActivityLogService.logContentCreated({
-        userId: user.id,
+        userId: user?.id || "anonymous",
         contentType: "quest",
         contentId: quest.id,
         title: result.quest.title,
@@ -232,7 +232,7 @@ export const generationRoutes = new Elysia()
         {
           category: body.category,
           topic: body.topic,
-          userId: user.id,
+          userId: user?.id || "anonymous",
           quality: body.quality,
         },
         "Generating lore",
@@ -262,8 +262,8 @@ export const generationRoutes = new Elysia()
           worldConfigId: body.worldConfigId,
         },
         tags: result.lore.relatedTopics || [],
-        createdBy: user.id,
-        walletAddress: user.walletAddress || undefined,
+        createdBy: user?.id || "anonymous",
+        walletAddress: user?.walletAddress || null || undefined,
       });
 
       logger.info(
@@ -273,7 +273,7 @@ export const generationRoutes = new Elysia()
 
       // Log content creation
       await ActivityLogService.logContentCreated({
-        userId: user.id,
+        userId: user?.id || "anonymous",
         contentType: "lore",
         contentId: lore.id,
         title: result.lore.title,
