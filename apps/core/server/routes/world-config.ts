@@ -7,7 +7,7 @@ import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
 import { WorldConfigService } from "../services/WorldConfigService";
 import * as Models from "../models";
-import { authPlugin } from "../plugins/auth.plugin";
+import { requireAuthGuard, authPlugin } from "../plugins/auth.plugin";
 
 const worldConfigService = new WorldConfigService();
 
@@ -240,7 +240,7 @@ export const worldConfigRoutes = new Elysia({
 
       // Authenticated route group for DELETE operations
       .group("", (authApp) =>
-        authApp.use(authPlugin).delete(
+        authApp.use(requireAuthGuard).delete(
           "/:id",
           async ({ params }) => {
             try {
@@ -644,7 +644,7 @@ export const worldConfigRoutes = new Elysia({
 
       // Authenticated route group for DELETE race
       .group("", (authApp) =>
-        authApp.use(authPlugin).delete(
+        authApp.use(requireAuthGuard).delete(
           "/:id/races/:raceId",
           async ({ params }) => {
             const config = await worldConfigService.getConfiguration(params.id);
@@ -874,7 +874,7 @@ export const worldConfigRoutes = new Elysia({
 
       // Authenticated route group for DELETE faction
       .group("", (authApp) =>
-        authApp.use(authPlugin).delete(
+        authApp.use(requireAuthGuard).delete(
           "/:id/factions/:factionId",
           async ({ params }) => {
             const config = await worldConfigService.getConfiguration(params.id);
@@ -1105,7 +1105,7 @@ export const worldConfigRoutes = new Elysia({
 
       // Authenticated route group for DELETE skill
       .group("", (authApp) =>
-        authApp.use(authPlugin).delete(
+        authApp.use(requireAuthGuard).delete(
           "/:id/skills/:skillId",
           async ({ params }) => {
             const config = await worldConfigService.getConfiguration(params.id);

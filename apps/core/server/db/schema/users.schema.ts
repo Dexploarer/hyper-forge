@@ -18,8 +18,8 @@ import {
 import { relations } from "drizzle-orm";
 
 /**
- * User role enum (kept for backward compatibility)
- * Everyone defaults to admin now
+ * User role enum
+ * New users default to member - admin access must be granted explicitly
  */
 export const userRoleEnum = pgEnum("user_role", ["admin", "member"]);
 
@@ -45,8 +45,8 @@ export const users = pgTable(
     // Profile completion tracking (optional)
     profileCompleted: timestamp("profile_completed", { withTimezone: true }),
 
-    // Role (default to admin for single-team use)
-    role: userRoleEnum("role").notNull().default("admin"),
+    // Role (default to member for security - admin must be granted explicitly)
+    role: userRoleEnum("role").notNull().default("member"),
 
     // User preferences
     settings: jsonb("settings").notNull().default({}),

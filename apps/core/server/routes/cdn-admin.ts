@@ -9,7 +9,7 @@
 
 import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
-import { authPlugin } from "../plugins/auth.plugin";
+import { requireAdminGuard, authPlugin } from "../plugins/auth.plugin";
 import { env } from "../config/env";
 import {
   ServiceUnavailableError,
@@ -155,7 +155,7 @@ export const cdnAdminRoutes = new Elysia({ prefix: "/api/admin/cdn" }).group(
   "",
   (app) =>
     app
-      .use(authPlugin)
+      .use(requireAdminGuard)
 
       /**
        * List all files on CDN

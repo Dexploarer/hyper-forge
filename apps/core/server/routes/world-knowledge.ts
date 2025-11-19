@@ -11,7 +11,7 @@
 
 import { Elysia, t } from "elysia";
 import { WorldKnowledgeService } from "../services/WorldKnowledgeService";
-import { authPlugin } from "../plugins/auth.plugin";
+import { requireAuthGuard, authPlugin } from "../plugins/auth.plugin";
 import { logger } from "../utils/logger";
 import type { AuthUser } from "../types/auth";
 
@@ -22,7 +22,7 @@ export const worldKnowledgeRoutes = new Elysia({
   name: "world-knowledge",
 })
   // All endpoints require authentication
-  .use(authPlugin)
+  .use(requireAuthGuard)
 
   /**
    * GET /api/world/context

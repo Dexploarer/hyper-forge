@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { authPlugin } from "../plugins/auth.plugin";
+import { requireAuthGuard, authPlugin } from "../plugins/auth.plugin";
 import { projectService } from "../services/ProjectService";
 import { permissionService } from "../services/PermissionService";
 import { NotFoundError, ForbiddenError } from "../errors";
@@ -20,7 +20,7 @@ export const projectsRoutes = new Elysia({
   // ==================== AUTHENTICATED ROUTES ====================
   .group("", (app) =>
     app
-      .use(authPlugin)
+      .use(requireAuthGuard)
       // Create new project
       .post(
         "/",

@@ -66,7 +66,10 @@ export const managementRoutes = new Elysia()
   .delete(
     "/npcs/:id",
     async ({ params, user }) => {
-      await contentDatabaseService.deleteNPC(params.id, user?.id || "anonymous");
+      await contentDatabaseService.deleteNPC(
+        params.id,
+        user?.id || "anonymous",
+      );
       return { success: true, message: "NPC deleted" };
     },
     {
@@ -87,7 +90,12 @@ export const managementRoutes = new Elysia()
       const existing = await contentDatabaseService.getQuest(params.id);
       if (!existing) throw new NotFoundError("Quest", params.id);
 
-      if (existing.createdBy !== user?.id || "anonymous" && user.role !== "admin") {
+      // Check permissions: allow if user is admin, owner, or content is anonymous
+      const isAdmin = user?.role === "admin";
+      const isOwner = user?.id === existing.createdBy;
+      const isAnonymousContent = existing.createdBy === "anonymous";
+
+      if (!isAdmin && !isOwner && !isAnonymousContent) {
         throw new ForbiddenError(
           "You do not have permission to edit this quest",
         );
@@ -152,7 +160,10 @@ export const managementRoutes = new Elysia()
     "/quests/:id",
     async ({ user, params, request }) => {
       const quest = await contentDatabaseService.getQuest(params.id);
-      await contentDatabaseService.deleteQuest(params.id, user?.id || "anonymous");
+      await contentDatabaseService.deleteQuest(
+        params.id,
+        user?.id || "anonymous",
+      );
 
       if (quest) {
         await ActivityLogService.logContentDeleted({
@@ -184,7 +195,12 @@ export const managementRoutes = new Elysia()
       const existing = await contentDatabaseService.getDialogue(params.id);
       if (!existing) throw new NotFoundError("Dialogue", params.id);
 
-      if (existing.createdBy !== user?.id || "anonymous" && user.role !== "admin") {
+      // Check permissions: allow if user is admin, owner, or content is anonymous
+      const isAdmin = user?.role === "admin";
+      const isOwner = user?.id === existing.createdBy;
+      const isAnonymousContent = existing.createdBy === "anonymous";
+
+      if (!isAdmin && !isOwner && !isAnonymousContent) {
         throw new ForbiddenError(
           "You do not have permission to edit this dialogue",
         );
@@ -224,7 +240,10 @@ export const managementRoutes = new Elysia()
   .delete(
     "/dialogues/:id",
     async ({ params, user }) => {
-      await contentDatabaseService.deleteDialogue(params.id, user?.id || "anonymous");
+      await contentDatabaseService.deleteDialogue(
+        params.id,
+        user?.id || "anonymous",
+      );
       return { success: true, message: "Dialogue deleted" };
     },
     {
@@ -245,7 +264,12 @@ export const managementRoutes = new Elysia()
       const existing = await contentDatabaseService.getLore(params.id);
       if (!existing) throw new NotFoundError("Lore", params.id);
 
-      if (existing.createdBy !== user?.id || "anonymous" && user.role !== "admin") {
+      // Check permissions: allow if user is admin, owner, or content is anonymous
+      const isAdmin = user?.role === "admin";
+      const isOwner = user?.id === existing.createdBy;
+      const isAnonymousContent = existing.createdBy === "anonymous";
+
+      if (!isAdmin && !isOwner && !isAnonymousContent) {
         throw new ForbiddenError(
           "You do not have permission to edit this lore",
         );
@@ -306,7 +330,10 @@ export const managementRoutes = new Elysia()
     "/lores/:id",
     async ({ user, params, request }) => {
       const lore = await contentDatabaseService.getLore(params.id);
-      await contentDatabaseService.deleteLore(params.id, user?.id || "anonymous");
+      await contentDatabaseService.deleteLore(
+        params.id,
+        user?.id || "anonymous",
+      );
 
       if (lore) {
         await ActivityLogService.logContentDeleted({

@@ -6,7 +6,7 @@
 
 import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
-import { authPlugin } from "../plugins/auth.plugin";
+import { requireAuthGuard, authPlugin } from "../plugins/auth.plugin";
 import { getEncryptionService } from "../services/ApiKeyEncryptionService";
 import { db } from "../db";
 import { users } from "../db/schema/users.schema";
@@ -18,7 +18,7 @@ export const userApiKeysRoutes = new Elysia({ prefix: "/api/users" }).group(
   "",
   (app) =>
     app
-      .use(authPlugin)
+      .use(requireAuthGuard)
       // Save user API keys (encrypted)
       .post(
         "/api-keys",

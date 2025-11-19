@@ -29,7 +29,9 @@ export const mediaRoutes = new Elysia()
         "Generating portrait for NPC",
       );
 
-      const userApiKeys = await getUserApiKeysWithFallback(user?.id || "anonymous");
+      const userApiKeys = await getUserApiKeysWithFallback(
+        user?.id || "anonymous",
+      );
 
       if (!userApiKeys.aiGatewayApiKey && !process.env.OPENAI_API_KEY) {
         throw new InternalServerError(
@@ -158,7 +160,9 @@ export const mediaRoutes = new Elysia()
         "Generating banner for quest",
       );
 
-      const userApiKeys = await getUserApiKeysWithFallback(user?.id || "anonymous");
+      const userApiKeys = await getUserApiKeysWithFallback(
+        user?.id || "anonymous",
+      );
 
       if (!userApiKeys.aiGatewayApiKey && !process.env.OPENAI_API_KEY) {
         throw new InternalServerError(
@@ -291,7 +295,7 @@ export const mediaRoutes = new Elysia()
       try {
         let imageData: Buffer;
         let mimeType: string;
-        let fileSize: number;
+        let size: number;
 
         // Support two patterns:
         // 1. File upload (multipart/form-data) - for user uploads
