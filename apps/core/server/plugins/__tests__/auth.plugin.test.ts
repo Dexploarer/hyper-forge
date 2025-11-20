@@ -18,7 +18,7 @@ describe("Auth Plugin", () => {
 
     beforeAll(() => {
       app = new Elysia().use(authPlugin).get("/test", ({ user }) => {
-        return { hasUser: !!user, userId: user?.userId };
+        return { hasUser: !!user, userId: user?.id };
       });
     });
 
@@ -68,7 +68,7 @@ describe("Auth Plugin", () => {
 
     beforeAll(() => {
       app = new Elysia().use(requireAuthGuard).get("/protected", ({ user }) => {
-        return { userId: user.userId, role: user.role };
+        return { userId: user.id, role: user.role };
       });
     });
 
@@ -106,7 +106,7 @@ describe("Auth Plugin", () => {
 
     beforeAll(() => {
       app = new Elysia().use(requireAdminGuard).get("/admin", ({ user }) => {
-        return { userId: user.userId, role: user.role };
+        return { userId: user.id, role: user.role };
       });
     });
 
@@ -149,7 +149,7 @@ describe("Auth Plugin", () => {
       const app = new Elysia().group("/api", (app) =>
         app
           .use(requireAuthGuard)
-          .get("/protected", ({ user }) => ({ userId: user.userId })),
+          .get("/protected", ({ user }) => ({ userId: user.id })),
       );
 
       const response = await app.handle(
@@ -167,7 +167,7 @@ describe("Auth Plugin", () => {
         // User should be optional
         if (user) {
           // These properties should exist
-          const userId: string = user.userId;
+          const userId: string = user.id;
           const role: string = user.role;
           return { userId, role };
         }
@@ -184,7 +184,7 @@ describe("Auth Plugin", () => {
         .use(requireAuthGuard)
         .get("/test", ({ user }) => {
           // User should NOT be optional here
-          const userId: string = user.userId;
+          const userId: string = user.id;
           const role: string = user.role;
           return { userId, role };
         });
