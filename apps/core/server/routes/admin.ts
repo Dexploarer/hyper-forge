@@ -1,6 +1,14 @@
 /**
  * Admin Routes
- * Routes for admin-only functionality like role management and activity logs
+ * System management routes (user management, activity logs, API keys, etc.)
+ *
+ * SINGLE-TEAM APP NOTE:
+ * Despite the "admin" name, these routes use requireAdminGuard which has been
+ * deprecated for single-team use. It now only checks authentication, NOT roles.
+ * All authenticated users have access to these routes.
+ *
+ * The role management functionality is kept for organizational purposes only -
+ * roles no longer affect access control in this single-team application.
  */
 
 import { Elysia, t } from "elysia";

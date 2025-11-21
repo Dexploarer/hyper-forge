@@ -1,24 +1,23 @@
 /**
  * Authentication Plugin for Elysia
- * Provides authentication and authorization using .derive() pattern
+ * Provides authentication using .derive() pattern
+ *
+ * SINGLE-TEAM APP: No role-based access control.
+ * Auth is optional throughout the app and used only for tracking.
  *
  * This plugin consolidates auth logic into reusable plugins:
- * - Injects optional user context into all requests
- * - Provides requireAuthGuard for protected routes
- * - Provides requireAdminGuard for admin routes
+ * - authPlugin: Injects optional user context (recommended for all routes)
+ * - requireAuthGuard: Requires authentication (rarely needed)
  *
  * Usage:
  * ```typescript
  * // Apply to entire app for optional auth on all routes
  * app.use(authPlugin)
+ *   .get('/api/assets', handler) // Auth optional
  *
- * // Protected route group
+ * // If you need to require auth (rarely needed in single-team app)
  * app.use(requireAuthGuard)
- *   .get('/api/assets', handler)
- *
- * // Admin-only route group
- * app.use(requireAdminGuard)
- *   .get('/api/admin/users', handler)
+ *   .get('/api/some-route', handler) // Auth required
  * ```
  *
  * Benefits:
@@ -391,19 +390,19 @@ export const requireAuthGuard = new Elysia({
 });
 
 /**
- * Require Admin Guard
- * Ensures user is authenticated AND has admin role
+ * Require Admin Guard (DEPRECATED - Single-Team App)
  *
- * Use this for admin-only routes.
+ * @deprecated This is a single-team app with no role-based access control.
+ * This guard now behaves identically to requireAuthGuard - it only checks
+ * authentication, not roles. All authenticated users have full access.
  *
- * Injects: { user: AuthUser } (guaranteed to exist and be admin)
+ * For backwards compatibility, this is kept as an alias to requireAuthGuard.
+ * Use authPlugin instead for optional auth (recommended for single-team).
  *
- * NOTE: Errors thrown in .derive() are caught by the global error handler
- * (errorHandlerPlugin with `{ as: 'global' }`), which converts UnauthorizedError
- * and ForbiddenError to proper 401/403 JSON responses.
+ * Injects: { user: AuthUser } (guaranteed to exist)
  */
 export const requireAdminGuard = new Elysia({
-  name: "require-admin-guard",
+  name: "require-admin-guard-deprecated",
 }).derive({ as: "scoped" }, async (context) => {
   const result = await requireAuth(context);
 
@@ -412,13 +411,14 @@ export const requireAdminGuard = new Elysia({
     throw new UnauthorizedError("Authentication required");
   }
 
-  // Check if user is admin
-  if (result.user.role !== "admin") {
-    throw new ForbiddenError("Admin access required", {
-      userRole: result.user.role,
-      requiredRole: "admin",
-    });
-  }
+  // SINGLE-TEAM: No role check - all authenticated users have access
+  logger.info(
+    {
+      userId: result.user.id,
+      context: "auth",
+    },
+    "Admin guard (deprecated): Auth only, no role check in single-team app",
+  );
 
   return { user: result.user } as { user: AuthUser };
 });

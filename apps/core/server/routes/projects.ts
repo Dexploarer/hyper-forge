@@ -1,13 +1,15 @@
 /**
  * Project Routes
  * Manage projects for organizing assets
+ *
+ * SINGLE-TEAM APP: No access control - everyone can access all projects.
+ * Auth is optional and used only for tracking who performed actions.
  */
 
 import { Elysia, t } from "elysia";
 import { authPlugin } from "../plugins/auth.plugin";
 import { projectService } from "../services/ProjectService";
-import { permissionService } from "../services/PermissionService";
-import { NotFoundError, ForbiddenError } from "../errors";
+import { NotFoundError } from "../errors";
 import { createChildLogger } from "../utils/logger";
 import type { AuthUser } from "../types/auth";
 
@@ -25,11 +27,13 @@ export const projectsRoutes = new Elysia({
       .post(
         "/",
         async (context) => {
-          const { user, body } = context as typeof context & { user: AuthUser };
+          const { user, body } = context as typeof context & {
+            user?: AuthUser;
+          };
           const project = await projectService.createProject({
             name: body.name,
             description: body.description,
-            ownerId: user.id,
+            ownerId: user?.id || null, // Single-team: ownerId is optional
             settings: body.settings,
             metadata: body.metadata,
           });
@@ -49,24 +53,27 @@ export const projectsRoutes = new Elysia({
             tags: ["Projects"],
             summary: "Create new project",
             description:
-              "Create a new project for organizing assets. Requires authentication.",
-            security: [{ BearerAuth: [] }],
+              "Create a new project for organizing assets (single-team app). Auth optional - ownerId will be null if not authenticated.",
+            security: [],
           },
         },
       )
 
-      // Get current user's projects
+      // Get all projects (single-team: everyone sees all projects)
       .get(
         "/",
         async (context) => {
           const { user, query } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
           const includeArchived = query.includeArchived === "true";
 
-          const projects = await projectService.getUserProjects(
-            user.id,
-            includeArchived,
+          // Single-team app: Return ALL projects, not just user's projects
+          const projects = await projectService.getAllProjects(includeArchived);
+
+          logger.info(
+            { userId: user?.id || "anonymous", projectCount: projects.length },
+            "Listing all projects",
           );
 
           return { success: true, projects };
@@ -77,10 +84,10 @@ export const projectsRoutes = new Elysia({
           }),
           detail: {
             tags: ["Projects"],
-            summary: "Get user's projects",
+            summary: "Get all projects",
             description:
-              "Get all projects for the authenticated user. Requires authentication.",
-            security: [{ BearerAuth: [] }],
+              "Get all projects in the system (single-team app). Auth optional - used only for tracking.",
+            security: [],
           },
         },
       )
@@ -90,27 +97,21 @@ export const projectsRoutes = new Elysia({
         "/:id",
         async (context) => {
           const { user, params } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
           const { id } = params;
 
           const project = await projectService.getProjectById(id);
 
           if (!project) {
-            throw new NotFoundError("Project", id, { userId: user.id });
+            throw new NotFoundError("Project", id, { userId: user?.id });
           }
 
-          // Check permission using PermissionService
-          if (!permissionService.canViewProject(user, project)) {
-            throw new ForbiddenError(
-              "You do not have permission to access this project",
-              {
-                projectId: id,
-                userId: user.id,
-                projectOwnerId: project.ownerId,
-              },
-            );
-          }
+          // Single-team app: No permission checks - everyone can view all projects
+          logger.info(
+            { projectId: id, userId: user?.id || "anonymous" },
+            "Fetching project",
+          );
 
           return { success: true, project };
         },
@@ -122,7 +123,7 @@ export const projectsRoutes = new Elysia({
             tags: ["Projects"],
             summary: "Get project by ID",
             description:
-              "Get a specific project by ID. Requires authentication and ownership.",
+              "Get a specific project by ID. Auth optional - single-team app.",
             security: [{ BearerAuth: [] }],
           },
         },
@@ -133,23 +134,21 @@ export const projectsRoutes = new Elysia({
         "/:id",
         async (context) => {
           const { user, params, body } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
           const { id } = params;
 
-          // Get project to check permissions
+          // Check if project exists
           const project = await projectService.getProjectById(id);
           if (!project) {
-            throw new NotFoundError("Project", id, { userId: user.id });
+            throw new NotFoundError("Project", id, { userId: user?.id });
           }
 
-          // Check permission using PermissionService
-          if (!permissionService.canEditProject(user, project)) {
-            throw new ForbiddenError(
-              "You do not have permission to update this project",
-              { projectId: id, userId: user.id },
-            );
-          }
+          // Single-team app: No permission checks - anyone can update any project
+          logger.info(
+            { projectId: id, userId: user?.id || "anonymous" },
+            "Updating project",
+          );
 
           const updatedProject = await projectService.updateProject(id, body);
           return { success: true, project: updatedProject };
@@ -173,7 +172,7 @@ export const projectsRoutes = new Elysia({
             tags: ["Projects"],
             summary: "Update project",
             description:
-              "Update project details. Requires authentication and ownership.",
+              "Update project details. Auth optional - single-team app.",
             security: [{ BearerAuth: [] }],
           },
         },
@@ -184,23 +183,21 @@ export const projectsRoutes = new Elysia({
         "/:id/archive",
         async (context) => {
           const { user, params } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
           const { id } = params;
 
-          // Get project to check permissions
+          // Check if project exists
           const project = await projectService.getProjectById(id);
           if (!project) {
-            throw new NotFoundError("Project", id, { userId: user.id });
+            throw new NotFoundError("Project", id, { userId: user?.id });
           }
 
-          // Check permission using PermissionService
-          if (!permissionService.canArchiveProject(user, project)) {
-            throw new ForbiddenError(
-              "You do not have permission to archive this project",
-              { projectId: id, userId: user.id },
-            );
-          }
+          // Single-team app: No permission checks - anyone can archive any project
+          logger.info(
+            { projectId: id, userId: user?.id || "anonymous" },
+            "Archiving project",
+          );
 
           const archivedProject = await projectService.archiveProject(id);
           return { success: true, project: archivedProject };
@@ -213,7 +210,7 @@ export const projectsRoutes = new Elysia({
             tags: ["Projects"],
             summary: "Archive project",
             description:
-              "Archive a project (soft delete). Requires authentication and ownership.",
+              "Archive a project (soft delete). Auth optional - single-team app.",
             security: [{ BearerAuth: [] }],
           },
         },
@@ -224,23 +221,21 @@ export const projectsRoutes = new Elysia({
         "/:id/restore",
         async (context) => {
           const { user, params } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
           const { id } = params;
 
-          // Get project to check permissions
+          // Check if project exists
           const project = await projectService.getProjectById(id);
           if (!project) {
-            throw new NotFoundError("Project", id, { userId: user.id });
+            throw new NotFoundError("Project", id, { userId: user?.id });
           }
 
-          // Check permission using PermissionService
-          if (!permissionService.canArchiveProject(user, project)) {
-            throw new ForbiddenError(
-              "You do not have permission to restore this project",
-              { projectId: id, userId: user.id },
-            );
-          }
+          // Single-team app: No permission checks - anyone can restore any project
+          logger.info(
+            { projectId: id, userId: user?.id || "anonymous" },
+            "Restoring project",
+          );
 
           const restoredProject = await projectService.restoreProject(id);
           return { success: true, project: restoredProject };
@@ -253,7 +248,7 @@ export const projectsRoutes = new Elysia({
             tags: ["Projects"],
             summary: "Restore project",
             description:
-              "Restore an archived project. Requires authentication and ownership.",
+              "Restore an archived project. Auth optional - single-team app.",
             security: [{ BearerAuth: [] }],
           },
         },
@@ -264,23 +259,21 @@ export const projectsRoutes = new Elysia({
         "/:id/assets",
         async (context) => {
           const { user, params, query } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
           const { id } = params;
 
-          // Get project to check permissions
+          // Check if project exists
           const project = await projectService.getProjectById(id);
           if (!project) {
-            throw new NotFoundError("Project", id, { userId: user.id });
+            throw new NotFoundError("Project", id, { userId: user?.id });
           }
 
-          // Check permission using PermissionService
-          if (!permissionService.canViewProject(user, project)) {
-            throw new ForbiddenError(
-              "You do not have permission to access this project",
-              { projectId: id, userId: user.id },
-            );
-          }
+          // Single-team app: No permission checks - anyone can view project assets
+          logger.info(
+            { projectId: id, userId: user?.id || "anonymous" },
+            "Fetching project assets",
+          );
 
           const assets = await projectService.getProjectAssets(id, {
             type: query.type,
@@ -301,7 +294,7 @@ export const projectsRoutes = new Elysia({
             tags: ["Projects"],
             summary: "Get project assets",
             description:
-              "Get all assets belonging to a project with optional filtering by type and status. Requires authentication and ownership.",
+              "Get all assets belonging to a project with optional filtering by type and status. Auth optional - single-team app.",
             security: [{ BearerAuth: [] }],
           },
         },
@@ -312,23 +305,21 @@ export const projectsRoutes = new Elysia({
         "/:id/stats",
         async (context) => {
           const { user, params } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
           const { id } = params;
 
-          // Get project to check permissions
+          // Check if project exists
           const project = await projectService.getProjectById(id);
           if (!project) {
-            throw new NotFoundError("Project", id, { userId: user.id });
+            throw new NotFoundError("Project", id, { userId: user?.id });
           }
 
-          // Check permission using PermissionService
-          if (!permissionService.canViewProject(user, project)) {
-            throw new ForbiddenError(
-              "You do not have permission to access this project",
-              { projectId: id, userId: user.id },
-            );
-          }
+          // Single-team app: No permission checks - anyone can view project stats
+          logger.info(
+            { projectId: id, userId: user?.id || "anonymous" },
+            "Fetching project statistics",
+          );
 
           const stats = await projectService.getProjectStats(id);
           return { success: true, stats };
@@ -341,23 +332,29 @@ export const projectsRoutes = new Elysia({
             tags: ["Projects"],
             summary: "Get project statistics",
             description:
-              "Get project statistics including asset count, breakdown by type, total size, and timestamps. Requires authentication and ownership.",
+              "Get project statistics including asset count, breakdown by type, total size, and timestamps. Auth optional - single-team app.",
             security: [{ BearerAuth: [] }],
           },
         },
       ),
   )
 
-  // ==================== ADMIN-ONLY ROUTES ====================
+  // ==================== ADMIN/SYSTEM ROUTES (Open Access) ====================
+  // Single-team app: No admin restriction - these are available to everyone
   .group("", (app) =>
     app
       .use(authPlugin)
-      // Get all projects (admin only)
+      // Get all projects
       .get(
         "/admin/all",
-        async ({ query }) => {
+        async ({ user, query }) => {
           const includeArchived = query.includeArchived === "true";
           const projects = await projectService.getAllProjects(includeArchived);
+
+          logger.info(
+            { userId: (user as AuthUser | undefined)?.id || "anonymous" },
+            "Fetching all projects",
+          );
 
           return { success: true, projects };
         },
@@ -367,18 +364,27 @@ export const projectsRoutes = new Elysia({
           }),
           detail: {
             tags: ["Projects"],
-            summary: "Get all projects (Admin only)",
-            description: "Get all projects in the system. Requires admin role.",
+            summary: "Get all projects",
+            description:
+              "Get all projects in the system. Auth optional - single-team app.",
             security: [{ BearerAuth: [] }],
           },
         },
       )
 
-      // Delete project (admin only)
+      // Delete project permanently
       .delete(
         "/admin/:id",
-        async ({ params }) => {
+        async ({ user, params }) => {
           const { id } = params;
+
+          logger.info(
+            {
+              projectId: id,
+              userId: (user as AuthUser | undefined)?.id || "anonymous",
+            },
+            "Permanently deleting project",
+          );
 
           await projectService.deleteProject(id);
           return { success: true, message: "Project deleted successfully" };
@@ -389,8 +395,9 @@ export const projectsRoutes = new Elysia({
           }),
           detail: {
             tags: ["Projects"],
-            summary: "Delete project (Admin only)",
-            description: "Permanently delete a project. Requires admin role.",
+            summary: "Delete project permanently",
+            description:
+              "Permanently delete a project. Auth optional - single-team app.",
             security: [{ BearerAuth: [] }],
           },
         },

@@ -1,7 +1,20 @@
 /**
  * Users & Projects Schema
- * SIMPLIFIED for single-team use - no auth restrictions
- * All users are admins, auth is optional, ownership is for organization only
+ *
+ * ⚠️ SINGLE-TEAM APPLICATION ARCHITECTURE ⚠️
+ *
+ * This application is designed for SINGLE-TEAM use only with NO access control:
+ * - All users have full access to all data and features
+ * - Authentication is OPTIONAL and used only for tracking who did what
+ * - Role field (admin/member) is kept for organizational purposes ONLY
+ * - ownerId/projectId fields are for organization ONLY, NOT access control
+ * - isPublic defaults to true - everything is shared within the team
+ *
+ * If you need multi-team support with proper access control, you must:
+ * 1. Add team/organization tables and relationships
+ * 2. Implement proper permission checking in all routes
+ * 3. Make authentication required (not optional)
+ * 4. Filter all queries by team/organization membership
  */
 
 import {

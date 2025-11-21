@@ -267,16 +267,17 @@ const NAVIGATION_STRUCTURE: NavSection[] = [
   },
 ];
 
-// Admin-only navigation items
+// System management navigation items
+// SINGLE-TEAM APP: Open to all users, not admin-only
 const ADMIN_NAVIGATION: NavSection[] = [
   {
     type: "item",
     item: {
       view: NAVIGATION_VIEWS.ADMIN_DASHBOARD,
       icon: Users,
-      label: "Admin Dashboard",
-      description: "Manage users & admins",
-      requiresAdmin: true,
+      label: "System Dashboard",
+      description: "User & system management",
+      // requiresAdmin removed - single-team app
     },
   },
 ];
@@ -317,13 +318,11 @@ export function Sidebar({ currentView, onViewChange }: SidebarProps) {
     );
   }, [expandedSections]);
 
-  // Determine if user is admin
-  const isAdmin = user?.role === "admin";
-
-  // Build final navigation structure
+  // SINGLE-TEAM APP: No role-based navigation filtering
+  // All users can access all sections (admin dashboard is open to everyone)
   const navigationSections = [
     ...NAVIGATION_STRUCTURE,
-    ...(isAdmin ? ADMIN_NAVIGATION : []),
+    ...ADMIN_NAVIGATION, // Always included - no role check
     ...SYSTEM_NAVIGATION,
   ];
 

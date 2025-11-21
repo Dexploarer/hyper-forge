@@ -71,12 +71,13 @@ const BASE_NAV_ITEMS: NavItem[] = [
   },
 ];
 
+// SINGLE-TEAM APP: System management open to all users
 const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     view: NAVIGATION_VIEWS.ADMIN_DASHBOARD,
     icon: Users,
-    label: "Admin Dashboard",
-    description: "Manage users & admins",
+    label: "System Dashboard",
+    description: "User & system management",
   },
 ];
 
@@ -89,11 +90,8 @@ export function MobileMenuDrawer({
   const { user, logout, completeProfile } = useAuth();
   const [showProfileSettings, setShowProfileSettings] = useState(false);
 
-  // Determine nav items based on role
-  const isAdmin = user?.role === "admin";
-  const NAV_ITEMS = isAdmin
-    ? [...BASE_NAV_ITEMS, ...ADMIN_NAV_ITEMS]
-    : BASE_NAV_ITEMS;
+  // SINGLE-TEAM APP: All users get all nav items (no role-based filtering)
+  const NAV_ITEMS = [...BASE_NAV_ITEMS, ...ADMIN_NAV_ITEMS];
 
   // Prevent body scroll when menu is open
   useEffect(() => {
