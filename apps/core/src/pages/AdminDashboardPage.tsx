@@ -490,9 +490,9 @@ export const AdminDashboardPage: React.FC = () => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
-          user.displayName?.toLowerCase().includes(query) ||
-          user.email?.toLowerCase().includes(query) ||
-          user.privyUserId?.toLowerCase().includes(query);
+          (user.displayName || "").toLowerCase().includes(query) ||
+          (user.email || "").toLowerCase().includes(query) ||
+          (user.privyUserId || "").toLowerCase().includes(query);
         if (!matchesSearch) return false;
       }
 
