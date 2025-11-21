@@ -27,11 +27,13 @@ export const projectsRoutes = new Elysia({
       .post(
         "/",
         async (context) => {
-          const { user, body } = context as typeof context & { user: AuthUser };
+          const { user, body } = context as typeof context & {
+            user?: AuthUser;
+          };
           const project = await projectService.createProject({
             name: body.name,
             description: body.description,
-            ownerId: user.id,
+            ownerId: user?.id || null, // Single-team: ownerId is optional
             settings: body.settings,
             metadata: body.metadata,
           });
@@ -51,24 +53,27 @@ export const projectsRoutes = new Elysia({
             tags: ["Projects"],
             summary: "Create new project",
             description:
-              "Create a new project for organizing assets. Requires authentication.",
-            security: [{ BearerAuth: [] }],
+              "Create a new project for organizing assets (single-team app). Auth optional - ownerId will be null if not authenticated.",
+            security: [],
           },
         },
       )
 
-      // Get current user's projects
+      // Get all projects (single-team: everyone sees all projects)
       .get(
         "/",
         async (context) => {
           const { user, query } = context as typeof context & {
-            user: AuthUser;
+            user?: AuthUser;
           };
           const includeArchived = query.includeArchived === "true";
 
-          const projects = await projectService.getUserProjects(
-            user.id,
-            includeArchived,
+          // Single-team app: Return ALL projects, not just user's projects
+          const projects = await projectService.getAllProjects(includeArchived);
+
+          logger.info(
+            { userId: user?.id || "anonymous", projectCount: projects.length },
+            "Listing all projects",
           );
 
           return { success: true, projects };
@@ -79,10 +84,10 @@ export const projectsRoutes = new Elysia({
           }),
           detail: {
             tags: ["Projects"],
-            summary: "Get user's projects",
+            summary: "Get all projects",
             description:
-              "Get all projects for the authenticated user. Requires authentication.",
-            security: [{ BearerAuth: [] }],
+              "Get all projects in the system (single-team app). Auth optional - used only for tracking.",
+            security: [],
           },
         },
       )
