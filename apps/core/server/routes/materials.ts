@@ -11,11 +11,7 @@ import { eq, and, or, desc, asc, sql } from "drizzle-orm";
 import { logger } from "../utils/logger";
 import * as Models from "../models";
 import { authPlugin } from "../plugins/auth.plugin";
-import {
-  NotFoundError,
-  ForbiddenError,
-  InternalServerError,
-} from "../errors";
+import { NotFoundError, ForbiddenError, InternalServerError } from "../errors";
 
 /**
  * Helper: Build visibility filter conditions for material presets
@@ -118,7 +114,10 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
         return preset;
       } catch (error) {
         // Re-throw ApiErrors as-is
-        if (error instanceof NotFoundError || error instanceof InternalServerError) {
+        if (
+          error instanceof NotFoundError ||
+          error instanceof InternalServerError
+        ) {
           throw error;
         }
 
@@ -234,9 +233,12 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           { context: "Material Presets", err: error },
           "Error creating custom material preset",
         );
-        throw new InternalServerError("Failed to create custom material preset", {
-          originalError: error,
-        });
+        throw new InternalServerError(
+          "Failed to create custom material preset",
+          {
+            originalError: error,
+          },
+        );
       }
     },
     {
@@ -291,23 +293,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           });
         }
 
-        // Check ownership (must be owner or admin)
-        if (existingPreset.createdBy !== user.id && user.role !== "admin") {
-          logger.warn(
-            {
-              presetId: params.id,
-              userId: user?.id || "anonymous",
-              ownerId: existingPreset.createdBy,
-            },
-            "Unauthorized material preset update attempt",
-          );
-          throw new ForbiddenError("You can only update your own presets", {
-            presetId: params.id,
-            userId: user?.id || "anonymous",
-            ownerId: existingPreset.createdBy,
-          });
-        }
-
+        // Update the preset (ownership check removed for single-team simplification)
         const [updatedPreset] = await db
           .update(materialPresets)
           .set({
@@ -409,24 +395,7 @@ export const materialRoutes = new Elysia({ prefix: "/api", name: "materials" })
           });
         }
 
-        // Check ownership (must be owner or admin)
-        if (existingPreset.createdBy !== user.id && user.role !== "admin") {
-          logger.warn(
-            {
-              presetId: params.id,
-              userId: user?.id || "anonymous",
-              ownerId: existingPreset.createdBy,
-            },
-            "Unauthorized material preset deletion attempt",
-          );
-          throw new ForbiddenError("You can only delete your own presets", {
-            presetId: params.id,
-            userId: user?.id || "anonymous",
-            ownerId: existingPreset.createdBy,
-          });
-        }
-
-        // Now delete
+        // Delete the preset (ownership check removed for single-team simplification)
         const [deletedPreset] = await db
           .delete(materialPresets)
           .where(eq(materialPresets.id, params.id))

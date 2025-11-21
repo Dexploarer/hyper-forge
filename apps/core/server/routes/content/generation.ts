@@ -204,7 +204,7 @@ export const generationRoutes = new Elysia()
 
       // Log content creation
       await ActivityLogService.logContentCreated({
-        userId: user?.id || "anonymous",
+        userId: user?.id ?? null,
         contentType: "quest",
         contentId: quest.id,
         title: result.quest.title,
@@ -273,7 +273,7 @@ export const generationRoutes = new Elysia()
 
       // Log content creation
       await ActivityLogService.logContentCreated({
-        userId: user?.id || "anonymous",
+        userId: user?.id ?? null,
         contentType: "lore",
         contentId: lore.id,
         title: result.lore.title,

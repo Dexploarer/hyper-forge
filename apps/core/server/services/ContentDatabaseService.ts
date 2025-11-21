@@ -133,7 +133,6 @@ export class ContentDatabaseService {
           and(
             eq(npcs.id, id),
             eq(npcs.createdBy, userId),
-            isNull(npcs.deletedAt),
           ),
         )
         .limit(1);
@@ -195,7 +194,6 @@ export class ContentDatabaseService {
           and(
             eq(npcs.id, id),
             or(eq(npcs.createdBy, userId), isNull(npcs.createdBy)),
-            isNull(npcs.deletedAt),
           ),
         )
         .limit(1);
@@ -331,7 +329,6 @@ export class ContentDatabaseService {
           and(
             eq(quests.id, id),
             eq(quests.createdBy, userId),
-            isNull(quests.deletedAt),
           ),
         )
         .limit(1);
@@ -392,7 +389,6 @@ export class ContentDatabaseService {
           and(
             eq(quests.id, id),
             eq(quests.createdBy, userId),
-            isNull(quests.deletedAt),
           ),
         )
         .limit(1);
@@ -530,7 +526,6 @@ export class ContentDatabaseService {
           and(
             eq(dialogues.id, id),
             eq(dialogues.createdBy, userId),
-            isNull(dialogues.deletedAt),
           ),
         )
         .limit(1);
@@ -590,7 +585,6 @@ export class ContentDatabaseService {
           and(
             eq(dialogues.id, id),
             eq(dialogues.createdBy, userId),
-            isNull(dialogues.deletedAt),
           ),
         )
         .limit(1);
@@ -729,7 +723,6 @@ export class ContentDatabaseService {
           and(
             eq(lores.id, id),
             eq(lores.createdBy, userId),
-            isNull(lores.deletedAt),
           ),
         )
         .limit(1);
@@ -790,7 +783,6 @@ export class ContentDatabaseService {
           and(
             eq(lores.id, id),
             eq(lores.createdBy, userId),
-            isNull(lores.deletedAt),
           ),
         )
         .limit(1);

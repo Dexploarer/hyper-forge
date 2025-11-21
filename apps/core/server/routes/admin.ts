@@ -7,7 +7,7 @@ import { Elysia, t } from "elysia";
 import { logger } from "../utils/logger";
 import { eq, desc, and } from "drizzle-orm";
 import { db, activityLog } from "../db";
-import { requireAuth, authPlugin } from "../plugins/auth.plugin";
+import { requireAuth, requireAdminGuard } from "../plugins/auth.plugin";
 import { userService } from "../services/UserService";
 import { ApiKeyService } from "../services/ApiKeyService";
 import { MediaStorageService } from "../services/MediaStorageService";
@@ -57,7 +57,7 @@ export const adminRoutes = new Elysia({ prefix: "/api/admin" })
   // JWT-based admin routes
   .group("", (app) =>
     app
-      .use(authPlugin)
+      .use(requireAdminGuard)
       /**
        * Update user role (admin only)
        * PUT /api/admin/users/:id/role
