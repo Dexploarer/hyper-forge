@@ -24,7 +24,7 @@ export * from "./PlaytesterSwarmOrchestrator";
 // Infrastructure Services
 export * from "./UserService";
 export * from "./ProjectService";
-export * from "./PermissionService";
+// PermissionService removed - single-team app has no access control
 export * from "./ActivityLogService";
 export * from "./ErrorTrackingService";
 export * from "./QdrantService";
