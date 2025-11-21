@@ -76,7 +76,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(npcs)
-        .where(and(eq(npcs.id, id), isNull(npcs.deletedAt)))
+        .where(and(eq(npcs.id, id)))
         .limit(1);
 
       return result[0] || null;
@@ -101,7 +101,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(npcs)
-        .where(isNull(npcs.deletedAt))
+        
         .orderBy(desc(npcs.createdAt))
         .limit(safeLimit)
         .offset(safeOffset);
@@ -133,7 +133,6 @@ export class ContentDatabaseService {
           and(
             eq(npcs.id, id),
             eq(npcs.createdBy, userId),
-            isNull(npcs.deletedAt),
           ),
         )
         .limit(1);
@@ -195,7 +194,6 @@ export class ContentDatabaseService {
           and(
             eq(npcs.id, id),
             or(eq(npcs.createdBy, userId), isNull(npcs.createdBy)),
-            isNull(npcs.deletedAt),
           ),
         )
         .limit(1);
@@ -274,7 +272,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(quests)
-        .where(and(eq(quests.id, id), isNull(quests.deletedAt)))
+        .where(and(eq(quests.id, id)))
         .limit(1);
 
       return result[0] || null;
@@ -299,7 +297,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(quests)
-        .where(isNull(quests.deletedAt))
+        
         .orderBy(desc(quests.createdAt))
         .limit(safeLimit)
         .offset(safeOffset);
@@ -331,7 +329,6 @@ export class ContentDatabaseService {
           and(
             eq(quests.id, id),
             eq(quests.createdBy, userId),
-            isNull(quests.deletedAt),
           ),
         )
         .limit(1);
@@ -392,7 +389,6 @@ export class ContentDatabaseService {
           and(
             eq(quests.id, id),
             eq(quests.createdBy, userId),
-            isNull(quests.deletedAt),
           ),
         )
         .limit(1);
@@ -473,7 +469,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(dialogues)
-        .where(and(eq(dialogues.id, id), isNull(dialogues.deletedAt)))
+        .where(and(eq(dialogues.id, id)))
         .limit(1);
 
       return result[0] || null;
@@ -498,7 +494,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(dialogues)
-        .where(isNull(dialogues.deletedAt))
+        
         .orderBy(desc(dialogues.createdAt))
         .limit(safeLimit)
         .offset(safeOffset);
@@ -530,7 +526,6 @@ export class ContentDatabaseService {
           and(
             eq(dialogues.id, id),
             eq(dialogues.createdBy, userId),
-            isNull(dialogues.deletedAt),
           ),
         )
         .limit(1);
@@ -590,7 +585,6 @@ export class ContentDatabaseService {
           and(
             eq(dialogues.id, id),
             eq(dialogues.createdBy, userId),
-            isNull(dialogues.deletedAt),
           ),
         )
         .limit(1);
@@ -672,7 +666,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(lores)
-        .where(and(eq(lores.id, id), isNull(lores.deletedAt)))
+        .where(and(eq(lores.id, id)))
         .limit(1);
 
       return result[0] || null;
@@ -697,7 +691,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(lores)
-        .where(isNull(lores.deletedAt))
+        
         .orderBy(desc(lores.createdAt))
         .limit(safeLimit)
         .offset(safeOffset);
@@ -729,7 +723,6 @@ export class ContentDatabaseService {
           and(
             eq(lores.id, id),
             eq(lores.createdBy, userId),
-            isNull(lores.deletedAt),
           ),
         )
         .limit(1);
@@ -790,7 +783,6 @@ export class ContentDatabaseService {
           and(
             eq(lores.id, id),
             eq(lores.createdBy, userId),
-            isNull(lores.deletedAt),
           ),
         )
         .limit(1);
@@ -836,7 +828,7 @@ export class ContentDatabaseService {
       const result = await db
         .select()
         .from(locations)
-        .where(isNull(locations.deletedAt))
+        
         .orderBy(desc(locations.createdAt))
         .limit(safeLimit)
         .offset(safeOffset);

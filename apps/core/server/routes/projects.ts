@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { requireAuthGuard, requireAdminGuard } from "../plugins/auth.plugin";
+import { authPlugin } from "../plugins/auth.plugin";
 import { projectService } from "../services/ProjectService";
 import { permissionService } from "../services/PermissionService";
 import { NotFoundError, ForbiddenError } from "../errors";
@@ -20,7 +20,7 @@ export const projectsRoutes = new Elysia({
   // ==================== AUTHENTICATED ROUTES ====================
   .group("", (app) =>
     app
-      .use(requireAuthGuard)
+      .use(authPlugin)
       // Create new project
       .post(
         "/",
@@ -351,7 +351,7 @@ export const projectsRoutes = new Elysia({
   // ==================== ADMIN-ONLY ROUTES ====================
   .group("", (app) =>
     app
-      .use(requireAdminGuard)
+      .use(authPlugin)
       // Get all projects (admin only)
       .get(
         "/admin/all",

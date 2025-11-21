@@ -7,7 +7,7 @@
 import {
   Elysia,
   t,
-  requireAuthGuard,
+  authPlugin,
   logger,
   contentDatabaseService,
   NotFoundError,
@@ -15,7 +15,7 @@ import {
 } from "./shared";
 
 export const retrievalRoutes = new Elysia()
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // ==================== NPCs ====================
   .get(

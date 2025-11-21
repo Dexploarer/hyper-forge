@@ -490,9 +490,9 @@ export const AdminDashboardPage: React.FC = () => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matchesSearch =
-          user.displayName?.toLowerCase().includes(query) ||
-          user.email?.toLowerCase().includes(query) ||
-          user.privyUserId.toLowerCase().includes(query);
+          (user.displayName || "").toLowerCase().includes(query) ||
+          (user.email || "").toLowerCase().includes(query) ||
+          (user.privyUserId || "").toLowerCase().includes(query);
         if (!matchesSearch) return false;
       }
 
@@ -939,7 +939,8 @@ export const AdminDashboardPage: React.FC = () => {
                                   )}
                                 </button>
                                 <p className="text-xs text-text-tertiary">
-                                  {user.privyUserId.substring(0, 20)}...
+                                  {user.privyUserId?.substring(0, 20) ||
+                                    "No Privy ID"}
                                 </p>
                               </div>
                             </div>

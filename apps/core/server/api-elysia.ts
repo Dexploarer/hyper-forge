@@ -88,16 +88,23 @@ const ASSETS_DIR = path.join(ROOT_DIR, "assets");
 
 // ==================== ENVIRONMENT VALIDATION ====================
 
-// Authentication is REQUIRED for API server
-if (!env.PRIVY_APP_ID || !env.PRIVY_APP_SECRET) {
-  throw new Error(
-    "PRIVY_APP_ID and PRIVY_APP_SECRET are required for API server",
+// Authentication is OPTIONAL for single-team use
+// If Privy credentials are provided, auth features will be available
+// If not provided, all endpoints work without authentication
+if (env.PRIVY_APP_ID && env.PRIVY_APP_SECRET) {
+  logger.info({}, "[Auth] Privy authentication enabled");
+} else {
+  logger.warn(
+    {},
+    "[Auth] Privy credentials not provided - running without authentication",
   );
 }
 
-// API key encryption is REQUIRED for API server
-if (!env.API_KEY_ENCRYPTION_SECRET) {
-  throw new Error("API_KEY_ENCRYPTION_SECRET is required for API server");
+// API key encryption is OPTIONAL
+if (env.API_KEY_ENCRYPTION_SECRET) {
+  logger.info({}, "[Auth] API key encryption enabled");
+} else {
+  logger.warn({}, "[Auth] API key encryption not configured");
 }
 
 // CDN_URL and IMAGE_SERVER_URL must be set in production

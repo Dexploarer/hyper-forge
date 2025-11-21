@@ -4,7 +4,7 @@
  */
 
 import { Elysia, t } from "elysia";
-import { requireAuthGuard } from "../plugins/auth.plugin";
+import { authPlugin } from "../plugins/auth.plugin";
 import { achievementService } from "../services/AchievementService";
 import { ForbiddenError } from "../errors";
 import { logger } from "../utils/logger";
@@ -30,7 +30,7 @@ export const achievementsRoutes = new Elysia({ prefix: "/api/achievements" })
   // Authenticated routes
   .group("", (app) =>
     app
-      .use(requireAuthGuard)
+      .use(authPlugin)
       // Get current user's achievements
       .get(
         "/me",

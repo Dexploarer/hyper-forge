@@ -11,7 +11,7 @@ import {
   InternalServerError,
 } from "../errors";
 import { createChildLogger } from "../utils/logger";
-import { requireAuthGuard } from "../plugins/auth.plugin";
+import { authPlugin } from "../plugins/auth.plugin";
 
 const logger = createChildLogger("VRMConversionRoutes");
 
@@ -210,7 +210,7 @@ export const vrmConversionRoutes = new Elysia({
   )
 
   // POST /api/vrm/convert-and-upload - Convert GLB to VRM and upload to CDN
-  .use(requireAuthGuard)
+  .use(authPlugin)
   .post(
     "/convert-and-upload",
     async ({ body, user }) => {
@@ -233,7 +233,7 @@ export const vrmConversionRoutes = new Elysia({
 
       logger.info(
         {
-          userId: user.id,
+          userId: user?.id || "anonymous",
           assetId,
           hasFile: !!file,
           hasUrl: !!glbUrl,

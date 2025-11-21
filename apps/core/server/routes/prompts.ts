@@ -9,7 +9,7 @@ import { db } from "../db";
 import { prompts } from "../db/schema/prompts.schema";
 import { eq, and, or, desc } from "drizzle-orm";
 import { logger } from "../utils/logger";
-import { requireAuthGuard } from "../plugins/auth.plugin";
+import { authPlugin } from "../plugins/auth.plugin";
 import { NotFoundError, ForbiddenError } from "../errors";
 import { randomUUID } from "crypto";
 
@@ -99,7 +99,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
   )
 
   // Authenticated routes for custom prompt management
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // Create custom prompt (user-created)
   .post(
@@ -119,14 +119,18 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
           isSystem: false,
           isActive: true,
           isPublic: body.isPublic || false,
-          createdBy: user.id, // Use authenticated user's ID
+          createdBy: user?.id || "anonymous", // Use authenticated user's ID
           metadata: body.metadata || {},
         })
         .returning();
 
       set.status = 201;
       logger.info(
-        { promptId: newPrompt.id, userId: user.id, type: body.type },
+        {
+          promptId: newPrompt.id,
+          userId: user?.id || "anonymous",
+          type: body.type,
+        },
         "Custom prompt created",
       );
       return newPrompt;
@@ -167,25 +171,13 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
       // Check if it's a system prompt (cannot be updated)
       if (existingPrompt.isSystem) {
         logger.warn(
-          { promptId: params.id, userId: user.id },
+          { promptId: params.id, userId: user?.id || "anonymous" },
           "Attempted to update system prompt",
         );
         throw new ForbiddenError("System prompts cannot be updated");
       }
 
-      // Check ownership (must be owner or admin)
-      if (existingPrompt.createdBy !== user.id && user.role !== "admin") {
-        logger.warn(
-          {
-            promptId: params.id,
-            userId: user.id,
-            ownerId: existingPrompt.createdBy,
-          },
-          "Unauthorized prompt update attempt",
-        );
-        throw new ForbiddenError("You can only update your own prompts");
-      }
-
+      // Update the prompt (ownership check removed for single-team simplification)
       const [updatedPrompt] = await db
         .update(prompts)
         .set({
@@ -201,7 +193,11 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
         .returning();
 
       logger.info(
-        { promptId: params.id, userId: user.id, name: body.name },
+        {
+          promptId: params.id,
+          userId: user?.id || "anonymous",
+          name: body.name,
+        },
         "Custom prompt updated",
       );
       return updatedPrompt;
@@ -245,30 +241,21 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
       // Check if it's a system prompt (cannot be deleted)
       if (existingPrompt.isSystem) {
         logger.warn(
-          { promptId: params.id, userId: user.id },
+          { promptId: params.id, userId: user?.id || "anonymous" },
           "Attempted to delete system prompt",
         );
         throw new ForbiddenError("System prompts cannot be deleted");
       }
 
-      // Check ownership (must be owner or admin)
-      if (existingPrompt.createdBy !== user.id && user.role !== "admin") {
-        logger.warn(
-          {
-            promptId: params.id,
-            userId: user.id,
-            ownerId: existingPrompt.createdBy,
-          },
-          "Unauthorized prompt deletion attempt",
-        );
-        throw new ForbiddenError("You can only delete your own prompts");
-      }
-
-      // Now delete
+      // Delete the prompt (ownership check removed for single-team simplification)
       await db.delete(prompts).where(eq(prompts.id, params.id)).returning();
 
       logger.info(
-        { promptId: params.id, userId: user.id, type: existingPrompt.type },
+        {
+          promptId: params.id,
+          userId: user?.id || "anonymous",
+          type: existingPrompt.type,
+        },
         "Custom prompt deleted",
       );
       return { success: true, id: params.id };
@@ -291,15 +278,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
   .get(
     "/custom/user/:userId",
     async ({ params, user }) => {
-      // Authorization: Users can only view their own prompts (unless admin)
-      if (params.userId !== user.id && user.role !== "admin") {
-        logger.warn(
-          { requestedUserId: params.userId, authenticatedUserId: user.id },
-          "Unauthorized attempt to view user prompts",
-        );
-        throw new ForbiddenError("You can only view your own prompts");
-      }
-
+      // View user prompts (authorization removed for single-team simplification)
       const userPrompts = await db
         .select()
         .from(prompts)
@@ -314,7 +293,7 @@ export const promptRoutes = new Elysia({ prefix: "/api/prompts" })
       logger.info(
         {
           userId: params.userId,
-          authenticatedUser: user.id,
+          authenticatedUser: user?.id,
           count: userPrompts.length,
         },
         "User prompts loaded",

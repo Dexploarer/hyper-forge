@@ -7,14 +7,14 @@
 import * as Models from "../../models";
 import {
   Elysia,
-  requireAuthGuard,
+  authPlugin,
   logger,
   contentGenService,
   authHeaders,
 } from "./shared";
 
 export const worldRoutes = new Elysia()
-  .use(requireAuthGuard)
+  .use(authPlugin)
 
   // POST /api/content/generate-world
   .post(

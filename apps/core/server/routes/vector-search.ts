@@ -12,7 +12,7 @@ import { assets } from "../db/schema/assets.schema";
 import { npcs, quests, lores } from "../db/schema/content.schema";
 import { eq, inArray } from "drizzle-orm";
 import * as Models from "../models";
-import { requireAuthGuard } from "../plugins/auth.plugin";
+import { authPlugin } from "../plugins/auth.plugin";
 import type { AuthUser } from "../types/auth";
 import {
   ServiceUnavailableError,
@@ -88,7 +88,7 @@ export const vectorSearchRoutes = new Elysia({
   // Authenticated search endpoints
   .group("", (app) =>
     app
-      .use(requireAuthGuard)
+      .use(authPlugin)
 
       /**
        * Search assets by semantic similarity
