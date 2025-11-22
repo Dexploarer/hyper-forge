@@ -33,7 +33,15 @@ if (!process.env.DATABASE_URL) {
 logger.info(
   {
     migrationsFolder,
-    databaseUrl: process.env.DATABASE_URL?.replace(/:[^:@]+@/, ":****@"), // Hide password
+    databaseUrl: (() => {
+      try {
+        const url = new URL(process.env.DATABASE_URL!);
+        url.password = "****";
+        return url.toString();
+      } catch {
+        return process.env.DATABASE_URL!.replace(/:[^:@]+@/, ":****@");
+      }
+    })(), // Hide password
   },
   "[Migrations] Starting migration process",
 );
