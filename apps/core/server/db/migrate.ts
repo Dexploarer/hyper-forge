@@ -30,18 +30,24 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Log migration info for debugging
+const sanitizedDbUrl = (() => {
+  try {
+    const url = new URL(process.env.DATABASE_URL!);
+    url.password = "****";
+    return url.toString();
+  } catch {
+    return process.env.DATABASE_URL!.replace(/:[^:@]+@/, ":****@");
+  }
+})(); // Hide password
+
+console.log("[Migrations] Starting migration process");
+console.log("[Migrations] Migrations folder:", migrationsFolder);
+console.log("[Migrations] Database URL:", sanitizedDbUrl);
+
 logger.info(
   {
     migrationsFolder,
-    databaseUrl: (() => {
-      try {
-        const url = new URL(process.env.DATABASE_URL!);
-        url.password = "****";
-        return url.toString();
-      } catch {
-        return process.env.DATABASE_URL!.replace(/:[^:@]+@/, ":****@");
-      }
-    })(), // Hide password
+    databaseUrl: sanitizedDbUrl,
   },
   "[Migrations] Starting migration process",
 );
@@ -84,6 +90,67 @@ async function main() {
     process.exit(1);
   }
 
+  // Test database connection before running migrations
+  console.log("[Migrations] Testing database connection...");
+  try {
+    const result = await migrationClient`SELECT 1 as test`;
+    console.log("[Migrations] ✓ Database connection successful");
+    logger.info({}, "[Migrations] Database connection test passed");
+  } catch (error: any) {
+    const errorMsg = `Database connection failed: ${error.message}`;
+    console.error("[Migrations] ✗ DATABASE CONNECTION FAILED");
+    console.error("Error Code:", error?.code);
+    console.error("Error Message:", error?.message);
+    console.error("Database URL:", sanitizedDbUrl);
+    console.error("Full Error:", JSON.stringify(error, null, 2));
+
+    logger.error(
+      {
+        err: error,
+        code: error?.code,
+        databaseUrl: sanitizedDbUrl,
+      },
+      errorMsg,
+    );
+    await migrationClient.end();
+    process.exit(1);
+  }
+
+  // Check for existing migrations (helps diagnose state)
+  try {
+    const existingMigrations = await migrationClient`
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'drizzle'
+      AND table_name = '__drizzle_migrations'
+    `;
+
+    if (existingMigrations.length > 0) {
+      const appliedMigrations = await migrationClient`
+        SELECT id, hash, created_at
+        FROM drizzle.__drizzle_migrations
+        ORDER BY created_at DESC
+        LIMIT 5
+      `;
+      console.log(
+        `[Migrations] Found ${appliedMigrations.length} previously applied migrations`,
+      );
+      logger.info(
+        { count: appliedMigrations.length },
+        "[Migrations] Previous migrations detected",
+      );
+    } else {
+      console.log("[Migrations] No previous migrations found (fresh database)");
+      logger.info({}, "[Migrations] Fresh database detected");
+    }
+  } catch (error: any) {
+    // Ignore errors here - schema might not exist yet
+    console.log(
+      "[Migrations] Could not check migration history (expected on first run)",
+    );
+  }
+
+  console.log("[Migrations] Running migrations...");
   logger.info({}, "[Migrations] Running migrations...");
 
   try {
