@@ -55,11 +55,41 @@ const db = drizzle(migrationClient);
 
 // Run migrations
 async function main() {
+  // Verify migrations folder exists and has files
+  try {
+    const fs = await import("node:fs/promises");
+    const migrationFiles = await fs.readdir(migrationsFolder);
+    const sqlFiles = migrationFiles.filter((f) => f.endsWith(".sql"));
+
+    logger.info(
+      {
+        migrationsFolder,
+        totalFiles: migrationFiles.length,
+        sqlFiles: sqlFiles.length,
+      },
+      "[Migrations] Found migration files",
+    );
+
+    if (sqlFiles.length === 0) {
+      const errorMsg = `No SQL migration files found in ${migrationsFolder}`;
+      console.error(`[Migrations] ERROR: ${errorMsg}`);
+      logger.error({}, errorMsg);
+      process.exit(1);
+    }
+  } catch (error: any) {
+    const errorMsg = `Failed to read migrations folder: ${error.message}`;
+    console.error(`[Migrations] ERROR: ${errorMsg}`);
+    console.error(`[Migrations] Stack: ${error.stack}`);
+    logger.error({ err: error }, errorMsg);
+    process.exit(1);
+  }
+
   logger.info({}, "[Migrations] Running migrations...");
 
   try {
     await migrate(db, { migrationsFolder });
     logger.info({}, "[Migrations] ✓ Migrations completed successfully");
+    console.log("[Migrations] ✓ Migrations completed successfully"); // Ensure visibility in Railway
   } catch (error: any) {
     // Check if it's a "relation already exists" error (PostgreSQL code 42P07)
     // Drizzle wraps PostgreSQL errors, so check the cause as well
@@ -72,16 +102,29 @@ async function main() {
     if (isAlreadyExistsError) {
       logger.warn({}, "[Migrations] ⚠️  Some tables already exist - skipping");
       logger.info({}, "[Migrations] ✓ Database schema is up to date");
-    } else {
-      logger.error(
-        {
-          err: error,
-          code: errorCode,
-          message: errorMessage,
-          migrationsFolder,
-        },
-        "[Migrations] ✗ Migration failed",
+      console.log(
+        "[Migrations] ✓ Database schema is up to date (some tables already exist)",
       );
+    } else {
+      // Log error details to both logger and console for maximum visibility
+      const errorDetails = {
+        code: errorCode,
+        message: errorMessage,
+        stack: error?.stack,
+        cause: error?.cause,
+        migrationsFolder,
+      };
+
+      console.error("[Migrations] ✗ MIGRATION FAILED - ERROR DETAILS:");
+      console.error("Error Code:", errorCode);
+      console.error("Error Message:", errorMessage);
+      console.error("Full Error:", JSON.stringify(error, null, 2));
+      console.error("Error Stack:", error?.stack);
+      if (error?.cause) {
+        console.error("Error Cause:", JSON.stringify(error.cause, null, 2));
+      }
+
+      logger.error(errorDetails, "[Migrations] ✗ Migration failed");
       process.exit(1);
     }
   }
