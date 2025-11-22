@@ -1,13 +1,20 @@
 /**
  * Database Migration Runner
  * Runs pending migrations against the database
+ * Note: Bun auto-loads .env files, no dotenv needed
  */
 
-import "dotenv/config";
 import { drizzle } from "drizzle-orm/postgres-js";
-import { logger } from "../utils/logger";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { logger } from "../utils/logger";
+
+// Get absolute path to migrations folder
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const migrationsFolder = join(__dirname, "migrations");
 
 // Validate environment
 if (!process.env.DATABASE_URL) {
@@ -22,6 +29,23 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
+// Log migration info for debugging
+logger.info(
+  {
+    migrationsFolder,
+    databaseUrl: (() => {
+      try {
+        const url = new URL(process.env.DATABASE_URL!);
+        url.password = "****";
+        return url.toString();
+      } catch {
+        return process.env.DATABASE_URL!.replace(/:[^:@]+@/, ":****@");
+      }
+    })(), // Hide password
+  },
+  "[Migrations] Starting migration process",
+);
+
 // Migration connection with NOTICE suppression
 const migrationClient = postgres(process.env.DATABASE_URL, {
   max: 1,
@@ -34,7 +58,7 @@ async function main() {
   logger.info({}, "[Migrations] Running migrations...");
 
   try {
-    await migrate(db, { migrationsFolder: "./server/db/migrations" });
+    await migrate(db, { migrationsFolder });
     logger.info({}, "[Migrations] ✓ Migrations completed successfully");
   } catch (error: any) {
     // Check if it's a "relation already exists" error (PostgreSQL code 42P07)
@@ -49,7 +73,15 @@ async function main() {
       logger.warn({}, "[Migrations] ⚠️  Some tables already exist - skipping");
       logger.info({}, "[Migrations] ✓ Database schema is up to date");
     } else {
-      logger.error({ err: error }, "[Migrations] ✗ Migration failed:");
+      logger.error(
+        {
+          err: error,
+          code: errorCode,
+          message: errorMessage,
+          migrationsFolder,
+        },
+        "[Migrations] ✗ Migration failed",
+      );
       process.exit(1);
     }
   }
