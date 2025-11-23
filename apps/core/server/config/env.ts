@@ -24,7 +24,20 @@ const envSchema = z.object({
   // =========================================
   // Database
   // =========================================
-  DATABASE_URL: z.string().url("DATABASE_URL must be a valid PostgreSQL URL"),
+  DATABASE_URL: z
+    .string()
+    .min(1, "DATABASE_URL is required")
+    .refine(
+      (val) => {
+        // Accept postgres:// or postgresql:// connection strings
+        // These are valid connection strings but may not pass standard URL validation
+        return val.startsWith("postgres://") || val.startsWith("postgresql://");
+      },
+      {
+        message:
+          "DATABASE_URL must be a valid PostgreSQL connection string (postgres:// or postgresql://)",
+      },
+    ),
 
   // =========================================
   // Authentication (Required for API server, optional for workers)
@@ -147,7 +160,10 @@ const envSchema = z.object({
     .optional()
     .transform((val) => {
       if (!val) return [];
-      return val.split(",").map((origin) => origin.trim()).filter(Boolean);
+      return val
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean);
     }),
   FRONTEND_URL: z
     .string()
@@ -257,6 +273,13 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
+  // Format errors in a human-readable way for console output
+  const errorMessages = parsed.error.issues.map((issue) => {
+    const path = issue.path.join(".");
+    return `  - ${path}: ${issue.message}`;
+  });
+
+  // Log structured data for log aggregation systems
   logger.error(
     {
       validation: "failed",
@@ -265,6 +288,28 @@ if (!parsed.success) {
     },
     "Environment variable validation failed",
   );
+
+  // Also print to console for Railway logs visibility
+  console.error(
+    "\n╔════════════════════════════════════════════════════════════╗",
+  );
+  console.error(
+    "║           ENVIRONMENT VARIABLE VALIDATION FAILED           ║",
+  );
+  console.error(
+    "╠════════════════════════════════════════════════════════════╣",
+  );
+  console.error(
+    "║ The following environment variables have issues:           ║",
+  );
+  console.error(
+    "╚════════════════════════════════════════════════════════════╝\n",
+  );
+  console.error(errorMessages.join("\n"));
+  console.error(
+    "\n[Help] Check .env file and Railway environment variables.\n",
+  );
+
   process.exit(1);
 }
 
