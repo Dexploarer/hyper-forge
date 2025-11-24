@@ -87,14 +87,13 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
 
     try {
       setIsGeneratingPortrait(true);
-      const result = await api.api.content["generate-npc-portrait"].post(
-        {
-          npcName: npc.name,
-          archetype: npc.archetype,
-          appearance: npc.appearance.description,
-          personality: npc.personality.traits.join(", "),
-        },
-      );
+      const result = await api.api.content["generate-npc-portrait"].post({
+        npcName: npc.name,
+        entityId: content.id!,
+        archetype: npc.archetype,
+        appearance: npc.appearance.description,
+        personality: npc.personality.traits.join(", "),
+      });
 
       if (result.error) {
         throw new Error(
@@ -224,14 +223,12 @@ export const ContentPreviewCard: React.FC<ContentPreviewCardProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1]; // Remove data:image/png;base64, prefix
 
-        // Save to backend
-        const result = await api.api.content.media["save-portrait"].post(
-          {
-            entityType: "npc",
-            entityId: content.id!,
-            imageData: base64Image,
-          },
-        );
+        // Save to backend - use imageUrl with data URL format
+        const result = await api.api.content.media["save-portrait"].post({
+          entityType: "npc",
+          entityId: content.id!,
+          imageUrl: `data:image/png;base64,${base64Image}`,
+        });
 
         if (result.error) {
           throw new Error(
