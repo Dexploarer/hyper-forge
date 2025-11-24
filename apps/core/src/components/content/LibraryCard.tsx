@@ -189,10 +189,10 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       const response = await fetch(
         `/api/content/media/${item.type}/${item.id}`,
-        { headers }
+        { headers },
       );
       if (response.ok) {
         const data = await response.json();
@@ -210,7 +210,10 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             console.log(`[LibraryCard] Loaded portrait for ${item.name}:`, url);
             return; // Success, exit early
           } else {
-            console.warn(`[LibraryCard] Portrait found but no URL for ${item.name}:`, portrait);
+            console.warn(
+              `[LibraryCard] Portrait found but no URL for ${item.name}:`,
+              portrait,
+            );
           }
         } else {
           // Only clear if we don't already have a portrait URL (might be from previous fetch)
@@ -219,12 +222,17 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             console.debug(`[LibraryCard] No portrait found for ${item.name}`);
             setPortraitUrl(null);
           } else {
-            console.debug(`[LibraryCard] No portrait found for ${item.name}, keeping existing URL`);
+            console.debug(
+              `[LibraryCard] No portrait found for ${item.name}, keeping existing URL`,
+            );
           }
         }
       } else if (response.status === 401 || response.status === 403) {
         // Auth error - don't retry, but don't clear existing URL
-        console.warn(`[LibraryCard] Auth error fetching portrait for ${item.name}:`, response.status);
+        console.warn(
+          `[LibraryCard] Auth error fetching portrait for ${item.name}:`,
+          response.status,
+        );
         // Don't clear portraitUrl on auth errors - might be temporary
       } else if (response.status === 404) {
         // 404 means no media exists - only clear if we don't have a URL already
@@ -235,24 +243,40 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       } else {
         // Other errors - retry if we haven't exceeded max retries
         if (retryCount < maxRetries) {
-          console.log(`[LibraryCard] Retrying portrait fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`);
-          setTimeout(() => {
-            fetchPortrait(retryCount + 1);
-          }, retryDelay * (retryCount + 1)); // Exponential backoff
+          console.log(
+            `[LibraryCard] Retrying portrait fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`,
+          );
+          setTimeout(
+            () => {
+              fetchPortrait(retryCount + 1);
+            },
+            retryDelay * (retryCount + 1),
+          ); // Exponential backoff
         } else {
-          console.warn(`[LibraryCard] Failed to fetch portrait for ${item.name} after ${maxRetries} retries:`, response.status);
+          console.warn(
+            `[LibraryCard] Failed to fetch portrait for ${item.name} after ${maxRetries} retries:`,
+            response.status,
+          );
           // Don't clear existing URL on final failure - preserve what we have
         }
       }
     } catch (error) {
       // Network errors - retry if we haven't exceeded max retries
       if (retryCount < maxRetries) {
-        console.log(`[LibraryCard] Network error, retrying portrait fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`);
-        setTimeout(() => {
-          fetchPortrait(retryCount + 1);
-        }, retryDelay * (retryCount + 1)); // Exponential backoff
+        console.log(
+          `[LibraryCard] Network error, retrying portrait fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`,
+        );
+        setTimeout(
+          () => {
+            fetchPortrait(retryCount + 1);
+          },
+          retryDelay * (retryCount + 1),
+        ); // Exponential backoff
       } else {
-        console.error(`[LibraryCard] Error fetching portrait for ${item.name} after ${maxRetries} retries:`, error);
+        console.error(
+          `[LibraryCard] Error fetching portrait for ${item.name} after ${maxRetries} retries:`,
+          error,
+        );
         // Don't clear existing URL on final failure - preserve what we have
       }
     }
@@ -265,17 +289,16 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
 
     try {
       setIsGeneratingPortrait(true);
-      const result = await api.api.content["generate-npc-portrait"].post(
-        {
-          npcName: npc.name,
-          archetype: npc.archetype || "default",
-          appearance:
-            npc.appearance?.description || "Generic appearance for a character",
-          personality:
-            npc.personality?.traits?.join(", ") ||
-            "Neutral and balanced personality",
-        },
-      );
+      const result = await api.api.content["generate-npc-portrait"].post({
+        npcName: npc.name,
+        entityId: item.id!,
+        archetype: npc.archetype || "default",
+        appearance:
+          npc.appearance?.description || "Generic appearance for a character",
+        personality:
+          npc.personality?.traits?.join(", ") ||
+          "Neutral and balanced personality",
+      });
 
       if (result.error) {
         throw new Error(
@@ -310,10 +333,10 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
-      
+
       const response = await fetch(
         `/api/content/media/${item.type}/${item.id}`,
-        { headers }
+        { headers },
       );
       if (response.ok) {
         const data = await response.json();
@@ -331,7 +354,10 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             console.log(`[LibraryCard] Loaded banner for ${item.name}:`, url);
             return; // Success, exit early
           } else {
-            console.warn(`[LibraryCard] Banner found but no URL for ${item.name}:`, banner);
+            console.warn(
+              `[LibraryCard] Banner found but no URL for ${item.name}:`,
+              banner,
+            );
           }
         } else {
           // Only clear if we don't already have a banner URL (might be from previous fetch)
@@ -340,12 +366,17 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
             console.debug(`[LibraryCard] No banner found for ${item.name}`);
             setBannerUrl(null);
           } else {
-            console.debug(`[LibraryCard] No banner found for ${item.name}, keeping existing URL`);
+            console.debug(
+              `[LibraryCard] No banner found for ${item.name}, keeping existing URL`,
+            );
           }
         }
       } else if (response.status === 401 || response.status === 403) {
         // Auth error - don't retry, but don't clear existing URL
-        console.warn(`[LibraryCard] Auth error fetching banner for ${item.name}:`, response.status);
+        console.warn(
+          `[LibraryCard] Auth error fetching banner for ${item.name}:`,
+          response.status,
+        );
         // Don't clear bannerUrl on auth errors - might be temporary
       } else if (response.status === 404) {
         // 404 means no media exists - only clear if we don't have a URL already
@@ -356,24 +387,40 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
       } else {
         // Other errors - retry if we haven't exceeded max retries
         if (retryCount < maxRetries) {
-          console.log(`[LibraryCard] Retrying banner fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`);
-          setTimeout(() => {
-            fetchBanner(retryCount + 1);
-          }, retryDelay * (retryCount + 1)); // Exponential backoff
+          console.log(
+            `[LibraryCard] Retrying banner fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`,
+          );
+          setTimeout(
+            () => {
+              fetchBanner(retryCount + 1);
+            },
+            retryDelay * (retryCount + 1),
+          ); // Exponential backoff
         } else {
-          console.warn(`[LibraryCard] Failed to fetch banner for ${item.name} after ${maxRetries} retries:`, response.status);
+          console.warn(
+            `[LibraryCard] Failed to fetch banner for ${item.name} after ${maxRetries} retries:`,
+            response.status,
+          );
           // Don't clear existing URL on final failure - preserve what we have
         }
       }
     } catch (error) {
       // Network errors - retry if we haven't exceeded max retries
       if (retryCount < maxRetries) {
-        console.log(`[LibraryCard] Network error, retrying banner fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`);
-        setTimeout(() => {
-          fetchBanner(retryCount + 1);
-        }, retryDelay * (retryCount + 1)); // Exponential backoff
+        console.log(
+          `[LibraryCard] Network error, retrying banner fetch for ${item.name} (attempt ${retryCount + 1}/${maxRetries})`,
+        );
+        setTimeout(
+          () => {
+            fetchBanner(retryCount + 1);
+          },
+          retryDelay * (retryCount + 1),
+        ); // Exponential backoff
       } else {
-        console.error(`[LibraryCard] Error fetching banner for ${item.name} after ${maxRetries} retries:`, error);
+        console.error(
+          `[LibraryCard] Error fetching banner for ${item.name} after ${maxRetries} retries:`,
+          error,
+        );
         // Don't clear existing URL on final failure - preserve what we have
       }
     }
@@ -387,12 +434,11 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
     try {
       setIsGeneratingBanner(true);
       // Generate banner with only visual requirements - no game metadata
-      const result = await api.api.content["generate-quest-banner"].post(
-        {
-          questTitle: quest.title,
-          description: quest.description || `Epic quest: ${quest.title}`,
-        },
-      );
+      const result = await api.api.content["generate-quest-banner"].post({
+        questTitle: quest.title,
+        entityId: item.id!,
+        description: quest.description || `Epic quest: ${quest.title}`,
+      });
 
       if (result.error) {
         throw new Error(
@@ -432,15 +478,13 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1]; // Remove data:image/png;base64, prefix
 
-        // Save to backend
-        const result = await api.api.content.media["save-portrait"].post(
-          {
-            entityType: "quest",
-            entityId: item.id,
-            imageData: base64Image,
-            type: "banner",
-          },
-        );
+        // Save to backend - use imageUrl with data URL format
+        const result = await api.api.content.media["save-portrait"].post({
+          entityType: "quest",
+          entityId: item.id,
+          imageUrl: `data:image/png;base64,${base64Image}`,
+          type: "banner",
+        });
 
         if (result.error) {
           throw new Error(
@@ -481,14 +525,12 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1]; // Remove data:image/png;base64, prefix
 
-        // Save to backend
-        const result = await api.api.content.media["save-portrait"].post(
-          {
-            entityType: "npc",
-            entityId: item.id,
-            imageData: base64Image,
-          },
-        );
+        // Save to backend - use imageUrl with data URL format
+        const result = await api.api.content.media["save-portrait"].post({
+          entityType: "npc",
+          entityId: item.id,
+          imageUrl: `data:image/png;base64,${base64Image}`,
+        });
 
         if (result.error) {
           throw new Error(
@@ -534,14 +576,12 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1];
 
-        // Save to backend
-        const result = await api.api.content.media["save-portrait"].post(
-          {
-            entityType: "npc",
-            entityId: item.id,
-            imageData: base64Image,
-          },
-        );
+        // Save to backend - use imageUrl with data URL format
+        const result = await api.api.content.media["save-portrait"].post({
+          entityType: "npc",
+          entityId: item.id,
+          imageUrl: `data:image/png;base64,${base64Image}`,
+        });
 
         if (result.error) {
           throw new Error(
@@ -591,15 +631,13 @@ export const LibraryCard: React.FC<LibraryCardProps> = ({
         const base64data = reader.result as string;
         const base64Image = base64data.split(",")[1];
 
-        // Save to backend
-        const result = await api.api.content.media["save-portrait"].post(
-          {
-            entityType: "quest",
-            entityId: item.id,
-            imageData: base64Image,
-            type: "banner",
-          },
-        );
+        // Save to backend - use imageUrl with data URL format
+        const result = await api.api.content.media["save-portrait"].post({
+          entityType: "quest",
+          entityId: item.id,
+          imageUrl: `data:image/png;base64,${base64Image}`,
+          type: "banner",
+        });
 
         if (result.error) {
           throw new Error(

@@ -2,11 +2,38 @@
  * TypeBox Validation Edge Case Tests
  * Tests validation schemas across all routes
  * NO MOCKS - Real validation behavior
+ *
+ * NOTE: TypeBox's Value.Check does NOT validate string formats (email, uuid, uri, date-time)
+ * by default. Format validation requires explicit format registration or use of TypeCompiler.
+ * Tests here focus on structural validation that works out of the box.
  */
 
 import { describe, it, expect } from "bun:test";
-import { Type as t, TSchema } from "@sinclair/typebox";
+import { Type as t, TSchema, FormatRegistry } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
+
+// Register common format validators for testing
+// These are the same patterns Elysia uses internally
+FormatRegistry.Set("email", (value) =>
+  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value),
+);
+FormatRegistry.Set("uuid", (value) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  ),
+);
+FormatRegistry.Set("uri", (value) => {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+});
+FormatRegistry.Set("date-time", (value) => {
+  const date = new Date(value);
+  return !isNaN(date.getTime()) && value.includes("T");
+});
 
 describe("TypeBox Validation Edge Cases", () => {
   describe("String Validation", () => {
@@ -17,9 +44,12 @@ describe("TypeBox Validation Edge Cases", () => {
       expect(result).toBe(false);
     });
 
-    it("should accept empty strings when optional", () => {
-      const schema = t.Optional(t.String());
-      const result = Value.Check(schema, undefined);
+    it("should accept undefined when optional in object context", () => {
+      // Optional types work in the context of object schemas
+      const schema = t.Object({
+        name: t.Optional(t.String()),
+      });
+      const result = Value.Check(schema, {});
 
       expect(result).toBe(true);
     });
@@ -331,12 +361,15 @@ describe("TypeBox Validation Edge Cases", () => {
       expect(Value.Check(schema, undefined)).toBe(false);
     });
 
-    it("should handle optional types", () => {
-      const schema = t.Optional(t.String());
+    it("should handle optional types in object context", () => {
+      // Optional works correctly within object schemas
+      const schema = t.Object({
+        name: t.Optional(t.String()),
+      });
 
-      expect(Value.Check(schema, "value")).toBe(true);
-      expect(Value.Check(schema, undefined)).toBe(true);
-      expect(Value.Check(schema, null)).toBe(false);
+      expect(Value.Check(schema, { name: "value" })).toBe(true);
+      expect(Value.Check(schema, {})).toBe(true);
+      expect(Value.Check(schema, { name: null })).toBe(false);
     });
   });
 

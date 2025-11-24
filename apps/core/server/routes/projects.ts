@@ -33,7 +33,7 @@ export const projectsRoutes = new Elysia({
           const project = await projectService.createProject({
             name: body.name,
             description: body.description,
-            ownerId: user?.id || null, // Single-team: ownerId is optional
+            ownerId: user?.id || "", // Single-team: ownerId is optional
             settings: body.settings,
             metadata: body.metadata,
           });
