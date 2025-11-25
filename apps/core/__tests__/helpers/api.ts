@@ -1,14 +1,77 @@
 /**
  * API Test Helper
  * November 2025 Best Practices (Elysia):
- * - Use app.handle() pattern instead of spinning up servers
- * - Request builder utilities
- * - Response assertion helpers
+ *
+ * RECOMMENDED: Use Eden Treaty for type-safe testing
+ * - Pass Elysia instance directly to treaty() - zero network overhead
+ * - Full TypeScript autocomplete for routes
+ * - Compile-time type checking for request/response
+ *
+ * ALTERNATIVE: Use app.handle() for low-level testing
+ * - Manual Request construction
+ * - Useful when you need fine-grained control
+ *
+ * @see https://elysiajs.com/patterns/unit-test
+ * @see https://elysiajs.com/eden/treaty/unit-test
  */
 
-import type { Elysia } from "elysia";
+import { Elysia } from "elysia";
+import { treaty } from "@elysiajs/eden";
 import type { AuthUser } from "../../server/middleware/auth";
 import { createAuthHeader } from "./auth";
+
+/**
+ * Type alias for any Elysia instance
+ * Using Elysia base type allows TypeScript to infer specific type parameters
+ * from the actual app instance passed to the functions below.
+ */
+type AnyElysiaApp = Elysia;
+
+/**
+ * Create a type-safe Eden Treaty client from an Elysia instance
+ *
+ * This is the RECOMMENDED approach for testing per Elysia best practices.
+ * Eden Treaty provides:
+ * - Full type safety with autocomplete
+ * - Zero network overhead (calls app.handle() internally)
+ * - Compile-time validation of requests/responses
+ *
+ * @example
+ * ```typescript
+ * const app = new Elysia().use(assetRoutes);
+ * const api = createTestClient(app);
+ *
+ * // Type-safe requests with autocomplete
+ * const { data, error } = await api.api.assets.get();
+ * const { data: asset } = await api.api.assets({ id: 'test' }).get();
+ * ```
+ */
+export function createTestClient<T extends AnyElysiaApp>(app: T) {
+  return treaty(app);
+}
+
+/**
+ * Create a type-safe Eden Treaty client with auth headers
+ *
+ * @example
+ * ```typescript
+ * const api = createAuthTestClient(app, testUser.authUser);
+ * const { data } = await api.api.assets.get(); // Authenticated request
+ * ```
+ */
+export function createAuthTestClient<T extends AnyElysiaApp>(
+  app: T,
+  user: AuthUser,
+) {
+  return treaty(app, {
+    headers: {
+      Authorization: createAuthHeader(
+        user.privyUserId,
+        user.email || undefined,
+      ),
+    },
+  });
+}
 
 /**
  * Helper function to create a Request object
@@ -36,7 +99,11 @@ export function get(path: string, headers?: HeadersInit): Request {
 /**
  * Create a POST request with JSON body
  */
-export function post(path: string, body: any, headers?: HeadersInit): Request {
+export function post(
+  path: string,
+  body: unknown,
+  headers?: HeadersInit,
+): Request {
   return req(path, {
     method: "POST",
     headers: {
@@ -50,7 +117,11 @@ export function post(path: string, body: any, headers?: HeadersInit): Request {
 /**
  * Create a PATCH request with JSON body
  */
-export function patch(path: string, body: any, headers?: HeadersInit): Request {
+export function patch(
+  path: string,
+  body: unknown,
+  headers?: HeadersInit,
+): Request {
   return req(path, {
     method: "PATCH",
     headers: {
@@ -89,7 +160,7 @@ export function authGet(path: string, user: AuthUser): Request {
 /**
  * Create an authenticated POST request
  */
-export function authPost(path: string, body: any, user: AuthUser): Request {
+export function authPost(path: string, body: unknown, user: AuthUser): Request {
   return req(path, {
     method: "POST",
     headers: {
@@ -106,7 +177,11 @@ export function authPost(path: string, body: any, user: AuthUser): Request {
 /**
  * Create an authenticated PATCH request
  */
-export function authPatch(path: string, body: any, user: AuthUser): Request {
+export function authPatch(
+  path: string,
+  body: unknown,
+  user: AuthUser,
+): Request {
   return req(path, {
     method: "PATCH",
     headers: {
@@ -149,7 +224,7 @@ export async function testRoute(
 /**
  * Test a route and parse JSON response
  */
-export async function testRouteJSON<T = any>(
+export async function testRouteJSON<T = unknown>(
   app: Elysia,
   request: Request,
 ): Promise<{ response: Response; data: T }> {
@@ -200,7 +275,7 @@ export function assertHeader(
 /**
  * Extract JSON from response with error handling
  */
-export async function extractJSON<T = any>(response: Response): Promise<T> {
+export async function extractJSON<T = unknown>(response: Response): Promise<T> {
   try {
     return await response.json();
   } catch (error) {

@@ -1,16 +1,35 @@
 /**
  * Authentication Test Helper
  * November 2025 Best Practices:
- * - Mock JWT tokens for testing
+ * - Properly signed JWT tokens for testing
  * - Privy authentication helpers
  * - Test authentication contexts
  */
 
+import { createHmac } from "crypto";
 import type { AuthUser } from "../../server/middleware/auth";
 
 /**
- * Generate a mock JWT token for testing
- * Note: This is NOT cryptographically valid, just for testing
+ * Get test JWT secret - MUST match TEST_JWT_SECRET env var in tests
+ * Set TEST_JWT_SECRET=test-secret-for-jwt-signing in test environment
+ *
+ * This function throws if TEST_JWT_SECRET is not set, matching the behavior
+ * in auth.plugin.ts to ensure consistent security handling.
+ */
+function getTestJwtSecret(): string {
+  const secret = process.env.TEST_JWT_SECRET;
+  if (!secret) {
+    throw new Error(
+      "TEST_JWT_SECRET environment variable is required for testing. " +
+        "Set TEST_JWT_SECRET=test-secret-for-jwt-signing in your test environment.",
+    );
+  }
+  return secret;
+}
+
+/**
+ * Generate a properly signed JWT token for testing
+ * Uses HMAC-SHA256 with TEST_JWT_SECRET for signature verification
  */
 export function createMockJWT(payload: {
   sub: string;
@@ -20,15 +39,20 @@ export function createMockJWT(payload: {
 }): string {
   const header = Buffer.from(
     JSON.stringify({ alg: "HS256", typ: "JWT" }),
-  ).toString("base64");
+  ).toString("base64url");
   const body = Buffer.from(
     JSON.stringify({
       ...payload,
       iat: payload.iat || Math.floor(Date.now() / 1000),
       exp: payload.exp || Math.floor(Date.now() / 1000) + 3600, // 1 hour
     }),
-  ).toString("base64");
-  const signature = "mock-signature";
+  ).toString("base64url");
+
+  // Generate proper HMAC signature
+  const signatureInput = `${header}.${body}`;
+  const signature = createHmac("sha256", getTestJwtSecret())
+    .update(signatureInput)
+    .digest("base64url");
 
   return `${header}.${body}.${signature}`;
 }

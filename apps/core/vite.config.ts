@@ -115,7 +115,8 @@ export default defineConfig({
     },
     // Increase chunk size warning limit for Three.js bundles
     chunkSizeWarningLimit: 1000,
-    // Source maps for production debugging
-    sourcemap: true,
+    // Disable source maps in production (security - don't expose source code)
+    // Enable in development for debugging
+    sourcemap: process.env.NODE_ENV !== "production",
   },
 });

@@ -39,6 +39,7 @@ import { fastHealthPlugin } from "./plugins/fast-health.plugin";
 import { modelsPlugin } from "./plugins/models.plugin";
 import { rateLimitingPlugin } from "./plugins/rate-limiting.plugin";
 import { authPlugin } from "./plugins/auth.plugin";
+import { csrfPlugin } from "./plugins/csrf.plugin";
 import { staticFilesPlugin } from "./plugins/static-files.plugin";
 import { standaloneApiRoutes } from "./plugins/api.plugin";
 import { metricsPlugin } from "./plugins/metrics.plugin";
@@ -251,7 +252,41 @@ const app = new Elysia()
   .use(securityHeaders)
   .use(
     cors({
-      origin: env.NODE_ENV === "production" ? env.FRONTEND_URL || "*" : true,
+      origin: (request) => {
+        // Build allowed origins list
+        const allowedOrigins: string[] = [];
+
+        // Add FRONTEND_URL if configured (required in production)
+        if (env.FRONTEND_URL) {
+          allowedOrigins.push(env.FRONTEND_URL);
+        }
+
+        // Add any additional CORS_ALLOWED_ORIGINS
+        if (env.CORS_ALLOWED_ORIGINS && env.CORS_ALLOWED_ORIGINS.length > 0) {
+          allowedOrigins.push(...env.CORS_ALLOWED_ORIGINS);
+        }
+
+        // In development, allow localhost origins
+        if (env.NODE_ENV !== "production") {
+          allowedOrigins.push(
+            "http://localhost:3000",
+            "http://localhost:3004",
+            "http://127.0.0.1:3000",
+            "http://127.0.0.1:3004",
+          );
+        }
+
+        // If no origins configured in production, reject (don't fall back to wildcard)
+        if (allowedOrigins.length === 0) {
+          logger.warn(
+            { context: "cors" },
+            "No CORS origins configured - rejecting cross-origin requests",
+          );
+          return false;
+        }
+
+        return allowedOrigins;
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     }),
@@ -265,9 +300,10 @@ const app = new Elysia()
   // Cache before logging to skip logs for cache hits (20% faster for cached responses)
   .use(cachingPlugin)
 
-  // ==================== AUTH & RATE LIMITING ====================
+  // ==================== AUTH, CSRF & RATE LIMITING ====================
   .use(rateLimitingPlugin)
   .use(authPlugin)
+  .use(csrfPlugin)
 
   // ==================== ROUTES (ORDERED BY FREQUENCY) ====================
   .use(healthRoutes) // Most frequent (K8s probes, monitoring)
@@ -284,15 +320,21 @@ const app = new Elysia()
   .use(createGenerationRoutes(getGenerationService))
   .use(createCDNRoutes(ROOT_DIR, CDN_URL))
 
-  .use(metricsPlugin) // Prometheus scraping
+  .use(metricsPlugin); // Prometheus scraping
 
-  // ==================== DEBUG ENDPOINTS (TEMPORARY) ====================
-  .use(
+// ==================== DEBUG ENDPOINTS (DEV ONLY) ====================
+// Only register debug plugin in non-production environments
+if (env.NODE_ENV !== "production") {
+  app.use(
     createDebugPlugin({
       rootDir: ROOT_DIR,
       apiPort: Number(API_PORT),
     }),
-  )
+  );
+}
+
+// Continue the chain
+app
 
   // ==================== ERROR HANDLING & LOGGING ====================
   // After routes to catch errors and log responses
