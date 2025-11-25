@@ -42,6 +42,9 @@ export * from "./material-presets.schema";
 // Static Assets
 export * from "./static-assets.schema";
 
+// Token Blocklist (JWT invalidation)
+export * from "./token-blocklist.schema";
+
 // Re-export everything for drizzle
 import * as usersSchema from "./users.schema";
 import * as assetsSchema from "./assets.schema";
@@ -56,6 +59,7 @@ import * as apiKeysSchema from "./api-keys.schema";
 import * as promptsSchema from "./prompts.schema";
 import * as materialPresetsSchema from "./material-presets.schema";
 import * as staticAssetsSchema from "./static-assets.schema";
+import * as tokenBlocklistSchema from "./token-blocklist.schema";
 
 export const schema = {
   ...usersSchema,
@@ -71,4 +75,5 @@ export const schema = {
   ...promptsSchema,
   ...materialPresetsSchema,
   ...staticAssetsSchema,
+  ...tokenBlocklistSchema,
 };

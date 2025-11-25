@@ -82,20 +82,20 @@ export const AssetDimensions = t.Object({
 });
 
 export const AssetMetadata = t.Object({
-  id: t.Optional(t.String()),
-  name: t.Optional(t.String()),
-  description: t.Optional(t.String()),
-  type: t.Optional(t.String()),
-  subtype: t.Optional(t.String()),
+  id: t.Optional(t.String({ maxLength: 255 })),
+  name: t.Optional(t.String({ maxLength: 255 })),
+  description: t.Optional(t.String({ maxLength: 5000 })),
+  type: t.Optional(t.String({ maxLength: 100 })),
+  subtype: t.Optional(t.String({ maxLength: 100 })),
   tier: t.Optional(t.Union([t.String(), t.Number()])),
-  category: t.Optional(t.String()),
-  thumbnailUrl: t.Optional(t.String()),
+  category: t.Optional(t.String({ maxLength: 100 })),
+  thumbnailUrl: t.Optional(t.String({ maxLength: 2000 })),
   hasSpriteSheet: t.Optional(t.Boolean()),
   spriteCount: t.Optional(t.Number()),
   // Generation metadata
-  detailedPrompt: t.Optional(t.String()),
-  workflow: t.Optional(t.String()),
-  meshyTaskId: t.Optional(t.String()),
+  detailedPrompt: t.Optional(t.String({ maxLength: 10000 })),
+  workflow: t.Optional(t.String({ maxLength: 100 })),
+  meshyTaskId: t.Optional(t.String({ maxLength: 255 })),
   generatedAt: t.Optional(t.String()),
   generationMethod: t.Optional(
     t.Union([
@@ -105,21 +105,21 @@ export const AssetMetadata = t.Object({
       t.Literal("placeholder"),
     ]),
   ),
-  quality: t.Optional(t.String()),
+  quality: t.Optional(t.String({ maxLength: 50 })),
   // File status
   hasConceptArt: t.Optional(t.Boolean()),
   hasModel: t.Optional(t.Boolean()),
   // Variant system
   isBaseModel: t.Optional(t.Boolean()),
   isVariant: t.Optional(t.Boolean()),
-  parentBaseModel: t.Optional(t.String()),
-  variants: t.Optional(t.Array(t.String())),
+  parentBaseModel: t.Optional(t.String({ maxLength: 255 })),
+  variants: t.Optional(t.Array(t.String({ maxLength: 255 }))),
   variantCount: t.Optional(t.Number()),
   lastVariantGenerated: t.Optional(t.String()),
   // Material info for variants
   materialPreset: t.Optional(MaterialPresetInfo),
-  baseMaterial: t.Optional(t.String()),
-  retextureTaskId: t.Optional(t.String()),
+  baseMaterial: t.Optional(t.String({ maxLength: 100 })),
+  retextureTaskId: t.Optional(t.String({ maxLength: 255 })),
   retextureMethod: t.Optional(
     t.Union([
       t.Literal("meshy-retexture"),
@@ -135,21 +135,21 @@ export const AssetMetadata = t.Object({
       t.Literal("failed"),
     ]),
   ),
-  retextureError: t.Optional(t.String()),
-  baseModelTaskId: t.Optional(t.String()),
+  retextureError: t.Optional(t.String({ maxLength: 5000 })),
+  baseModelTaskId: t.Optional(t.String({ maxLength: 255 })),
   // Other fields
-  gameId: t.Optional(t.String()),
+  gameId: t.Optional(t.String({ maxLength: 255 })),
   gddCompliant: t.Optional(t.Boolean()),
   isPlaceholder: t.Optional(t.Boolean()),
   normalized: t.Optional(t.Boolean()),
   normalizationDate: t.Optional(t.String()),
   dimensions: t.Optional(AssetDimensions),
-  format: t.Optional(t.String()),
+  format: t.Optional(t.String({ maxLength: 50 })),
   gripDetected: t.Optional(t.Boolean()),
   requiresAnimationStrip: t.Optional(t.Boolean()),
   // Ownership tracking (Phase 1)
-  createdBy: t.Optional(t.String()), // User ID
-  walletAddress: t.Optional(t.String()), // User's wallet address
+  createdBy: t.Optional(t.String({ maxLength: 255 })), // User ID
+  walletAddress: t.Optional(t.String({ maxLength: 255 })), // User's wallet address
   isPublic: t.Optional(t.Boolean()), // Default true
   createdAt: t.Optional(t.String()),
   updatedAt: t.Optional(t.String()),

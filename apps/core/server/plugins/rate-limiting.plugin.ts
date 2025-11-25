@@ -2,15 +2,11 @@
  * Rate Limiting Plugin for Elysia
  * Consolidates all rate limiting configuration into organized groups
  *
- * Rate Limits (Relaxed for Development):
- * - Global: 10000 req/min (all endpoints)
- * - Admin: 5000 req/min (/api/admin/*)
- * - Generation: 100 req/min (/api/generation/*)
- * - Music: 200 req/min (/api/music/*)
- * - SFX: 300 req/min (/api/sfx/*)
- * - Voice: 200 req/min (/api/voice/*)
+ * Rate Limits (Environment-aware):
+ * - Production: Strict limits to prevent abuse
+ * - Development: Higher limits for testing, but still enforced
+ * - Test: Very high limits but still enforced (can be disabled with DISABLE_RATE_LIMITING=true)
  *
- * Note: Rate limiting is disabled in development mode
  * Uses Elysia's .group() pattern for organized route protection
  */
 
@@ -41,53 +37,70 @@ function createRateLimitError(message: string) {
 }
 
 /**
- * Check if rate limiting should be enabled
- * Disabled in development and test environments
+ * Rate limiting is now ALWAYS enabled by default
+ * Can only be disabled explicitly with DISABLE_RATE_LIMITING=true (for specific tests)
  */
-const RATE_LIMITING_ENABLED =
-  env.NODE_ENV === "production" || env.ENABLE_RATE_LIMITING === true;
+const RATE_LIMITING_ENABLED = process.env.DISABLE_RATE_LIMITING !== "true";
+
+/**
+ * Multiplier for rate limits based on environment
+ * - Production: 1x (base limits)
+ * - Development: 10x (relaxed for testing)
+ * - Test: 100x (very relaxed for automated tests)
+ */
+const RATE_LIMIT_MULTIPLIER =
+  env.NODE_ENV === "production" ? 1 : env.NODE_ENV === "test" ? 100 : 10;
+
+/**
+ * Base rate limits (production values)
+ * Multiplied by RATE_LIMIT_MULTIPLIER for dev/test environments
+ */
+const BASE_GLOBAL_LIMIT = 1000; // 1000 req/min in production
+const BASE_ADMIN_LIMIT = 500;
+const BASE_GENERATION_LIMIT = 10; // AI generation is expensive
+const BASE_MUSIC_LIMIT = 20;
+const BASE_SFX_LIMIT = 30;
+const BASE_VOICE_LIMIT = 20;
 
 /**
  * Global rate limit (applied to all routes)
- * Very relaxed limits for development and admin usage
  */
 const GLOBAL_RATE_LIMIT: RateLimitConfig = {
   duration: 60000, // 1 minute
-  max: 10000, // 10x increase
+  max: BASE_GLOBAL_LIMIT * RATE_LIMIT_MULTIPLIER,
   errorMessage: "Rate limit exceeded. Please try again later.",
 };
 
 /**
  * Rate limits for specific endpoint groups
- * Significantly relaxed for better development experience
  */
 const ENDPOINT_RATE_LIMITS: Record<string, RateLimitConfig> = {
   admin: {
     duration: 60000,
-    max: 5000, // 50x increase - admins need high limits
+    max: BASE_ADMIN_LIMIT * RATE_LIMIT_MULTIPLIER,
     errorMessage: "Admin endpoint rate limit exceeded. Please try again later.",
   },
   generation: {
     duration: 60000,
-    max: 100, // 10x increase - still controlled for cost
+    max: BASE_GENERATION_LIMIT * RATE_LIMIT_MULTIPLIER,
     errorMessage:
       "Generation rate limit exceeded. Please wait before generating more assets.",
   },
   music: {
     duration: 60000,
-    max: 200, // 10x increase
+    max: BASE_MUSIC_LIMIT * RATE_LIMIT_MULTIPLIER,
     errorMessage:
       "Music generation rate limit exceeded. Please try again later.",
   },
   sfx: {
     duration: 60000,
-    max: 300, // 10x increase
+    max: BASE_SFX_LIMIT * RATE_LIMIT_MULTIPLIER,
     errorMessage:
       "Sound effect generation rate limit exceeded. Please try again later.",
   },
   voice: {
     duration: 60000,
-    max: 200, // 10x increase
+    max: BASE_VOICE_LIMIT * RATE_LIMIT_MULTIPLIER,
     errorMessage:
       "Voice generation rate limit exceeded. Please try again later.",
   },

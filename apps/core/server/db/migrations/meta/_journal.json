@@ -225,6 +225,20 @@
       "when": 1763534616494,
       "tag": "0031_stormy_black_panther",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1763700000000,
+      "tag": "0032_fix_schema_drift",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1763700100000,
+      "tag": "0033_add_token_blocklist",
+      "breakpoints": true
     }
   ]
 }

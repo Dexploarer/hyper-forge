@@ -4,12 +4,17 @@
  *
  * Headers applied:
  * - Cross-Origin-Opener-Policy: Required for Privy embedded wallets
- * - Cross-Origin-Embedder-Policy: Modern security for embedded content
  * - X-Content-Type-Options: Prevents MIME sniffing
  * - X-Frame-Options: Prevents clickjacking
+ * - X-XSS-Protection: Legacy XSS protection (for older browsers)
+ * - Referrer-Policy: Controls referrer information
+ * - Permissions-Policy: Restricts browser features
+ * - Strict-Transport-Security: Forces HTTPS (production only)
  */
 
 import { Elysia } from "elysia";
+
+const isProduction = process.env.NODE_ENV === "production";
 
 export const securityHeaders = new Elysia({
   name: "security-headers",
@@ -23,7 +28,25 @@ export const securityHeaders = new Elysia({
   // Privy's embedded wallet iframe needs to load resources without CORP headers
   // COEP is only needed for SharedArrayBuffer/high-resolution timers, not for auth
 
-  // Additional security headers
+  // Prevent MIME sniffing
   set.headers["X-Content-Type-Options"] = "nosniff";
+
+  // Prevent clickjacking
   set.headers["X-Frame-Options"] = "DENY";
+
+  // Legacy XSS protection (for older browsers)
+  set.headers["X-XSS-Protection"] = "1; mode=block";
+
+  // Control referrer information
+  set.headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+
+  // Restrict browser features
+  set.headers["Permissions-Policy"] =
+    "geolocation=(), microphone=(), camera=(), payment=()";
+
+  // HSTS - Force HTTPS in production (1 year, include subdomains)
+  if (isProduction) {
+    set.headers["Strict-Transport-Security"] =
+      "max-age=31536000; includeSubDomains";
+  }
 });

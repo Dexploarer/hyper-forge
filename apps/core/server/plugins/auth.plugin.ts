@@ -33,6 +33,7 @@ import { UnauthorizedError, ForbiddenError } from "../errors";
 import type { AuthUser } from "../types/auth";
 import { userService } from "../services/UserService";
 import { ApiKeyService } from "../services/ApiKeyService";
+import { tokenBlocklistService } from "../services/TokenBlocklistService";
 import { logger } from "../utils/logger";
 import { env } from "../config/env";
 
@@ -69,7 +70,27 @@ export async function optionalAuth({
 
     const token = authHeader.replace("Bearer ", "");
 
-    // NEW: Check if this is an API key (starts with "af_")
+    // Check token blocklist for JWT tokens (not API keys)
+    if (!token.startsWith("af_")) {
+      try {
+        const isBlocked = await tokenBlocklistService.isTokenBlocklisted(token);
+        if (isBlocked) {
+          logger.info(
+            { context: "auth" },
+            "Token is blocklisted (revoked/logged out)",
+          );
+          return {};
+        }
+      } catch (error) {
+        // Don't block auth if blocklist check fails - log and continue
+        logger.warn(
+          { err: error, context: "auth" },
+          "Failed to check token blocklist, continuing",
+        );
+      }
+    }
+
+    // Check if this is an API key (starts with "af_")
     if (token.startsWith("af_")) {
       const apiKeyService = new ApiKeyService();
       const result = await apiKeyService.validateApiKey(token);
@@ -136,24 +157,52 @@ export async function optionalAuth({
 
     let privyUserId: string;
 
-    // In test mode, decode JWT without verifying signature
+    // In test mode, use TEST_JWT_SECRET for verification instead of Privy
+    // This allows tests to create valid tokens without external Privy calls
     if (env.NODE_ENV === "test") {
       try {
-        // Decode JWT payload (part between first and second dot)
+        // Require TEST_JWT_SECRET in test mode - prevents accidental production bypass
+        const testSecret = process.env.TEST_JWT_SECRET;
+        if (!testSecret) {
+          logger.error(
+            { context: "auth" },
+            "TEST MODE - TEST_JWT_SECRET not configured, rejecting token",
+          );
+          return {};
+        }
+
+        // Simple HMAC verification for test tokens
         const parts = token.split(".");
         if (parts.length !== 3) {
           throw new Error("Invalid JWT format");
         }
+
+        // Verify signature using TEST_JWT_SECRET
+        const crypto = await import("crypto");
+        const signatureInput = `${parts[0]}.${parts[1]}`;
+        const expectedSignature = crypto
+          .createHmac("sha256", testSecret)
+          .update(signatureInput)
+          .digest("base64url");
+
+        if (parts[2] !== expectedSignature) {
+          logger.warn(
+            { context: "auth" },
+            "TEST MODE - Invalid token signature",
+          );
+          return {};
+        }
+
         const payload = JSON.parse(Buffer.from(parts[1], "base64").toString());
         privyUserId = payload.sub;
         logger.info(
           { privyUserId, context: "auth" },
-          "TEST MODE - Decoded token for userId",
+          "TEST MODE - Verified token for userId",
         );
       } catch (error) {
         logger.error(
           { err: error, context: "auth" },
-          "TEST MODE - Failed to decode token",
+          "TEST MODE - Failed to verify token",
         );
         return {};
       }
@@ -390,19 +439,15 @@ export const requireAuthGuard = new Elysia({
 });
 
 /**
- * Require Admin Guard (DEPRECATED - Single-Team App)
+ * Require Admin Guard
  *
- * @deprecated This is a single-team app with no role-based access control.
- * This guard now behaves identically to requireAuthGuard - it only checks
- * authentication, not roles. All authenticated users have full access.
+ * Ensures user is authenticated AND has admin role.
+ * Use this for admin-only endpoints (user management, system settings, etc.)
  *
- * For backwards compatibility, this is kept as an alias to requireAuthGuard.
- * Use authPlugin instead for optional auth (recommended for single-team).
- *
- * Injects: { user: AuthUser } (guaranteed to exist)
+ * Injects: { user: AuthUser } (guaranteed to exist and be admin)
  */
 export const requireAdminGuard = new Elysia({
-  name: "require-admin-guard-deprecated",
+  name: "require-admin-guard",
 }).derive({ as: "scoped" }, async (context) => {
   const result = await requireAuth(context);
 
@@ -411,13 +456,25 @@ export const requireAdminGuard = new Elysia({
     throw new UnauthorizedError("Authentication required");
   }
 
-  // SINGLE-TEAM: No role check - all authenticated users have access
+  // Check admin role
+  if (result.user.role !== "admin") {
+    logger.warn(
+      {
+        userId: result.user.id,
+        role: result.user.role,
+        context: "auth",
+      },
+      "Admin access denied - user is not admin",
+    );
+    throw new ForbiddenError("Admin access required");
+  }
+
   logger.info(
     {
       userId: result.user.id,
       context: "auth",
     },
-    "Admin guard (deprecated): Auth only, no role check in single-team app",
+    "Admin access granted",
   );
 
   return { user: result.user } as { user: AuthUser };
