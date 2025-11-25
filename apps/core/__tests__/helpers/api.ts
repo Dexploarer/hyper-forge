@@ -1,14 +1,71 @@
 /**
  * API Test Helper
  * November 2025 Best Practices (Elysia):
- * - Use app.handle() pattern instead of spinning up servers
- * - Request builder utilities
- * - Response assertion helpers
+ *
+ * RECOMMENDED: Use Eden Treaty for type-safe testing
+ * - Pass Elysia instance directly to treaty() - zero network overhead
+ * - Full TypeScript autocomplete for routes
+ * - Compile-time type checking for request/response
+ *
+ * ALTERNATIVE: Use app.handle() for low-level testing
+ * - Manual Request construction
+ * - Useful when you need fine-grained control
+ *
+ * @see https://elysiajs.com/patterns/unit-test
+ * @see https://elysiajs.com/eden/treaty/unit-test
  */
 
 import type { Elysia } from "elysia";
+import { treaty } from "@elysiajs/eden";
 import type { AuthUser } from "../../server/middleware/auth";
 import { createAuthHeader } from "./auth";
+
+/**
+ * Create a type-safe Eden Treaty client from an Elysia instance
+ *
+ * This is the RECOMMENDED approach for testing per Elysia best practices.
+ * Eden Treaty provides:
+ * - Full type safety with autocomplete
+ * - Zero network overhead (calls app.handle() internally)
+ * - Compile-time validation of requests/responses
+ *
+ * @example
+ * ```typescript
+ * const app = new Elysia().use(assetRoutes);
+ * const api = createTestClient(app);
+ *
+ * // Type-safe requests with autocomplete
+ * const { data, error } = await api.api.assets.get();
+ * const { data: asset } = await api.api.assets({ id: 'test' }).get();
+ * ```
+ */
+export function createTestClient<
+  T extends Elysia<any, any, any, any, any, any>,
+>(app: T) {
+  return treaty(app);
+}
+
+/**
+ * Create a type-safe Eden Treaty client with auth headers
+ *
+ * @example
+ * ```typescript
+ * const api = createAuthTestClient(app, testUser.authUser);
+ * const { data } = await api.api.assets.get(); // Authenticated request
+ * ```
+ */
+export function createAuthTestClient<
+  T extends Elysia<any, any, any, any, any, any>,
+>(app: T, user: AuthUser) {
+  return treaty(app, {
+    headers: {
+      Authorization: createAuthHeader(
+        user.privyUserId,
+        user.email || undefined,
+      ),
+    },
+  });
+}
 
 /**
  * Helper function to create a Request object
