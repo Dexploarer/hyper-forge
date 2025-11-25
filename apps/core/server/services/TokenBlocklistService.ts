@@ -89,17 +89,23 @@ export class TokenBlocklistService {
 
   /**
    * Block all tokens for a user (logout everywhere)
-   * Note: This only blocks tokens we've seen - new tokens won't be affected
-   * For complete invalidation, change the user's secret or rotate keys
+   * @deprecated This function is a placeholder and does not provide a secure "logout everywhere" implementation.
+   * A robust solution requires a mechanism like a `tokensValidFrom` timestamp on the user model.
    */
   async blockUserTokens(userId: string, reason?: string): Promise<void> {
-    // We can't block tokens we haven't seen
-    // For a proper "logout everywhere", the user should change their password
-    // or we should track active sessions
-    logger.info(
+    // This is a critical security operation that is NOT implemented.
+    // A proper implementation should invalidate all of a user's sessions,
+    // for example by updating a `tokensValidFrom` timestamp in the user's database record
+    // and checking it during token verification.
+    // Leaving this as a no-op to prevent a false sense of security.
+    logger.error(
       { userId, reason, context: "auth" },
-      "User token blocklist requested (note: only blocks known tokens)",
+      "CRITICAL: blockUserTokens is not implemented. User tokens were NOT invalidated.",
     );
+    // To prevent accidental use, throw an error in non-production environments.
+    if (process.env.NODE_ENV !== "production") {
+      throw new Error("blockUserTokens is not implemented.");
+    }
   }
 }
 
