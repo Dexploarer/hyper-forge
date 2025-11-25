@@ -82,11 +82,12 @@ export async function optionalAuth({
           return {};
         }
       } catch (error) {
-        // Don't block auth if blocklist check fails - log and continue
-        logger.warn(
+        // Fail-closed: If blocklist check fails, reject the token for security.
+        logger.error(
           { err: error, context: "auth" },
-          "Failed to check token blocklist, continuing",
+          "Failed to check token blocklist. Rejecting token as a security precaution.",
         );
+        return {};
       }
     }
 
