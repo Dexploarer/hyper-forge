@@ -6,6 +6,8 @@
  * - cleanup-expired-jobs: Cleanup expired and old failed generation jobs (hourly)
  * - aggregate-errors: Aggregate API errors for analytics (hourly at :05)
  * - cleanup-old-errors: Delete old error logs and aggregations (daily at 2 AM)
+ * - cleanup-old-activity: Delete old activity logs (daily at 2:30 AM)
+ * - cleanup-token-blocklist: Remove expired tokens from blocklist (daily at 2:45 AM)
  * - cleanup-disk-space: Clean up temporary files and caches (daily at 3 AM)
  *
  * Uses @elysiajs/cron for scheduling
@@ -15,6 +17,7 @@ import { Elysia } from "elysia";
 import { cron } from "@elysiajs/cron";
 import { logger } from "../utils/logger";
 import { generationPipelineService } from "../services/GenerationPipelineService";
+import { tokenBlocklistService } from "../services/TokenBlocklistService";
 
 /**
  * Cron Jobs Plugin
@@ -29,8 +32,10 @@ export const cronPlugin = new Elysia({ name: "cron" })
       pattern: "0 * * * *", // Every hour
       async run() {
         logger.info({}, "[Cron] Running job cleanup...");
-        const expiredCount = await generationPipelineService.cleanupExpiredJobs();
-        const failedCount = await generationPipelineService.cleanupOldFailedJobs();
+        const expiredCount =
+          await generationPipelineService.cleanupExpiredJobs();
+        const failedCount =
+          await generationPipelineService.cleanupOldFailedJobs();
         logger.info(
           { expiredCount, failedCount },
           "Cleaned up expired and old failed jobs",
@@ -86,6 +91,55 @@ export const cronPlugin = new Elysia({ name: "cron" })
           );
         } catch (error) {
           logger.error({ err: error }, "Error cleanup failed");
+        }
+      },
+    }),
+  )
+
+  // Cleanup old activity logs daily at 2:30 AM (retain 90 days)
+  .use(
+    cron({
+      name: "cleanup-old-activity",
+      pattern: "30 2 * * *", // Daily at 2:30 AM
+      async run() {
+        logger.info({}, "[Cron] Running activity log cleanup...");
+        try {
+          const { db } = await import("../db/db");
+          const { activityLog } = await import("../db/schema");
+          const { lt } = await import("drizzle-orm");
+
+          // Delete logs older than 90 days
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - 90);
+
+          const result = await db
+            .delete(activityLog)
+            .where(lt(activityLog.createdAt, cutoffDate));
+
+          const deletedCount = result.rowCount || 0;
+          logger.info(
+            { deletedCount, cutoffDate: cutoffDate.toISOString() },
+            "Activity log cleanup completed",
+          );
+        } catch (error) {
+          logger.error({ err: error }, "Activity log cleanup failed");
+        }
+      },
+    }),
+  )
+
+  // Cleanup expired token blocklist entries daily at 2:45 AM
+  .use(
+    cron({
+      name: "cleanup-token-blocklist",
+      pattern: "45 2 * * *", // Daily at 2:45 AM
+      async run() {
+        logger.info({}, "[Cron] Running token blocklist cleanup...");
+        try {
+          const deletedCount = await tokenBlocklistService.cleanupExpired();
+          logger.info({ deletedCount }, "Token blocklist cleanup completed");
+        } catch (error) {
+          logger.error({ err: error }, "Token blocklist cleanup failed");
         }
       },
     }),
