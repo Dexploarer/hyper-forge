@@ -9,6 +9,8 @@ import { userService } from "../services/UserService";
 import { ActivityLogService } from "../services/ActivityLogService";
 import { ApiKeyService } from "../services/ApiKeyService";
 import type { AuthUser } from "../types/auth";
+// Import drizzle-typebox schemas for Elysia validation
+import { UserProfileUpdateSchema } from "../db/typebox-schemas";
 
 export const usersRoutes = new Elysia({ prefix: "/api/users" })
   // Regular authenticated user routes
@@ -76,11 +78,9 @@ export const usersRoutes = new Elysia({ prefix: "/api/users" })
           return { user: updatedUser };
         },
         {
-          body: t.Object({
-            displayName: t.String(),
-            email: t.String(),
-            discordUsername: t.Optional(t.String()),
-          }),
+          // Using drizzle-typebox schema for validation
+          // Defined once in Drizzle, used for both DB and API validation
+          body: UserProfileUpdateSchema,
           detail: {
             tags: ["Users"],
             summary: "Update user profile",
