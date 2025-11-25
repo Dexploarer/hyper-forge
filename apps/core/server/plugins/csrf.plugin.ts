@@ -94,9 +94,30 @@ export const csrfPlugin = new Elysia({ name: "csrf" }).onBeforeHandle(
       }
     }
 
-    // Skip for requests without origin (same-origin requests in some browsers)
-    // This is safe because browsers always send Origin on cross-origin requests
+    // In production, reject state-changing requests without an origin header.
+    // This is a stricter CSRF check.
     if (!effectiveOrigin) {
+      if (env.NODE_ENV === "production") {
+        logger.warn(
+          {
+            context: "csrf",
+            method,
+            path: new URL(request.url).pathname,
+          },
+          "CSRF validation failed - missing Origin/Referer header in production",
+        );
+        return new Response(
+          JSON.stringify({
+            error: "CSRF_VALIDATION_FAILED",
+            message: "Missing Origin header",
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+      // In non-production, allow requests without an origin for easier testing.
       return;
     }
 
