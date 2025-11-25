@@ -39,6 +39,10 @@ function createRateLimitError(message: string) {
 /**
  * Rate limiting is now ALWAYS enabled by default
  * Can only be disabled explicitly with DISABLE_RATE_LIMITING=true (for specific tests)
+ *
+ * Note: We check process.env directly here since DISABLE_RATE_LIMITING is a test-only
+ * flag that may not be in the validated env schema. This is intentional to allow
+ * test-specific behavior without polluting the production config.
  */
 const RATE_LIMITING_ENABLED = process.env.DISABLE_RATE_LIMITING !== "true";
 

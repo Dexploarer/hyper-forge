@@ -27,8 +27,8 @@ function getAllowedOrigins(): string[] {
     origins.push(...env.CORS_ALLOWED_ORIGINS);
   }
 
-  // In development, allow localhost
-  if (env.NODE_ENV === "development") {
+  // In non-production environments (development, test), allow localhost
+  if (env.NODE_ENV !== "production") {
     origins.push(
       "http://localhost:3000",
       "http://localhost:3004",

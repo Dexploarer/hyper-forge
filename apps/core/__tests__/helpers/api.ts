@@ -15,10 +15,17 @@
  * @see https://elysiajs.com/eden/treaty/unit-test
  */
 
-import type { Elysia } from "elysia";
+import { Elysia } from "elysia";
 import { treaty } from "@elysiajs/eden";
 import type { AuthUser } from "../../server/middleware/auth";
 import { createAuthHeader } from "./auth";
+
+/**
+ * Type alias for any Elysia instance
+ * Using Elysia base type allows TypeScript to infer specific type parameters
+ * from the actual app instance passed to the functions below.
+ */
+type AnyElysiaApp = Elysia;
 
 /**
  * Create a type-safe Eden Treaty client from an Elysia instance
@@ -39,9 +46,7 @@ import { createAuthHeader } from "./auth";
  * const { data: asset } = await api.api.assets({ id: 'test' }).get();
  * ```
  */
-export function createTestClient<
-  T extends Elysia<any, any, any, any, any, any>,
->(app: T) {
+export function createTestClient<T extends AnyElysiaApp>(app: T) {
   return treaty(app);
 }
 
@@ -54,9 +59,10 @@ export function createTestClient<
  * const { data } = await api.api.assets.get(); // Authenticated request
  * ```
  */
-export function createAuthTestClient<
-  T extends Elysia<any, any, any, any, any, any>,
->(app: T, user: AuthUser) {
+export function createAuthTestClient<T extends AnyElysiaApp>(
+  app: T,
+  user: AuthUser,
+) {
   return treaty(app, {
     headers: {
       Authorization: createAuthHeader(
@@ -93,7 +99,11 @@ export function get(path: string, headers?: HeadersInit): Request {
 /**
  * Create a POST request with JSON body
  */
-export function post(path: string, body: any, headers?: HeadersInit): Request {
+export function post(
+  path: string,
+  body: unknown,
+  headers?: HeadersInit,
+): Request {
   return req(path, {
     method: "POST",
     headers: {
@@ -107,7 +117,11 @@ export function post(path: string, body: any, headers?: HeadersInit): Request {
 /**
  * Create a PATCH request with JSON body
  */
-export function patch(path: string, body: any, headers?: HeadersInit): Request {
+export function patch(
+  path: string,
+  body: unknown,
+  headers?: HeadersInit,
+): Request {
   return req(path, {
     method: "PATCH",
     headers: {
@@ -146,7 +160,7 @@ export function authGet(path: string, user: AuthUser): Request {
 /**
  * Create an authenticated POST request
  */
-export function authPost(path: string, body: any, user: AuthUser): Request {
+export function authPost(path: string, body: unknown, user: AuthUser): Request {
   return req(path, {
     method: "POST",
     headers: {
@@ -163,7 +177,11 @@ export function authPost(path: string, body: any, user: AuthUser): Request {
 /**
  * Create an authenticated PATCH request
  */
-export function authPatch(path: string, body: any, user: AuthUser): Request {
+export function authPatch(
+  path: string,
+  body: unknown,
+  user: AuthUser,
+): Request {
   return req(path, {
     method: "PATCH",
     headers: {
@@ -206,7 +224,7 @@ export async function testRoute(
 /**
  * Test a route and parse JSON response
  */
-export async function testRouteJSON<T = any>(
+export async function testRouteJSON<T = unknown>(
   app: Elysia,
   request: Request,
 ): Promise<{ response: Response; data: T }> {
@@ -257,7 +275,7 @@ export function assertHeader(
 /**
  * Extract JSON from response with error handling
  */
-export async function extractJSON<T = any>(response: Response): Promise<T> {
+export async function extractJSON<T = unknown>(response: Response): Promise<T> {
   try {
     return await response.json();
   } catch (error) {

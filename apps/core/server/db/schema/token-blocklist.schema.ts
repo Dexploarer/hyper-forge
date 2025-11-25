@@ -29,7 +29,8 @@ export const tokenBlocklist = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   },
   (table) => [
-    index("idx_token_blocklist_token_id").on(table.tokenId),
+    // Note: tokenId already has a unique constraint which creates an index automatically
+    // Only add index for expiresAt which is used for cleanup queries
     index("idx_token_blocklist_expires_at").on(table.expiresAt),
   ],
 );

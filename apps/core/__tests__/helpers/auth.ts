@@ -10,11 +10,22 @@ import { createHmac } from "crypto";
 import type { AuthUser } from "../../server/middleware/auth";
 
 /**
- * Default test secret - MUST match TEST_JWT_SECRET env var in tests
+ * Get test JWT secret - MUST match TEST_JWT_SECRET env var in tests
  * Set TEST_JWT_SECRET=test-secret-for-jwt-signing in test environment
+ *
+ * This function throws if TEST_JWT_SECRET is not set, matching the behavior
+ * in auth.plugin.ts to ensure consistent security handling.
  */
-const TEST_JWT_SECRET =
-  process.env.TEST_JWT_SECRET || "test-secret-for-jwt-signing";
+function getTestJwtSecret(): string {
+  const secret = process.env.TEST_JWT_SECRET;
+  if (!secret) {
+    throw new Error(
+      "TEST_JWT_SECRET environment variable is required for testing. " +
+        "Set TEST_JWT_SECRET=test-secret-for-jwt-signing in your test environment.",
+    );
+  }
+  return secret;
+}
 
 /**
  * Generate a properly signed JWT token for testing
@@ -39,7 +50,7 @@ export function createMockJWT(payload: {
 
   // Generate proper HMAC signature
   const signatureInput = `${header}.${body}`;
-  const signature = createHmac("sha256", TEST_JWT_SECRET)
+  const signature = createHmac("sha256", getTestJwtSecret())
     .update(signatureInput)
     .digest("base64url");
 
