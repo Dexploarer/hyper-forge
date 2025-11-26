@@ -252,7 +252,15 @@ const app = new Elysia()
   .use(securityHeaders)
   .use(
     cors({
-      origin: (request) => {
+      origin: ({ request }) => {
+        // Get the incoming origin from the request
+        const incomingOrigin = request.headers.get("origin");
+
+        // No origin header means same-origin request or non-browser client
+        if (!incomingOrigin) {
+          return true;
+        }
+
         // Build allowed origins list
         const allowedOrigins: string[] = [];
 
@@ -276,16 +284,30 @@ const app = new Elysia()
           );
         }
 
-        // If no origins configured in production, reject (don't fall back to wildcard)
+        // If no origins configured in production, reject
         if (allowedOrigins.length === 0) {
           logger.warn(
-            { context: "cors" },
-            "No CORS origins configured - rejecting cross-origin requests",
+            { context: "cors", origin: incomingOrigin },
+            "No CORS origins configured - rejecting cross-origin request",
           );
           return false;
         }
 
-        return allowedOrigins;
+        // Check if incoming origin is in allowed list
+        const isAllowed = allowedOrigins.includes(incomingOrigin);
+
+        if (!isAllowed) {
+          logger.warn(
+            {
+              context: "cors",
+              origin: incomingOrigin,
+              allowed: allowedOrigins,
+            },
+            "CORS request from unauthorized origin rejected",
+          );
+        }
+
+        return isAllowed;
       },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
