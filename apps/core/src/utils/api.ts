@@ -30,10 +30,13 @@ export async function apiFetch(
   // Construct full URL if input is a relative path
   // If input is already absolute (http:// or https://), use it as-is
   // Otherwise, prepend base URL (empty string in dev/prod means relative URL)
+  const baseUrl = getApiBaseUrl();
   const url =
     input.startsWith("http://") || input.startsWith("https://")
       ? input
-      : `${getApiBaseUrl()}${input.startsWith("/") ? input : `/${input}`}`;
+      : baseUrl && !input.startsWith("/")
+        ? `${baseUrl}/${input}`
+        : `${baseUrl}${input}`;
 
   const fetchWithTimeout = async (): Promise<Response> => {
     const controller = new AbortController();
