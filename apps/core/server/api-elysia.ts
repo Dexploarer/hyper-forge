@@ -261,17 +261,21 @@ const app = new Elysia()
           return true;
         }
 
-        // Build allowed origins list
+        // Build allowed origins list (normalize by removing trailing slashes)
+        // Browser Origin headers never include trailing slashes, but env vars might
+        const normalizeOrigin = (origin: string) =>
+          origin.endsWith("/") ? origin.slice(0, -1) : origin;
+
         const allowedOrigins: string[] = [];
 
         // Add FRONTEND_URL if configured (required in production)
         if (env.FRONTEND_URL) {
-          allowedOrigins.push(env.FRONTEND_URL);
+          allowedOrigins.push(normalizeOrigin(env.FRONTEND_URL));
         }
 
         // Add any additional CORS_ALLOWED_ORIGINS
         if (env.CORS_ALLOWED_ORIGINS && env.CORS_ALLOWED_ORIGINS.length > 0) {
-          allowedOrigins.push(...env.CORS_ALLOWED_ORIGINS);
+          allowedOrigins.push(...env.CORS_ALLOWED_ORIGINS.map(normalizeOrigin));
         }
 
         // In development, allow localhost origins
