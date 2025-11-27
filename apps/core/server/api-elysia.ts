@@ -252,18 +252,30 @@ const app = new Elysia()
   .use(securityHeaders)
   .use(
     cors({
-      origin: (request) => {
-        // Build allowed origins list
+      origin: ({ request }) => {
+        // Get the incoming origin from the request
+        const incomingOrigin = request.headers.get("origin");
+
+        // No origin header means same-origin request or non-browser client
+        if (!incomingOrigin) {
+          return true;
+        }
+
+        // Build allowed origins list (normalize by removing trailing slashes)
+        // Browser Origin headers never include trailing slashes, but env vars might
+        const normalizeOrigin = (origin: string) =>
+          origin.endsWith("/") ? origin.slice(0, -1) : origin;
+
         const allowedOrigins: string[] = [];
 
         // Add FRONTEND_URL if configured (required in production)
         if (env.FRONTEND_URL) {
-          allowedOrigins.push(env.FRONTEND_URL);
+          allowedOrigins.push(normalizeOrigin(env.FRONTEND_URL));
         }
 
         // Add any additional CORS_ALLOWED_ORIGINS
         if (env.CORS_ALLOWED_ORIGINS && env.CORS_ALLOWED_ORIGINS.length > 0) {
-          allowedOrigins.push(...env.CORS_ALLOWED_ORIGINS);
+          allowedOrigins.push(...env.CORS_ALLOWED_ORIGINS.map(normalizeOrigin));
         }
 
         // In development, allow localhost origins
@@ -276,16 +288,30 @@ const app = new Elysia()
           );
         }
 
-        // If no origins configured in production, reject (don't fall back to wildcard)
+        // If no origins configured in production, reject
         if (allowedOrigins.length === 0) {
           logger.warn(
-            { context: "cors" },
-            "No CORS origins configured - rejecting cross-origin requests",
+            { context: "cors", origin: incomingOrigin },
+            "No CORS origins configured - rejecting cross-origin request",
           );
           return false;
         }
 
-        return allowedOrigins;
+        // Check if incoming origin is in allowed list
+        const isAllowed = allowedOrigins.includes(incomingOrigin);
+
+        if (!isAllowed) {
+          logger.warn(
+            {
+              context: "cors",
+              origin: incomingOrigin,
+              allowed: allowedOrigins,
+            },
+            "CORS request from unauthorized origin rejected",
+          );
+        }
+
+        return isAllowed;
       },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],

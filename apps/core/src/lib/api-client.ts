@@ -20,13 +20,20 @@ import { getAuthToken } from "@/utils/auth-token-store";
 // Get API base URL
 // In development: Use http://localhost:3004 (direct connection to local backend)
 // In production: Use VITE_API_URL if set, otherwise relative path /api
-const API_BASE_URL = import.meta.env.DEV 
+// Remove trailing slash to prevent double-slash URLs (e.g., //api/users/me)
+const rawBaseUrl = import.meta.env.DEV
   ? "http://localhost:3004" // Dev mode: Direct connection to local backend
-  : (import.meta.env.VITE_API_URL || "/api"); // Production: Use VITE_API_URL or relative path
+  : import.meta.env.VITE_API_URL || "/api"; // Production: Use VITE_API_URL or relative path
+const API_BASE_URL = rawBaseUrl.endsWith("/")
+  ? rawBaseUrl.slice(0, -1)
+  : rawBaseUrl;
 
 // Debug logging
 if (import.meta.env.DEV) {
-  console.log("[API Client] Dev mode - connecting to local backend, API_BASE_URL:", API_BASE_URL);
+  console.log(
+    "[API Client] Dev mode - connecting to local backend, API_BASE_URL:",
+    API_BASE_URL,
+  );
 }
 
 /**
