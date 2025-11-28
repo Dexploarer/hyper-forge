@@ -99,7 +99,7 @@ bun run clean            # Clean build artifacts
 
 ```
 asset-forge/
-├── packages/
+├── apps/
 │   └── core/                    # Main application
 │       ├── src/                 # React frontend
 │       │   ├── components/      # UI components
@@ -115,6 +115,7 @@ asset-forge/
 │       ├── public/              # Static assets
 │       ├── scripts/             # Utility scripts
 │       └── dev-book/            # Documentation
+├── packages/                    # Shared packages
 ├── package.json                 # Workspace root
 ├── turbo.json                   # Build config
 └── README.md                    # This file
